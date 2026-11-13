@@ -12,7 +12,7 @@ const fixture = async (message: string, file: string) => {
   const packages = ['core', 'vue', 'other'];
   await writeFile(join(directory, 'package.json'), JSON.stringify({ private: true, workspaces: ['packages/*'] }));
   git('init', '-b', 'main'); git('config', 'user.name', 'Release Fixture'); git('config', 'user.email', 'fixture@example.invalid');
-  const remote = join(directory, 'remote.git'); git('init', '--bare', remote); git('remote', 'add', 'origin', remote);
+  const remote = join(directory, 'remote.git'); git('init', '--bare', '-b', 'main', remote); git('remote', 'add', 'origin', remote);
   for (const name of packages) {
     await mkdir(join(directory, 'packages', name), { recursive: true });
     await writeFile(join(directory, 'packages', name, 'package.json'), JSON.stringify({
