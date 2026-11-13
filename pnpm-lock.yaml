@@ -11,7 +11,7 @@ importers:
 
   .:
     devDependencies:
-      '@morfira/wysiwyg':
+      '@morfira-dev/wysiwyg':
         specifier: workspace:*
         version: link:packages/wysiwyg
       '@playwright/test':
@@ -80,7 +80,7 @@ importers:
 
   apps/docs:
     devDependencies:
-      '@morfira/wysiwyg':
+      '@morfira-dev/wysiwyg':
         specifier: workspace:*
         version: link:../../packages/wysiwyg
 
@@ -88,13 +88,13 @@ importers:
 
   packages/plugins:
     dependencies:
-      '@morfira/wysiwyg-core':
+      '@morfira-dev/wysiwyg-core':
         specifier: ^0.2.0
         version: link:../core
 
   packages/react:
     dependencies:
-      '@morfira/wysiwyg-core':
+      '@morfira-dev/wysiwyg-core':
         specifier: ^0.2.0
         version: link:../core
       react:
@@ -103,7 +103,7 @@ importers:
 
   packages/svelte:
     dependencies:
-      '@morfira/wysiwyg-core':
+      '@morfira-dev/wysiwyg-core':
         specifier: ^0.2.0
         version: link:../core
       svelte:
@@ -112,7 +112,7 @@ importers:
 
   packages/vue:
     dependencies:
-      '@morfira/wysiwyg-core':
+      '@morfira-dev/wysiwyg-core':
         specifier: ^0.2.0
         version: link:../core
       vue:
@@ -121,19 +121,19 @@ importers:
 
   packages/wysiwyg:
     dependencies:
-      '@morfira/wysiwyg-core':
+      '@morfira-dev/wysiwyg-core':
         specifier: ^0.2.0
         version: link:../core
-      '@morfira/wysiwyg-plugins':
+      '@morfira-dev/wysiwyg-plugins':
         specifier: ^0.2.0
         version: link:../plugins
-      '@morfira/wysiwyg-react':
+      '@morfira-dev/wysiwyg-react':
         specifier: ^0.2.0
         version: link:../react
-      '@morfira/wysiwyg-svelte':
+      '@morfira-dev/wysiwyg-svelte':
         specifier: ^0.2.0
         version: link:../svelte
-      '@morfira/wysiwyg-vue':
+      '@morfira-dev/wysiwyg-vue':
         specifier: ^0.2.0
         version: link:../vue
       react:

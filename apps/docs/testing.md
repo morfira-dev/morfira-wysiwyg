@@ -26,7 +26,7 @@ pnpm run docs:build
 - `break(core): ...` — отдельная явная метка major, включая зависимые адаптеры и публичный пакет. Стандартные `feat(core)!: ...` и footer `BREAKING CHANGE: ...` также распознаются.
 - Коммиты только с документацией, тестами или chore не выпускают библиотеку.
 
-Scope коммита помогает читать историю; пакет определяется изменёнными файлами. Теги: `@morfira/wysiwyg-core@1.0.0`, `@morfira/wysiwyg@1.0.0` и аналогично для остальных. Пока тегов нет, первый автоматический релиз будет `1.0.0` по правилам semantic-release. Версия `0.2.0` в исходниках — локальная стартовая версия; фактическую опубликованную версию определяют npm и теги. Это не обещание полного набора возможностей зрелых редакторов.
+Scope коммита помогает читать историю; пакет определяется изменёнными файлами. Теги: `@morfira-dev/wysiwyg-core@1.0.0`, `@morfira-dev/wysiwyg@1.0.0` и аналогично для остальных. Пока тегов нет, первый автоматический релиз будет `1.0.0` по правилам semantic-release. Версия `0.2.0` в исходниках — локальная стартовая версия; фактическую опубликованную версию определяют npm и теги. Это не обещание полного набора возможностей зрелых редакторов.
 
 ```sh
 pnpm run test:release
@@ -39,7 +39,7 @@ pnpm run release:plan
 
 Workflow `release.yml` запускается для main и вручную. Сначала вызывается полный Check: редактор в Chromium/Firefox/WebKit, типы, сборка, бюджеты, сайт и демки. Затем сохраняется артефакт `release-plan`. Публикация включается только переменной репозитория `NPM_PUBLISH_ENABLED=true`; без неё успешно выполняются проверки и план, а publish пропускается. PR не публикует пакеты. Сайт остаётся локальным.
 
-Для **каждого** из пакетов `@morfira/wysiwyg-core`, `@morfira/wysiwyg-plugins`, `@morfira/wysiwyg-vue`, `@morfira/wysiwyg-react`, `@morfira/wysiwyg-svelte`, `@morfira/wysiwyg` в npm → Settings → Trusted publishing добавьте GitHub Actions:
+Для **каждого** из пакетов `@morfira-dev/wysiwyg-core`, `@morfira-dev/wysiwyg-plugins`, `@morfira-dev/wysiwyg-vue`, `@morfira-dev/wysiwyg-react`, `@morfira-dev/wysiwyg-svelte`, `@morfira-dev/wysiwyg` в npm → Settings → Trusted publishing добавьте GitHub Actions:
 
 | Поле | Значение |
 | --- | --- |
@@ -54,12 +54,12 @@ Workflow получает `id-token: write` и `contents: write`; постоян
 Если npm ещё не позволяет настроить доверие для нового имени, владелец scope должен один раз опубликовать стартовые пакеты интерактивно с 2FA. После `pnpm run build` и `npm login` выполните в указанном порядке:
 
 ```sh
-pnpm --filter @morfira/wysiwyg-core publish --access public
-pnpm --filter @morfira/wysiwyg-plugins publish --access public
-pnpm --filter @morfira/wysiwyg-vue publish --access public
-pnpm --filter @morfira/wysiwyg-react publish --access public
-pnpm --filter @morfira/wysiwyg-svelte publish --access public
-pnpm --filter @morfira/wysiwyg publish --access public
+pnpm --filter @morfira-dev/wysiwyg-core publish --access public
+pnpm --filter @morfira-dev/wysiwyg-plugins publish --access public
+pnpm --filter @morfira-dev/wysiwyg-vue publish --access public
+pnpm --filter @morfira-dev/wysiwyg-react publish --access public
+pnpm --filter @morfira-dev/wysiwyg-svelte publish --access public
+pnpm --filter @morfira-dev/wysiwyg publish --access public
 ```
 
 Это реальная публикация `0.2.0`, а не проверка: выполнять только при готовности выпустить пакеты. Затем настройте все шесть trusted publishers, включите переменную и запустите Release. Первый автоматический релиз `1.0.0` обновит все внутренние зависимости. Не создавайте фиктивные release-теги до публикации. Новую связь npm нужно подтвердить успешной публикацией в течение 2 дней; если она истекла, создайте заново. Доступ к npm и успешную OIDC-публикацию нельзя подтвердить локальными тестами.

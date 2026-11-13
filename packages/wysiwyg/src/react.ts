@@ -1,1 +1,1 @@
-export * from '@morfira/wysiwyg-react';
+export * from '@morfira-dev/wysiwyg-react';

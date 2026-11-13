@@ -1,4 +1,4 @@
-import { sanitizeHTML } from '@morfira/wysiwyg-core';
+import { sanitizeHTML } from '@morfira-dev/wysiwyg-core';
 import { cellsInRectangle, emptyCell, readGrid, rebuildGrid, selectionRectangle } from './grid.js';
 import type { CellRectangle, GridCell } from './grid.js';
 

@@ -1,5 +1,5 @@
 {
-  "name": "@morfira/wysiwyg-docs",
+  "name": "@morfira-dev/wysiwyg-docs",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +9,6 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@morfira/wysiwyg": "workspace:*"
+    "@morfira-dev/wysiwyg": "workspace:*"
   }
 }

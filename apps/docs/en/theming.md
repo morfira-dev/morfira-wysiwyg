@@ -1,6 +1,6 @@
 # Theming
 
-Import `@morfira/wysiwyg/style.css` once. Set variables on a wrapper to scope them to one editor, or on `:root` for the entire application. The core does not inject styles at runtime. It works without the default toolbar.
+Import `@morfira-dev/wysiwyg/style.css` once. Set variables on a wrapper to scope them to one editor, or on `:root` for the entire application. The core does not inject styles at runtime. It works without the default toolbar.
 
 ```css
 .article-editor {

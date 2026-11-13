@@ -1,1 +1,1 @@
-export * from '@morfira/wysiwyg-vue';
+export * from '@morfira-dev/wysiwyg-vue';

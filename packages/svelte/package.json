@@ -1,5 +1,5 @@
 {
-  "name": "@morfira/wysiwyg-svelte",
+  "name": "@morfira-dev/wysiwyg-svelte",
   "version": "0.2.0",
   "type": "module",
   "files": [
@@ -20,7 +20,7 @@
     }
   },
   "peerDependencies": {
-    "@morfira/wysiwyg-core": "^0.2.0",
+    "@morfira-dev/wysiwyg-core": "^0.2.0",
     "svelte": "^5.0.0"
   },
   "svelte": "./dist/index.js",

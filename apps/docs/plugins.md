@@ -3,10 +3,10 @@
 ## Подключение таблиц
 
 ```ts
-import { createEditor } from '@morfira/wysiwyg';
-import { tables, tableCommands } from '@morfira/wysiwyg/plugins/tables';
-import '@morfira/wysiwyg/style.css';
-import '@morfira/wysiwyg/plugins/tables.css';
+import { createEditor } from '@morfira-dev/wysiwyg';
+import { tables, tableCommands } from '@morfira-dev/wysiwyg/plugins/tables';
+import '@morfira-dev/wysiwyg/style.css';
+import '@morfira-dev/wysiwyg/plugins/tables.css';
 
 const editor = createEditor(host, { plugins: [tables()] });
 const table = tableCommands(editor);
@@ -28,7 +28,7 @@ table.merge();
 ## Свой плагин
 
 ```ts
-import type { EditorPlugin } from '@morfira/wysiwyg';
+import type { EditorPlugin } from '@morfira-dev/wysiwyg';
 
 const counter = (): EditorPlugin => ({
   name: 'counter',

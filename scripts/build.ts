@@ -10,7 +10,7 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
     entryPoints: [`packages/${name}/src/${name === 'plugins' ? 'tables.ts' : name === 'react' ? 'index.tsx' : 'index.ts'}`],
     outdir, bundle: true, splitting: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true,
     sourcemap: true, jsx: 'automatic',
-    external: ['@morfira/*', 'vue', 'react', 'react/jsx-runtime'],
+    external: ['@morfira-dev/*', 'vue', 'react', 'react/jsx-runtime'],
 
   });
   if (['core', 'plugins'].includes(name) && Object.keys(result.metafile!.inputs).some((input) => input.includes('node_modules/'))) throw new Error(`${name}: bundled runtime dependencies are forbidden.`);
@@ -22,7 +22,7 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
 }
 await build({
   entryPoints: ['index', 'vue', 'react', 'svelte', 'plugins/tables'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
-  outdir: 'packages/wysiwyg/dist', outbase: 'packages/wysiwyg/src', bundle: true, format: 'esm', external: ['@morfira/*'],
+  outdir: 'packages/wysiwyg/dist', outbase: 'packages/wysiwyg/src', bundle: true, format: 'esm', external: ['@morfira-dev/*'],
 });
 await mkdir('packages/wysiwyg/dist/plugins', { recursive: true });
 await cp('packages/core/dist/style.css', 'packages/wysiwyg/dist/style.css');

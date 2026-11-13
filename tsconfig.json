@@ -14,19 +14,19 @@
     "jsx": "react-jsx",
     "noEmit": true,
     "paths": {
-      "@morfira/wysiwyg-core": [
+      "@morfira-dev/wysiwyg-core": [
         "./packages/core/src/index.ts"
       ],
-      "@morfira/wysiwyg-vue": [
+      "@morfira-dev/wysiwyg-vue": [
         "./packages/vue/src/index.ts"
       ],
-      "@morfira/wysiwyg-react": [
+      "@morfira-dev/wysiwyg-react": [
         "./packages/react/src/index.tsx"
       ],
-      "@morfira/wysiwyg-svelte": [
+      "@morfira-dev/wysiwyg-svelte": [
         "./packages/svelte/src/index.ts"
       ],
-      "@morfira/wysiwyg-plugins/tables": [
+      "@morfira-dev/wysiwyg-plugins/tables": [
         "./packages/plugins/src/tables.ts"
       ]
     }

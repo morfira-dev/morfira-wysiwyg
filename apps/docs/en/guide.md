@@ -18,8 +18,8 @@ The documentation is local-only. Packages are workspace-linked and have not been
 Provide two empty elements: `<div id="toolbar"></div><div id="editor"></div>`.
 
 ```ts
-import { createEditor, createToolbar } from '@morfira/wysiwyg';
-import '@morfira/wysiwyg/style.css';
+import { createEditor, createToolbar } from '@morfira-dev/wysiwyg';
+import '@morfira-dev/wysiwyg/style.css';
 
 const host = document.querySelector<HTMLElement>('#editor')!;
 const editor = createEditor(host, {

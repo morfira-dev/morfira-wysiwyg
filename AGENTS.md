@@ -8,7 +8,7 @@ Use pnpm 11.0.7 for installation and all workspace scripts. Keep only pnpm-lock.
 
 - Maintain an independently implemented editor and table system. Do not wrap, vendor, rename, or disguise an external editing engine. New code is MIT licensed. Preserve required notices for any actual third-party code; do not misrepresent authorship.
 - Core and plugins have zero runtime dependencies. Vue, React, and Svelte are peer dependencies of their adapters. Keep build, test, and documentation tooling development-only. Add a dependency only when the user's task requires it and an existing platform capability cannot reasonably satisfy it.
-- Public imports are `@morfira/wysiwyg`, `/vue`, `/react`, `/svelte`, and `/plugins/tables`. Keep plugins out of the core dependency graph.
+- Public imports are `@morfira-dev/wysiwyg`, `/vue`, `/react`, `/svelte`, and `/plugins/tables`. Keep plugins out of the core dependency graph.
 - Source, tests, and build scripts use strict TypeScript. Functions are `const name = (...) => ...`, including exported functions; do not use named `function` declarations. JSON, CSS, Markdown, Vue/Svelte templates, and generated JavaScript are expected non-TS artifacts.
 - Use independent SemVer with semantic-release and multi-semantic-release; keep internal dependencies and the public facade compatible. Explicitly document breaking changes to public APIs or document formats.
 

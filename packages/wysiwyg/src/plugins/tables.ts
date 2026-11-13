@@ -1,1 +1,1 @@
-export * from '@morfira/wysiwyg-plugins/tables';
+export * from '@morfira-dev/wysiwyg-plugins/tables';

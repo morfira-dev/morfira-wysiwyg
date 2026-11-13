@@ -2,7 +2,7 @@
 
 Status: implemented preview contract. Regression scenarios live in `tests/editor.spec.ts` and `tests/native.spec.ts`.
 
-- Public entry: `@morfira/wysiwyg/plugins/tables`; separate CSS. No runtime dependency or shared global registry. `tables()` installs instance-local UI and commands.
+- Public entry: `@morfira-dev/wysiwyg/plugins/tables`; separate CSS. No runtime dependency or shared global registry. `tables()` installs instance-local UI and commands.
 - Semantic HTML table/caption/column/row/cell structures persist through version 1 document JSON. Cell content may contain supported blocks and inline formatting.
 - Use a logical grid resolving rowspan and colspan. Cap dimensions and occupancy to avoid unbounded allocation from imported attributes.
 - Commands: insert, select a rectangular cell region, insert/delete rows/columns, merge/split, remove table, cell background/border color, column width. All edits are one atomic undoable transaction and obey read-only.

@@ -1,13 +1,13 @@
-import { createEditor, createToolbar } from '@morfira/wysiwyg';
-import type { Editor, EditorChange } from '@morfira/wysiwyg';
-import { tables, tableCommands } from '@morfira/wysiwyg/plugins/tables';
-import '@morfira/wysiwyg/style.css';
-import '@morfira/wysiwyg/plugins/tables.css';
+import { createEditor, createToolbar } from '@morfira-dev/wysiwyg';
+import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
+import { tables, tableCommands } from '@morfira-dev/wysiwyg/plugins/tables';
+import '@morfira-dev/wysiwyg/style.css';
+import '@morfira-dev/wysiwyg/plugins/tables.css';
 import { createApp, h, ref } from 'vue';
-import { MorfiraEditor as VueEditor } from '@morfira/wysiwyg/vue';
+import { MorfiraEditor as VueEditor } from '@morfira-dev/wysiwyg/vue';
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MorfiraEditor as ReactEditor } from '@morfira/wysiwyg/react';
+import { MorfiraEditor as ReactEditor } from '@morfira-dev/wysiwyg/react';
 import { mount, unmount } from 'svelte';
 import SvelteHarness from './SvelteHarness.svelte';
 

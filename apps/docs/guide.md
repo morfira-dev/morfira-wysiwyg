@@ -18,8 +18,8 @@ pnpm run docs:dev
 Подготовьте два пустых элемента: `<div id="toolbar"></div><div id="editor"></div>`.
 
 ```ts
-import { createEditor, createToolbar } from '@morfira/wysiwyg';
-import '@morfira/wysiwyg/style.css';
+import { createEditor, createToolbar } from '@morfira-dev/wysiwyg';
+import '@morfira-dev/wysiwyg/style.css';
 
 const host = document.querySelector<HTMLElement>('#editor')!;
 const editor = createEditor(host, {

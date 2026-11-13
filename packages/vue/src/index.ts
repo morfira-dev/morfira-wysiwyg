@@ -1,7 +1,7 @@
 import { defineComponent, h, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { PropType } from 'vue';
-import { createEditor } from '@morfira/wysiwyg-core';
-import type { Editor, EditorPlugin } from '@morfira/wysiwyg-core';
+import { createEditor } from '@morfira-dev/wysiwyg-core';
+import type { Editor, EditorPlugin } from '@morfira-dev/wysiwyg-core';
 
 export const MorfiraEditor = defineComponent({
   name: 'MorfiraEditor',

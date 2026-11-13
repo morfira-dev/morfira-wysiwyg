@@ -10,9 +10,9 @@
     "brotli": 811
   },
   "plugins.js": {
-    "raw": 18411,
-    "gzip": 6521,
-    "brotli": 5859
+    "raw": 18415,
+    "gzip": 6524,
+    "brotli": 5868
   },
   "plugins.css": {
     "raw": 1813,
@@ -20,18 +20,18 @@
     "brotli": 543
   },
   "vue.js": {
-    "raw": 880,
-    "gzip": 525,
-    "brotli": 456
+    "raw": 884,
+    "gzip": 528,
+    "brotli": 460
   },
   "react.js": {
-    "raw": 796,
-    "gzip": 463,
-    "brotli": 411
+    "raw": 800,
+    "gzip": 466,
+    "brotli": 415
   },
   "svelte.js": {
-    "raw": 914,
-    "gzip": 595,
-    "brotli": 506
+    "raw": 918,
+    "gzip": 598,
+    "brotli": 510
   }
 }

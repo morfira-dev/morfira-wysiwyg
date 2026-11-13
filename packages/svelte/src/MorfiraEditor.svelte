@@ -1,7 +1,7 @@
 <script lang="ts">
 import { onMount } from 'svelte';
-import { createEditor } from '@morfira/wysiwyg-core';
-import type { Editor, EditorChange, EditorPlugin } from '@morfira/wysiwyg-core';
+import { createEditor } from '@morfira-dev/wysiwyg-core';
+import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg-core';
 
 interface Props {
   value?: string;

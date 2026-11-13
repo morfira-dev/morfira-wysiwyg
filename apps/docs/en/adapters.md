@@ -7,10 +7,10 @@ Adapters share the core HTML contract and lifecycle. Instances are created after
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue';
-import { MorfiraEditor } from '@morfira/wysiwyg/vue';
-import { tables } from '@morfira/wysiwyg/plugins/tables';
-import '@morfira/wysiwyg/style.css';
-import '@morfira/wysiwyg/plugins/tables.css';
+import { MorfiraEditor } from '@morfira-dev/wysiwyg/vue';
+import { tables } from '@morfira-dev/wysiwyg/plugins/tables';
+import '@morfira-dev/wysiwyg/style.css';
+import '@morfira-dev/wysiwyg/plugins/tables.css';
 const html = ref('<p>Hello</p>');
 const plugins = [tables()];
 </script>
@@ -26,8 +26,8 @@ Events: `update:modelValue` with HTML, `change` with `EditorChange`, and `ready`
 
 ```tsx
 import { useState } from 'react';
-import { MorfiraEditor } from '@morfira/wysiwyg/react';
-import '@morfira/wysiwyg/style.css';
+import { MorfiraEditor } from '@morfira-dev/wysiwyg/react';
+import '@morfira-dev/wysiwyg/style.css';
 
 export const Article = () => {
   const [value, setValue] = useState('<p>Hello</p>');
@@ -42,8 +42,8 @@ export const Article = () => {
 
 ```svelte
 <script lang="ts">
-  import { MorfiraEditor } from '@morfira/wysiwyg/svelte';
-  import '@morfira/wysiwyg/style.css';
+  import { MorfiraEditor } from '@morfira-dev/wysiwyg/svelte';
+  import '@morfira-dev/wysiwyg/style.css';
   let html = $state('<p>Hello</p>');
 </script>
 

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { EditorDocument } from '@morfira/wysiwyg';
+import type { EditorDocument } from '@morfira-dev/wysiwyg';
 
 const initialize = async (page: import('@playwright/test').Page) => {
   await page.goto('/');
@@ -7,7 +7,7 @@ const initialize = async (page: import('@playwright/test').Page) => {
 };
 
 test('core import works without a browser document', async () => {
-  const core = await import('@morfira/wysiwyg');
+  const core = await import('@morfira-dev/wysiwyg');
   expect(typeof core.createEditor).toBe('function');
   expect(typeof core.sanitizeHTML).toBe('function');
 });

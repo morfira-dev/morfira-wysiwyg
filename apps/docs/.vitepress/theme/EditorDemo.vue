@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useData } from 'vitepress';
-import type { Editor, ToolbarAction } from '@morfira/wysiwyg';
-import type { TableCommands, TableClipboardData } from '@morfira/wysiwyg/plugins/tables';
-import '@morfira/wysiwyg/style.css';
-import '@morfira/wysiwyg/plugins/tables.css';
+import type { Editor, ToolbarAction } from '@morfira-dev/wysiwyg';
+import type { TableCommands, TableClipboardData } from '@morfira-dev/wysiwyg/plugins/tables';
+import '@morfira-dev/wysiwyg/style.css';
+import '@morfira-dev/wysiwyg/plugins/tables.css';
 
 const props = defineProps<{ full?: boolean }>();
 const { lang } = useData();
@@ -77,7 +77,7 @@ const insertImage = () => run((instance) => {
   instance.insertHTML(image.outerHTML);
 });
 onMounted(async () => {
-  const [{ createEditor, createToolbar }, { tables, tableCommands }] = await Promise.all([import('@morfira/wysiwyg'), import('@morfira/wysiwyg/plugins/tables')]);
+  const [{ createEditor, createToolbar }, { tables, tableCommands }] = await Promise.all([import('@morfira-dev/wysiwyg'), import('@morfira-dev/wysiwyg/plugins/tables')]);
   if (cancelled) return;
   editor = createEditor(host.value!, {
     label: t('Попробуйте Morfira', 'Try Morfira'), plugins: [tables({ onClipboardError: (error) => notify(error.message, true) })],

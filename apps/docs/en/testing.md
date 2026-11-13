@@ -26,7 +26,7 @@ The six library workspaces have independent versions. semantic-release analyzes 
 - `break(core): ...` — the explicit major marker, including dependent adapters and the public facade. Standard `feat(core)!: ...` and `BREAKING CHANGE: ...` footers are also recognized.
 - Documentation, test and chore commits alone do not release a library.
 
-Commit scopes help readers; changed files determine affected packages. Tags use `@morfira/wysiwyg-core@1.0.0`, `@morfira/wysiwyg@1.0.0`, and the other package names. Without existing release tags, semantic-release starts at `1.0.0`. Source manifests at `0.2.0` are development starting versions; npm and release tags identify published versions. This does not promise full feature parity with mature editors.
+Commit scopes help readers; changed files determine affected packages. Tags use `@morfira-dev/wysiwyg-core@1.0.0`, `@morfira-dev/wysiwyg@1.0.0`, and the other package names. Without existing release tags, semantic-release starts at `1.0.0`. Source manifests at `0.2.0` are development starting versions; npm and release tags identify published versions. This does not promise full feature parity with mature editors.
 
 ```sh
 pnpm run test:release
@@ -39,7 +39,7 @@ Planning publishes nothing, pushes no tags, creates no GitHub Release and needs 
 
 `release.yml` runs on main pushes and manual dispatch. It first calls the complete Check workflow: Chromium/Firefox/WebKit editor tests, types, builds, budgets, documentation and demos. It then uploads a `release-plan` artifact. Publication requires repository variable `NPM_PUBLISH_ENABLED=true`; without it, checks and planning run successfully and publishing is skipped. PRs never publish packages. The documentation site remains local.
 
-For **each** package (`@morfira/wysiwyg-core`, `@morfira/wysiwyg-plugins`, `@morfira/wysiwyg-vue`, `@morfira/wysiwyg-react`, `@morfira/wysiwyg-svelte`, `@morfira/wysiwyg`), add GitHub Actions under npm → Settings → Trusted publishing:
+For **each** package (`@morfira-dev/wysiwyg-core`, `@morfira-dev/wysiwyg-plugins`, `@morfira-dev/wysiwyg-vue`, `@morfira-dev/wysiwyg-react`, `@morfira-dev/wysiwyg-svelte`, `@morfira-dev/wysiwyg`), add GitHub Actions under npm → Settings → Trusted publishing:
 
 | Field | Value |
 | --- | --- |
@@ -54,12 +54,12 @@ The workflow grants `id-token: write` and `contents: write`, with no permanent `
 If npm does not allow trust configuration for a new package name, its scope owner must publish initial packages once interactively with 2FA. After `pnpm run build` and `npm login`, run these commands in order:
 
 ```sh
-pnpm --filter @morfira/wysiwyg-core publish --access public
-pnpm --filter @morfira/wysiwyg-plugins publish --access public
-pnpm --filter @morfira/wysiwyg-vue publish --access public
-pnpm --filter @morfira/wysiwyg-react publish --access public
-pnpm --filter @morfira/wysiwyg-svelte publish --access public
-pnpm --filter @morfira/wysiwyg publish --access public
+pnpm --filter @morfira-dev/wysiwyg-core publish --access public
+pnpm --filter @morfira-dev/wysiwyg-plugins publish --access public
+pnpm --filter @morfira-dev/wysiwyg-vue publish --access public
+pnpm --filter @morfira-dev/wysiwyg-react publish --access public
+pnpm --filter @morfira-dev/wysiwyg-svelte publish --access public
+pnpm --filter @morfira-dev/wysiwyg publish --access public
 ```
 
 This really publishes `0.2.0`; it is not a check and should run only when ready to release. Then configure all six trusted publishers, enable the repository variable and run Release. The first automated `1.0.0` release updates internal dependencies. Do not create fictional release tags before publishing. Newly configured npm trust must complete a successful publish within 2 days; recreate an expired binding. Local tests cannot verify npm access or a successful OIDC publication.

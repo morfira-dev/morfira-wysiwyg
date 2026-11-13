@@ -14,10 +14,10 @@ pnpm run docs:dev
 Документация на русском и английском, поиск и интерактивный редактор находятся в `apps/docs`. Публикация не выполняется.
 
 ```ts
-import { createEditor } from '@morfira/wysiwyg';
-import { tables, tableCommands } from '@morfira/wysiwyg/plugins/tables';
-import '@morfira/wysiwyg/style.css';
-import '@morfira/wysiwyg/plugins/tables.css';
+import { createEditor } from '@morfira-dev/wysiwyg';
+import { tables, tableCommands } from '@morfira-dev/wysiwyg/plugins/tables';
+import '@morfira-dev/wysiwyg/style.css';
+import '@morfira-dev/wysiwyg/plugins/tables.css';
 
 const editor = createEditor(document.querySelector<HTMLElement>('#editor')!, {
   value: '<p>Привет, Morfira!</p>',
@@ -26,7 +26,7 @@ const editor = createEditor(document.querySelector<HTMLElement>('#editor')!, {
 tableCommands(editor).insert(3, 3);
 ```
 
-Публичные входы: `@morfira/wysiwyg`, `/vue`, `/react`, `/svelte`, `/plugins/tables`. Пакеты пока локальные, через workspaces. Импорт ядра безопасен без DOM; создание редактора требует браузерного элемента.
+Публичные входы: `@morfira-dev/wysiwyg`, `/vue`, `/react`, `/svelte`, `/plugins/tables`. Пакеты пока локальные, через workspaces. Импорт ядра безопасен без DOM; создание редактора требует браузерного элемента.
 
 ## Структура
 

@@ -1,5 +1,5 @@
 {
-  "name": "@morfira/wysiwyg",
+  "name": "@morfira-dev/wysiwyg",
   "version": "0.2.0",
   "type": "module",
   "files": [
@@ -34,11 +34,11 @@
     "./plugins/tables.css": "./dist/plugins/tables.css"
   },
   "dependencies": {
-    "@morfira/wysiwyg-core": "^0.2.0",
-    "@morfira/wysiwyg-plugins": "^0.2.0",
-    "@morfira/wysiwyg-vue": "^0.2.0",
-    "@morfira/wysiwyg-react": "^0.2.0",
-    "@morfira/wysiwyg-svelte": "^0.2.0"
+    "@morfira-dev/wysiwyg-core": "^0.2.0",
+    "@morfira-dev/wysiwyg-plugins": "^0.2.0",
+    "@morfira-dev/wysiwyg-vue": "^0.2.0",
+    "@morfira-dev/wysiwyg-react": "^0.2.0",
+    "@morfira-dev/wysiwyg-svelte": "^0.2.0"
   },
   "peerDependencies": {
     "vue": "^3.5.0",

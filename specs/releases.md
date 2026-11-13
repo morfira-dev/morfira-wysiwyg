@@ -15,3 +15,7 @@ Status: requested implementation. Supersedes the Changesets workflow after the u
 ## Workspace tooling
 
 Use pnpm 11.0.7, matching morfira-ui, with `pnpm-workspace.yaml` and a committed `pnpm-lock.yaml`. CI uses frozen-lockfile installation. Link local packages through `linkWorkspacePackages: true` while keeping ordinary compatible dependency ranges for coordinated semantic-release. pnpm manages the monorepo; the semantic-release npm plugin uses its own npm CLI for registry publication/OIDC. Do not keep an npm package lock.
+
+## npm scope correction
+
+The user corrected the npm organization to `@morfira-dev` before publication. Rename all six library packages and their internal dependency/peer ranges, workspace consumers, build externals, tests and bilingual examples to this scope. The public facade is `@morfira-dev/wysiwyg` with the same `/vue`, `/react`, `/svelte`, `/plugins/tables` and CSS subpaths. No packages have been published under the previous scope; no compatibility aliases are required. GitHub owner/repository and OIDC workflow identity remain `morfira-dev/morfira-wysiwyg` and `release.yml`. Acceptance: frozen pnpm install, builds/exports/declarations, all browser and docs tests, and release planning must resolve only the corrected scope.

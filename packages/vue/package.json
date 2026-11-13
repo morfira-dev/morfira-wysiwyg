@@ -1,5 +1,5 @@
 {
-  "name": "@morfira/wysiwyg-vue",
+  "name": "@morfira-dev/wysiwyg-vue",
   "version": "0.2.0",
   "type": "module",
   "files": [
@@ -19,7 +19,7 @@
     }
   },
   "peerDependencies": {
-    "@morfira/wysiwyg-core": "^0.2.0",
+    "@morfira-dev/wysiwyg-core": "^0.2.0",
     "vue": "^3.5.0"
   },
   "peerDependenciesMeta": {

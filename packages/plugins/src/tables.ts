@@ -1,4 +1,4 @@
-import type { Editor, EditorPlugin } from '@morfira/wysiwyg-core';
+import type { Editor, EditorPlugin } from '@morfira-dev/wysiwyg-core';
 import { cellsInRectangle, deleteGridColumn, deleteGridRow, emptyCell, insertGridColumn, insertGridRow, readGrid, rebuildGrid, selectionRectangle } from './grid.js';
 import type { CellAddress } from './grid.js';
 import { copyTableRange, isTableClipboard, planTablePaste, readClipboardTable } from './clipboard.js';

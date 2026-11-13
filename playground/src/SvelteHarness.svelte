@@ -1,6 +1,6 @@
 <script lang="ts">
-import { MorfiraEditor } from '@morfira/wysiwyg/svelte';
-import type { Editor, EditorChange } from '@morfira/wysiwyg';
+import { MorfiraEditor } from '@morfira-dev/wysiwyg/svelte';
+import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
 let { onready, onchange }: { onready: (editor: Editor) => void; onchange: (change: EditorChange) => void; } = $props();
 let value = $state('<p>Initial content</p>');
 let readOnly = $state(false);

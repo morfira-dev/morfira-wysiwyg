@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { createEditor } from '@morfira/wysiwyg-core';
-import type { Editor, EditorChange, EditorPlugin } from '@morfira/wysiwyg-core';
+import { createEditor } from '@morfira-dev/wysiwyg-core';
+import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg-core';
 
 export interface MorfiraEditorProps {
   value?: string;
