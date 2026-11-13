@@ -70,4 +70,6 @@ pnpm run test:docs
 
 Markdown shortcuts: необязательный `/plugins/markdown` (локальная разработка), [RU](apps/docs/markdown.md) / [EN](apps/docs/en/markdown.md), [контракт](specs/markdown-shortcuts.md). Преобразования при вводе с историей, без Markdown-парсера и конвертации вставки.
 
-Mentions/slash phase 1: локальные `/plugins/mentions`, `/plugins/slash` и необязательное меню `/plugins/suggestions` + `/plugins/suggestions.css`; [RU](apps/docs/suggestions.md) / [EN](apps/docs/en/suggestions.md). Асинхронные провайдеры приложения, отмена, клавиатура, вставка обычного текста без постоянных ID и структурных команд.
+Mentions/slash: локальные `/plugins/mentions`, `/plugins/slash` и необязательное меню `/plugins/suggestions` + `/plugins/suggestions.css`; [RU](apps/docs/suggestions.md) / [EN](apps/docs/en/suggestions.md). Асинхронные провайдеры приложения, отмена, клавиатура, редактируемые упоминания без постоянных ID, текстовые шаблоны и готовые структурные команды через расширяемый реестр.
+
+Архитектура расширений: [события и составные транзакции RU](apps/docs/events.md) / [EN](apps/docs/en/events.md). Готовые основные плагины подключаются выборочно; tree-shaking проверяется командой `pnpm run check:tree-shaking`. Правила владения кодом: [spec](specs/code-organization.md). Тяжёлый офисный паритет не является целью проекта.

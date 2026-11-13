@@ -1,0 +1,57 @@
+export interface GridCell {
+  element: HTMLTableCellElement;
+  row: number;
+  column: number;
+  rowspan: number;
+  colspan: number;
+}
+export interface TableGrid {
+  rows: number;
+  columns: number;
+  cells: GridCell[];
+  slots: GridCell[][];
+}
+export interface CellAddress {
+  row: number;
+  column: number;
+}
+export interface CellRectangle {
+  top: number;
+  left: number;
+  bottom: number;
+  right: number;
+}
+export interface TableClipboardInput {
+  html?: string;
+  text?: string;
+}
+export interface TableClipboardData {
+  html: string;
+  text: string;
+}
+export interface TablePastePlan {
+  apply(): void;
+  firstCell: HTMLTableCellElement;
+}
+export interface TableOptions {
+  onClipboardError?: (error: Error) => void;
+}
+export interface TableCommands {
+  copy(): TableClipboardData;
+  cut(): TableClipboardData;
+  paste(data: TableClipboardInput): void;
+  insert(rows: number, columns: number): void;
+  select(from: CellAddress, to?: CellAddress): void;
+  rowAbove(): void;
+  rowBelow(): void;
+  columnLeft(): void;
+  columnRight(): void;
+  deleteRow(): void;
+  deleteColumn(): void;
+  merge(): void;
+  split(): void;
+  remove(): void;
+  background(color: string): void;
+  border(color: string): void;
+  columnWidth(column: number, pixels: number): void;
+}

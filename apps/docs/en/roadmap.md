@@ -26,4 +26,6 @@ Project source is MIT; see the root LICENSE. Core and table runtime have no thir
 
 The local preview includes [literal find/replace](/en/search) and [Unicode statistics](/en/statistics), with case/whole-word options, one-step replacement history, document/selection counts and separate optional entry points. Regex search and simultaneous highlighting of all matches are not implemented; statistics require Intl.Segmenter.
 
-[Markdown typing shortcuts](/en/markdown) are available in the local demo. Phase-1 [mentions/slash snippets](/en/suggestions) are implemented locally as editable text suggestions. Persistent atoms and structural commands remain later phases. Durable identity-bearing mentions need an explicit document-model decision.
+[Markdown typing shortcuts](/en/markdown) are available in the local demo. Phase-1 [mentions/slash snippets](/en/suggestions) are implemented locally as editable text suggestions. Structural commands are available; persistent atoms remain a later phase. Durable identity-bearing mentions need an explicit document-model decision.
+
+Priority: a small reliable everyday editor with ready essential plugins, selective imports/tree-shaking and custom extensions. Heavy office-suite parity is not a goal. Next: real mobile/IME/accessibility checks and large-document/memory benchmarks; add further features for concrete use cases.

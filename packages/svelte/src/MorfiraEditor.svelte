@@ -1,17 +1,9 @@
 <script lang="ts">
+import type { Props } from './types.js';
 import { onMount } from 'svelte';
 import { createEditor } from '@morfira-dev/wysiwyg-core';
-import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg-core';
+import type { Editor } from '@morfira-dev/wysiwyg-core';
 
-interface Props {
-  value?: string;
-  readOnly?: boolean;
-  placeholder?: string;
-  label?: string;
-  plugins?: EditorPlugin[];
-  onchange?: (change: EditorChange) => void;
-  onready?: (editor: Editor) => void;
-}
 let { value = $bindable(''), readOnly = false, placeholder, label, plugins = [], onchange, onready }: Props = $props();
 let host: HTMLDivElement;
 let editor = $state.raw<Editor>();

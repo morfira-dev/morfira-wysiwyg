@@ -1,7 +1,7 @@
-import { createEditor, createToolbar } from '@morfira-dev/wysiwyg';
+import { createEditor, createToolbar, createPluginEvent } from '@morfira-dev/wysiwyg';
 import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
 import { mentions, mentionCommands } from '@morfira-dev/wysiwyg/plugins/mentions';
-import { slash, slashCommands } from '@morfira-dev/wysiwyg/plugins/slash';
+import { slash, slashCommands, createSlashActions } from '@morfira-dev/wysiwyg/plugins/slash';
 import { createSuggestionMenu } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import type { SuggestionQuery } from '@morfira-dev/wysiwyg/plugins/mentions';
 import { markdownShortcuts, markdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
@@ -21,9 +21,9 @@ import { mount, unmount } from 'svelte';
 import SvelteHarness from './SvelteHarness.svelte';
 
 declare global {
-  interface Window { createMentions: typeof mentions; mentionCommands: typeof mentionCommands; createSlash: typeof slash; slashCommands: typeof slashCommands; createSuggestionMenu: typeof createSuggestionMenu; suggestionSignals: AbortSignal[]; suggestionQueries: string[]; createEditor: typeof createEditor; createTables: typeof tables; createImages: typeof images; createSearch: typeof search; createStatistics: typeof statistics; createMarkdownShortcuts: typeof markdownShortcuts; markdownCommands: typeof markdownCommands; statisticsCommands: typeof statisticsCommands; searchCommands: typeof searchCommands; imageCommands: typeof imageCommands; editor: Editor; changes: EditorChange[]; dispose: () => void; tableCommands: typeof tableCommands; }
+  interface Window { createMentions: typeof mentions; mentionCommands: typeof mentionCommands; createSlash: typeof slash; createSlashActions: typeof createSlashActions; slashCommands: typeof slashCommands; createSuggestionMenu: typeof createSuggestionMenu; suggestionSignals: AbortSignal[]; suggestionQueries: string[]; createEditor: typeof createEditor; createPluginEvent: typeof createPluginEvent; createTables: typeof tables; createImages: typeof images; createSearch: typeof search; createStatistics: typeof statistics; createMarkdownShortcuts: typeof markdownShortcuts; markdownCommands: typeof markdownCommands; statisticsCommands: typeof statisticsCommands; searchCommands: typeof searchCommands; imageCommands: typeof imageCommands; editor: Editor; changes: EditorChange[]; dispose: () => void; tableCommands: typeof tableCommands; }
 }
-window.createEditor = createEditor; window.createMentions = mentions; window.mentionCommands = mentionCommands; window.createSlash = slash; window.slashCommands = slashCommands; window.createSuggestionMenu = createSuggestionMenu; window.suggestionSignals = []; window.suggestionQueries = [];
+window.createEditor = createEditor; window.createPluginEvent = createPluginEvent; window.createMentions = mentions; window.mentionCommands = mentionCommands; window.createSlash = slash; window.createSlashActions = createSlashActions; window.slashCommands = slashCommands; window.createSuggestionMenu = createSuggestionMenu; window.suggestionSignals = []; window.suggestionQueries = [];
 window.createTables = tables; window.createImages = images; window.createSearch = search; window.createStatistics = statistics; window.createMarkdownShortcuts = markdownShortcuts; window.markdownCommands = markdownCommands; window.statisticsCommands = statisticsCommands; window.searchCommands = searchCommands; window.imageCommands = imageCommands;
 window.changes = [];
 window.tableCommands = tableCommands;
@@ -39,7 +39,7 @@ const fixtureProvider = <T,>(items: T[]) => ({ query, signal }: SuggestionQuery)
 });
 const suggestionPlugins = new URLSearchParams(location.search).has('suggestions') ? [
   mentions({ provide: fixtureProvider([{ id: 'anna', label: 'Anna Smith' }, { id: 'boris', label: 'Борис' }]), debounceMs: 0 }),
-  slash({ provide: fixtureProvider([{ id: 'signature', label: 'Signature', text: 'Best regards' }]), debounceMs: 0 }),
+  slash({ provide: fixtureProvider([{ id: 'signature', label: 'Signature', text: 'Best regards' }, { id: 'heading', label: 'Heading 2', action: 'heading2' }]), actions: createSlashActions(), debounceMs: 0 }),
 ] : [];
 
 if (adapter === 'vue') {

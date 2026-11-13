@@ -14,36 +14,36 @@
   "license": "MIT",
   "exports": {
     "./tables": {
-      "types": "./dist/tables.d.ts",
+      "types": "./dist/tables/index.d.ts",
       "import": "./dist/tables.js"
     },
     "./tables.css": "./dist/tables.css",
     "./images": {
-      "types": "./dist/images.d.ts",
+      "types": "./dist/images/index.d.ts",
       "import": "./dist/images.js"
     },
     "./search": {
-      "types": "./dist/search.d.ts",
+      "types": "./dist/search/index.d.ts",
       "import": "./dist/search.js"
     },
     "./statistics": {
-      "types": "./dist/statistics.d.ts",
+      "types": "./dist/statistics/index.d.ts",
       "import": "./dist/statistics.js"
     },
     "./markdown": {
-      "types": "./dist/markdown.d.ts",
+      "types": "./dist/markdown/index.d.ts",
       "import": "./dist/markdown.js"
     },
     "./mentions": {
-      "types": "./dist/mentions.d.ts",
+      "types": "./dist/mentions/index.d.ts",
       "import": "./dist/mentions.js"
     },
     "./slash": {
-      "types": "./dist/slash.d.ts",
+      "types": "./dist/slash/index.d.ts",
       "import": "./dist/slash.js"
     },
     "./suggestions": {
-      "types": "./dist/suggestions.d.ts",
+      "types": "./dist/suggestions/index.d.ts",
       "import": "./dist/suggestions.js"
     },
     "./suggestions.css": "./dist/suggestions.css"

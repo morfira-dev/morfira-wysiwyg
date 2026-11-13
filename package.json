@@ -7,7 +7,7 @@
     "build": "tsx scripts/build.ts && tsc -p packages/core && tsc -p packages/plugins && tsc -p packages/vue && tsc -p packages/react && pnpm --filter @morfira-dev/wysiwyg-svelte build && tsc -p packages/wysiwyg && tsx scripts/size.ts",
     "typecheck": "tsc --noEmit && svelte-check --tsconfig ./packages/svelte/tsconfig.json && vue-tsc --noEmit -p apps/docs/tsconfig.json",
     "test": "playwright test",
-    "check": "pnpm run check:project && pnpm run build && pnpm run package:check && pnpm run typecheck && pnpm test",
+    "check": "pnpm run check:project && pnpm run build && pnpm run package:check && pnpm run check:tree-shaking && pnpm run typecheck && pnpm test",
     "release": "tsx scripts/release.ts",
     "docs:dev": "pnpm run build && vitepress dev apps/docs --host 127.0.0.1",
     "docs:build": "pnpm run build && vitepress build apps/docs",
@@ -16,7 +16,8 @@
     "check:project": "tsx scripts/check-project.ts",
     "release:plan": "tsx scripts/release.ts --dry-run",
     "test:release": "tsx scripts/tests/index.ts",
-    "package:check": "tsx scripts/check-packages.ts"
+    "package:check": "tsx scripts/check-packages.ts",
+    "check:tree-shaking": "tsx scripts/check-tree-shaking.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

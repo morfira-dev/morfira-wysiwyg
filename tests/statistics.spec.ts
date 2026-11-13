@@ -123,7 +123,7 @@ test('invalid locales reject before editor setup and SSR import/factory need no 
   expect(await page.evaluate(() => { try { window.createStatistics({ locale: 'bad_locale' }); } catch { return true; } return false; })).toBe(true);
   expect(await page.evaluate(() => { try { window.createStatistics({ locale: '' }); } catch { return true; } return false; })).toBe(true);
   // The module factory is evaluated without DOM in the separate Node-side import below.
-  const { statistics } = await import('../packages/plugins/src/statistics.js');
+  const { statistics } = await import('../packages/plugins/src/statistics/index.js');
   expect(statistics({ locale: 'ru' }).name).toBe('statistics');
 });
 

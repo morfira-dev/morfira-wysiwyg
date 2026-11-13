@@ -25,3 +25,5 @@ Statistics milestone: `specs/statistics.md`. Optional document/selection graphem
 Markdown typing shortcuts: `specs/markdown-shortcuts.md`. Literal bilingual sample plus an optional enable checkbox, a clearly labelled document-reset typing button, trigger cheat sheet and explicit pre-trigger undo/non-parser limitations.
 
 Phase-1 mentions/slash: `specs/mentions-slash.md`. Two local async providers and optional menus on both homepages/playgrounds; native typing and explicit sample/open controls, delay/empty/error paths, plain-text semantics, keyboard/pointer/read-only and cleanup. No network/storage/schema migration.
+
+Phase-2 slash adds ready formatting actions and an explicitly configured table callback. Both localized homepages provide /h2 and /table quick starts, all options from /, and exact one-step history examples. No heavy processing or provider-delivered executable code.

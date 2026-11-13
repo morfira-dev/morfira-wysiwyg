@@ -11,6 +11,10 @@ Before implementation, describe the requested observable behavior and acceptance
 
 Implement original, strict TypeScript using `const` arrow functions. Core/plugins have no runtime dependencies; framework adapters declare peers. Use a typed versioned document schema and per-instance plugins. Do not introduce external editor implementations or hide third-party attribution. New code uses MIT.
 
+For structural work, follow `specs/code-organization.md`: feature-owned folders, explicit entrypoints, adjacent named types, styles/helpers with their owner and stable public names/subpaths. Keep core small; optional modules and application-owned plugins provide extensions. Per-editor cooperation must preserve validation, transaction, read-only and cleanup boundaries.
+
+Provide essential editing and useful built-in plugins ready to use while retaining selective imports and tree-shaking. Do not chase heavyweight enterprise-editor parity or require consumers to implement ordinary editing from scratch. Typed per-editor events carry lifecycle/custom notifications, not RPC commands; document ownership and automatic cleanup. Keep named types in owner type files and lifecycle code readable rather than packed into one-line setup/disposal blocks.
+
 For changed behavior, add tests that demonstrate document content, selection, history, or lifecycle results. Use real browser tests for Selection/Range and input behavior. Include malformed imported data and merged-table cases when those contracts change. Keep the public subpath imports stable unless a breaking change is explicitly required.
 
 Update both language versions of affected docs and examples. If an old example or format stops working, document the replacement and migration limits; do not retain false compatibility claims.

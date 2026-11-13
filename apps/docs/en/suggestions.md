@@ -1,9 +1,9 @@
 # Mentions and slash suggestions
 
-Phase 1 provides asynchronous suggestions selected through keyboard commands or a menu. These optional modules add no external runtime dependencies:
+Asynchronous suggestions support keyboard/menu selection and optional structural commands. These optional modules add no external runtime dependencies:
 
 - `/plugins/mentions` inserts ordinary editable `@label ` text.
-- `/plugins/slash` replaces `/query` with a literal single-line snippet.
+- `/plugins/slash` replaces `/query` with a text snippet or runs a registered structural command.
 - `/plugins/suggestions` exports shared types and an optional menu; its CSS is opt-in.
 
 **Result IDs are not persisted in the document.** These mentions can be edited and deleted character by character. They are not atomic nodes and send no notifications. Slash snippets do not execute formatting: `# Heading` remains text even with Markdown shortcuts installed. Document schema v1 stays unchanged.
@@ -127,3 +127,37 @@ The menu anchors to the caret Range without inserting measurement spans, clamps 
 Listbox/status semantics and keyboard/browser checks are not accessibility certification. Screen-reader, touch, zoom and real IME evidence still need separate testing. On the [homepage](/en/#editor) and [playground](/en/playground), local asynchronous providers demonstrate ready/loading/empty/error/cancellation without sending document text to a server.
 
 Structural slash actions and identity-bearing atomic mentions require separate model/transaction contracts. They are not implemented by this plain-text first slice.
+
+## Structural slash commands
+
+The ready-made `createSlashActions()` registry includes `paragraph`, `heading1`–`heading6`, `bulletList`, `orderedList`, `blockquote` and `codeBlock`. It is explicitly installed; text snippets still work without it.
+
+```ts
+import { createEditor } from '@morfira-dev/wysiwyg';
+import type { Editor } from '@morfira-dev/wysiwyg';
+import { slash, createSlashActions } from '@morfira-dev/wysiwyg/plugins/slash';
+import { tables, tableCommands } from '@morfira-dev/wysiwyg/plugins/tables';
+
+const actions = {
+  ...createSlashActions(),
+  table: (editor: Editor) => tableCommands(editor).insert(3, 3),
+};
+const editor = createEditor(host, {
+  plugins: [tables(), slash({
+    actions,
+    provide: ({ query }) => [
+      { id: 'heading', label: 'Heading 2', action: 'heading2' },
+      { id: 'table', label: 'Table', action: 'table' },
+      { id: 'signature', label: 'Signature', text: 'Best regards, team' },
+    ].filter((item) => item.id.includes(query)),
+  })],
+});
+```
+
+The complete example also imports `createEditor` and `type Editor` from the root package. Provider results contain **either** `text` **or** `action: string`. Action keys must exist in the configured registry; unknown keys, response callbacks, simultaneous text/action or invalid results reject the entire response. The factory copies the registry: later changes to its source object cannot change the installed plugin. Names match `[A-Za-z][A-Za-z0-9_:.-]{0,127}`.
+
+Choosing revalidates the caret/token, removes `/query` and executes the command in one composed transaction. One Undo restores the token and caret; there is no intermediate change. Suffixes and adjacent blocks remain intact. Lists/headings inside cells preserve grid geometry. The table command requires an installed table plugin and rejects nested tables with complete rollback.
+
+`SlashAction = (editor: Editor) => void` is trusted **synchronous** application code using public commands. Providers never deliver executable code. Actions may call a custom plugin API through `getPlugin`; slash does not import its implementation. Events are not an implicit dispatcher. Even a no-op action consumes the token; failures roll back both the action and token removal. Async callbacks/thenables are rejected; do not schedule mutations after returning. See [events and transactions](/en/events).
+
+The homepage offers `/h2`, `/bullet`, `/ordered`, `/quote`, `/code`, `/table` and the complete list after `/`. New-example buttons replace the document; the provider remains local with delay/error/empty response controls.

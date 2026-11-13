@@ -7,7 +7,7 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
   await mkdir(outdir, { recursive: true });
   const result = await build({
     metafile: true,
-    entryPoints: name === 'plugins' ? ['tables', 'images', 'search', 'statistics', 'markdown', 'mentions', 'slash', 'suggestions'].map((entry) => `packages/plugins/src/${entry}.ts`) : [`packages/${name}/src/${name === 'react' ? 'index.tsx' : 'index.ts'}`],
+    entryPoints: name === 'plugins' ? Object.fromEntries(['tables', 'images', 'search', 'statistics', 'markdown', 'mentions', 'slash', 'suggestions'].map((entry) => [entry, `packages/plugins/src/${entry}/index.ts`])) : [`packages/${name}/src/${name === 'react' ? 'index.tsx' : 'index.ts'}`],
     outdir, bundle: true, splitting: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true,
     sourcemap: true, jsx: 'automatic',
     external: ['@morfira-dev/*', 'vue', 'react', 'react/jsx-runtime'],
@@ -16,13 +16,13 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
   if (name === 'plugins') {
     const outputs = result.metafile!.outputs;
     const closure = (path: string): string[] => [...new Set([path, ...outputs[path].imports.filter((entry) => !entry.external).flatMap((entry) => closure(entry.path))])];
-    const entries = Object.fromEntries(Object.entries(outputs).filter(([, output]) => output.entryPoint?.endsWith('.ts')).map(([path, output]) => [output.entryPoint!.split('/').at(-1)!.replace('.ts', ''), closure(path).map((file) => file.split('/').at(-1)!)]));
+    const entries = Object.fromEntries(Object.entries(outputs).filter(([, output]) => output.entryPoint?.endsWith('.ts')).map(([path, output]) => [path.split('/').at(-1)!.replace('.js', ''), closure(path).map((file) => file.split('/').at(-1)!)]));
     await writeFile(`${outdir}/entries.json`, JSON.stringify(entries));
   }
   if (['core', 'plugins'].includes(name) && Object.keys(result.metafile!.inputs).some((input) => input.includes('node_modules/'))) throw new Error(`${name}: bundled runtime dependencies are forbidden.`);
   await cp('LICENSE', `${outdir}/LICENSE`);
   if (name === 'core' || name === 'plugins') {
-    for (const file of name === 'core' ? ['style'] : ['tables', 'suggestions']) await build({ entryPoints: [`packages/${name}/src/${file}.css`], outfile: `${outdir}/${file}.css`, bundle: true, minify: true });
+    for (const file of name === 'core' ? ['style'] : ['tables', 'suggestions']) await build({ entryPoints: [name === 'core' ? `packages/core/src/${file}.css` : `packages/plugins/src/${file}/style.css`], outfile: `${outdir}/${file}.css`, bundle: true, minify: true });
   }
 }
 await build({

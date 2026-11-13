@@ -1,18 +1,8 @@
+import type { MorfiraEditorProps, MorfiraEditorHandle } from './types.js';
+export type { MorfiraEditorProps, MorfiraEditorHandle } from './types.js';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { createEditor } from '@morfira-dev/wysiwyg-core';
-import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg-core';
-
-export interface MorfiraEditorProps {
-  value?: string;
-  readOnly?: boolean;
-  placeholder?: string;
-  label?: string;
-  plugins?: EditorPlugin[];
-  className?: string;
-  onChange?: (change: EditorChange) => void;
-  onReady?: (editor: Editor) => void;
-}
-export interface MorfiraEditorHandle { getEditor(): Editor | undefined; }
+import type { Editor } from '@morfira-dev/wysiwyg-core';
 
 export const MorfiraEditor = forwardRef<MorfiraEditorHandle, MorfiraEditorProps>((props, ref) => {
   const host = useRef<HTMLDivElement>(null);

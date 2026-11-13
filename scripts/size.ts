@@ -22,6 +22,11 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte']) {
   }
   if (name === 'plugins') {
     const entries = JSON.parse(await readFile(`${path}/entries.json`, 'utf8')) as Record<string, string[]>;
+    for (const [group, selectedEntries] of [['suggestions-set', ['mentions', 'slash', 'suggestions']], ['all-plugins', Object.keys(entries)]] as const) {
+      const selected = [...new Set(selectedEntries.flatMap((entry) => entries[entry]))];
+      const buffers = await Promise.all(selected.map((file) => readFile(`${path}/${file}`)));
+      report[`${group}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
+    }
     const css = await readFile(`${path}/suggestions.css`); report['suggestions.css'] = { raw: css.length, gzip: gzipSync(css).length, brotli: brotliCompressSync(css).length };
     for (const entry of ['images', 'search', 'statistics', 'markdown', 'mentions', 'slash', 'suggestions']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));

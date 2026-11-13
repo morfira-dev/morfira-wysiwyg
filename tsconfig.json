@@ -27,28 +27,28 @@
         "./packages/svelte/src/index.ts"
       ],
       "@morfira-dev/wysiwyg-plugins/tables": [
-        "./packages/plugins/src/tables.ts"
+        "./packages/plugins/src/tables/index.ts"
       ],
       "@morfira-dev/wysiwyg-plugins/images": [
-        "./packages/plugins/src/images.ts"
+        "./packages/plugins/src/images/index.ts"
       ],
       "@morfira-dev/wysiwyg-plugins/search": [
-        "./packages/plugins/src/search.ts"
+        "./packages/plugins/src/search/index.ts"
       ],
       "@morfira-dev/wysiwyg-plugins/statistics": [
-        "./packages/plugins/src/statistics.ts"
+        "./packages/plugins/src/statistics/index.ts"
       ],
       "@morfira-dev/wysiwyg-plugins/markdown": [
-        "./packages/plugins/src/markdown.ts"
+        "./packages/plugins/src/markdown/index.ts"
       ],
       "@morfira-dev/wysiwyg-plugins/mentions": [
-        "./packages/plugins/src/mentions.ts"
+        "./packages/plugins/src/mentions/index.ts"
       ],
       "@morfira-dev/wysiwyg-plugins/slash": [
-        "./packages/plugins/src/slash.ts"
+        "./packages/plugins/src/slash/index.ts"
       ],
       "@morfira-dev/wysiwyg-plugins/suggestions": [
-        "./packages/plugins/src/suggestions.ts"
+        "./packages/plugins/src/suggestions/index.ts"
       ]
     }
   },

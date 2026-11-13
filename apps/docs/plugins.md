@@ -65,3 +65,5 @@ commands.paste({ text: 'Название\tЗначение\nЯзык\tTypeScript
 [Markdown shortcuts](/markdown) — необязательный `/plugins/markdown` для преобразований при вводе; загрузка и вставка текста остаются буквальными.
 
 [Упоминания и slash-шаблоны](/suggestions): `/plugins/mentions`, `/plugins/slash`, необязательные `/plugins/suggestions` и `/plugins/suggestions.css`. Первый этап вставляет обычный текст и не сохраняет ID.
+
+См. [события, взаимодействие плагинов и составные транзакции](/events). Структурные slash-команды описаны [здесь](/suggestions#структурные-slash-команды).

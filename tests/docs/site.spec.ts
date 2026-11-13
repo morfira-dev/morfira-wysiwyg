@@ -352,3 +352,35 @@ for (const english of [false, true]) test(`suggestion empty/error/loading, cance
   await expect(panel.getByRole('button', { name: t('Открыть подсказки', 'Open suggestions'), exact: true })).toBeDisabled();
   await expect(page.getByRole('listbox', { name: t('Люди', 'People'), exact: true })).toBeHidden();
 });
+
+for (const english of [false, true]) test(`structural slash headings and tables keep one-step history on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/');
+  await expect(page.locator('.mw-content')).toBeVisible();
+  await page.locator('.lab-suggestions summary').click();
+  const panel = page.locator('.lab-suggestions');
+  await panel.getByLabel(t('Задержка, мс', 'Delay, ms'), { exact: true }).fill('0');
+  await panel.getByRole('button', { name: t('Новый пример /h2', 'New /h2 example'), exact: true }).click();
+  await expect(page.getByRole('option', { name: /Заголовок 2|Heading 2/ })).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.mw-content h2')).toHaveCount(1);
+  await page.keyboard.type('Heading');
+  await expect(page.locator('.mw-content h2')).toHaveText('Heading');
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
+  await expect(page.locator('.mw-content p')).toHaveText('/h2');
+  await panel.getByRole('button', { name: t('Новый пример /table', 'New /table example'), exact: true }).click();
+  await page.getByRole('option', { name: /Таблица 3 × 3|Table 3 × 3/ }).click();
+  await expect(page.locator('.mw-content td')).toHaveCount(9);
+  await page.keyboard.type('Cell');
+  await expect(page.locator('.mw-content td').first()).toHaveText('Cell');
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
+  await expect(page.locator('.mw-content p')).toHaveText('/table');
+  await expect(page.locator('.mw-content table')).toHaveCount(0);
+  await panel.getByRole('button', { name: t('Открыть подсказки', 'Open suggestions'), exact: true }).click();
+  await expect(page.getByRole('option', { name: /Таблица 3 × 3|Table 3 × 3/ })).toBeVisible();
+  await page.locator('.demo-inspector details').first().locator('summary').click();
+  await panel.getByRole('button', { name: t('Открыть подсказки', 'Open suggestions'), exact: true }).click();
+  await page.locator('.demo-workspace').screenshot({ path: `artifacts/structural-slash-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
+});
