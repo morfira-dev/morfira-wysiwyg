@@ -37,6 +37,9 @@
       ],
       "@morfira-dev/wysiwyg-plugins/statistics": [
         "./packages/plugins/src/statistics.ts"
+      ],
+      "@morfira-dev/wysiwyg-plugins/markdown": [
+        "./packages/plugins/src/markdown.ts"
       ]
     }
   },

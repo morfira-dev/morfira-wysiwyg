@@ -49,7 +49,7 @@ export interface Editor {
   onSelectionChange(listener: () => void): () => void;
   destroy(): void;
 }
-interface Snapshot { html: string; selection: SelectionBookmark | undefined; }
+interface Snapshot { html: string; selection: SelectionBookmark | undefined; typing?: { offset: number; formats: Record<string, string | boolean> }; }
 
 const ensureDocument = (root: HTMLElement): boolean => {
   let normalized = false;
@@ -158,7 +158,11 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     if (destroyed)
       throw new Error('Editor has been destroyed.');
   };
-  const capture = (): Snapshot => ({ html: sanitizeHTML(surface.innerHTML), selection: bookmark(surface) });
+  const capture = (): Snapshot => ({ html: sanitizeHTML(surface.innerHTML), selection: bookmark(surface), ...(typingOffset !== undefined && Object.keys(typingOverrides).length && typingAtCaret() ? { typing: { offset: typingOffset, formats: { ...typingOverrides } } } : {}) });
+  const restoreTyping = (snapshot: Snapshot) => {
+    clearTyping(); const selection = readTextSelection(surface);
+    if (snapshot.typing && selection?.length === 0 && selection.index === snapshot.typing.offset) { typingOffset = snapshot.typing.offset; typingOverrides = { ...snapshot.typing.formats }; }
+  };
   let current = capture();
   let lastSelection = current.selection;
   const notifySelection = () => {
@@ -206,6 +210,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     ensureDocument(surface);
     surface.focus({ preventScroll: true });
     restoreBookmark(surface, snapshot.selection);
+    restoreTyping(snapshot);
     current = capture();
     lastSelection = current.selection;
     lastInputTime = 0;
@@ -226,6 +231,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     catch (error) {
       surface.innerHTML = before.html;
       restoreBookmark(surface, before.selection);
+      restoreTyping(before);
       current = capture();
       undoStack.splice(0, undoStack.length, ...previousUndo);
       redoStack.splice(0, redoStack.length, ...previousRedo);

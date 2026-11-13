@@ -1,5 +1,6 @@
 import { createEditor, createToolbar } from '@morfira-dev/wysiwyg';
 import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
+import { markdownShortcuts, markdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
 import { statistics, statisticsCommands } from '@morfira-dev/wysiwyg/plugins/statistics';
 import { search, searchCommands } from '@morfira-dev/wysiwyg/plugins/search';
 import { images, imageCommands } from '@morfira-dev/wysiwyg/plugins/images';
@@ -15,10 +16,10 @@ import { mount, unmount } from 'svelte';
 import SvelteHarness from './SvelteHarness.svelte';
 
 declare global {
-  interface Window { createEditor: typeof createEditor; createTables: typeof tables; createImages: typeof images; createSearch: typeof search; createStatistics: typeof statistics; statisticsCommands: typeof statisticsCommands; searchCommands: typeof searchCommands; imageCommands: typeof imageCommands; editor: Editor; changes: EditorChange[]; dispose: () => void; tableCommands: typeof tableCommands; }
+  interface Window { createEditor: typeof createEditor; createTables: typeof tables; createImages: typeof images; createSearch: typeof search; createStatistics: typeof statistics; createMarkdownShortcuts: typeof markdownShortcuts; markdownCommands: typeof markdownCommands; statisticsCommands: typeof statisticsCommands; searchCommands: typeof searchCommands; imageCommands: typeof imageCommands; editor: Editor; changes: EditorChange[]; dispose: () => void; tableCommands: typeof tableCommands; }
 }
 window.createEditor = createEditor;
-window.createTables = tables; window.createImages = images; window.createSearch = search; window.createStatistics = statistics; window.statisticsCommands = statisticsCommands; window.searchCommands = searchCommands; window.imageCommands = imageCommands;
+window.createTables = tables; window.createImages = images; window.createSearch = search; window.createStatistics = statistics; window.createMarkdownShortcuts = markdownShortcuts; window.markdownCommands = markdownCommands; window.statisticsCommands = statisticsCommands; window.searchCommands = searchCommands; window.imageCommands = imageCommands;
 window.changes = [];
 window.tableCommands = tableCommands;
 const ready = (editor: Editor) => { window.editor = editor; };

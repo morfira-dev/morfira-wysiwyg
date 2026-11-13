@@ -269,3 +269,37 @@ for (const english of [false, true]) test(`Unicode document and selection statis
   await page.getByRole('button', { name: t('Применить документ', 'Apply document'), exact: true }).click();
   await expect(panel.locator('[data-stat="document-characters"]')).toHaveText('8'); await expect(panel.locator('[data-stat="document-words"]')).toHaveText('2');
 });
+
+for (const english of [false, true]) test(`Markdown block and inline typing with conversion history on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible();
+  await page.locator('.lab-markdown summary').click(); const panel = page.locator('.lab-markdown');
+  await panel.getByRole('button', { name: t('Начать с пустого абзаца', 'Start with an empty paragraph'), exact: true }).click();
+  await page.keyboard.type('# '); await expect(page.locator('.mw-content h1')).toHaveCount(1);
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content p')).toHaveText('#');
+  await page.getByRole('button', { name: t('Повторить', 'Redo'), exact: true }).click(); await expect(page.locator('.mw-content h1')).toHaveCount(1);
+  await page.keyboard.type(t('Заголовок', 'Heading')); await expect(page.locator('.mw-content h1')).toHaveText(t('Заголовок', 'Heading'));
+  await panel.getByRole('button', { name: t('Начать с пустого абзаца', 'Start with an empty paragraph'), exact: true }).click();
+  await page.keyboard.type('**bold**'); await expect(page.locator('.mw-content strong')).toHaveText('bold');
+  await page.keyboard.type(' plain'); await expect(page.locator('.mw-content')).toHaveText('bold plain'); await expect(page.locator('.mw-content strong')).toHaveText('bold');
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content')).toHaveText('bold');
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content p')).toHaveText('**bold*');
+  await page.getByRole('button', { name: t('Повторить', 'Redo'), exact: true }).click(); await expect(page.locator('.mw-content strong')).toHaveText('bold');
+  await page.locator('.demo-inspector details').first().locator('summary').click();
+  await page.locator('.demo-workspace').screenshot({ path: `artifacts/markdown-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
+});
+
+for (const english of [false, true]) test(`Markdown literal samples, toggle and readonly on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'markdown', english);
+  await expect(page.locator('.mw-content')).toContainText('**'); await expect(page.locator('.mw-content strong')).toHaveCount(0); await expect(page.locator('.mw-content h1')).toHaveCount(0);
+  await page.locator('.lab-markdown summary').click(); const panel = page.locator('.lab-markdown');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await panel.getByLabel(t('Markdown при вводе', 'Markdown while typing'), { exact: true }).uncheck();
+  await panel.getByRole('button', { name: t('Начать с пустого абзаца', 'Start with an empty paragraph'), exact: true }).click();
+  await page.keyboard.type('**literal**'); await expect(page.locator('.mw-content')).toHaveText('**literal**'); await expect(page.locator('.mw-content strong')).toHaveCount(0);
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(panel.getByRole('button', { name: t('Начать с пустого абзаца', 'Start with an empty paragraph'), exact: true })).toBeDisabled();
+  await panel.getByLabel(t('Markdown при вводе', 'Markdown while typing'), { exact: true }).check(); await expect(page.locator('.mw-content')).toHaveText('**literal**');
+});

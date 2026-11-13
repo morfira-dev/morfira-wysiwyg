@@ -32,3 +32,5 @@ Current guardrails: core JS 200000 bytes, table JS 150000, each adapter 10000. M
 Image commands use `/plugins/images` and remain outside the core graph. `images.js` measures that entry and its shared chunks separately; `plugins.js` continues to measure the table entry and its shared chunks. Each entry has a 150000-byte minified JS guardrail, matching the existing optional-plugin envelope; shared chunks count in each independently loadable entry.
 
 `search.js` measures the search entry and its shared chunks independently from images/tables. Its minified JS guardrail is 150000 bytes, matching other optional modules. Native Selection/Range selects results without persistent highlight wrappers.
+
+`markdown.js` is measured independently with its shared chunks under the same 150000-byte minified JS guardrail as other optional modules. Core does not import it.

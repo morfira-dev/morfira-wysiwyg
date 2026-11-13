@@ -238,3 +238,23 @@ test('pending inline formats do not mutate an empty document and typing replaces
   expect(await page.evaluate(() => window.editor.getHTML())).toBe(before.html);
   expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
 });
+
+test('undo and redo restore pending caret mark/color exits without persisting history metadata', async ({ page }) => {
+  await initialize(page);
+  await page.evaluate(() => { window.editor.setHTML('<p><strong><span style="color:red">abcd</span></strong></p>'); window.editor.setSelection(2); window.editor.format('bold', false); window.editor.format('color', false); });
+  await page.keyboard.type('X');
+  await page.evaluate(() => window.editor.undo());
+  expect(await page.evaluate(() => window.editor.getFormats())).toMatchObject({ bold: false, color: false });
+  expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: 2, length: 0 });
+  await page.evaluate(() => window.editor.redo()); await page.keyboard.type('Y');
+  await expect(page.locator('.mw-content')).toHaveText('abXYcd');
+  await page.evaluate(() => window.editor.setSelection(2, 2));
+  expect(await page.evaluate(() => Boolean(window.editor.getFormats().bold))).toBe(false);
+  expect(await page.evaluate(() => window.editor.getFormats().color)).toBeUndefined();
+  expect(await page.evaluate(() => window.editor.getJSON())).not.toHaveProperty('typing');
+  await page.evaluate(() => { window.editor.setSelection(4); window.editor.format('italic', true); window.editor.setHTML('<p>New</p>'); window.editor.setSelection(3); });
+  expect(await page.evaluate(() => window.editor.getFormats().italic)).toBeUndefined();
+  await page.evaluate(() => { window.editor.setSelection(1); window.editor.format('italic', true); try { window.editor.transact((surface) => { surface.textContent = 'Rejected'; window.editor.setSelection(0); throw new Error('Rollback'); }); } catch {} });
+  expect(await page.evaluate(() => window.editor.getHTML())).toBe('<p>New</p>');
+  expect(await page.evaluate(() => window.editor.getFormats().italic)).toBe(true);
+});

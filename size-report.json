@@ -1,8 +1,8 @@
 {
   "core.js": {
-    "raw": 34120,
-    "gzip": 11325,
-    "brotli": 10195
+    "raw": 34331,
+    "gzip": 11395,
+    "brotli": 10279
   },
   "core.css": {
     "raw": 3138,
@@ -33,6 +33,11 @@
     "raw": 2750,
     "gzip": 1293,
     "brotli": 1135
+  },
+  "markdown.js": {
+    "raw": 6923,
+    "gzip": 2892,
+    "brotli": 2625
   },
   "vue.js": {
     "raw": 884,

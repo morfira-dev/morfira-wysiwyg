@@ -21,3 +21,5 @@ Images milestone: see `specs/images.md` for bilingual image selection/metadata, 
 Find/replace milestone: `specs/search.md`. Both homepages/playgrounds expose literal case/whole-word search across rich inline content, native active selection, current/all replacement, live results, read-only navigation and honest no-regex/no-cross-block limitations.
 
 Statistics milestone: `specs/statistics.md`. Optional document/selection grapheme, non-whitespace and word counts populate the shared status and a bilingual inspector table, without document mutations.
+
+Markdown typing shortcuts: `specs/markdown-shortcuts.md`. Literal bilingual sample plus an optional enable checkbox, a clearly labelled document-reset typing button, trigger cheat sheet and explicit pre-trigger undo/non-parser limitations.

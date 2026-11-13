@@ -61,3 +61,5 @@ Malformed quoting, nested/multiple source tables, over-limit ranges and selectio
 [Find and replace](/en/search) uses the optional `/plugins/search` entry; core does not require it.
 
 [Text statistics](/en/statistics) uses `/plugins/statistics` for document/selection grapheme and word counts.
+
+[Markdown shortcuts](/en/markdown) uses the optional `/plugins/markdown` entry for typing conversions; imports and pasted text stay literal.

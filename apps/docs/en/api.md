@@ -74,3 +74,7 @@ Lists support nesting through `format('indent', 1 | -1)`. `format('clear', true)
 [Find and replace](/en/search) uses the optional `/plugins/search` entry; core does not require it.
 
 [Text statistics](/en/statistics) uses `/plugins/statistics` for document/selection grapheme and word counts.
+
+[Markdown shortcuts](/en/markdown) uses the optional `/plugins/markdown` entry for typing conversions; imports and pasted text stay literal.
+
+Undo/redo restores pending caret formatting along with its position. This is internal history metadata, not extra HTML/JSON data. External replacement and selection movement clear pending formatting.

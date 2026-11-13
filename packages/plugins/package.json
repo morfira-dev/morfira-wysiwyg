@@ -29,6 +29,10 @@
     "./statistics": {
       "types": "./dist/statistics.d.ts",
       "import": "./dist/statistics.js"
+    },
+    "./markdown": {
+      "types": "./dist/markdown.d.ts",
+      "import": "./dist/markdown.js"
     }
   },
   "peerDependencies": {

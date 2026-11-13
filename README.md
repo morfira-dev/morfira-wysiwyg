@@ -67,3 +67,5 @@ pnpm run test:docs
 Поиск и замена: необязательный `/plugins/search` (локальная разработка), [RU](apps/docs/search.md) / [EN](apps/docs/en/search.md), [контракт](specs/search.md). Буквальный поиск, регистр, целое слово, текущая/массовая замена с историей.
 
 Статистика: `/plugins/statistics` (локальная разработка), [RU](apps/docs/statistics.md) / [EN](apps/docs/en/statistics.md). Unicode-графемы и слова документа/выделения через платформенный Intl.Segmenter.
+
+Markdown shortcuts: необязательный `/plugins/markdown` (локальная разработка), [RU](apps/docs/markdown.md) / [EN](apps/docs/en/markdown.md), [контракт](specs/markdown-shortcuts.md). Преобразования при вводе с историей, без Markdown-парсера и конвертации вставки.

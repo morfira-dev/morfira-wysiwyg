@@ -2,6 +2,7 @@
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useData } from 'vitepress';
 import type { Editor, ToolbarAction } from '@morfira-dev/wysiwyg';
+import type { MarkdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
 import type { StatisticsCommands, StatisticsState } from '@morfira-dev/wysiwyg/plugins/statistics';
 import type { SearchCommands, SearchState } from '@morfira-dev/wysiwyg/plugins/search';
 import type { ImageCommands, ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
@@ -18,7 +19,7 @@ const dark = ref(false); const readOnly = ref(false); const ready = ref(false);
 const output = ref(''); const outputFormat = ref<'html' | 'json'>('html');
 const message = ref(''); const failed = ref(false); const count = ref(0); const words = ref(0);
 const undoAvailable = ref(false); const redoAvailable = ref(false); const source = ref('initial');
-const sample = ref('showcase');
+const sample = ref('showcase'); const markdownEnabled = ref(true); let markdownAPI: MarkdownCommands | undefined;
 const query = ref('Morfira'); const replacement = ref('Morfira Studio'); const matchCase = ref(false); const wholeWord = ref(false);
 const searchState = ref<SearchState>({ query: '', options: { caseSensitive: false, wholeWord: false }, matches: [], current: -1 });
 const statisticsState = ref<StatisticsState>({ document: { characters: 0, charactersWithoutWhitespace: 0, words: 0 }, selection: { characters: 0, charactersWithoutWhitespace: 0, words: 0 } });
@@ -50,8 +51,9 @@ const listSample = () => t(
 const stylingSample = () => `<h2>${t('Цвета и ссылки', 'Colors and links')}</h2><p><span style="color: #6658e8">${t('Цветной текст', 'Colored text')}</span> · <span style="background-color: #fff59d">${t('Важная мысль', 'An important thought')}</span> · <a href="https://example.com" target="_blank" title="Example">${t('Редактируемая ссылка', 'Editable link')}</a></p><p>${t('Выдели часть текста или поставь курсор внутри ссылки. Поля справа сохраняют позицию.', 'Select some text or place the caret in a link. The fields on the right preserve your position.')}</p>`;
 const imageSample = () => `<h2>${t('Изображения с подписью', 'Images with captions')}</h2><p>${t('Нажми на изображение и измени размеры, alt или подпись справа.', 'Click the image and edit dimensions, alt text or caption on the right.')}</p><figure><img src="/logo.svg" alt="Morfira" width="160" height="160"><figcaption>${t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption')}</figcaption></figure><p>${t('Здесь можно продолжить текст.', 'Continue writing here.')}</p>`;
 const statisticsSample = () => `<h2>${t('Unicode и статистика', 'Unicode and statistics')}</h2><p>e<strong>́</strong> · 👨‍👩‍👧‍👦 · 🇷🇺 · ${t('Привет, мир!', 'Hello, world!')}</p><p>${t('Выдели букву с комбинируемым знаком или эмодзи и открой панель статистики: считаются видимые графемы, а не UTF-16 единицы.', 'Select a combining sequence or emoji and open Statistics: the counter measures visible graphemes rather than UTF-16 units.')}</p>`;
+const markdownSample = () => `<h2>Markdown shortcuts</h2><p>${t('Эти примеры загружены как обычный текст. Для преобразования введи маркеры сам и нажми Space; для code fence или разделителя доступен также Enter.', 'These examples are loaded as literal text. Type markers yourself and press Space to transform; code fences and horizontal rules also accept Enter.')}</p><p># ${t('Заголовок', 'Heading')}</p><p>- ${t('Пункт', 'Item')}</p><p>&gt; ${t('Цитата', 'Quote')}</p><p>**${t('полужирный', 'bold')}** · _${t('курсив', 'italic')}_ · ~~${t('зачёркнутый', 'strike')}~~ · \`${t('код', 'code')}\`</p><p>${t('Последняя пустая строка — для твоего ввода. Undo возвращает текст до клавиши-триггера.', 'Use the final empty line for typing. Undo restores text before the trigger key.')}</p><p><br></p>`;
 const searchSample = () => `<h2>${t('Поиск и замена', 'Find and replace')}</h2><p><strong>Mor</strong>fira ${t('помогает писать', 'helps you write')}. <em>Morfira</em> ${t('сохраняет стили', 'preserves styles')}.</p><p><a href="https://example.com">MORFIRA</a> · morfira</p><ul><li>Morfira ${t('в списке', 'in a list')}</li></ul><table><tbody><tr><td rowspan="2"><p>Morfira</p></td><td>A</td></tr><tr><td>B</td></tr></tbody></table><figure><img src="/logo.svg" alt="Morfira" width="64"><figcaption>Morfira</figcaption></figure><p>MorfiraPlus — ${t('совпадение только без целого слова', 'a match only with whole word disabled')}.</p>`;
-const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + searchSample() + tableSample();
+const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + markdownSample() + searchSample() + tableSample();
 const updateStatistics = (state: StatisticsState) => { statisticsState.value = state; count.value = state.document.characters; words.value = state.document.words; };
 const refresh = () => {
   if (!editor) return;
@@ -98,7 +100,9 @@ const replaceMatches = (all: boolean) => {
   if (completed) notify(t(`Заменено: ${replaced}`, `Replaced: ${replaced}`));
 };
 const clearSearch = () => { if (!searchAPI) return; searchAPI.clear(); query.value = ''; notify(''); };
-const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'statistics' ? statisticsSample() : sample.value === 'search' ? searchSample() : sample.value === 'images' ? imageSample() : sample.value === 'styling' ? stylingSample() : sample.value === 'lists' ? listSample() : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
+const toggleMarkdown = () => { markdownAPI?.setEnabled(markdownEnabled.value); };
+const startMarkdown = () => run((instance) => { instance.setHTML('<p><br></p>'); instance.setSelection(0); });
+const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'markdown' ? markdownSample() : sample.value === 'statistics' ? statisticsSample() : sample.value === 'search' ? searchSample() : sample.value === 'images' ? imageSample() : sample.value === 'styling' ? stylingSample() : sample.value === 'lists' ? listSample() : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
 const insertTable = () => tableRun((api) => api.insert(Number(rows.value), Number(columns.value)));
 const toggleReadOnly = () => { readOnly.value = !readOnly.value; editor?.setReadOnly(readOnly.value); refresh(); };
 const snapshot = (type: 'html' | 'json') => {
@@ -141,14 +145,15 @@ const demoUpload = (_file: File, { signal }: { signal: AbortSignal }): Promise<I
   if (signal.aborted) abort(); else signal.addEventListener('abort', abort, { once: true });
 });
 onMounted(async () => {
-  const [{ createEditor, createToolbar }, { tables, tableCommands }, { images, imageCommands }, { search, searchCommands }, { statistics, statisticsCommands }] = await Promise.all([import('@morfira-dev/wysiwyg'), import('@morfira-dev/wysiwyg/plugins/tables'), import('@morfira-dev/wysiwyg/plugins/images'), import('@morfira-dev/wysiwyg/plugins/search'), import('@morfira-dev/wysiwyg/plugins/statistics')]);
+  const [{ createEditor, createToolbar }, { tables, tableCommands }, { images, imageCommands }, { search, searchCommands }, { statistics, statisticsCommands }, { markdownShortcuts, markdownCommands }] = await Promise.all([import('@morfira-dev/wysiwyg'), import('@morfira-dev/wysiwyg/plugins/tables'), import('@morfira-dev/wysiwyg/plugins/images'), import('@morfira-dev/wysiwyg/plugins/search'), import('@morfira-dev/wysiwyg/plugins/statistics'), import('@morfira-dev/wysiwyg/plugins/markdown')]);
   if (cancelled) return;
   editor = createEditor(host.value!, {
-    label: t('Попробуйте Morfira', 'Try Morfira'), plugins: [statistics({ locale: ru.value ? 'ru' : 'en' }), search(), images({ upload: demoUpload }), tables({ onClipboardError: (error) => notify(error.message, true) })],
+    label: t('Попробуйте Morfira', 'Try Morfira'), plugins: [markdownShortcuts(), statistics({ locale: ru.value ? 'ru' : 'en' }), search(), images({ upload: demoUpload }), tables({ onClipboardError: (error) => notify(error.message, true) })],
     value: props.full ? showcase() : article(),
     onChange: (change) => { source.value = change.source; refresh(); },
   });
   commands = tableCommands(editor); imageAPI = imageCommands(editor); searchAPI = searchCommands(editor);
+  markdownAPI = markdownCommands(editor); markdownEnabled.value = markdownAPI.getState().enabled;
   statisticsAPI = statisticsCommands(editor); updateStatistics(statisticsAPI.getState()); unstatistics = statisticsAPI.subscribe(updateStatistics);
   searchState.value = searchAPI.getState(); unsearch = searchAPI.subscribe((state) => { searchState.value = state; });
   editor.surface.addEventListener('click', imageClick);
@@ -184,7 +189,7 @@ onBeforeUnmount(() => { cancelled = true; unstatistics?.(); unsearch?.(); editor
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <button v-else :disabled="!ready || readOnly" @click="insertTable">{{ t('+ Таблица 3 × 3', '+ Table 3 × 3') }}</button>
@@ -220,6 +225,13 @@ onBeforeUnmount(() => { cancelled = true; unstatistics?.(); unsearch?.(); editor
           <button @click="tableRun((api) => api.select({ row: fromRow - 1, column: fromColumn - 1 }, { row: toRow - 1, column: toColumn - 1 }), false)">{{ t('Выделить диапазон', 'Select range') }}</button>
           <div class="lab-fields"><label>{{ t('Фон ячеек', 'Cell background') }}<input v-model="cellColor" type="color" @change="tableRun((api) => api.background(cellColor))"></label><label>{{ t('Границы', 'Cell borders') }}<input v-model="borderColor" type="color" @change="tableRun((api) => api.border(borderColor))"></label><label>{{ t('Номер столбца', 'Column number') }}<input v-model.number="widthColumn" type="number" min="1"></label><label>{{ t('Ширина, px', 'Width, px') }}<input v-model.number="widthValue" type="number" min="40" max="4000"></label></div>
           <button @click="tableRun((api) => api.columnWidth(widthColumn - 1, widthValue))">{{ t('Применить ширину', 'Apply width') }}</button>
+        </fieldset></details>
+        <details class="lab-markdown"><summary>Markdown shortcuts</summary><fieldset :disabled="!ready">
+          <label class="lab-checkbox"><input v-model="markdownEnabled" type="checkbox" @change="toggleMarkdown">{{ t('Markdown при вводе', 'Markdown while typing') }}</label>
+          <button :disabled="readOnly" @click="startMarkdown">{{ t('Начать с пустого абзаца', 'Start with an empty paragraph') }}</button>
+          <p class="lab-hint">{{ t('Кнопка заменяет документ пустым абзацем. Далее вводи маркеры в редакторе.', 'The button replaces the document with an empty paragraph. Then type markers in the editor.') }}</p>
+          <ul class="lab-shortcuts"><li><code># … ###### + Space</code> — {{ t('заголовки', 'headings') }}</li><li><code>- / * / + / 1. / 1) + Space</code> — {{ t('списки', 'lists') }}</li><li><code>&gt; + Space</code> — {{ t('цитата', 'quote') }}</li><li><code>``` + Space / Enter</code> — {{ t('блок кода', 'code block') }}</li><li><code>--- / *** / ___ + Space / Enter</code> — {{ t('разделитель', 'horizontal rule') }}</li><li><code>**bold** / __bold__ / *italic* / _italic_ / ~~strike~~ / `code`</code></li></ul>
+          <p class="lab-hint">{{ t('Строчные стили срабатывают на последнем символе закрывающего маркера. Undo возвращает документ до триггера. Это не Markdown-парсер: вставка и загрузка примеров не преобразуются; язык code fence и вложенный Markdown пока не поддерживаются.', 'Inline styles trigger on the final closing marker. Undo restores the document before that trigger. This is not a Markdown parser: paste/sample loading is not converted; language fences and nested Markdown are not supported yet.') }}</p>
         </fieldset></details>
         <details class="lab-search"><summary>{{ t('Поиск и замена', 'Find and replace') }}</summary><fieldset :disabled="!ready">
           <label>{{ t('Найти текст', 'Find text') }}<input v-model="query" type="text" maxlength="1000" @keydown.enter.prevent="find"></label>

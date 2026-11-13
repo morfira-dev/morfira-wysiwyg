@@ -36,3 +36,7 @@ Inline color and enhanced link commands follow `specs/colors-links.md`. Invalid 
 Image commands follow `specs/images.md`. Schema v1 adds figure/figcaption semantics; older readers may flatten those wrappers. Image commands remain an optional module.
 
 Optional literal find/replace follows `specs/search.md`, with no schema change or core dependency on the search entry. Replacements retain document structure and participate in history; search/navigation do not.
+
+Optional Markdown typing rules follow `specs/markdown-shortcuts.md`. Conversions are transactions over schema v1; shortcuts do not run during import/paste or composition.
+
+History snapshots retain bounded pending caret formatting (boolean marks and inline colors) with their collapsed text offset. Undo/redo restores this transient affinity only when the restored caret still matches that offset, so subsequent text after a Markdown conversion remains outside the newly closed mark after redo. This metadata is history-only, never HTML/JSON schema data. External replacement and ordinary selection movement still clear pending formatting. Failed transactions restore pending formatting with their document/selection snapshot.

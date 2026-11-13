@@ -92,3 +92,7 @@
 .lab-statistics-table caption { text-align: left; color: var(--mw-muted); margin-bottom: 8px; }
 .lab-statistics-table th, .lab-statistics-table td { padding: 6px 3px; border-bottom: 1px solid var(--mw-border); text-align: left; overflow-wrap: anywhere; }
 .lab-statistics-table th { font-weight: 500; }
+
+.lab-shortcuts { padding-left: 16px; font: 12px/1.7 var(--mw-font); color: var(--mw-text); margin: 12px 0; }
+.lab-shortcuts li { margin: 6px 0; overflow-wrap: anywhere; }
+.lab-shortcuts code { color: var(--mw-text); background: var(--mw-hover); border-radius: 4px; padding: 1px 3px; }
