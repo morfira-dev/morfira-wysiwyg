@@ -30,3 +30,5 @@ Browser tests establish their recorded scenarios, not full Word/Excel fidelity, 
 Caret regression: disabling an inline mark in the middle of marked text keeps the insertion position, preserves the mark on both neighboring fragments, and retains other nested marks.
 
 Lists, keyboard boundaries and toolbar extensions follow `specs/lists-toolbar.md`. Document schema v1 is unchanged.
+
+Inline color and enhanced link commands follow `specs/colors-links.md`. Invalid link command arguments now throw before mutation, replacing the earlier silent rejection; safe HTML/JSON imports still sanitize through schema v1.

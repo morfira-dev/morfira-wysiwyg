@@ -1,7 +1,9 @@
 import type { DocumentNode, DocumentTag, EditorDocument, ElementNode } from './model.js';
-import { documentHTML, parseHTML, validateDocument } from './model.js';
+import { documentHTML, parseHTML } from './model.js';
 import { activeRange, readTextSelection, selectText, preserveRange } from './selection.js';
 
+import { inlineStyles, normalizeInlineStyle, transformInlineAttributes } from './inline-attributes.js';
+import { applyLink } from './links.js';
 import { applyList, indentList, listState, selectedBlocks } from './lists.js';
 
 export const inlineFormats: Record<string, DocumentTag> = { bold: 'strong', italic: 'em', underline: 'u', strike: 's', code: 'code', subscript: 'sub', superscript: 'sup' };
@@ -57,7 +59,8 @@ const formatsAt = (root: HTMLElement, node: Node): Record<string, unknown> => {
     if (element.localName === 'blockquote') formats.blockquote = true;
     if (element.localName === 'pre') formats['code-block'] = true;
     if ((element.localName === 'ul' || element.localName === 'ol') && formats.list === undefined) formats.list = element.localName === 'ul' ? 'bullet' : 'ordered';
-    if (element.localName === 'a' && formats.link === undefined) formats.link = element.getAttribute('href');
+    if (element.localName === 'a' && formats.link === undefined) { formats.link = element.getAttribute('href'); formats.linkTitle = element.getAttribute('title') ?? ''; formats.linkTarget = element.getAttribute('target') ?? '_self'; }
+    if (element instanceof HTMLElement) for (const [name, property] of Object.entries(inlineStyles)) if (formats[name] === undefined && element.style.getPropertyValue(property)) formats[name] = element.style.getPropertyValue(property);
     if (element instanceof HTMLElement && element.style.textAlign && formats.align === undefined) formats.align = element.style.textAlign;
     element = element.parentElement;
   }
@@ -77,7 +80,7 @@ export const readFormats = (root: HTMLElement): Record<string, unknown> => {
       position = end;
     }
     if (samples.length) formats = samples[0];
-    const keys = [...Object.keys(inlineFormats), 'header', 'list', 'blockquote', 'code-block', 'link', 'align'];
+    const keys = [...Object.keys(inlineFormats), 'header', 'list', 'blockquote', 'code-block', 'link', 'linkTitle', 'linkTarget', 'color', 'background', 'align'];
     const normalized = (sample: Record<string, unknown>, key: string) => sample[key] ?? (key === 'align' ? 'left' : key === 'header' ? 0 : false);
     for (const key of keys) if (samples.some((sample) => normalized(sample, key) !== normalized(samples[0], key))) mixed.add(key);
   }
@@ -104,32 +107,12 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown): vo
     selectText(root, selection.index, selection.length);
     return;
   }
-  if (name === 'link') {
-    if (!value) {
-      const link = closestElement(range.startContainer)?.closest('a');
-      if (link && root.contains(link))
-        link.replaceWith(...link.childNodes);
-    }
-    else if (typeof value === 'string' && !range.collapsed) {
-      const template = parseHTML(`<a></a>`);
-      const link = template.children[0] as ElementNode;
-      link.attributes.href = value;
-      // Use the shared validator instead of assigning an unchecked URL to the live document.
-      const holder = document.createElement('div');
-      holder.innerHTML = documentHTML(validateDocument({ version: 1, children: [link] }));
-      const clean = parseHTML(holder.innerHTML).children[0] as ElementNode;
-      if (!clean.attributes.href)
-        return;
-      const element = document.createElement('a');
-      element.setAttribute('href', clean.attributes.href);
-      element.append(range.extractContents());
-      range.insertNode(element);
-      range.selectNodeContents(element);
-      const native = document.getSelection();
-      native?.removeAllRanges();
-      native?.addRange(range);
-    }
-    return;
+  if (name === 'link') { applyLink(root, value); return; }
+  if (Object.hasOwn(inlineStyles, name)) {
+    const color = normalizeInlineStyle(name, value);
+    if (!selection.length) return;
+    root.innerHTML = documentHTML(transformInlineAttributes(parseHTML(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'style', property: inlineStyles[name], value: color }));
+    selectText(root, selection.index, selection.length); return;
   }
   let blocks = selectedBlocks(root, range, false);
   if (!blocks.length) {

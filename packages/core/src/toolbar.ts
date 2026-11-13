@@ -1,4 +1,5 @@
 import type { Editor } from './index.js';
+import { inlineStyles, normalizeInlineStyle } from './inline-attributes.js';
 import { bookmark, restoreBookmark } from './selection.js';
 import type { SelectionBookmark } from './selection.js';
 
@@ -23,6 +24,7 @@ const defaultActions: ToolbarAction[] = [
   { label: 'Очистить форматирование', text: 'Tx', format: 'clear', enabled: (editor) => Boolean(editor.getSelection()?.length) },
 ];
 export const createToolbar = (host: HTMLElement, editor: Editor, actions = defaultActions, options: ToolbarOptions = {}): () => void => {
+  actions = actions.map((action) => action.format && Object.hasOwn(inlineStyles, action.format) ? { ...action, value: normalizeInlineStyle(action.format, action.value) } : action);
   const toolbar = document.createElement('div'); toolbar.className = 'mw-toolbar';
   toolbar.setAttribute('role', 'toolbar'); toolbar.setAttribute('aria-label', options.label ?? 'Форматирование');
   let saved: SelectionBookmark | undefined; let disposed = false; let tabIndex = 0;

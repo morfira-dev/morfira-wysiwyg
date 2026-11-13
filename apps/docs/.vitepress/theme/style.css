@@ -79,3 +79,9 @@
 .demo-full .lab-heading p, .demo-full .demo-status { color: var(--mw-muted); }
 .demo-full .lab-eyebrow { color: var(--mw-accent); }
 .demo-full .demo-controls button { background: var(--mw-surface); color: var(--mw-text); border-color: var(--mw-border); }
+
+.demo-full .lab-color-controls { align-items: flex-end; margin-bottom: 12px; gap: 8px; }
+.lab-color-controls button { border: 1px solid var(--mw-border); background: var(--mw-surface); color: var(--mw-text); border-radius: 6px; padding: 7px 9px; font: 500 12px var(--mw-font); min-height: 32px; cursor: pointer; }
+.lab-color-controls button:hover { border-color: var(--mw-accent); }
+.lab-color-controls span { flex-basis: 100%; font: 12px var(--mw-font); color: var(--mw-muted); }
+.demo-shell .lab-checkbox { flex-direction: row; align-items: center; gap: 8px; }

@@ -133,3 +133,28 @@ test('homepage dropdowns retain a multi-paragraph range and show mixed list stat
   await expect(page.getByLabel('Тип списка', { exact: true })).toHaveValue('mixed');
   await expect(page.getByRole('button', { name: 'Нумерованный список', exact: true })).toHaveAttribute('aria-pressed', 'mixed');
 });
+
+for (const english of [false, true]) test(`colors and link forms preserve caret and drafts on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/');
+  await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'styling', english);
+  const colored = page.locator('.mw-content span').first();
+  await colored.evaluate((element) => { const range = document.createRange(); range.selectNodeContents(element); const native = window.getSelection()!; native.removeAllRanges(); native.addRange(range); (element.closest('.mw-content') as HTMLElement).focus(); });
+  await page.getByLabel(t('Цвет текста', 'Text color'), { exact: true }).fill('#00ff00');
+  await page.getByRole('button', { name: t('Применить цвет', 'Apply color'), exact: true }).click();
+  await expect(page.locator('.mw-content span').first()).toHaveCSS('color', 'rgb(0, 255, 0)');
+  await page.getByRole('button', { name: t('Сбросить цвет', 'Reset color'), exact: true }).click();
+  expect(await page.locator('.mw-content').innerHTML()).not.toContain('rgb(0, 255, 0)');
+  await page.locator('.mw-content a').evaluate((anchor) => { const range = document.createRange(); range.setStart(anchor.firstChild!, 3); range.collapse(true); const native = window.getSelection()!; native.removeAllRanges(); native.addRange(range); (anchor.closest('.mw-content') as HTMLElement).focus(); });
+  await page.getByText(t('Ссылки и изображения', 'Links and images'), { exact: true }).click();
+  await expect(page.getByLabel(t('Адрес ссылки', 'Link URL'), { exact: true })).toHaveValue('https://example.com');
+  await page.getByLabel(t('Адрес ссылки', 'Link URL'), { exact: true }).fill('/updated');
+  await page.getByLabel(t('Заголовок ссылки', 'Link title'), { exact: true }).fill('Updated title');
+  await page.getByRole('button', { name: t('Обновить ссылку', 'Update link'), exact: true }).click();
+  await expect(page.locator('.mw-content a')).toHaveAttribute('href', '/updated');
+  await expect(page.locator('.mw-content a')).toHaveAttribute('title', 'Updated title');
+  await expect(page.locator('.mw-content a')).toHaveAttribute('rel', 'noopener noreferrer');
+  expect(await page.evaluate(() => window.getSelection()?.anchorOffset)).toBe(3);
+  await page.locator('.demo-inspector details').first().locator('summary').click();
+  await page.locator('.demo-workspace').screenshot({ path: `artifacts/colors-links-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
+});

@@ -4,6 +4,8 @@ import { activeRange, bookmark, placeCaret, readTextSelection, restoreBookmark, 
 import type { SelectionBookmark, TextSelection } from './selection.js';
 import { editListInput, handlesListInput, indentList, listState, selectedBlocks } from './lists.js';
 import { applyFormat, inlineFormats, readFormats } from './formatting.js';
+import { inlineStyles, normalizeInlineStyle } from './inline-attributes.js';
+export type { LinkFormat } from './inline-attributes.js';
 export { sanitizeHTML } from './model.js';
 export type { EditorDocument, DocumentNode, ElementNode, TextNode, DocumentTag } from './model.js';
 export type { TextSelection, SelectionBookmark } from './selection.js';
@@ -140,7 +142,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   let pendingInput: Snapshot | undefined;
   let lastInputTime = 0;
   let lastInputType = '';
-  let typingOverrides: Record<string, boolean> = {};
+  let typingOverrides: Record<string, string | boolean> = {};
   let typingOffset: number | undefined;
   const clearTyping = () => { typingOverrides = {}; typingOffset = undefined; };
   const typingAtCaret = () => { const selection = readTextSelection(surface); return selection?.length === 0 && selection.index === typingOffset; };
@@ -270,9 +272,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     format: (name, value) => {
       assertActive(); if (readOnly) return; editor.focus();
       const selection = readTextSelection(surface);
-      if (selection?.length === 0 && Object.hasOwn(inlineFormats, name)) {
+      if (selection?.length === 0 && (Object.hasOwn(inlineFormats, name) || Object.hasOwn(inlineStyles, name))) {
         if (!typingAtCaret()) clearTyping();
-        typingOffset = selection.index; typingOverrides[name] = Boolean(value); notifySelection();
+        typingOffset = selection.index; typingOverrides[name] = Object.hasOwn(inlineStyles, name) ? normalizeInlineStyle(name, value) : Boolean(value); notifySelection();
         return;
       }
       clearTyping(); editor.transact(() => applyFormat(surface, name, value));
@@ -371,7 +373,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         }
         range.insertNode(document.createTextNode(text));
         selectText(surface, start, text.length);
-        for (const [name, enabled] of Object.entries(overrides)) if (Boolean(readFormats(surface)[name]) !== enabled) applyFormat(surface, name, enabled);
+        for (const [name, enabled] of Object.entries(overrides)) if ((Object.hasOwn(inlineStyles, name) ? readFormats(surface)[name] ?? false : Boolean(readFormats(surface)[name])) !== enabled) applyFormat(surface, name, enabled);
         selectText(surface, start + text.length);
         typingOffset = start + text.length;
       }, 'insertText');

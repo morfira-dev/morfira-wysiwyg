@@ -42,7 +42,7 @@ Document methods after destruction throw. Read-only blocks user commands but per
 
 ## Formatting
 
-Inline: `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`. Blocks: `header` (1–6 or false), `blockquote`, `code-block`, `list` (`bullet`, `ordered`, false), `align` (`left`, `center`, `right`, `justify`). `link` uses a checked URL and a nonempty selection. Collapsed inline formatting establishes a typing position; complex cursor-boundary cases remain part of browser compatibility work.
+Inline: `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`. Blocks: `header` (1–6 or false), `blockquote`, `code-block`, `list` (`bullet`, `ordered`, false), `align` (`left`, `center`, `right`, `justify`). `color` and `background` accept a CSS color or false. `link` accepts a URL, `LinkFormat` or false: a selection changes only that fragment; a caret inside a link edits the whole anchor. Unsafe API options throw before document mutation. Collapsed inline formatting establishes a typing position; complex cursor-boundary cases remain part of browser compatibility work.
 
 ## Events and toolbar
 
@@ -66,3 +66,5 @@ const dispose = createToolbar(host, editor, [
 The default toolbar has Russian labels; supply your own actions for localization. The fourth `{ label }` argument localizes the toolbar accessible name. It preserves DOM bookmarks including empty items, exposes disabled/pressed/mixed states and supports arrow/Home/End/Escape navigation. `ToolbarAction.enabled(instance)` controls command availability. A complete dropdown/dialog system and accessibility audit are future work.
 
 Lists support nesting through `format('indent', 1 | -1)`. `format('clear', true)` removes inline formatting from selected text. See [Lists and formatting](/en/lists) for keyboard contracts, mixed states and examples.
+
+[Colors and links: parameters, caret behavior and limitations](/en/styling).

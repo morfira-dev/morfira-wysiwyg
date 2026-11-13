@@ -13,3 +13,5 @@ Status: implementation milestone. The `/playground` and `/en/playground` pages e
 Acceptance: format selected text, change blocks, insert checked link/image, perform table operations and TSV range paste, inspect/import JSON, reject invalid JSON without mutation, switch read-only/theme, and show the laboratory without horizontal overflow at mobile width. Verify built pages and browser errors.
 
 Lists/toolbar milestone: `specs/lists-toolbar.md` adds nested-list samples, indent/outdent, clear inline formatting, mixed states and localized keyboard-accessible toolbar controls to both homepages and playgrounds.
+
+Colors/link milestone: `specs/colors-links.md` adds validated text/highlight controls, link metadata editing and a dedicated example to both language homepages and playgrounds.

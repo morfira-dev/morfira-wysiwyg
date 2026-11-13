@@ -23,7 +23,9 @@ const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛ
 const url = ref('https://example.com'); const imageURL = ref('/logo.svg'); const imageAlt = ref('Morfira'); const imageWidth = ref(64);
 const accent = ref('#6658e8'); const fontSize = ref(16); const padding = ref(28); const radius = ref(12);
 const themeStyle = computed(() => ({ '--mw-accent': accent.value, '--mw-font-size': `${fontSize.value}px`, '--mw-padding': `${padding.value}px`, '--mw-radius': `${radius.value}px` }));
-let labSelection: ReturnType<Editor['getSelection']>;
+const textColor = ref('#6658e8'); const highlight = ref('#fff59d'); const activeStyles = ref('');
+const linkTitle = ref(''); const linkText = ref(''); const linkNewTab = ref(false); const editingLink = ref(false);
+let inspectedLink = '';
 let editor: Editor | undefined; let commands: TableCommands | undefined; let disposeToolbar: (() => void) | undefined;
 let unsubscribe: (() => void) | undefined; let unselect: (() => void) | undefined; let cancelled = false;
 
@@ -36,7 +38,8 @@ const listSample = () => t(
   '<h2>Списки, которые слушаются</h2><p>Enter делит пункт, пустой пункт завершает список. Tab и Shift+Tab меняют вложенность вне таблиц; Backspace в начале объединяет пункты.</p><ul><li>Подготовить материал<ol><li>Собрать ссылки</li><li><strong>Проверить факты</strong></li></ol></li><li>Написать черновик</li><li>Опубликовать</li></ul><p>Выдели несколько пунктов и попробуй нумерацию или кнопки отступа.</p>',
   '<h2>Lists that follow your lead</h2><p>Enter splits an item; an empty item exits the list. Tab and Shift+Tab change nesting outside tables; Backspace at the start joins items.</p><ul><li>Prepare the material<ol><li>Collect links</li><li><strong>Check the facts</strong></li></ol></li><li>Write a draft</li><li>Publish</li></ul><p>Select several items and try numbering or the indentation buttons.</p>',
 );
-const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + tableSample();
+const stylingSample = () => `<h2>${t('Цвета и ссылки', 'Colors and links')}</h2><p><span style="color: #6658e8">${t('Цветной текст', 'Colored text')}</span> · <span style="background-color: #fff59d">${t('Важная мысль', 'An important thought')}</span> · <a href="https://example.com" target="_blank" title="Example">${t('Редактируемая ссылка', 'Editable link')}</a></p><p>${t('Выдели часть текста или поставь курсор внутри ссылки. Поля справа сохраняют позицию.', 'Select some text or place the caret in a link. The fields on the right preserve your position.')}</p>`;
+const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + tableSample();
 const refresh = () => {
   if (!editor) return;
   const text = editor.getText().trim(); count.value = text.length; words.value = text ? text.split(/\s+/).length : 0;
@@ -46,6 +49,14 @@ const refresh = () => {
   const formats = editor.getFormats(); const mixed = formats.mixed as string[] | undefined;
   heading.value = mixed?.includes('header') ? 'mixed' : String(formats.header ?? 0);
   list.value = mixed?.includes('list') ? 'mixed' : String(formats.list || '');
+  activeStyles.value = ['color', 'background'].map((name) => mixed?.includes(name) ? t('Разное', 'Mixed') : String(formats[name] ?? '—')).join(' / ');
+  if (range && editor.surface.contains(range.startContainer)) {
+    const node = range.startContainer; const anchor = (node instanceof Element ? node : node.parentElement)?.closest('a');
+    editingLink.value = Boolean(anchor);
+    const signature = anchor?.outerHTML ?? '';
+    if (anchor && signature !== inspectedLink) { url.value = anchor.getAttribute('href') ?? ''; linkTitle.value = anchor.getAttribute('title') ?? ''; linkNewTab.value = anchor.getAttribute('target') === '_blank'; }
+    inspectedLink = signature;
+  }
   alignment.value = mixed?.includes('align') ? 'mixed' : String(formats.align ?? 'left');
 };
 const notify = (text: string, error = false) => { message.value = text; failed.value = error; };
@@ -59,7 +70,7 @@ const run = (action: (instance: Editor) => void, mutation = true) => {
 };
 const tableRun = (action: (api: TableCommands) => void, mutation = true) => run(() => { if (commands) action(commands); }, mutation);
 const format = (name: string, value: unknown) => run((instance) => instance.format(name, value));
-const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'lists' ? listSample() : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
+const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'styling' ? stylingSample() : sample.value === 'lists' ? listSample() : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
 const insertTable = () => tableRun((api) => api.insert(Number(rows.value), Number(columns.value)));
 const toggleReadOnly = () => { readOnly.value = !readOnly.value; editor?.setReadOnly(readOnly.value); refresh(); };
 const snapshot = (type: 'html' | 'json') => {
@@ -76,16 +87,15 @@ const pasteRange = () => tableRun((api) => api.paste(bufferFormat.value === 'htm
 const preserveLabSelection = (event: PointerEvent) => {
   const control = event.target instanceof Element ? event.target.closest('button,input,select,textarea,summary') : null;
   if (props.full && control && !editor?.element.contains(control)) {
-    labSelection = editor?.getSelection() ?? labSelection;
     const selection = window.getSelection(); const range = selection?.rangeCount ? selection.getRangeAt(0) : undefined;
     if (range && editor?.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer)) labRange = range.cloneRange();
     event.stopPropagation();
   }
 };
 const insertLink = () => run((instance) => {
-  if (labSelection) instance.setSelection(labSelection.index, labSelection.length);
-  if (!instance.getSelection()?.length) throw new Error(t('Сначала выделите текст ссылки.', 'Select the link text first.'));
-  instance.format('link', url.value);
+  const create = !instance.getSelection()?.length && !instance.getFormats().link;
+  if (create && !linkText.value) throw new Error(t('Укажите подпись новой ссылки или выделите текст.', 'Enter new link text or select text.'));
+  instance.format('link', { href: url.value, title: linkTitle.value, target: linkNewTab.value ? '_blank' : '_self', ...(create ? { text: linkText.value } : {}) });
 });
 const insertImage = () => run((instance) => {
   const image = document.createElement('img'); image.setAttribute('src', imageURL.value); image.setAttribute('alt', imageAlt.value);
@@ -133,7 +143,7 @@ onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); dispose
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <button v-else :disabled="!ready || readOnly" @click="insertTable">{{ t('+ Таблица 3 × 3', '+ Table 3 × 3') }}</button>
@@ -149,6 +159,11 @@ onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); dispose
           <label>{{ t('Список', 'List') }}<select v-model="list" :disabled="!ready || readOnly" :aria-label="t('Тип списка', 'List type')" @change="list !== 'mixed' && format('list', list || false)"><option value="mixed" disabled>{{ t('Разное', 'Mixed') }}</option><option value="">{{ t('Нет', 'None') }}</option><option value="bullet">{{ t('Маркеры', 'Bullet') }}</option><option value="ordered">{{ t('Нумерация', 'Ordered') }}</option></select></label>
           <label>{{ t('Выравнивание', 'Alignment') }}<select v-model="alignment" :disabled="!ready || readOnly" :aria-label="t('Выравнивание текста', 'Text alignment')" @change="alignment !== 'mixed' && format('align', alignment)"><option value="mixed" disabled>{{ t('Разное', 'Mixed') }}</option><option value="left">{{ t('Слева', 'Left') }}</option><option value="center">{{ t('По центру', 'Center') }}</option><option value="right">{{ t('Справа', 'Right') }}</option><option value="justify">{{ t('По ширине', 'Justify') }}</option></select></label>
         </div>
+        <fieldset v-if="full" :disabled="!ready || readOnly" class="lab-inline-actions lab-color-controls">
+          <label>{{ t('Цвет текста', 'Text color') }}<input v-model="textColor" type="color"></label><button @click="format('color', textColor)">{{ t('Применить цвет', 'Apply color') }}</button><button @click="format('color', false)">{{ t('Сбросить цвет', 'Reset color') }}</button>
+          <label>{{ t('Выделение цветом', 'Highlight color') }}<input v-model="highlight" type="color"></label><button @click="format('background', highlight)">{{ t('Применить выделение', 'Apply highlight') }}</button><button @click="format('background', false)">{{ t('Сбросить выделение', 'Reset highlight') }}</button>
+          <span>{{ t('Текст / фон', 'Text / background') }}: {{ activeStyles }}</span>
+        </fieldset>
         <div ref="toolbar"></div><div ref="host"></div>
         <div class="demo-status"><span>{{ count }} {{ t('символов', 'characters') }}<template v-if="full"> · {{ words }} {{ t('слов', 'words') }}</template></span><span v-if="full">undo {{ undoAvailable ? '●' : '○' }} · redo {{ redoAvailable ? '●' : '○' }} · {{ source }}</span><span v-else>{{ t('Таблицы: контекстное меню по правой кнопке', 'Tables: right-click for actions') }}</span></div>
         <p v-if="full" class="lab-hint">{{ t('Выделяй текст перед форматированием. Кликни в ячейку перед табличной командой. Ctrl/Cmd+Z — отмена; Ctrl/Cmd+B/I/U — формат; Enter — новый пункт, пустой — выход; Tab/Shift+Tab — вложенность. В таблице Tab — следующая ячейка.', 'Select text before formatting. Click a cell before a table command. Ctrl/Cmd+Z undoes; Ctrl/Cmd+B/I/U formats; Enter splits an item; an empty item exits. Tab/Shift+Tab nests lists; in tables Tab moves to the next cell.') }}</p>
@@ -166,7 +181,7 @@ onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); dispose
           <button @click="tableRun((api) => api.columnWidth(widthColumn - 1, widthValue))">{{ t('Применить ширину', 'Apply width') }}</button>
         </fieldset></details>
         <details><summary>{{ t('Ссылки и изображения', 'Links and images') }}</summary><fieldset :disabled="!ready || readOnly">
-          <label>{{ t('Адрес ссылки', 'Link URL') }}<input v-model="url" type="text"></label><div class="lab-button-grid"><button @click="insertLink">{{ t('Создать ссылку', 'Create link') }}</button><button @click="format('link', false)">{{ t('Убрать ссылку', 'Remove link') }}</button></div>
+          <label>{{ t('Адрес ссылки', 'Link URL') }}<input v-model="url" type="text"></label><label>{{ t('Заголовок ссылки', 'Link title') }}<input v-model="linkTitle" type="text"></label><label>{{ t('Подпись новой ссылки', 'New link text') }}<input v-model="linkText" type="text"></label><label class="lab-checkbox"><input v-model="linkNewTab" type="checkbox">{{ t('В новой вкладке', 'Open in new tab') }}</label><div class="lab-button-grid"><button @click="insertLink">{{ editingLink ? t('Обновить ссылку', 'Update link') : t('Создать ссылку', 'Create link') }}</button><button @click="format('link', false)">{{ t('Убрать ссылку', 'Remove link') }}</button></div>
           <hr><label>{{ t('URL изображения', 'Image URL') }}<input v-model="imageURL" type="text"></label><div class="lab-fields"><label>Alt<input v-model="imageAlt" type="text"></label><label>{{ t('Ширина изображения', 'Image width') }}<input v-model.number="imageWidth" type="number" min="1" max="1000"></label></div><button @click="insertImage">{{ t('Вставить изображение', 'Insert image') }}</button><p class="lab-hint">{{ t('Вставка по URL. Загрузка файлов и resize изображения ещё не реализованы.', 'URL insertion. File uploads and image drag resizing are not implemented yet.') }}</p>
         </fieldset></details>
         <details><summary>{{ t('Оформление', 'Appearance') }}</summary><div class="lab-fields"><label>{{ t('Акцент', 'Accent') }}<input v-model="accent" type="color"></label><label>{{ t('Размер текста', 'Text size') }}<input v-model.number="fontSize" type="number" min="12" max="28"></label><label>{{ t('Отступы', 'Padding') }}<input v-model.number="padding" type="number" min="8" max="64"></label><label>{{ t('Скругление', 'Radius') }}<input v-model.number="radius" type="number" min="0" max="28"></label></div><p class="lab-hint">{{ t('Меняет CSS-переменные этого экземпляра. Содержимое документа не меняется.', 'Changes CSS variables for this instance without editing the document.') }}</p></details>

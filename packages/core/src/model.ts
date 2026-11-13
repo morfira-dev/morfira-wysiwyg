@@ -68,9 +68,15 @@ const attributesFor = (tag: DocumentTag, input: Record<string, unknown>): Record
       if (/^\d{1,4}$/.test(value) && Number(value) > 0 && Number(value) <= 1000)
         output[key] = value;
     }
+    else if (tag === 'a' && key === 'target' && ['_self', '_blank'].includes(value)) output.target = value;
+    else if (tag === 'a' && key === 'rel') {
+      const tokens = [...new Set(value.toLowerCase().split(/\s+/).filter((token) => ['noopener', 'noreferrer'].includes(token)))];
+      if (tokens.length) output.rel = tokens.join(' ');
+    }
     else if (tag === 'th' && key === 'scope' && ['row', 'col', 'rowgroup', 'colgroup'].includes(value))
       output[key] = value;
   }
+  if (tag === 'a' && output.target === '_blank') output.rel = 'noopener noreferrer';
   return output;
 };
 
