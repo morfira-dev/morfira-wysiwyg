@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import multiRelease from 'multi-semantic-release';
 import type { Options } from 'semantic-release';
+import { persistReleaseState } from './release-state.js';
 
 export const assertPublishRuntime = (npmVersion: string, env: NodeJS.ProcessEnv): void => {
   const version = npmVersion.trim();
@@ -43,7 +44,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const dryRun = process.argv.includes('--dry-run');
   if (!dryRun && process.env.GITHUB_ACTIONS !== 'true') throw new Error('Publish through the checked GitHub Actions release workflow. Use --dry-run locally.');
   if (!dryRun) assertPublishRuntime(execFileSync('npm', ['--version'], { encoding: 'utf8' }), process.env);
+  const sourceHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   const result = await releasePackages(process.cwd(), dryRun);
+  if (!dryRun && result.some((pkg) => pkg.release)) await persistReleaseState(process.cwd(), sourceHead);
   console.log(JSON.stringify(result, null, 2));
   await writeFile('release-plan.json', `${JSON.stringify(result, null, 2)}\n`);
 }

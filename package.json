@@ -15,7 +15,7 @@
     "test:docs": "playwright test --config playwright.docs.config.ts",
     "check:project": "tsx scripts/check-project.ts",
     "release:plan": "tsx scripts/release.ts --dry-run",
-    "test:release": "tsx scripts/tests/releases.test.ts",
+    "test:release": "tsx scripts/tests/index.ts",
     "package:check": "tsx scripts/check-packages.ts"
   },
   "devDependencies": {

@@ -26,14 +26,14 @@ The six library workspaces have independent versions. semantic-release analyzes 
 - `break(core): ...` — the explicit major marker, including dependent adapters and the public facade. Standard `feat(core)!: ...` and `BREAKING CHANGE: ...` footers are also recognized.
 - Documentation, test and chore commits alone do not release a library.
 
-Commit scopes help readers; changed files determine affected packages. Tags use `@morfira-dev/wysiwyg-core@1.0.0`, `@morfira-dev/wysiwyg@1.0.0`, and the other package names. Without existing release tags, semantic-release starts at `1.0.0`. Source manifests at `0.2.0` are development starting versions; npm and release tags identify published versions. This does not promise full feature parity with mature editors.
+Commit scopes help readers; changed files determine affected packages. Tags use `@morfira-dev/wysiwyg-core@1.0.0`, `@morfira-dev/wysiwyg@1.0.0`, and the other package names. Without existing release tags, semantic-release starts at `1.0.0`. After a successful release, source versions and internal dependency ranges are synchronized with the published packages in one service commit. This does not promise full feature parity with mature editors.
 
 ```sh
 pnpm run test:release
 pnpm run release:plan
 ```
 
-Planning publishes nothing, pushes no tags, creates no GitHub Release and needs no npm credentials. Actual releases include GitHub release notes. `pnpm run release` runs only inside GitHub Actions after checks. The release job does not commit updated manifests to main; package versions and internal dependency ranges are substituted in CI before publication.
+Planning publishes nothing, pushes no tags, creates no GitHub Release and needs no npm credentials. Actual releases include GitHub release notes. `pnpm run release` runs only inside GitHub Actions after checks. After all packages publish successfully, the release job refreshes `pnpm-lock.yaml` with `pnpm install --lockfile-only --ignore-scripts --no-frozen-lockfile` and saves manifests and lockfile in one `chore(release): sync package versions [skip ci]` commit authored by github-actions[bot]. It pushes with GITHUB_TOKEN without force. This push does not trigger another workflow; the `chore` type also produces no release on a manual rerun. Dry runs, publication failures and no-release runs create no commits. If main has advanced, the push is rejected; published versions are preserved.
 
 ## GitHub Actions and npm OIDC
 
