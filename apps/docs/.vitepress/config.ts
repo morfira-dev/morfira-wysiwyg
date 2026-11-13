@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress';
 
-const pages = ['guide', 'api', 'plugins', 'adapters', 'theming', 'architecture', 'testing', 'roadmap'];
-const en = ['Getting started', 'Core API', 'Plugins & tables', 'Framework adapters', 'Theming', 'Architecture & size', 'Testing & releases', 'Roadmap & limitations'];
-const ru = ['Быстрый старт', 'API ядра', 'Плагины и таблицы', 'Адаптеры фреймворков', 'Темизация', 'Архитектура и вес', 'Тесты и релизы', 'Планы и ограничения'];
+const pages = ['guide', 'api', 'lists', 'plugins', 'adapters', 'theming', 'architecture', 'testing', 'roadmap'];
+const en = ['Getting started', 'Core API', 'Lists & formatting', 'Plugins & tables', 'Framework adapters', 'Theming', 'Architecture & size', 'Testing & releases', 'Roadmap & limitations'];
+const ru = ['Быстрый старт', 'API ядра', 'Списки и форматирование', 'Плагины и таблицы', 'Адаптеры фреймворков', 'Темизация', 'Архитектура и вес', 'Тесты и релизы', 'Планы и ограничения'];
 export default defineConfig({
   title: 'Morfira WYSIWYG',
   description: 'A modular TypeScript editor. A small core, room for more.',
@@ -23,6 +23,6 @@ export default defineConfig({
       }
     },
   },
-  themeConfig: { search: { provider: 'local' }, logo: '/logo.svg', footer: { message: 'TypeScript · Modular by design · 0.2.0 preview' } },
+  themeConfig: { search: { provider: 'local' }, logo: '/logo.svg', footer: { message: 'TypeScript · Modular by design · Local preview' } },
   vite: { server: { fs: { allow: ['../..'] } } },
 });

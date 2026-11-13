@@ -3,7 +3,7 @@ layout: home
 hero:
   name: Morfira WYSIWYG
   text: Your words. Less weight.
-  tagline: A modular editor with tables, framework adapters, and your design. Version 0.2 is a working foundation, with a clear path forward.
+  tagline: A modular editor with tables, framework adapters, and your design. Try lists, nesting, and formatting right here.
   actions:
     - theme: brand
       text: Get started

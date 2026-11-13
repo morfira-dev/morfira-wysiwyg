@@ -1,4 +1,4 @@
-# Editor contract — 0.2
+# Editor contract — document schema v1
 
 Status: implemented preview contract. Acceptance scenarios are exercised in `tests/editor.spec.ts` and `tests/native.spec.ts`; verification limits remain explicit.
 
@@ -28,3 +28,5 @@ Status: implemented preview contract. Acceptance scenarios are exercised in `tes
 Browser tests establish their recorded scenarios, not full Word/Excel fidelity, complete browser editing normalization, accessibility conformance, collaborative editing, or mobile/IME certification. Report those separately.
 
 Caret regression: disabling an inline mark in the middle of marked text keeps the insertion position, preserves the mark on both neighboring fragments, and retains other nested marks.
+
+Lists, keyboard boundaries and toolbar extensions follow `specs/lists-toolbar.md`. Document schema v1 is unchanged.

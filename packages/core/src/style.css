@@ -42,3 +42,6 @@
 .mw-toolbar button:focus-visible { outline: 2px solid var(--mw-accent); outline-offset: 2px; }
 .mw-toolbar button:disabled { opacity: .4; cursor: default; }
 @media (prefers-reduced-motion: no-preference) { .mw-toolbar button { transition: background .12s; } }
+.mw-toolbar button[aria-pressed=mixed] { background: var(--mw-accent-soft); box-shadow: inset 0 -2px var(--mw-accent); }
+.mw-content ul ul { list-style-type: circle; }
+.mw-content ul ul ul { list-style-type: square; }

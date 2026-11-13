@@ -90,3 +90,25 @@ export const placeCaret = (element: HTMLElement, end = false): void => {
   selection?.removeAllRanges();
   selection?.addRange(range);
 };
+
+/** Keep actual DOM positions while moving blocks, including empty list items. */
+export const preserveRange = (root: HTMLElement, mutate: () => void): void => {
+  const range = activeRange(root);
+  if (!range) return;
+  const native = root.ownerDocument.getSelection()!;
+  const backward = !range.collapsed && native.anchorNode === range.endContainer && native.anchorOffset === range.endOffset;
+  const start = root.ownerDocument.createComment('mw-start');
+  const end = range.collapsed ? undefined : root.ownerDocument.createComment('mw-end');
+  if (end) { const tail = range.cloneRange(); tail.collapse(false); tail.insertNode(end); }
+  const head = range.cloneRange(); head.collapse(true); head.insertNode(start);
+  try {
+    mutate();
+    if (root.contains(start) && (!end || root.contains(end))) {
+      const next = root.ownerDocument.createRange(); next.setStartBefore(start);
+      if (end) next.setEndBefore(end); else next.collapse(true);
+      start.remove(); end?.remove(); root.normalize();
+      if (backward) native.setBaseAndExtent(next.endContainer, next.endOffset, next.startContainer, next.startOffset);
+      else { native.removeAllRanges(); native.addRange(next); }
+    }
+  } finally { start.remove(); end?.remove(); }
+};

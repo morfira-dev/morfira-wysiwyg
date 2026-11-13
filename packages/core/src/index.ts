@@ -2,6 +2,7 @@ import { documentHTML, parseHTML, renderDocument, sanitizeHTML, validateDocument
 import type { EditorDocument } from './model.js';
 import { activeRange, bookmark, placeCaret, readTextSelection, restoreBookmark, selectText } from './selection.js';
 import type { SelectionBookmark, TextSelection } from './selection.js';
+import { editListInput, handlesListInput, indentList, listState, selectedBlocks } from './lists.js';
 import { applyFormat, inlineFormats, readFormats } from './formatting.js';
 export { sanitizeHTML } from './model.js';
 export type { EditorDocument, DocumentNode, ElementNode, TextNode, DocumentTag } from './model.js';
@@ -352,6 +353,10 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         editor.redo();
       return;
     }
+    if (!composing && !event.isComposing && handlesListInput(surface, event.inputType)) {
+      event.preventDefault(); clearTyping(); pendingInput = undefined;
+      runTransaction(() => editListInput(surface, event.inputType)); return;
+    }
     if (event.inputType === 'insertText' && event.data && !composing && !event.isComposing && typingAtCaret() && Object.keys(typingOverrides).length) {
       event.preventDefault();
       const start = readTextSelection(surface)!.index;
@@ -404,6 +409,16 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   });
   listen('drop', (event) => { event.preventDefault(); });
   listen('keydown', (event) => {
+    if (!composing && !event.isComposing && !readOnly && !event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'Enter' || event.key === 'Backspace')) {
+      const type = event.key === 'Backspace' ? 'deleteContentBackward' : event.shiftKey ? 'insertLineBreak' : 'insertParagraph';
+      if (handlesListInput(surface, type)) { event.preventDefault(); clearTyping(); pendingInput = undefined; runTransaction(() => editListInput(surface, type)); return; }
+    }
+    if (!composing && !event.isComposing && !readOnly && event.key === 'Tab' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const blocks = selectedBlocks(surface);
+      if (blocks.length && blocks.every((block) => block.localName === 'li' && !block.closest('td,th')) && listState(surface).canOutdent) {
+        event.preventDefault(); clearTyping(); runTransaction(() => indentList(surface, event.shiftKey ? -1 : 1)); return;
+      }
+    }
     if (composing || event.isComposing || readOnly || !(event.ctrlKey || event.metaKey) || event.altKey)
       return;
     const key = event.key.toLowerCase();
@@ -417,7 +432,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     const name = ({ b: 'bold', i: 'italic', u: 'underline' } as Record<string, string>)[key];
     if (name) {
       event.preventDefault();
-      editor.format(name, !editor.getFormats()[name]);
+      editor.format(name, (editor.getFormats().mixed as string[] | undefined)?.includes(name) || !editor.getFormats()[name]);
     }
   });
   document.addEventListener('selectionchange', notifySelection);
@@ -437,59 +452,5 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   }
 };
 
-export interface ToolbarAction { label: string; text: string; format?: string; value?: unknown; run?: (editor: Editor) => void; }
-const defaultActions: ToolbarAction[] = [
-  { label: 'Отменить', text: '↶', run: (editor) => editor.undo() },
-  { label: 'Повторить', text: '↷', run: (editor) => editor.redo() },
-  { label: 'Полужирный', text: 'B', format: 'bold' },
-  { label: 'Курсив', text: 'I', format: 'italic' },
-  { label: 'Подчёркнутый', text: 'U', format: 'underline' },
-  { label: 'Заголовок', text: 'H₂', format: 'header', value: 2 },
-  { label: 'Маркированный список', text: '☷', format: 'list', value: 'bullet' },
-  { label: 'Цитата', text: '❝', format: 'blockquote' },
-];
-export const createToolbar = (host: HTMLElement, editor: Editor, actions = defaultActions): () => void => {
-  const toolbar = document.createElement('div');
-  toolbar.className = 'mw-toolbar';
-  toolbar.setAttribute('role', 'toolbar');
-  toolbar.setAttribute('aria-label', 'Форматирование');
-  let savedSelection: TextSelection | undefined;
-  const buttons = actions.map((action) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = action.text;
-    button.title = action.label;
-    button.setAttribute('aria-label', action.label);
-    button.addEventListener('mousedown', (event) => event.preventDefault());
-    button.addEventListener('click', () => {
-      if (editor.isReadOnly())
-        return;
-      if (savedSelection)
-        editor.setSelection(savedSelection.index, savedSelection.length);
-      else
-        editor.focus();
-      if (action.run)
-        action.run(editor);
-      else if (action.format)
-        editor.format(action.format, editor.getFormats()[action.format] === (action.value ?? true) ? false : action.value ?? true);
-      update();
-    });
-    toolbar.append(button);
-    return button;
-  });
-  const update = () => {
-    savedSelection = editor.getSelection() ?? savedSelection;
-    const formats = editor.getFormats();
-    buttons.forEach((button, index) => {
-      button.disabled = editor.isReadOnly();
-      const action = actions[index];
-      if (action.format)
-        button.setAttribute('aria-pressed', String(formats[action.format] === (action.value ?? true)));
-    });
-  };
-  const unsubscribe = editor.subscribe(update);
-  const unselect = editor.onSelectionChange(update);
-  host.append(toolbar);
-  update();
-  return () => { unsubscribe(); unselect(); toolbar.remove(); };
-};
+export { createToolbar } from './toolbar.js';
+export type { ToolbarAction, ToolbarOptions } from './toolbar.js';

@@ -100,3 +100,36 @@ for (const route of ['/', '/playground', '/en/']) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 }
+
+for (const english of [false, true]) {
+  test(`homepage list sample exposes nesting, format controls and localized toolbar: ${english ? 'en' : 'ru'}`, async ({ page }) => {
+    const errors: string[] = []; page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(english ? '/en/' : '/'); await sample(page, 'lists', english);
+    const toolbar = page.getByRole('toolbar', { name: english ? 'Formatting' : 'Форматирование', exact: true });
+    await expect(toolbar).toBeVisible(); await expect(page.locator('.mw-content ul > li > ol')).toHaveCount(1);
+    await page.locator('.mw-content > ul > li').nth(1).evaluate((item) => { const range = document.createRange(); range.selectNodeContents(item); range.collapse(true); const s = window.getSelection()!; s.removeAllRanges(); s.addRange(range); });
+    await expect(toolbar.getByRole('button', { name: english ? 'Indent list' : 'Увеличить отступ', exact: true })).toBeEnabled();
+    await toolbar.getByRole('button', { name: english ? 'Indent list' : 'Увеличить отступ', exact: true }).click();
+    await expect(page.locator('.mw-content > ul > li')).toHaveCount(2);
+    await page.keyboard.press('Enter'); await page.keyboard.type(english ? 'New item' : 'Новый пункт');
+    await expect(page.locator('.mw-content')).toContainText(english ? 'New item' : 'Новый пункт');
+    await page.getByLabel(english ? 'Text alignment' : 'Выравнивание текста', { exact: true }).selectOption('right');
+    await expect(page.locator('.mw-content [style*="text-align: right"]')).toHaveCount(1);
+    await expect(page.getByLabel(english ? 'Text alignment' : 'Выравнивание текста', { exact: true })).toHaveValue('right');
+    await sample(page, 'lists', english);
+    await page.locator('.mw-content > ul > li').nth(1).click();
+    await page.screenshot({ path: `artifacts/lists-home-${english ? 'en' : 'ru'}.png`, fullPage: true });
+    await page.locator('.demo-editing').screenshot({ path: `artifacts/lists-editor-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
+    expect(errors).toEqual([]);
+  });
+}
+
+test('homepage dropdowns retain a multi-paragraph range and show mixed list state', async ({ page }) => {
+  await page.goto('/'); await replaceHTML(page, '<p>A</p><p>B</p><p>C</p>');
+  await page.locator('.mw-content').evaluate((root) => { const range = document.createRange(); const blocks = root.querySelectorAll('p'); range.setStart(blocks[0].firstChild!, 0); range.setEnd(blocks[1].firstChild!, 1); const s = window.getSelection()!; s.removeAllRanges(); s.addRange(range); });
+  await page.getByLabel('Тип списка', { exact: true }).selectOption('ordered');
+  await expect(page.locator('.mw-content > ol > li')).toHaveCount(2); await expect(page.locator('.mw-content > p')).toHaveText('C');
+  await page.locator('.mw-content').evaluate((root) => { const range = document.createRange(); range.selectNodeContents(root); const s = window.getSelection()!; s.removeAllRanges(); s.addRange(range); });
+  await expect(page.getByLabel('Тип списка', { exact: true })).toHaveValue('mixed');
+  await expect(page.getByRole('button', { name: 'Нумерованный список', exact: true })).toHaveAttribute('aria-pressed', 'mixed');
+});

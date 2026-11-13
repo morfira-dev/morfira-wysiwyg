@@ -15,7 +15,8 @@ const dark = ref(false); const readOnly = ref(false); const ready = ref(false);
 const output = ref(''); const outputFormat = ref<'html' | 'json'>('html');
 const message = ref(''); const failed = ref(false); const count = ref(0); const words = ref(0);
 const undoAvailable = ref(false); const redoAvailable = ref(false); const source = ref('initial');
-const sample = ref('showcase'); const heading = ref('0'); const list = ref(''); const alignment = ref('left');
+const sample = ref('showcase');
+let labRange: Range | undefined; const heading = ref('0'); const list = ref(''); const alignment = ref('left');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
 const cellColor = ref('#eeeaff'); const borderColor = ref('#6658e8'); const widthColumn = ref(1); const widthValue = ref(180);
 const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛицензия\tMIT'); const bufferFormat = ref<'text' | 'html'>('text');
@@ -31,22 +32,34 @@ const article = () => t(
   '<h2>A place for your ideas.</h2><p>A good editor lets you focus on <strong>the content</strong>. Select text, try formatting, or add a table.</p><p>A small core. The plugins you need. Your design.</p>',
 );
 const tableSample = () => `<h2>${t('Таблицы без лишнего', 'Tables, without the weight')}</h2><p>${t('Выделяйте ячейки, меняйте структуру и вставляйте диапазоны.', 'Select cells, change the structure, and paste ranges.')}</p><table style="width:100%"><thead><tr><th scope="col">${t('Раздел', 'Area')}</th><th scope="col">${t('Возможность', 'Feature')}</th><th scope="col">${t('Статус', 'Status')}</th></tr></thead><tbody><tr><td rowspan="2"><p>${t('Таблицы', 'Tables')}</p></td><td><p>${t('Объединение ячеек', 'Merged cells')}</p></td><td><p>✓</p></td></tr><tr><td><p>HTML / TSV</p></td><td><p>✓</p></td></tr></tbody></table><p><br></p>`;
-const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + tableSample();
+const listSample = () => t(
+  '<h2>Списки, которые слушаются</h2><p>Enter делит пункт, пустой пункт завершает список. Tab и Shift+Tab меняют вложенность вне таблиц; Backspace в начале объединяет пункты.</p><ul><li>Подготовить материал<ol><li>Собрать ссылки</li><li><strong>Проверить факты</strong></li></ol></li><li>Написать черновик</li><li>Опубликовать</li></ul><p>Выдели несколько пунктов и попробуй нумерацию или кнопки отступа.</p>',
+  '<h2>Lists that follow your lead</h2><p>Enter splits an item; an empty item exits the list. Tab and Shift+Tab change nesting outside tables; Backspace at the start joins items.</p><ul><li>Prepare the material<ol><li>Collect links</li><li><strong>Check the facts</strong></li></ol></li><li>Write a draft</li><li>Publish</li></ul><p>Select several items and try numbering or the indentation buttons.</p>',
+);
+const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + tableSample();
 const refresh = () => {
   if (!editor) return;
   const text = editor.getText().trim(); count.value = text.length; words.value = text ? text.split(/\s+/).length : 0;
   undoAvailable.value = editor.canUndo(); redoAvailable.value = editor.canRedo();
-  const formats = editor.getFormats(); heading.value = String(formats.header ?? 0); list.value = String(formats.list ?? '');
+  const range = window.getSelection()?.rangeCount ? window.getSelection()!.getRangeAt(0) : undefined;
+  if (range && editor.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer)) labRange = range.cloneRange();
+  const formats = editor.getFormats(); const mixed = formats.mixed as string[] | undefined;
+  heading.value = mixed?.includes('header') ? 'mixed' : String(formats.header ?? 0);
+  list.value = mixed?.includes('list') ? 'mixed' : String(formats.list || '');
+  alignment.value = mixed?.includes('align') ? 'mixed' : String(formats.align ?? 'left');
 };
 const notify = (text: string, error = false) => { message.value = text; failed.value = error; };
 const run = (action: (instance: Editor) => void, mutation = true) => {
   if (!editor || (mutation && readOnly.value)) return;
-  try { editor.focus(); action(editor); refresh(); notify(''); }
+  try {
+    if (labRange && editor.surface.contains(labRange.startContainer) && editor.surface.contains(labRange.endContainer)) { const selection = window.getSelection()!; selection.removeAllRanges(); selection.addRange(labRange.cloneRange()); }
+    editor.focus(); action(editor); refresh(); notify('');
+  }
   catch (error) { notify(error instanceof Error ? error.message : String(error), true); }
 };
 const tableRun = (action: (api: TableCommands) => void, mutation = true) => run(() => { if (commands) action(commands); }, mutation);
 const format = (name: string, value: unknown) => run((instance) => instance.format(name, value));
-const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
+const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'lists' ? listSample() : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
 const insertTable = () => tableRun((api) => api.insert(Number(rows.value), Number(columns.value)));
 const toggleReadOnly = () => { readOnly.value = !readOnly.value; editor?.setReadOnly(readOnly.value); refresh(); };
 const snapshot = (type: 'html' | 'json') => {
@@ -63,7 +76,10 @@ const pasteRange = () => tableRun((api) => api.paste(bufferFormat.value === 'htm
 const preserveLabSelection = (event: PointerEvent) => {
   const control = event.target instanceof Element ? event.target.closest('button,input,select,textarea,summary') : null;
   if (props.full && control && !editor?.element.contains(control)) {
-    labSelection = editor?.getSelection() ?? labSelection; event.stopPropagation();
+    labSelection = editor?.getSelection() ?? labSelection;
+    const selection = window.getSelection(); const range = selection?.rangeCount ? selection.getRangeAt(0) : undefined;
+    if (range && editor?.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer)) labRange = range.cloneRange();
+    event.stopPropagation();
   }
 };
 const insertLink = () => run((instance) => {
@@ -86,8 +102,8 @@ onMounted(async () => {
   });
   commands = tableCommands(editor);
   const marks: ToolbarAction[] = [
-    { label: t('Отменить', 'Undo'), text: '↶', run: (instance) => instance.undo() },
-    { label: t('Повторить', 'Redo'), text: '↷', run: (instance) => instance.redo() },
+    { label: t('Отменить', 'Undo'), text: '↶', run: (instance) => instance.undo(), enabled: (instance) => instance.canUndo() },
+    { label: t('Повторить', 'Redo'), text: '↷', run: (instance) => instance.redo(), enabled: (instance) => instance.canRedo() },
     { label: t('Полужирный', 'Bold'), text: 'B', format: 'bold' },
     { label: t('Курсив', 'Italic'), text: 'I', format: 'italic' },
     { label: t('Подчёркнутый', 'Underline'), text: 'U', format: 'underline' },
@@ -95,10 +111,15 @@ onMounted(async () => {
     { label: t('Строчный код', 'Inline code'), text: '‹›', format: 'code' },
     { label: t('Нижний индекс', 'Subscript'), text: 'x₂', format: 'subscript' },
     { label: t('Верхний индекс', 'Superscript'), text: 'x²', format: 'superscript' },
+    { label: t('Маркированный список', 'Bullet list'), text: '☷', format: 'list', value: 'bullet' },
+    { label: t('Нумерованный список', 'Ordered list'), text: '1.', format: 'list', value: 'ordered' },
+    { label: t('Увеличить отступ', 'Indent list'), text: '⇥', format: 'indent', value: 1, enabled: (instance) => Boolean(instance.getFormats().canIndent) },
+    { label: t('Уменьшить отступ', 'Outdent list'), text: '⇤', format: 'indent', value: -1, enabled: (instance) => Boolean(instance.getFormats().canOutdent) },
+    { label: t('Очистить форматирование', 'Clear formatting'), text: 'Tx', format: 'clear', enabled: (instance) => Boolean(instance.getSelection()?.length) },
     { label: t('Цитата', 'Blockquote'), text: '❝', format: 'blockquote' },
     { label: t('Блок кода', 'Code block'), text: '{ }', format: 'code-block' },
   ];
-  disposeToolbar = props.full ? createToolbar(toolbar.value!, editor, marks) : createToolbar(toolbar.value!, editor);
+  disposeToolbar = props.full ? createToolbar(toolbar.value!, editor, marks, { label: t('Форматирование', 'Formatting') }) : createToolbar(toolbar.value!, editor);
   unsubscribe = editor.subscribe(refresh); unselect = editor.onSelectionChange(refresh); ready.value = true; refresh();
 });
 onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); disposeToolbar?.(); editor?.destroy(); });
@@ -112,7 +133,7 @@ onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); dispose
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <button v-else :disabled="!ready || readOnly" @click="insertTable">{{ t('+ Таблица 3 × 3', '+ Table 3 × 3') }}</button>
@@ -124,13 +145,13 @@ onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); dispose
     <div class="demo-workspace">
       <div class="demo-editing">
         <div v-if="full" class="lab-block-controls">
-          <label>{{ t('Блок', 'Block') }}<select v-model="heading" :disabled="!ready || readOnly" :aria-label="t('Формат блока', 'Block format')" @change="format('header', Number(heading) || false)"><option value="0">{{ t('Абзац', 'Paragraph') }}</option><option v-for="level in 6" :key="level" :value="String(level)">H{{ level }}</option></select></label>
-          <label>{{ t('Список', 'List') }}<select v-model="list" :disabled="!ready || readOnly" :aria-label="t('Тип списка', 'List type')" @change="format('list', list || false)"><option value="">{{ t('Нет', 'None') }}</option><option value="bullet">{{ t('Маркеры', 'Bullet') }}</option><option value="ordered">{{ t('Нумерация', 'Ordered') }}</option></select></label>
-          <label>{{ t('Выравнивание', 'Alignment') }}<select v-model="alignment" :disabled="!ready || readOnly" :aria-label="t('Выравнивание текста', 'Text alignment')" @change="format('align', alignment)"><option value="left">{{ t('Слева', 'Left') }}</option><option value="center">{{ t('По центру', 'Center') }}</option><option value="right">{{ t('Справа', 'Right') }}</option><option value="justify">{{ t('По ширине', 'Justify') }}</option></select></label>
+          <label>{{ t('Блок', 'Block') }}<select v-model="heading" :disabled="!ready || readOnly" :aria-label="t('Формат блока', 'Block format')" @change="heading !== 'mixed' && format('header', Number(heading) || false)"><option value="mixed" disabled>{{ t('Разное', 'Mixed') }}</option><option value="0">{{ t('Абзац', 'Paragraph') }}</option><option v-for="level in 6" :key="level" :value="String(level)">H{{ level }}</option></select></label>
+          <label>{{ t('Список', 'List') }}<select v-model="list" :disabled="!ready || readOnly" :aria-label="t('Тип списка', 'List type')" @change="list !== 'mixed' && format('list', list || false)"><option value="mixed" disabled>{{ t('Разное', 'Mixed') }}</option><option value="">{{ t('Нет', 'None') }}</option><option value="bullet">{{ t('Маркеры', 'Bullet') }}</option><option value="ordered">{{ t('Нумерация', 'Ordered') }}</option></select></label>
+          <label>{{ t('Выравнивание', 'Alignment') }}<select v-model="alignment" :disabled="!ready || readOnly" :aria-label="t('Выравнивание текста', 'Text alignment')" @change="alignment !== 'mixed' && format('align', alignment)"><option value="mixed" disabled>{{ t('Разное', 'Mixed') }}</option><option value="left">{{ t('Слева', 'Left') }}</option><option value="center">{{ t('По центру', 'Center') }}</option><option value="right">{{ t('Справа', 'Right') }}</option><option value="justify">{{ t('По ширине', 'Justify') }}</option></select></label>
         </div>
         <div ref="toolbar"></div><div ref="host"></div>
         <div class="demo-status"><span>{{ count }} {{ t('символов', 'characters') }}<template v-if="full"> · {{ words }} {{ t('слов', 'words') }}</template></span><span v-if="full">undo {{ undoAvailable ? '●' : '○' }} · redo {{ redoAvailable ? '●' : '○' }} · {{ source }}</span><span v-else>{{ t('Таблицы: контекстное меню по правой кнопке', 'Tables: right-click for actions') }}</span></div>
-        <p v-if="full" class="lab-hint">{{ t('Выделяй текст перед форматированием. Кликни в ячейку перед табличной командой. Ctrl/Cmd+Z — отмена; Ctrl/Cmd+B/I/U — формат; Tab — следующая ячейка.', 'Select text before formatting. Click a cell before a table command. Ctrl/Cmd+Z undoes; Ctrl/Cmd+B/I/U formats; Tab moves to the next cell.') }}</p>
+        <p v-if="full" class="lab-hint">{{ t('Выделяй текст перед форматированием. Кликни в ячейку перед табличной командой. Ctrl/Cmd+Z — отмена; Ctrl/Cmd+B/I/U — формат; Enter — новый пункт, пустой — выход; Tab/Shift+Tab — вложенность. В таблице Tab — следующая ячейка.', 'Select text before formatting. Click a cell before a table command. Ctrl/Cmd+Z undoes; Ctrl/Cmd+B/I/U formats; Enter splits an item; an empty item exits. Tab/Shift+Tab nests lists; in tables Tab moves to the next cell.') }}</p>
       </div>
       <aside v-if="full" class="demo-inspector">
         <details open><summary>{{ t('Таблицы', 'Tables') }}</summary><fieldset :disabled="!ready || readOnly">

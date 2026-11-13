@@ -25,7 +25,7 @@
 | `setJSON(document)` | Validate schema before replacing content |
 | `getSelection()` | `{ index, length }` text offsets, or undefined outside the surface |
 | `setSelection(index, length?)` | Select text; nonnegative integer offsets |
-| `getFormats()` | Active formats at selection start |
+| `getFormats()` | Formats at selection start, `mixed`, list depth and indentation availability |
 | `format(name, value)` | Undoable user-format command |
 | `insertHTML(html)` | Validated paste-like replacement of the current selection |
 | `setReadOnly(value) / isReadOnly()` | Control and query user editing |
@@ -59,8 +59,10 @@ Initial content emits no change. Adapter feedback from external value updates is
 ```ts
 const dispose = createToolbar(host, editor, [
   { label: 'Bold', text: 'B', format: 'bold' },
-  { label: 'Undo', text: '↶', run: (instance) => instance.undo() },
+  { label: 'Undo', text: '↶', run: (instance) => instance.undo(), enabled: (instance) => instance.canUndo() },
 ]);
 ```
 
-The default toolbar has Russian labels; supply your own actions for localization. It preserves text selection and exposes disabled/pressed states. A complete dropdown/dialog system and accessibility audit are future work.
+The default toolbar has Russian labels; supply your own actions for localization. The fourth `{ label }` argument localizes the toolbar accessible name. It preserves DOM bookmarks including empty items, exposes disabled/pressed/mixed states and supports arrow/Home/End/Escape navigation. `ToolbarAction.enabled(instance)` controls command availability. A complete dropdown/dialog system and accessibility audit are future work.
+
+Lists support nesting through `format('indent', 1 | -1)`. `format('clear', true)` removes inline formatting from selected text. See [Lists and formatting](/en/lists) for keyboard contracts, mixed states and examples.

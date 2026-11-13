@@ -11,3 +11,5 @@ Status: implementation milestone. The `/playground` and `/en/playground` pages e
 - Keep temporary content in browser memory. Show unsupported features honestly. The server remains local and running for the user after the requested handoff.
 
 Acceptance: format selected text, change blocks, insert checked link/image, perform table operations and TSV range paste, inspect/import JSON, reject invalid JSON without mutation, switch read-only/theme, and show the laboratory without horizontal overflow at mobile width. Verify built pages and browser errors.
+
+Lists/toolbar milestone: `specs/lists-toolbar.md` adds nested-list samples, indent/outdent, clear inline formatting, mixed states and localized keyboard-accessible toolbar controls to both homepages and playgrounds.

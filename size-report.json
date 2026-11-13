@@ -1,13 +1,13 @@
 {
   "core.js": {
-    "raw": 18416,
-    "gzip": 6868,
-    "brotli": 6208
+    "raw": 28537,
+    "gzip": 9745,
+    "brotli": 8800
   },
   "core.css": {
-    "raw": 2668,
-    "gzip": 995,
-    "brotli": 811
+    "raw": 2866,
+    "gzip": 1040,
+    "brotli": 842
   },
   "plugins.js": {
     "raw": 18415,
