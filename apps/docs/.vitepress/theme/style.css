@@ -96,3 +96,5 @@
 .lab-shortcuts { padding-left: 16px; font: 12px/1.7 var(--mw-font); color: var(--mw-text); margin: 12px 0; }
 .lab-shortcuts li { margin: 6px 0; overflow-wrap: anywhere; }
 .lab-shortcuts code { color: var(--mw-text); background: var(--mw-hover); border-radius: 4px; padding: 1px 3px; }
+
+.lab-suggestions-status { font: 12px/1.5 var(--mw-font); color: var(--mw-muted); margin: 10px 0; overflow-wrap: anywhere; }

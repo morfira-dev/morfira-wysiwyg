@@ -47,7 +47,20 @@
     "./plugins/markdown": {
       "types": "./dist/plugins/markdown.d.ts",
       "import": "./dist/plugins/markdown.js"
-    }
+    },
+    "./plugins/mentions": {
+      "types": "./dist/plugins/mentions.d.ts",
+      "import": "./dist/plugins/mentions.js"
+    },
+    "./plugins/slash": {
+      "types": "./dist/plugins/slash.d.ts",
+      "import": "./dist/plugins/slash.js"
+    },
+    "./plugins/suggestions": {
+      "types": "./dist/plugins/suggestions.d.ts",
+      "import": "./dist/plugins/suggestions.js"
+    },
+    "./plugins/suggestions.css": "./dist/plugins/suggestions.css"
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.4.0",

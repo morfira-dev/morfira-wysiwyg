@@ -63,3 +63,5 @@ Malformed quoting, nested/multiple source tables, over-limit ranges and selectio
 [Text statistics](/en/statistics) uses `/plugins/statistics` for document/selection grapheme and word counts.
 
 [Markdown shortcuts](/en/markdown) uses the optional `/plugins/markdown` entry for typing conversions; imports and pasted text stay literal.
+
+[Mentions and slash snippets](/en/suggestions): `/plugins/mentions`, `/plugins/slash`, optional `/plugins/suggestions` and `/plugins/suggestions.css`. Phase 1 inserts ordinary text without persisted IDs.

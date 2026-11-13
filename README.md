@@ -69,3 +69,5 @@ pnpm run test:docs
 Статистика: `/plugins/statistics` (локальная разработка), [RU](apps/docs/statistics.md) / [EN](apps/docs/en/statistics.md). Unicode-графемы и слова документа/выделения через платформенный Intl.Segmenter.
 
 Markdown shortcuts: необязательный `/plugins/markdown` (локальная разработка), [RU](apps/docs/markdown.md) / [EN](apps/docs/en/markdown.md), [контракт](specs/markdown-shortcuts.md). Преобразования при вводе с историей, без Markdown-парсера и конвертации вставки.
+
+Mentions/slash phase 1: локальные `/plugins/mentions`, `/plugins/slash` и необязательное меню `/plugins/suggestions` + `/plugins/suggestions.css`; [RU](apps/docs/suggestions.md) / [EN](apps/docs/en/suggestions.md). Асинхронные провайдеры приложения, отмена, клавиатура, вставка обычного текста без постоянных ID и структурных команд.

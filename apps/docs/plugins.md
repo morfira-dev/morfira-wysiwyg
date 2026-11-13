@@ -63,3 +63,5 @@ commands.paste({ text: 'Название\tЗначение\nЯзык\tTypeScript
 [Статистика текста](/statistics) — отдельный `/plugins/statistics` для графем и слов документа/выделения.
 
 [Markdown shortcuts](/markdown) — необязательный `/plugins/markdown` для преобразований при вводе; загрузка и вставка текста остаются буквальными.
+
+[Упоминания и slash-шаблоны](/suggestions): `/plugins/mentions`, `/plugins/slash`, необязательные `/plugins/suggestions` и `/plugins/suggestions.css`. Первый этап вставляет обычный текст и не сохраняет ID.

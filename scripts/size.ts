@@ -10,7 +10,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte']) {
   const files = (await readdir(path)).filter((file) => /\.(js|css)$/.test(file));
   for (const extension of ['js', 'css']) {
     const entryMap = name === 'plugins' ? JSON.parse(await readFile(`${path}/entries.json`, 'utf8')) as Record<string, string[]> : undefined;
-    const buffers = await Promise.all(files.filter((file) => file.endsWith(`.${extension}`) && (!entryMap || extension !== 'js' || entryMap.tables.includes(file))).map((file) => readFile(`${path}/${file}`)));
+    const buffers = await Promise.all(files.filter((file) => file.endsWith(`.${extension}`) && (!entryMap || (extension === 'js' ? entryMap.tables.includes(file) : file === 'tables.css'))).map((file) => readFile(`${path}/${file}`)));
     if (name === 'svelte' && extension === 'js') {
       const source = await readFile(`${path}/MorfiraEditor.svelte`, 'utf8');
       const compiled = compile(source, { filename: 'MorfiraEditor.svelte', generate: 'client', dev: false });
@@ -22,7 +22,8 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte']) {
   }
   if (name === 'plugins') {
     const entries = JSON.parse(await readFile(`${path}/entries.json`, 'utf8')) as Record<string, string[]>;
-    for (const entry of ['images', 'search', 'statistics', 'markdown']) {
+    const css = await readFile(`${path}/suggestions.css`); report['suggestions.css'] = { raw: css.length, gzip: gzipSync(css).length, brotli: brotliCompressSync(css).length };
+    for (const entry of ['images', 'search', 'statistics', 'markdown', 'mentions', 'slash', 'suggestions']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].raw > 150_000) { console.error(`${entry}: exceeds 150000 byte JS budget`); failed = true; }

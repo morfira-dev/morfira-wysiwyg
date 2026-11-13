@@ -40,6 +40,15 @@
       ],
       "@morfira-dev/wysiwyg-plugins/markdown": [
         "./packages/plugins/src/markdown.ts"
+      ],
+      "@morfira-dev/wysiwyg-plugins/mentions": [
+        "./packages/plugins/src/mentions.ts"
+      ],
+      "@morfira-dev/wysiwyg-plugins/slash": [
+        "./packages/plugins/src/slash.ts"
+      ],
+      "@morfira-dev/wysiwyg-plugins/suggestions": [
+        "./packages/plugins/src/suggestions.ts"
       ]
     }
   },

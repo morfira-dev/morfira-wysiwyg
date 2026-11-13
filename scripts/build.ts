@@ -7,7 +7,7 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
   await mkdir(outdir, { recursive: true });
   const result = await build({
     metafile: true,
-    entryPoints: name === 'plugins' ? ['tables', 'images', 'search', 'statistics', 'markdown'].map((entry) => `packages/plugins/src/${entry}.ts`) : [`packages/${name}/src/${name === 'react' ? 'index.tsx' : 'index.ts'}`],
+    entryPoints: name === 'plugins' ? ['tables', 'images', 'search', 'statistics', 'markdown', 'mentions', 'slash', 'suggestions'].map((entry) => `packages/plugins/src/${entry}.ts`) : [`packages/${name}/src/${name === 'react' ? 'index.tsx' : 'index.ts'}`],
     outdir, bundle: true, splitting: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true,
     sourcemap: true, jsx: 'automatic',
     external: ['@morfira-dev/*', 'vue', 'react', 'react/jsx-runtime'],
@@ -22,16 +22,16 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
   if (['core', 'plugins'].includes(name) && Object.keys(result.metafile!.inputs).some((input) => input.includes('node_modules/'))) throw new Error(`${name}: bundled runtime dependencies are forbidden.`);
   await cp('LICENSE', `${outdir}/LICENSE`);
   if (name === 'core' || name === 'plugins') {
-    const file = name === 'core' ? 'style' : 'tables';
-    await build({ entryPoints: [`packages/${name}/src/${file}.css`], outfile: `${outdir}/${file}.css`, bundle: true, minify: true });
+    for (const file of name === 'core' ? ['style'] : ['tables', 'suggestions']) await build({ entryPoints: [`packages/${name}/src/${file}.css`], outfile: `${outdir}/${file}.css`, bundle: true, minify: true });
   }
 }
 await build({
-  entryPoints: ['index', 'vue', 'react', 'svelte', 'plugins/tables', 'plugins/images', 'plugins/search', 'plugins/statistics', 'plugins/markdown'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
+  entryPoints: ['index', 'vue', 'react', 'svelte', 'plugins/tables', 'plugins/images', 'plugins/search', 'plugins/statistics', 'plugins/markdown', 'plugins/mentions', 'plugins/slash', 'plugins/suggestions'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
   outdir: 'packages/wysiwyg/dist', outbase: 'packages/wysiwyg/src', bundle: true, format: 'esm', external: ['@morfira-dev/*'],
 });
 await mkdir('packages/wysiwyg/dist/plugins', { recursive: true });
 await cp('packages/core/dist/style.css', 'packages/wysiwyg/dist/style.css');
 await cp('packages/plugins/dist/tables.css', 'packages/wysiwyg/dist/plugins/tables.css');
+await cp('packages/plugins/dist/suggestions.css', 'packages/wysiwyg/dist/plugins/suggestions.css');
 
 await cp('LICENSE', 'packages/wysiwyg/dist/LICENSE');

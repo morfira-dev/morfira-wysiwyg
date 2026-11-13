@@ -33,7 +33,20 @@
     "./markdown": {
       "types": "./dist/markdown.d.ts",
       "import": "./dist/markdown.js"
-    }
+    },
+    "./mentions": {
+      "types": "./dist/mentions.d.ts",
+      "import": "./dist/mentions.js"
+    },
+    "./slash": {
+      "types": "./dist/slash.d.ts",
+      "import": "./dist/slash.js"
+    },
+    "./suggestions": {
+      "types": "./dist/suggestions.d.ts",
+      "import": "./dist/suggestions.js"
+    },
+    "./suggestions.css": "./dist/suggestions.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.4.0"

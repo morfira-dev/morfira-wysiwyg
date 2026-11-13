@@ -34,3 +34,5 @@ Image commands use `/plugins/images` and remain outside the core graph. `images.
 `search.js` measures the search entry and its shared chunks independently from images/tables. Its minified JS guardrail is 150000 bytes, matching other optional modules. Native Selection/Range selects results without persistent highlight wrappers.
 
 `markdown.js` is measured independently with its shared chunks under the same 150000-byte minified JS guardrail as other optional modules. Core does not import it.
+
+`mentions.js`, `slash.js`, `suggestions.js` are measured as independent entries including shared chunks. Loading them together loads the shared engine once; summing entry sizes overcounts shared code. Menu CSS (`suggestions.css`) is measured separately from table CSS.

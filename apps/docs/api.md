@@ -78,3 +78,5 @@ const dispose = createToolbar(host, editor, [
 [Markdown shortcuts](/markdown) — необязательный `/plugins/markdown` для преобразований при вводе; загрузка и вставка текста остаются буквальными.
 
 Undo/redo восстанавливает ожидающее оформление у курсора вместе с его позицией. Это внутренняя история: в HTML/JSON дополнительные метаданные не сохраняются. Замена документа и перемещение выделения сбрасывают ожидающее оформление.
+
+[Упоминания и slash-шаблоны](/suggestions): `/plugins/mentions`, `/plugins/slash`, необязательные `/plugins/suggestions` и `/plugins/suggestions.css`. Первый этап вставляет обычный текст и не сохраняет ID.

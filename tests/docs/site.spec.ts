@@ -303,3 +303,52 @@ for (const english of [false, true]) test(`Markdown literal samples, toggle and 
   await expect(panel.getByRole('button', { name: t('Начать с пустого абзаца', 'Start with an empty paragraph'), exact: true })).toBeDisabled();
   await panel.getByLabel(t('Markdown при вводе', 'Markdown while typing'), { exact: true }).check(); await expect(page.locator('.mw-content')).toHaveText('**literal**');
 });
+
+for (const english of [false, true]) test(`mentions and slash snippets support native keyboard, pointer and history on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'empty', english);
+  await page.locator('.lab-suggestions summary').click(); const panel = page.locator('.lab-suggestions');
+  await panel.getByLabel(t('Задержка, мс', 'Delay, ms'), { exact: true }).fill('0');
+  await page.locator('.mw-content').click(); await page.keyboard.type('@an');
+  await expect(page.getByRole('option', { name: /Anna Smith|Анна Смирнова/ })).toBeVisible();
+  await page.keyboard.press('Enter'); await expect(page.locator('.mw-content')).toHaveText(t('@Анна Смирнова', '@Anna Smith'));
+  await page.keyboard.type('works'); await expect(page.locator('.mw-content')).toHaveText(t('@Анна Смирнова works', '@Anna Smith works'));
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content')).toHaveText(t('@Анна Смирнова', '@Anna Smith'));
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content')).toHaveText('@an');
+  await expect(page.getByRole('listbox', { name: t('Люди', 'People'), exact: true })).toBeHidden();
+  await panel.getByRole('button', { name: t('Новый пример /sig', 'New /sig example'), exact: true }).click();
+  await page.getByRole('option', { name: /Signature|Подпись/ }).click();
+  await expect(page.locator('.mw-content')).toHaveText(t('С уважением, команда Morfira', 'Best regards, Morfira team'));
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content')).toHaveText('/sig');
+  await panel.getByRole('button', { name: t('Открыть подсказки', 'Open suggestions'), exact: true }).click();
+  await expect(page.getByRole('listbox', { name: t('Шаблоны', 'Snippets'), exact: true })).toBeVisible();
+  await page.locator('.demo-inspector details').first().locator('summary').click();
+  // Reopen after moving focus to the inspector; take proof with the live popup.
+  await panel.getByRole('button', { name: t('Открыть подсказки', 'Open suggestions'), exact: true }).click();
+  await expect(page.getByRole('option', { name: /Signature|Подпись/ })).toBeVisible();
+  await page.locator('.demo-workspace').screenshot({ path: `artifacts/suggestions-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
+});
+
+for (const english of [false, true]) test(`suggestion empty/error/loading, cancellation and readonly on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible();
+  await page.locator('.lab-suggestions summary').click(); const panel = page.locator('.lab-suggestions');
+  await panel.getByLabel(t('Задержка, мс', 'Delay, ms'), { exact: true }).fill('0');
+  await panel.getByLabel(t('Ответ провайдера', 'Provider response'), { exact: true }).selectOption('error');
+  await panel.getByRole('button', { name: t('Новый пример @an', 'New @an example'), exact: true }).click();
+  await expect(page.getByText(t('Ошибка поиска людей', 'People lookup failed'), { exact: true })).toBeVisible(); await expect(page.locator('.mw-content')).toHaveText('@an');
+  await panel.getByLabel(t('Ответ провайдера', 'Provider response'), { exact: true }).selectOption('empty');
+  await panel.getByRole('button', { name: t('Новый пример @an', 'New @an example'), exact: true }).click();
+  await expect(page.getByText(t('Люди не найдены', 'No people found'), { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await panel.getByLabel(t('Ответ провайдера', 'Provider response'), { exact: true }).selectOption('normal');
+  await panel.getByLabel(t('Задержка, мс', 'Delay, ms'), { exact: true }).fill('1000');
+  await panel.getByRole('button', { name: t('Новый пример @an', 'New @an example'), exact: true }).click();
+  await expect(panel.getByRole('status')).toHaveText(t('Загрузка вариантов…', 'Loading choices…'));
+  await panel.getByRole('button', { name: t('Закрыть подсказки', 'Close suggestions'), exact: true }).click();
+  await expect(panel.getByRole('status')).toHaveText(t('Подсказки закрыты', 'Suggestions closed')); await expect(page.locator('.mw-content')).toHaveText('@an');
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(panel.getByRole('button', { name: t('Открыть подсказки', 'Open suggestions'), exact: true })).toBeDisabled();
+  await expect(page.getByRole('listbox', { name: t('Люди', 'People'), exact: true })).toBeHidden();
+});

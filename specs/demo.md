@@ -23,3 +23,5 @@ Find/replace milestone: `specs/search.md`. Both homepages/playgrounds expose lit
 Statistics milestone: `specs/statistics.md`. Optional document/selection grapheme, non-whitespace and word counts populate the shared status and a bilingual inspector table, without document mutations.
 
 Markdown typing shortcuts: `specs/markdown-shortcuts.md`. Literal bilingual sample plus an optional enable checkbox, a clearly labelled document-reset typing button, trigger cheat sheet and explicit pre-trigger undo/non-parser limitations.
+
+Phase-1 mentions/slash: `specs/mentions-slash.md`. Two local async providers and optional menus on both homepages/playgrounds; native typing and explicit sample/open controls, delay/empty/error paths, plain-text semantics, keyboard/pointer/read-only and cleanup. No network/storage/schema migration.

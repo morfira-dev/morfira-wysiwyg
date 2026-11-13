@@ -19,6 +19,11 @@
     "gzip": 716,
     "brotli": 543
   },
+  "suggestions.css": {
+    "raw": 1196,
+    "gzip": 492,
+    "brotli": 376
+  },
   "images.js": {
     "raw": 7716,
     "gzip": 2841,
@@ -38,6 +43,21 @@
     "raw": 6923,
     "gzip": 2892,
     "brotli": 2625
+  },
+  "mentions.js": {
+    "raw": 10348,
+    "gzip": 4230,
+    "brotli": 3839
+  },
+  "slash.js": {
+    "raw": 10331,
+    "gzip": 4227,
+    "brotli": 3814
+  },
+  "suggestions.js": {
+    "raw": 17328,
+    "gzip": 6654,
+    "brotli": 5975
   },
   "vue.js": {
     "raw": 884,
