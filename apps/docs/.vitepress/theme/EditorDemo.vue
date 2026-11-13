@@ -2,6 +2,8 @@
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useData } from 'vitepress';
 import type { Editor, ToolbarAction } from '@morfira-dev/wysiwyg';
+import type { StatisticsCommands, StatisticsState } from '@morfira-dev/wysiwyg/plugins/statistics';
+import type { SearchCommands, SearchState } from '@morfira-dev/wysiwyg/plugins/search';
 import type { ImageCommands, ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
 import type { TableCommands, TableClipboardData } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/style.css';
@@ -17,6 +19,11 @@ const output = ref(''); const outputFormat = ref<'html' | 'json'>('html');
 const message = ref(''); const failed = ref(false); const count = ref(0); const words = ref(0);
 const undoAvailable = ref(false); const redoAvailable = ref(false); const source = ref('initial');
 const sample = ref('showcase');
+const query = ref('Morfira'); const replacement = ref('Morfira Studio'); const matchCase = ref(false); const wholeWord = ref(false);
+const searchState = ref<SearchState>({ query: '', options: { caseSensitive: false, wholeWord: false }, matches: [], current: -1 });
+const statisticsState = ref<StatisticsState>({ document: { characters: 0, charactersWithoutWhitespace: 0, words: 0 }, selection: { characters: 0, charactersWithoutWhitespace: 0, words: 0 } });
+let statisticsAPI: StatisticsCommands | undefined; let unstatistics: (() => void) | undefined;
+let searchAPI: SearchCommands | undefined; let unsearch: (() => void) | undefined;
 let labRange: Range | undefined; const heading = ref('0'); const list = ref(''); const alignment = ref('left');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
 const cellColor = ref('#eeeaff'); const borderColor = ref('#6658e8'); const widthColumn = ref(1); const widthValue = ref(180);
@@ -42,10 +49,13 @@ const listSample = () => t(
 );
 const stylingSample = () => `<h2>${t('Цвета и ссылки', 'Colors and links')}</h2><p><span style="color: #6658e8">${t('Цветной текст', 'Colored text')}</span> · <span style="background-color: #fff59d">${t('Важная мысль', 'An important thought')}</span> · <a href="https://example.com" target="_blank" title="Example">${t('Редактируемая ссылка', 'Editable link')}</a></p><p>${t('Выдели часть текста или поставь курсор внутри ссылки. Поля справа сохраняют позицию.', 'Select some text or place the caret in a link. The fields on the right preserve your position.')}</p>`;
 const imageSample = () => `<h2>${t('Изображения с подписью', 'Images with captions')}</h2><p>${t('Нажми на изображение и измени размеры, alt или подпись справа.', 'Click the image and edit dimensions, alt text or caption on the right.')}</p><figure><img src="/logo.svg" alt="Morfira" width="160" height="160"><figcaption>${t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption')}</figcaption></figure><p>${t('Здесь можно продолжить текст.', 'Continue writing here.')}</p>`;
-const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + tableSample();
+const statisticsSample = () => `<h2>${t('Unicode и статистика', 'Unicode and statistics')}</h2><p>e<strong>́</strong> · 👨‍👩‍👧‍👦 · 🇷🇺 · ${t('Привет, мир!', 'Hello, world!')}</p><p>${t('Выдели букву с комбинируемым знаком или эмодзи и открой панель статистики: считаются видимые графемы, а не UTF-16 единицы.', 'Select a combining sequence or emoji and open Statistics: the counter measures visible graphemes rather than UTF-16 units.')}</p>`;
+const searchSample = () => `<h2>${t('Поиск и замена', 'Find and replace')}</h2><p><strong>Mor</strong>fira ${t('помогает писать', 'helps you write')}. <em>Morfira</em> ${t('сохраняет стили', 'preserves styles')}.</p><p><a href="https://example.com">MORFIRA</a> · morfira</p><ul><li>Morfira ${t('в списке', 'in a list')}</li></ul><table><tbody><tr><td rowspan="2"><p>Morfira</p></td><td>A</td></tr><tr><td>B</td></tr></tbody></table><figure><img src="/logo.svg" alt="Morfira" width="64"><figcaption>Morfira</figcaption></figure><p>MorfiraPlus — ${t('совпадение только без целого слова', 'a match only with whole word disabled')}.</p>`;
+const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + searchSample() + tableSample();
+const updateStatistics = (state: StatisticsState) => { statisticsState.value = state; count.value = state.document.characters; words.value = state.document.words; };
 const refresh = () => {
   if (!editor) return;
-  const text = editor.getText().trim(); count.value = text.length; words.value = text ? text.split(/\s+/).length : 0;
+  if (!statisticsAPI) { const text = editor.getText().trim(); count.value = text.length; words.value = text ? text.split(/\s+/).length : 0; }
   undoAvailable.value = editor.canUndo(); redoAvailable.value = editor.canRedo();
   const range = window.getSelection()?.rangeCount ? window.getSelection()!.getRangeAt(0) : undefined;
   if (range && editor.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer)) labRange = range.cloneRange();
@@ -81,7 +91,14 @@ const run = (action: (instance: Editor) => void, mutation = true) => {
 };
 const tableRun = (action: (api: TableCommands) => void, mutation = true) => run(() => { if (commands) action(commands); }, mutation);
 const format = (name: string, value: unknown) => run((instance) => instance.format(name, value));
-const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'images' ? imageSample() : sample.value === 'styling' ? stylingSample() : sample.value === 'lists' ? listSample() : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
+const find = () => run(() => { searchAPI?.setQuery(query.value, { caseSensitive: matchCase.value, wholeWord: wholeWord.value }); if (searchAPI?.getState().matches.length) searchAPI.select(0); }, false);
+const replaceMatches = (all: boolean) => {
+  let completed = false; let replaced = 0;
+  run(() => { replaced = all ? searchAPI!.replaceAll(replacement.value) : Number(searchAPI!.replaceCurrent(replacement.value)); completed = true; });
+  if (completed) notify(t(`Заменено: ${replaced}`, `Replaced: ${replaced}`));
+};
+const clearSearch = () => { if (!searchAPI) return; searchAPI.clear(); query.value = ''; notify(''); };
+const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'statistics' ? statisticsSample() : sample.value === 'search' ? searchSample() : sample.value === 'images' ? imageSample() : sample.value === 'styling' ? stylingSample() : sample.value === 'lists' ? listSample() : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
 const insertTable = () => tableRun((api) => api.insert(Number(rows.value), Number(columns.value)));
 const toggleReadOnly = () => { readOnly.value = !readOnly.value; editor?.setReadOnly(readOnly.value); refresh(); };
 const snapshot = (type: 'html' | 'json') => {
@@ -124,14 +141,16 @@ const demoUpload = (_file: File, { signal }: { signal: AbortSignal }): Promise<I
   if (signal.aborted) abort(); else signal.addEventListener('abort', abort, { once: true });
 });
 onMounted(async () => {
-  const [{ createEditor, createToolbar }, { tables, tableCommands }, { images, imageCommands }] = await Promise.all([import('@morfira-dev/wysiwyg'), import('@morfira-dev/wysiwyg/plugins/tables'), import('@morfira-dev/wysiwyg/plugins/images')]);
+  const [{ createEditor, createToolbar }, { tables, tableCommands }, { images, imageCommands }, { search, searchCommands }, { statistics, statisticsCommands }] = await Promise.all([import('@morfira-dev/wysiwyg'), import('@morfira-dev/wysiwyg/plugins/tables'), import('@morfira-dev/wysiwyg/plugins/images'), import('@morfira-dev/wysiwyg/plugins/search'), import('@morfira-dev/wysiwyg/plugins/statistics')]);
   if (cancelled) return;
   editor = createEditor(host.value!, {
-    label: t('Попробуйте Morfira', 'Try Morfira'), plugins: [images({ upload: demoUpload }), tables({ onClipboardError: (error) => notify(error.message, true) })],
+    label: t('Попробуйте Morfira', 'Try Morfira'), plugins: [statistics({ locale: ru.value ? 'ru' : 'en' }), search(), images({ upload: demoUpload }), tables({ onClipboardError: (error) => notify(error.message, true) })],
     value: props.full ? showcase() : article(),
     onChange: (change) => { source.value = change.source; refresh(); },
   });
-  commands = tableCommands(editor); imageAPI = imageCommands(editor);
+  commands = tableCommands(editor); imageAPI = imageCommands(editor); searchAPI = searchCommands(editor);
+  statisticsAPI = statisticsCommands(editor); updateStatistics(statisticsAPI.getState()); unstatistics = statisticsAPI.subscribe(updateStatistics);
+  searchState.value = searchAPI.getState(); unsearch = searchAPI.subscribe((state) => { searchState.value = state; });
   editor.surface.addEventListener('click', imageClick);
   const marks: ToolbarAction[] = [
     { label: t('Отменить', 'Undo'), text: '↶', run: (instance) => instance.undo(), enabled: (instance) => instance.canUndo() },
@@ -154,7 +173,7 @@ onMounted(async () => {
   disposeToolbar = props.full ? createToolbar(toolbar.value!, editor, marks, { label: t('Форматирование', 'Formatting') }) : createToolbar(toolbar.value!, editor);
   unsubscribe = editor.subscribe(refresh); unselect = editor.onSelectionChange(refresh); ready.value = true; refresh();
 });
-onBeforeUnmount(() => { cancelled = true; editor?.surface.removeEventListener('click', imageClick); unsubscribe?.(); unselect?.(); disposeToolbar?.(); editor?.destroy(); });
+onBeforeUnmount(() => { cancelled = true; unstatistics?.(); unsearch?.(); editor?.surface.removeEventListener('click', imageClick); unsubscribe?.(); unselect?.(); disposeToolbar?.(); editor?.destroy(); });
 </script>
 
 <template>
@@ -165,7 +184,7 @@ onBeforeUnmount(() => { cancelled = true; editor?.surface.removeEventListener('c
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <button v-else :disabled="!ready || readOnly" @click="insertTable">{{ t('+ Таблица 3 × 3', '+ Table 3 × 3') }}</button>
@@ -202,6 +221,25 @@ onBeforeUnmount(() => { cancelled = true; editor?.surface.removeEventListener('c
           <div class="lab-fields"><label>{{ t('Фон ячеек', 'Cell background') }}<input v-model="cellColor" type="color" @change="tableRun((api) => api.background(cellColor))"></label><label>{{ t('Границы', 'Cell borders') }}<input v-model="borderColor" type="color" @change="tableRun((api) => api.border(borderColor))"></label><label>{{ t('Номер столбца', 'Column number') }}<input v-model.number="widthColumn" type="number" min="1"></label><label>{{ t('Ширина, px', 'Width, px') }}<input v-model.number="widthValue" type="number" min="40" max="4000"></label></div>
           <button @click="tableRun((api) => api.columnWidth(widthColumn - 1, widthValue))">{{ t('Применить ширину', 'Apply width') }}</button>
         </fieldset></details>
+        <details class="lab-search"><summary>{{ t('Поиск и замена', 'Find and replace') }}</summary><fieldset :disabled="!ready">
+          <label>{{ t('Найти текст', 'Find text') }}<input v-model="query" type="text" maxlength="1000" @keydown.enter.prevent="find"></label>
+          <label class="lab-checkbox"><input v-model="matchCase" type="checkbox">{{ t('Учитывать регистр', 'Match case') }}</label>
+          <label class="lab-checkbox"><input v-model="wholeWord" type="checkbox">{{ t('Целое слово', 'Whole word') }}</label>
+          <button @click="find">{{ t('Найти', 'Find') }}</button>
+          <p class="lab-search-status" role="status" aria-live="polite">{{ searchState.error ? t('Слишком много совпадений: уточните запрос.', 'Too many matches: narrow the query.') : !searchState.query ? t('Введите запрос и нажмите «Найти».', 'Enter a query and press Find.') : !searchState.matches.length ? t('Ничего не найдено.', 'No matches found.') : t(`Совпадение ${searchState.current + 1} из ${searchState.matches.length}`, `Match ${searchState.current + 1} of ${searchState.matches.length}`) }}</p>
+          <div class="lab-button-grid"><button :disabled="!searchState.matches.length" @click="run(() => searchAPI?.previous(), false)">{{ t('Предыдущее совпадение', 'Previous match') }}</button><button :disabled="!searchState.matches.length" @click="run(() => searchAPI?.next(), false)">{{ t('Следующее совпадение', 'Next match') }}</button></div>
+          <label>{{ t('Заменить на', 'Replace with') }}<input v-model="replacement" type="text" maxlength="20000"></label>
+          <div class="lab-button-grid"><button :disabled="readOnly || !searchState.matches.length" @click="replaceMatches(false)">{{ t('Заменить совпадение', 'Replace match') }}</button><button :disabled="readOnly || !searchState.matches.length" @click="replaceMatches(true)">{{ t('Заменить все', 'Replace all') }}</button></div>
+          <button @click="clearSearch">{{ t('Очистить поиск', 'Clear search') }}</button>
+          <p class="lab-hint">{{ t('Буквальный поиск, без регулярных выражений. Совпадения пересекают стили, но не блоки, ячейки, переносы и изображения. Выделяется активное совпадение; поиск доступен в read-only.', 'Literal search without regular expressions. Matches cross inline styles, but not blocks, cells, line breaks or images. The active match is selected; search works in read-only.') }}</p>
+        </fieldset></details>
+        <details class="lab-statistics"><summary>{{ t('Статистика', 'Statistics') }}</summary>
+          <table class="lab-statistics-table"><caption>{{ t('Счётчики текста', 'Text counts') }}</caption><thead><tr><th>{{ t('Метрика', 'Metric') }}</th><th>{{ t('Документ', 'Document') }}</th><th>{{ t('Выделение', 'Selection') }}</th></tr></thead><tbody>
+            <tr><th>{{ t('Символы (графемы)', 'Characters (graphemes)') }}</th><td data-stat="document-characters">{{ statisticsState.document.characters }}</td><td data-stat="selection-characters">{{ statisticsState.selection.characters }}</td></tr>
+            <tr><th>{{ t('Без пробельных', 'Without whitespace') }}</th><td data-stat="document-compact">{{ statisticsState.document.charactersWithoutWhitespace }}</td><td data-stat="selection-compact">{{ statisticsState.selection.charactersWithoutWhitespace }}</td></tr>
+            <tr><th>{{ t('Слова', 'Words') }}</th><td data-stat="document-words">{{ statisticsState.document.words }}</td><td data-stat="selection-words">{{ statisticsState.selection.words }}</td></tr>
+          </tbody></table><p class="lab-hint">{{ t('Считаются графемы Unicode: эмодзи и комбинируемые знаки не распадаются на UTF-16 единицы. Подписи входят в подсчёт, alt и URL — нет. Выделение вне редактора даёт нули. Счётчики не меняют документ и историю.', 'Unicode graphemes keep emoji and combining sequences together. Captions count; alt and URLs do not. Selection outside the editor reports zero. Counters never change the document or history.') }}</p>
+        </details>
         <details><summary>{{ t('Ссылки и изображения', 'Links and images') }}</summary><fieldset :disabled="!ready || readOnly">
           <label>{{ t('Адрес ссылки', 'Link URL') }}<input v-model="url" type="text"></label><label>{{ t('Заголовок ссылки', 'Link title') }}<input v-model="linkTitle" type="text"></label><label>{{ t('Подпись новой ссылки', 'New link text') }}<input v-model="linkText" type="text"></label><label class="lab-checkbox"><input v-model="linkNewTab" type="checkbox">{{ t('В новой вкладке', 'Open in new tab') }}</label><div class="lab-button-grid"><button @click="insertLink">{{ editingLink ? t('Обновить ссылку', 'Update link') : t('Создать ссылку', 'Create link') }}</button><button @click="format('link', false)">{{ t('Убрать ссылку', 'Remove link') }}</button></div>
           <hr><label>{{ t('URL изображения', 'Image URL') }}<input v-model="imageURL" type="text"></label><div class="lab-fields"><label>Alt<input v-model="imageAlt" type="text"></label><label>{{ t('Ширина изображения', 'Image width') }}<input v-model.number="imageWidth" type="number" min="1" max="1000"></label><label>{{ t('Высота изображения', 'Image height') }}<input v-model="imageHeight" type="number" min="1" max="1000"></label></div><label>{{ t('Подпись изображения', 'Image caption') }}<input v-model="imageCaption" type="text" maxlength="5000"></label><button @click="insertImage">{{ t('Вставить изображение', 'Insert image') }}</button><div class="lab-button-grid"><button :disabled="!selectedImage" @click="updateImage">{{ t('Обновить изображение', 'Update image') }}</button><button :disabled="!selectedImage" @click="run(() => imageAPI?.remove())">{{ t('Удалить изображение', 'Remove image') }}</button></div>

@@ -70,3 +70,7 @@ Lists support nesting through `format('indent', 1 | -1)`. `format('clear', true)
 [Colors and links: parameters, caret behavior and limitations](/en/styling).
 
 [Images and upload callbacks](/en/images) use the optional `/plugins/images` module.
+
+[Find and replace](/en/search) uses the optional `/plugins/search` entry; core does not require it.
+
+[Text statistics](/en/statistics) uses `/plugins/statistics` for document/selection grapheme and word counts.

@@ -34,3 +34,5 @@ Lists, keyboard boundaries and toolbar extensions follow `specs/lists-toolbar.md
 Inline color and enhanced link commands follow `specs/colors-links.md`. Invalid link command arguments now throw before mutation, replacing the earlier silent rejection; safe HTML/JSON imports still sanitize through schema v1.
 
 Image commands follow `specs/images.md`. Schema v1 adds figure/figcaption semantics; older readers may flatten those wrappers. Image commands remain an optional module.
+
+Optional literal find/replace follows `specs/search.md`, with no schema change or core dependency on the search entry. Replacements retain document structure and participate in history; search/navigation do not.

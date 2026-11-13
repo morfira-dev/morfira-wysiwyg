@@ -15,7 +15,7 @@ The persisted document format is now `EditorDocument` version 1. The previous pr
 1. Expand real Word/Excel fixtures beyond the implemented HTML/TSV range clipboard, including browser editing boundaries and malformed imported structure.
 2. Broad IME/mobile/touch and screen-reader coverage; keyboard-only resize/menu improvements.
 3. Images: connect application storage through the upload callback, then drag resizing and cropping. Dimensions, captions and an upload form are available in the demo.
-4. More formatting UI, find/replace, mentions and Markdown shortcuts as optional features.
+4. Markdown shortcuts, mentions and additional optional formatting controls. Literal find/replace and Unicode text statistics are implemented in the local preview.
 5. Large-document benchmarks, history memory profiling and expanded composition testing.
 
 Collaboration, track changes, comments, pagination and DOCX/PDF import/export are not implemented. Applications own upload transport through a callback; the demo never uploads files. The native input surface still inherits browser editing behavior. Passing behavioral tests is not a security or accessibility certification.
@@ -23,3 +23,5 @@ Collaboration, track changes, comments, pagination and DOCX/PDF import/export ar
 ## Licensing
 
 Project source is MIT; see the root LICENSE. Core and table runtime have no third-party dependencies. Frameworks/tooling keep their own licenses and notices; development dependencies are not relicensed by the project's MIT grant.
+
+The local preview includes [literal find/replace](/en/search) and [Unicode statistics](/en/statistics), with case/whole-word options, one-step replacement history, document/selection counts and separate optional entry points. Regex search and simultaneous highlighting of all matches are not implemented; statistics require Intl.Segmenter.

@@ -30,3 +30,5 @@ Current guardrails: core JS 200000 bytes, table JS 150000, each adapter 10000. M
 `pnpm run check:project` enforces arrow-function implementations, MIT package metadata and zero core/plugin runtime dependencies. SDD contracts live in `specs/editor.md` and `specs/tables.md`; read `AGENTS.md` before changing them. API/document-format changes need SemVer and bilingual documentation updates.
 
 Image commands use `/plugins/images` and remain outside the core graph. `images.js` measures that entry and its shared chunks separately; `plugins.js` continues to measure the table entry and its shared chunks. Each entry has a 150000-byte minified JS guardrail, matching the existing optional-plugin envelope; shared chunks count in each independently loadable entry.
+
+`search.js` measures the search entry and its shared chunks independently from images/tables. Its minified JS guardrail is 150000 bytes, matching other optional modules. Native Selection/Range selects results without persistent highlight wrappers.

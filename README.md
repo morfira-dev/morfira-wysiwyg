@@ -26,7 +26,7 @@ const editor = createEditor(document.querySelector<HTMLElement>('#editor')!, {
 tableCommands(editor).insert(3, 3);
 ```
 
-Публичные входы: `@morfira-dev/wysiwyg`, `/vue`, `/react`, `/svelte`, `/plugins/tables`, `/plugins/images` (новый локальный модуль). Пакеты опубликованы в npm; внутри репозитория связаны через workspaces. Импорт ядра безопасен без DOM; создание редактора требует браузерного элемента.
+Публичные входы: `@morfira-dev/wysiwyg`, `/vue`, `/react`, `/svelte`, `/plugins/tables`, `/plugins/images`. Пакеты опубликованы в npm; внутри репозитория связаны через workspaces. Импорт ядра безопасен без DOM; создание редактора требует браузерного элемента.
 
 ## Структура
 
@@ -63,3 +63,7 @@ pnpm run test:docs
 [MIT](./LICENSE). У фреймворков и инструментов сохраняются собственные лицензии — см. [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
 
 Изображения: [контракт](specs/images.md), [документация](apps/docs/images.md), [English](apps/docs/en/images.md). Необязательный `/plugins/images` предоставляет команды и отменяемый upload callback; реальное хранилище подключает приложение.
+
+Поиск и замена: необязательный `/plugins/search` (локальная разработка), [RU](apps/docs/search.md) / [EN](apps/docs/en/search.md), [контракт](specs/search.md). Буквальный поиск, регистр, целое слово, текущая/массовая замена с историей.
+
+Статистика: `/plugins/statistics` (локальная разработка), [RU](apps/docs/statistics.md) / [EN](apps/docs/en/statistics.md). Unicode-графемы и слова документа/выделения через платформенный Intl.Segmenter.

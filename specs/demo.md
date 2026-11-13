@@ -17,3 +17,7 @@ Lists/toolbar milestone: `specs/lists-toolbar.md` adds nested-list samples, inde
 Colors/link milestone: `specs/colors-links.md` adds validated text/highlight controls, link metadata editing and a dedicated example to both language homepages and playgrounds.
 
 Images milestone: see `specs/images.md` for bilingual image selection/metadata, captions, cancellable application upload callback and explicit local-only logo simulation.
+
+Find/replace milestone: `specs/search.md`. Both homepages/playgrounds expose literal case/whole-word search across rich inline content, native active selection, current/all replacement, live results, read-only navigation and honest no-regex/no-cross-block limitations.
+
+Statistics milestone: `specs/statistics.md`. Optional document/selection grapheme, non-whitespace and word counts populate the shared status and a bilingual inspector table, without document mutations.

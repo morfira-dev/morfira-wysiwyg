@@ -35,6 +35,14 @@
     "./plugins/images": {
       "types": "./dist/plugins/images.d.ts",
       "import": "./dist/plugins/images.js"
+    },
+    "./plugins/search": {
+      "types": "./dist/plugins/search.d.ts",
+      "import": "./dist/plugins/search.js"
+    },
+    "./plugins/statistics": {
+      "types": "./dist/plugins/statistics.d.ts",
+      "import": "./dist/plugins/statistics.js"
     }
   },
   "dependencies": {

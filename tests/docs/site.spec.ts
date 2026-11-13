@@ -206,3 +206,66 @@ for (const english of [false, true]) test(`image upload cancellation, result and
   await file.setInputFiles({ name: 'bad.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
   await expect(page.getByRole('alert')).toContainText('supported raster image'); await expect(page.locator('.mw-content img')).toHaveCount(0);
 });
+
+for (const english of [false, true]) test(`literal search, replacement forms and one-step undo on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'search', english);
+  await page.locator('.lab-search summary').click();
+  const panel = page.locator('.lab-search');
+  await panel.getByLabel(t('Найти текст', 'Find text'), { exact: true }).fill('Morfira');
+  await panel.getByRole('button', { name: t('Найти', 'Find'), exact: true }).click();
+  await expect(panel.getByRole('status')).toHaveText(t('Совпадение 1 из 8', 'Match 1 of 8'));
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('Morfira');
+  await expect(page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true })).toBeDisabled();
+  await panel.getByRole('button', { name: t('Следующее совпадение', 'Next match'), exact: true }).click();
+  await expect(panel.getByRole('status')).toHaveText(t('Совпадение 2 из 8', 'Match 2 of 8'));
+  await panel.getByRole('button', { name: t('Предыдущее совпадение', 'Previous match'), exact: true }).click();
+  await panel.getByLabel(t('Заменить на', 'Replace with'), { exact: true }).fill('<b>$&</b>');
+  await panel.getByRole('button', { name: t('Заменить совпадение', 'Replace match'), exact: true }).click();
+  await expect(page.locator('.mw-content strong').first()).toHaveText('<b>$&</b>'); await expect(page.locator('.mw-content b')).toHaveCount(0);
+  await expect(panel.getByRole('status')).toContainText(t('из 7', 'of 7'));
+  await panel.getByLabel(t('Заменить на', 'Replace with'), { exact: true }).fill('Atlas');
+  await panel.getByRole('button', { name: t('Заменить все', 'Replace all'), exact: true }).click();
+  await expect(page.getByText(t('Заменено: 7', 'Replaced: 7'), { exact: true })).toBeVisible();
+  await expect(panel.getByRole('status')).toHaveText(t('Ничего не найдено.', 'No matches found.'));
+  await expect(page.locator('.mw-content td[rowspan="2"]')).toHaveText('Atlas'); await expect(page.locator('.mw-content figcaption')).toHaveText('Atlas'); await expect(page.locator('.mw-content img')).toHaveCount(1);
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(panel.getByRole('status')).toContainText(t('из 7', 'of 7'));
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(panel.getByRole('status')).toContainText(t('из 8', 'of 8'));
+  await page.locator('.demo-inspector details').first().locator('summary').click();
+  await page.locator('.lab-statistics summary').click();
+  await panel.getByRole('button', { name: t('Найти', 'Find'), exact: true }).click();
+  await page.locator('.demo-workspace').screenshot({ path: `artifacts/search-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
+});
+
+for (const english of [false, true]) test(`search options, no results and read-only navigation on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'search', english);
+  await page.locator('.lab-search summary').click(); const panel = page.locator('.lab-search');
+  await panel.getByLabel(t('Целое слово', 'Whole word'), { exact: true }).check();
+  await panel.getByRole('button', { name: t('Найти', 'Find'), exact: true }).click(); await expect(panel.getByRole('status')).toHaveText(t('Совпадение 1 из 7', 'Match 1 of 7'));
+  await panel.getByLabel(t('Учитывать регистр', 'Match case'), { exact: true }).check();
+  await panel.getByRole('button', { name: t('Найти', 'Find'), exact: true }).click(); await expect(panel.getByRole('status')).toHaveText(t('Совпадение 1 из 5', 'Match 1 of 5'));
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await panel.getByRole('button', { name: t('Следующее совпадение', 'Next match'), exact: true }).click(); await expect(panel.getByRole('status')).toHaveText(t('Совпадение 2 из 5', 'Match 2 of 5'));
+  await expect(panel.getByRole('button', { name: t('Заменить все', 'Replace all'), exact: true })).toBeDisabled();
+  await panel.getByLabel(t('Найти текст', 'Find text'), { exact: true }).fill('not present');
+  await panel.getByRole('button', { name: t('Найти', 'Find'), exact: true }).click(); await expect(panel.getByRole('status')).toHaveText(t('Ничего не найдено.', 'No matches found.'));
+  await panel.getByRole('button', { name: t('Очистить поиск', 'Clear search'), exact: true }).click(); await expect(panel.getByLabel(t('Найти текст', 'Find text'), { exact: true })).toHaveValue('');
+});
+
+for (const english of [false, true]) test(`Unicode document and selection statistics on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible();
+  await sample(page, 'statistics', english); await expect(page.locator('.mw-content')).toContainText('👨‍👩‍👧‍👦');
+  await page.getByLabel(t('Формат документа', 'Document format'), { exact: true }).selectOption('html');
+  await page.getByLabel(t('Исходник документа', 'Document source'), { exact: true }).fill('<p><strong>e</strong>\u0301 👨‍👩‍👧‍👦 cat</p><p>dog</p><figure><img src="/logo.svg" alt="ignored words"><figcaption>caption</figcaption></figure><p><br></p>');
+  await page.getByRole('button', { name: t('Применить документ', 'Apply document'), exact: true }).click();
+  await page.locator('.lab-statistics summary').click(); const panel = page.locator('.lab-statistics');
+  await expect(panel.locator('[data-stat="document-characters"]')).toHaveText('17'); await expect(panel.locator('[data-stat="document-compact"]')).toHaveText('15'); await expect(panel.locator('[data-stat="document-words"]')).toHaveText('4');
+  await page.locator('.mw-content p').first().evaluate((element) => { const r = document.createRange(); r.selectNodeContents(element); const native = window.getSelection()!; native.removeAllRanges(); native.addRange(r); (element.closest('.mw-content') as HTMLElement).focus(); });
+  await expect(panel.locator('[data-stat="selection-characters"]')).toHaveText('7'); await expect(panel.locator('[data-stat="selection-words"]')).toHaveText('2');
+  await expect(page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true })).toBeDisabled();
+  await page.getByLabel(t('Исходник документа', 'Document source'), { exact: true }).fill('<p>New text</p>');
+  await page.getByRole('button', { name: t('Применить документ', 'Apply document'), exact: true }).click();
+  await expect(panel.locator('[data-stat="document-characters"]')).toHaveText('8'); await expect(panel.locator('[data-stat="document-words"]')).toHaveText('2');
+});

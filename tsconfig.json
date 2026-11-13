@@ -31,6 +31,12 @@
       ],
       "@morfira-dev/wysiwyg-plugins/images": [
         "./packages/plugins/src/images.ts"
+      ],
+      "@morfira-dev/wysiwyg-plugins/search": [
+        "./packages/plugins/src/search.ts"
+      ],
+      "@morfira-dev/wysiwyg-plugins/statistics": [
+        "./packages/plugins/src/statistics.ts"
       ]
     }
   },

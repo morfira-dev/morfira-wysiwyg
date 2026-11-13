@@ -85,3 +85,10 @@
 .lab-color-controls button:hover { border-color: var(--mw-accent); }
 .lab-color-controls span { flex-basis: 100%; font: 12px var(--mw-font); color: var(--mw-muted); }
 .demo-shell .lab-checkbox { flex-direction: row; align-items: center; gap: 8px; }
+
+.lab-search-status { font: 12px/1.5 var(--mw-font); color: var(--mw-muted); margin: 10px 0; overflow-wrap: anywhere; }
+
+.demo-inspector .lab-statistics-table { width: 100%; border-collapse: collapse; font: 12px/1.5 var(--mw-font); margin: 0; display: table; }
+.lab-statistics-table caption { text-align: left; color: var(--mw-muted); margin-bottom: 8px; }
+.lab-statistics-table th, .lab-statistics-table td { padding: 6px 3px; border-bottom: 1px solid var(--mw-border); text-align: left; overflow-wrap: anywhere; }
+.lab-statistics-table th { font-weight: 500; }

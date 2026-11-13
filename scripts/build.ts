@@ -7,7 +7,7 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
   await mkdir(outdir, { recursive: true });
   const result = await build({
     metafile: true,
-    entryPoints: name === 'plugins' ? ['tables', 'images'].map((entry) => `packages/plugins/src/${entry}.ts`) : [`packages/${name}/src/${name === 'react' ? 'index.tsx' : 'index.ts'}`],
+    entryPoints: name === 'plugins' ? ['tables', 'images', 'search', 'statistics'].map((entry) => `packages/plugins/src/${entry}.ts`) : [`packages/${name}/src/${name === 'react' ? 'index.tsx' : 'index.ts'}`],
     outdir, bundle: true, splitting: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true,
     sourcemap: true, jsx: 'automatic',
     external: ['@morfira-dev/*', 'vue', 'react', 'react/jsx-runtime'],
@@ -27,7 +27,7 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
   }
 }
 await build({
-  entryPoints: ['index', 'vue', 'react', 'svelte', 'plugins/tables', 'plugins/images'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
+  entryPoints: ['index', 'vue', 'react', 'svelte', 'plugins/tables', 'plugins/images', 'plugins/search', 'plugins/statistics'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
   outdir: 'packages/wysiwyg/dist', outbase: 'packages/wysiwyg/src', bundle: true, format: 'esm', external: ['@morfira-dev/*'],
 });
 await mkdir('packages/wysiwyg/dist/plugins', { recursive: true });

@@ -1,0 +1,23 @@
+# Optional Unicode text statistics
+
+Status: implemented locally; 36 statistics browser checks pass within the 405-test editor/module suite, plus 23 bilingual site tests. Original strict TypeScript, MIT, zero runtime dependencies. Public `/plugins/statistics` entry exports `statistics(options?: StatisticsOptions)` and `statisticsCommands(editor)`. Core never imports the module; schema v1 is unchanged.
+
+## API and counting
+
+`StatisticsOptions { locale?: string }`; `TextStatistics { characters: number; charactersWithoutWhitespace: number; words: number }`; `StatisticsState { document: TextStatistics; selection: TextStatistics }`; `StatisticsCommands { getState(): StatisticsState; subscribe(listener: (state: StatisticsState) => void): () => void }`.
+
+Characters are Unicode extended grapheme clusters using platform Intl.Segmenter with granularity grapheme. A family emoji, flag, or letter plus combining marks is one character even across inline text nodes. CharactersWithoutWhitespace excludes a grapheme only if its whole contents are Unicode whitespace (`\s`); whitespace mixed with a visible mark is retained. Words use Intl.Segmenter granularity word and isWordLike. Some tested engines misclassify a decomposed word followed by more text as non-word-like while recognizing the same segment independently. For a false segment containing a Unicode letter/number, recheck the unmodified segment independently via the same platform word segmenter; count once only if that isolated segment contains a word-like part. Do not normalize document text or split grapheme counts. Classification remains platform WordLike: numeric keycap sequences can count as numeric tokens, while pictographic family/flag emoji are not words. Locale defaults to runtime locale; provided locale must be a valid single language tag. Intl.Segmenter is required: there is no inaccurate code-unit fallback or bundled polyfill. Import/factory evaluation does not access DOM and validates locale/platform before plugin installation.
+
+Count actual text nodes, including their real whitespace. Inline styles/links do not split words/graphemes. Block boundaries (paragraphs, headings, list items/nested lists, table cells, captions, pre/blockquote), br/img/hr split runs without contributing synthetic characters. Caption text is included; image alt/title/src and HTML attributes are excluded. Foreign/executable nodes are omitted. Words cannot join across separate cells, paragraphs or images. Semantic runs are collected once and segmented independently. Counts are not reading-time estimates and do not promise locale-independent linguistic correctness or parity with office products.
+
+Document metrics cover the editor surface only. Selection metrics cover the actual native Range only when both boundaries belong to this surface and it is noncollapsed; otherwise zero. Cloned partial rich ranges preserve semantic barriers. Selecting an image alone contributes zero. Half-grapheme user selections count the actually selected string; the plugin does not alter/snap selection boundaries.
+
+## Updates and lifecycle
+
+getState calculates current metrics and returns independent snapshots. subscribe is not immediate; query getState for initial values. Notify after document/user/external changes and selection changes, only when metric values changed. Notifications receive independent snapshots and iterate a listener snapshot so unsubscribe/reentrancy does not corrupt iteration. Read-only remains readable. Never mutate content, focus, selection, history, or adapter values. Reusing a factory result in multiple instances keeps state/subscriptions independent. Dispose editor subscriptions; disposed APIs throw and existing unsubscribe functions remain idempotent. No timers, DOM wrappers or observers.
+
+## Acceptance
+
+Browser cases in Chromium/Firefox/WebKit: split inline words/graphemes, family emoji/flags/combining marks; real whitespace versus synthetic block/br/img boundaries; list/caption/merged-cell text without alt/attributes; partial selection across marks/blocks, collapsed/outside/image selection; input/undo/redo/external replacement/read-only; independent copied states/subscriptions/instances, disposal/reuse; invalid locale and SSR-safe import/factory. Parent integrates public entries, independent bundle measurement, live bilingual demo and docs. Full project/docs checks run by parent; no Git operations in this milestone without user request.
+
+Independent statistics entry size includes shared chunks and uses the existing optional-module 150000-byte minified JS envelope. Parent demo status/inspector use its document and selection counts in both languages.

@@ -24,6 +24,16 @@
     "gzip": 2841,
     "brotli": 2526
   },
+  "search.js": {
+    "raw": 7369,
+    "gzip": 3145,
+    "brotli": 2804
+  },
+  "statistics.js": {
+    "raw": 2750,
+    "gzip": 1293,
+    "brotli": 1135
+  },
   "vue.js": {
     "raw": 884,
     "gzip": 528,
