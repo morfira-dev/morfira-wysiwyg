@@ -14,3 +14,4 @@ release-plan.json
 *.tgz
 .env
 .env.*
+.npmrc
