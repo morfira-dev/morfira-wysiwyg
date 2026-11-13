@@ -1,0 +1,11 @@
+packages:
+  - packages/*
+  - apps/*
+
+linkWorkspacePackages: true
+saveExact: true
+
+allowBuilds:
+  esbuild: true
+overrides:
+  vitepress>vite: ^6.4.4

@@ -1,0 +1,102 @@
+import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+const sample = async (page: Page, value: string, english = false) => {
+  await page.getByLabel(english ? 'Document sample' : 'Пример документа', { exact: true }).selectOption(value);
+  await page.getByRole('button', { name: english ? 'Load sample' : 'Загрузить пример', exact: true }).click();
+};
+const replaceHTML = async (page: Page, value: string) => {
+  await page.getByLabel('Формат документа', { exact: true }).selectOption('html');
+  await page.getByLabel('Исходник документа', { exact: true }).fill(value);
+  await page.getByRole('button', { name: 'Применить документ', exact: true }).click();
+};
+
+test('homepage exposes the complete laboratory, tables, theme and HTML/JSON', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.locator('h1')).toContainText('Morfira WYSIWYG');
+  await expect(page.getByRole('textbox', { name: 'Попробуйте Morfira', exact: true })).toBeVisible();
+  await expect(page.getByText('Буфер диапазона · HTML / TSV', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Верхний индекс', exact: true })).toBeVisible();
+  await sample(page, 'empty');
+  await page.getByRole('button', { name: 'Вставить таблицу', exact: true }).click();
+  await expect(page.locator('.mw-content td')).toHaveCount(9);
+  await page.getByRole('button', { name: 'Сменить тему', exact: true }).click();
+  await expect(page.locator('.demo-shell')).toHaveClass(/dark-demo/);
+  await page.getByRole('button', { name: 'HTML', exact: true }).click();
+  await expect(page.getByLabel('Исходник документа', { exact: true })).toHaveValue(/<table/);
+  await page.getByRole('button', { name: 'JSON', exact: true }).click();
+  await expect(page.getByLabel('Исходник документа', { exact: true })).toHaveValue(/"version": 1/);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: 'artifacts/docs-preview.png', fullPage: true });
+  expect(errors).toEqual([]);
+});
+
+test('full demo formats text, changes blocks and inserts a checked link and local image', async ({ page }) => {
+  await page.goto('/playground'); await replaceHTML(page, '<p>Hello world</p>');
+  const content = page.getByRole('textbox', { name: 'Попробуйте Morfira', exact: true });
+  await content.focus();
+  await content.evaluate((element) => {
+    const range = document.createRange(); const text = element.querySelector('p')!.firstChild!;
+    range.setStart(text, 0); range.setEnd(text, 5);
+    const selection = window.getSelection()!; selection.removeAllRanges(); selection.addRange(range);
+  });
+  await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe('Hello');
+  await page.getByRole('button', { name: 'Полужирный', exact: true }).click(); await expect(page.locator('.mw-content strong')).toHaveText('Hello');
+  await page.getByLabel('Формат блока', { exact: true }).selectOption('3'); await expect(page.locator('.mw-content h3')).toHaveText('Hello world');
+  await content.focus();
+  await content.evaluate((element) => {
+    const range = document.createRange(); const text = element.querySelector('h3 strong')!.firstChild!;
+    range.setStart(text, 0); range.setEnd(text, 5);
+    const selection = window.getSelection()!; selection.removeAllRanges(); selection.addRange(range);
+  });
+  await page.getByText('Ссылки и изображения', { exact: true }).click();
+  await page.getByLabel('Адрес ссылки', { exact: true }).fill('https://example.com/article');
+  await page.getByRole('button', { name: 'Создать ссылку', exact: true }).click();
+  await expect(page.locator('.mw-content a')).toHaveAttribute('href', 'https://example.com/article');
+  await page.getByRole('button', { name: 'Вставить изображение', exact: true }).click();
+  await expect(page.locator('.mw-content img')).toHaveAttribute('src', '/logo.svg');
+});
+
+test('table controls preserve a range while using forms, merge/split and paste TSV', async ({ page }) => {
+  await page.goto('/playground'); await sample(page, 'empty');
+  await page.getByRole('button', { name: 'Вставить таблицу', exact: true }).click();
+  await page.locator('.mw-content td').first().click();
+  await page.getByRole('button', { name: 'Выделить диапазон', exact: true }).click();
+  await expect(page.locator('.mw-content [data-mw-selected]')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Объединить', exact: true }).click();
+  await expect(page.locator('.mw-content td[colspan="2"]')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Разделить', exact: true }).click();
+  await expect(page.locator('.mw-content td')).toHaveCount(9);
+  await page.getByLabel('До строки', { exact: true }).fill('2');
+  await page.getByRole('button', { name: 'Выделить диапазон', exact: true }).click();
+  await page.getByLabel('Содержимое буфера', { exact: true }).fill('One\tTwo\nThree\tFour');
+  await page.getByRole('button', { name: 'Вставить диапазон', exact: true }).click();
+  await expect(page.locator('.mw-content td').first()).toHaveText('One');
+  await expect(page.locator('.mw-content tr').nth(1).locator('td').nth(1)).toHaveText('Four');
+});
+
+test('invalid JSON is rejected visibly without altering the editor', async ({ page }) => {
+  await page.goto('/playground'); const before = await page.locator('.mw-content').innerHTML();
+  await page.getByLabel('Формат документа', { exact: true }).selectOption('json');
+  await page.getByLabel('Исходник документа', { exact: true }).fill('{"version":99,"children":[]}');
+  await page.getByRole('button', { name: 'Применить документ', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible(); expect(await page.locator('.mw-content').innerHTML()).toBe(before);
+});
+
+test('English homepage and lab localize controls and support readonly', async ({ page }) => {
+  await page.goto('/en/'); await expect(page.getByText('Try everything that works today.', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Buffer contents', { exact: true })).toBeVisible();
+  await page.goto('/en/guide'); await expect(page.getByRole('heading', { name: /^Getting started/ })).toBeVisible();
+  await page.goto('/en/playground'); await page.getByRole('button', { name: 'Read only', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Try Morfira', exact: true })).toHaveAttribute('contenteditable', 'false');
+  await expect(page.getByRole('button', { name: 'Insert table', exact: true })).toBeDisabled();
+});
+
+for (const route of ['/', '/playground', '/en/']) {
+  test(`mobile full laboratory has no horizontal page overflow: ${route}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); await page.goto(route);
+    await expect(page.locator('.mw-content')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}

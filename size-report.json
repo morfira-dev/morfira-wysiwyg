@@ -1,0 +1,37 @@
+{
+  "core.js": {
+    "raw": 18416,
+    "gzip": 6868,
+    "brotli": 6208
+  },
+  "core.css": {
+    "raw": 2668,
+    "gzip": 995,
+    "brotli": 811
+  },
+  "plugins.js": {
+    "raw": 18411,
+    "gzip": 6521,
+    "brotli": 5859
+  },
+  "plugins.css": {
+    "raw": 1813,
+    "gzip": 716,
+    "brotli": 543
+  },
+  "vue.js": {
+    "raw": 880,
+    "gzip": 525,
+    "brotli": 456
+  },
+  "react.js": {
+    "raw": 796,
+    "gzip": 463,
+    "brotli": 411
+  },
+  "svelte.js": {
+    "raw": 914,
+    "gzip": 595,
+    "brotli": 506
+  }
+}

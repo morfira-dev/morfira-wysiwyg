@@ -1,0 +1,16 @@
+node_modules/
+dist/
+dist-demo/
+test-results/
+playwright-report/
+*.local
+.DS_Store
+.vitepress/cache/
+.vitepress/dist/
+artifacts/
+.idea/
+.svelte-kit/
+release-plan.json
+*.tgz
+.env
+.env.*

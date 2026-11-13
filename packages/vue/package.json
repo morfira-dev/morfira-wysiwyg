@@ -1,0 +1,39 @@
+{
+  "name": "@morfira/wysiwyg-vue",
+  "version": "0.2.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@morfira/wysiwyg-core": "^0.2.0",
+    "vue": "^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morfira-dev/morfira-wysiwyg.git",
+    "directory": "packages/vue"
+  },
+  "homepage": "https://github.com/morfira-dev/morfira-wysiwyg#readme",
+  "bugs": {
+    "url": "https://github.com/morfira-dev/morfira-wysiwyg/issues"
+  }
+}

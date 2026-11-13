@@ -1,0 +1,34 @@
+{
+  "name": "@morfira/wysiwyg-plugins",
+  "version": "0.2.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "exports": {
+    "./tables": {
+      "types": "./dist/tables.d.ts",
+      "import": "./dist/tables.js"
+    },
+    "./tables.css": "./dist/tables.css"
+  },
+  "peerDependencies": {
+    "@morfira/wysiwyg-core": "^0.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morfira-dev/morfira-wysiwyg.git",
+    "directory": "packages/plugins"
+  },
+  "homepage": "https://github.com/morfira-dev/morfira-wysiwyg#readme",
+  "bugs": {
+    "url": "https://github.com/morfira-dev/morfira-wysiwyg/issues"
+  }
+}

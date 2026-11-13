@@ -1,0 +1,44 @@
+{
+  "name": "@morfira/wysiwyg-svelte",
+  "version": "0.2.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "svelte": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@morfira/wysiwyg-core": "^0.2.0",
+    "svelte": "^5.0.0"
+  },
+  "svelte": "./dist/index.js",
+  "scripts": {
+    "build": "svelte-package -i src -o dist"
+  },
+  "peerDependenciesMeta": {
+    "svelte": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morfira-dev/morfira-wysiwyg.git",
+    "directory": "packages/svelte"
+  },
+  "homepage": "https://github.com/morfira-dev/morfira-wysiwyg#readme",
+  "bugs": {
+    "url": "https://github.com/morfira-dev/morfira-wysiwyg/issues"
+  }
+}

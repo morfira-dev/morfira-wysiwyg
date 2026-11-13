@@ -1,0 +1,71 @@
+{
+  "name": "@morfira/wysiwyg",
+  "version": "0.2.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vue": {
+      "types": "./dist/vue.d.ts",
+      "import": "./dist/vue.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./svelte": {
+      "types": "./dist/svelte.d.ts",
+      "import": "./dist/svelte.js"
+    },
+    "./plugins/tables": {
+      "types": "./dist/plugins/tables.d.ts",
+      "import": "./dist/plugins/tables.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./plugins/tables.css": "./dist/plugins/tables.css"
+  },
+  "dependencies": {
+    "@morfira/wysiwyg-core": "^0.2.0",
+    "@morfira/wysiwyg-plugins": "^0.2.0",
+    "@morfira/wysiwyg-vue": "^0.2.0",
+    "@morfira/wysiwyg-react": "^0.2.0",
+    "@morfira/wysiwyg-svelte": "^0.2.0"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "svelte": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "svelte": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morfira-dev/morfira-wysiwyg.git",
+    "directory": "packages/wysiwyg"
+  },
+  "homepage": "https://github.com/morfira-dev/morfira-wysiwyg#readme",
+  "bugs": {
+    "url": "https://github.com/morfira-dev/morfira-wysiwyg/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
