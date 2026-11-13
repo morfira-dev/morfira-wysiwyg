@@ -35,5 +35,6 @@
   "homepage": "https://github.com/morfira-dev/morfira-wysiwyg#readme",
   "bugs": {
     "url": "https://github.com/morfira-dev/morfira-wysiwyg/issues"
-  }
+  },
+  "description": "Vue adapter for the Morfira TypeScript rich text editor."
 }

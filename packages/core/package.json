@@ -27,5 +27,6 @@
   "homepage": "https://github.com/morfira-dev/morfira-wysiwyg#readme",
   "bugs": {
     "url": "https://github.com/morfira-dev/morfira-wysiwyg/issues"
-  }
+  },
+  "description": "Lightweight TypeScript rich text editor with a versioned document schema."
 }

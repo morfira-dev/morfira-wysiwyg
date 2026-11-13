@@ -19,3 +19,9 @@ Use pnpm 11.0.7, matching morfira-ui, with `pnpm-workspace.yaml` and a committed
 ## npm scope correction
 
 The user corrected the npm organization to `@morfira-dev` before publication. Rename all six library packages and their internal dependency/peer ranges, workspace consumers, build externals, tests and bilingual examples to this scope. The public facade is `@morfira-dev/wysiwyg` with the same `/vue`, `/react`, `/svelte`, `/plugins/tables` and CSS subpaths. No packages have been published under the previous scope; no compatibility aliases are required. GitHub owner/repository and OIDC workflow identity remain `morfira-dev/morfira-wysiwyg` and `release.yml`. Acceptance: frozen pnpm install, builds/exports/declarations, all browser and docs tests, and release planning must resolve only the corrected scope.
+
+## OIDC runtime and interrupted first release
+
+Publish jobs explicitly install npm CLI 11.21.2 (Node 22 already meets its engine requirement). pnpm remains the workspace manager. Before semantic-release can create tags, the live entry point must reject npm below 11.5.1 or missing GitHub OIDC request URL/token; dry-run planning remains credential-free. Test the minimum supported npm version, older/malformed versions and missing OIDC permissions.
+
+The initial failed publication left core and Vue 1.0.0 tags but no corresponding npm versions. Preserve these tags and published 0.2.0 packages. Correct the public package descriptions in both manifests in the recovery fix so semantic-release produces patch versions for those packages, with coordinated internal dependencies; other packages keep their normal independent release calculation. Do not delete tags or unpublish packages. Verify all six registry versions after the recovery workflow.

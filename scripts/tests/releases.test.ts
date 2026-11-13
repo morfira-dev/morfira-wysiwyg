@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { releasePackages } from '../release.js';
+import { assertPublishRuntime, releasePackages } from '../release.js';
 
 const fixture = async (message: string, file: string) => {
   const directory = await mkdtemp(join(tmpdir(), 'morfira-release-'));
@@ -47,3 +47,11 @@ for (const scenario of [
     } finally { await rm(directory, { recursive: true, force: true }); }
   });
 }
+
+test('publication fails before creating tags when npm cannot use OIDC or permissions are missing', () => {
+  const oidc = { ACTIONS_ID_TOKEN_REQUEST_URL: 'https://example.invalid/oidc', ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'fixture' };
+  for (const version of ['10.9.9', '11.4.9', '11.5.0', 'invalid']) assert.throws(() => assertPublishRuntime(version, oidc), /npm|version/);
+  for (const version of ['11.5.1', '11.21.2', '12.0.0']) assert.doesNotThrow(() => assertPublishRuntime(version, oidc));
+  assert.throws(() => assertPublishRuntime('11.21.2', {}), /id-token: write/);
+  assert.throws(() => assertPublishRuntime('11.21.2', { ACTIONS_ID_TOKEN_REQUEST_URL: oidc.ACTIONS_ID_TOKEN_REQUEST_URL }), /id-token: write/);
+});
