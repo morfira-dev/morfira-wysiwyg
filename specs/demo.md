@@ -15,3 +15,5 @@ Acceptance: format selected text, change blocks, insert checked link/image, perf
 Lists/toolbar milestone: `specs/lists-toolbar.md` adds nested-list samples, indent/outdent, clear inline formatting, mixed states and localized keyboard-accessible toolbar controls to both homepages and playgrounds.
 
 Colors/link milestone: `specs/colors-links.md` adds validated text/highlight controls, link metadata editing and a dedicated example to both language homepages and playgrounds.
+
+Images milestone: see `specs/images.md` for bilingual image selection/metadata, captions, cancellable application upload callback and explicit local-only logo simulation.

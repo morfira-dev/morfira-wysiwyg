@@ -17,7 +17,11 @@
       "types": "./dist/tables.d.ts",
       "import": "./dist/tables.js"
     },
-    "./tables.css": "./dist/tables.css"
+    "./tables.css": "./dist/tables.css",
+    "./images": {
+      "types": "./dist/images.d.ts",
+      "import": "./dist/images.js"
+    }
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.2.0"

@@ -55,3 +55,5 @@ commands.paste({ text: 'Name\tValue\nLanguage\tTypeScript' });
 ```
 
 Malformed quoting, nested/multiple source tables, over-limit ranges and selection mismatches leave the document unchanged. Browser failures appear in an accessible status message; `onClipboardError` can also report them to the application. API calls throw validation errors. Browser fixtures cover these formats; arbitrary Word/Excel clipboard fidelity is not certified.
+
+[Images and upload callbacks](/en/images) use the optional `/plugins/images` module.

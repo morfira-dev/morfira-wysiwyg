@@ -2,6 +2,7 @@
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useData } from 'vitepress';
 import type { Editor, ToolbarAction } from '@morfira-dev/wysiwyg';
+import type { ImageCommands, ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
 import type { TableCommands, TableClipboardData } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
@@ -20,7 +21,8 @@ let labRange: Range | undefined; const heading = ref('0'); const list = ref('');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
 const cellColor = ref('#eeeaff'); const borderColor = ref('#6658e8'); const widthColumn = ref(1); const widthValue = ref(180);
 const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛицензия\tMIT'); const bufferFormat = ref<'text' | 'html'>('text');
-const url = ref('https://example.com'); const imageURL = ref('/logo.svg'); const imageAlt = ref('Morfira'); const imageWidth = ref(64);
+const url = ref('https://example.com'); const imageURL = ref('/logo.svg'); const imageAlt = ref('Morfira'); const imageWidth = ref<number | string>(64); const imageHeight = ref<number | string>(''); const imageCaption = ref('');
+const selectedImage = ref(false); const uploading = ref(false); let imageAPI: ImageCommands | undefined; let inspectedImage = '';
 const accent = ref('#6658e8'); const fontSize = ref(16); const padding = ref(28); const radius = ref(12);
 const themeStyle = computed(() => ({ '--mw-accent': accent.value, '--mw-font-size': `${fontSize.value}px`, '--mw-padding': `${padding.value}px`, '--mw-radius': `${radius.value}px` }));
 const textColor = ref('#6658e8'); const highlight = ref('#fff59d'); const activeStyles = ref('');
@@ -39,13 +41,21 @@ const listSample = () => t(
   '<h2>Lists that follow your lead</h2><p>Enter splits an item; an empty item exits the list. Tab and Shift+Tab change nesting outside tables; Backspace at the start joins items.</p><ul><li>Prepare the material<ol><li>Collect links</li><li><strong>Check the facts</strong></li></ol></li><li>Write a draft</li><li>Publish</li></ul><p>Select several items and try numbering or the indentation buttons.</p>',
 );
 const stylingSample = () => `<h2>${t('Цвета и ссылки', 'Colors and links')}</h2><p><span style="color: #6658e8">${t('Цветной текст', 'Colored text')}</span> · <span style="background-color: #fff59d">${t('Важная мысль', 'An important thought')}</span> · <a href="https://example.com" target="_blank" title="Example">${t('Редактируемая ссылка', 'Editable link')}</a></p><p>${t('Выдели часть текста или поставь курсор внутри ссылки. Поля справа сохраняют позицию.', 'Select some text or place the caret in a link. The fields on the right preserve your position.')}</p>`;
-const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + tableSample();
+const imageSample = () => `<h2>${t('Изображения с подписью', 'Images with captions')}</h2><p>${t('Нажми на изображение и измени размеры, alt или подпись справа.', 'Click the image and edit dimensions, alt text or caption on the right.')}</p><figure><img src="/logo.svg" alt="Morfira" width="160" height="160"><figcaption>${t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption')}</figcaption></figure><p>${t('Здесь можно продолжить текст.', 'Continue writing here.')}</p>`;
+const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + tableSample();
 const refresh = () => {
   if (!editor) return;
   const text = editor.getText().trim(); count.value = text.length; words.value = text ? text.split(/\s+/).length : 0;
   undoAvailable.value = editor.canUndo(); redoAvailable.value = editor.canRedo();
   const range = window.getSelection()?.rangeCount ? window.getSelection()!.getRangeAt(0) : undefined;
   if (range && editor.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer)) labRange = range.cloneRange();
+  uploading.value = imageAPI?.isUploading() ?? false;
+  if (range && editor.surface.contains(range.startContainer)) {
+    const image = imageAPI?.getSelected(); selectedImage.value = Boolean(image);
+    const signature = image ? JSON.stringify(image) : '';
+    if (image && signature !== inspectedImage) { imageURL.value = image.src; imageAlt.value = image.alt ?? ''; imageWidth.value = image.width ?? ''; imageHeight.value = image.height ?? ''; imageCaption.value = image.caption ?? ''; }
+    inspectedImage = signature;
+  }
   const formats = editor.getFormats(); const mixed = formats.mixed as string[] | undefined;
   heading.value = mixed?.includes('header') ? 'mixed' : String(formats.header ?? 0);
   list.value = mixed?.includes('list') ? 'mixed' : String(formats.list || '');
@@ -59,6 +69,7 @@ const refresh = () => {
   }
   alignment.value = mixed?.includes('align') ? 'mixed' : String(formats.align ?? 'left');
 };
+const imageClick = (event: MouseEvent) => { if (event.target instanceof HTMLImageElement) refresh(); };
 const notify = (text: string, error = false) => { message.value = text; failed.value = error; };
 const run = (action: (instance: Editor) => void, mutation = true) => {
   if (!editor || (mutation && readOnly.value)) return;
@@ -70,7 +81,7 @@ const run = (action: (instance: Editor) => void, mutation = true) => {
 };
 const tableRun = (action: (api: TableCommands) => void, mutation = true) => run(() => { if (commands) action(commands); }, mutation);
 const format = (name: string, value: unknown) => run((instance) => instance.format(name, value));
-const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'styling' ? stylingSample() : sample.value === 'lists' ? listSample() : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
+const loadSample = () => run((instance) => { instance.setHTML(sample.value === 'empty' ? '<p><br></p>' : sample.value === 'images' ? imageSample() : sample.value === 'styling' ? stylingSample() : sample.value === 'lists' ? listSample() : sample.value === 'tables' ? tableSample() : sample.value === 'article' ? article() : showcase()); output.value = ''; });
 const insertTable = () => tableRun((api) => api.insert(Number(rows.value), Number(columns.value)));
 const toggleReadOnly = () => { readOnly.value = !readOnly.value; editor?.setReadOnly(readOnly.value); refresh(); };
 const snapshot = (type: 'html' | 'json') => {
@@ -97,20 +108,31 @@ const insertLink = () => run((instance) => {
   if (create && !linkText.value) throw new Error(t('Укажите подпись новой ссылки или выделите текст.', 'Enter new link text or select text.'));
   instance.format('link', { href: url.value, title: linkTitle.value, target: linkNewTab.value ? '_blank' : '_self', ...(create ? { text: linkText.value } : {}) });
 });
-const insertImage = () => run((instance) => {
-  const image = document.createElement('img'); image.setAttribute('src', imageURL.value); image.setAttribute('alt', imageAlt.value);
-  if (Number.isInteger(Number(imageWidth.value)) && Number(imageWidth.value) > 0) image.setAttribute('width', String(imageWidth.value));
-  instance.insertHTML(image.outerHTML);
+const imageValue = (): ImageValue => ({ src: imageURL.value, alt: imageAlt.value, caption: imageCaption.value, ...(imageWidth.value !== '' ? { width: Number(imageWidth.value) } : {}), ...(imageHeight.value !== '' ? { height: Number(imageHeight.value) } : {}) });
+const insertImage = () => run(() => imageAPI?.insert(imageValue()));
+const updateImage = () => run(() => imageAPI?.update({ ...imageValue(), width: imageWidth.value === '' ? null : Number(imageWidth.value), height: imageHeight.value === '' ? null : Number(imageHeight.value) }));
+const uploadImage = (event: Event) => {
+  const input = event.target as HTMLInputElement; const file = input.files?.[0]; if (!file) return;
+  run(() => {
+    const operation = imageAPI!.upload(file); uploading.value = imageAPI!.isUploading();
+    void operation.then((inserted) => { if (!cancelled) notify(inserted ? t('Демо-изображение вставлено. Файл не отправлялся.', 'Demo image inserted. The file was not uploaded.') : t('Загрузка отменена.', 'Upload cancelled.')); }).catch((error: unknown) => { if (!cancelled) notify(String(error), true); }).finally(() => { uploading.value = false; input.value = ''; });
+  });
+};
+const demoUpload = (_file: File, { signal }: { signal: AbortSignal }): Promise<ImageValue> => new Promise((resolve, reject) => {
+  const abort = () => { window.clearTimeout(timer); signal.removeEventListener('abort', abort); reject(new DOMException('Cancelled', 'AbortError')); };
+  const timer = window.setTimeout(() => { signal.removeEventListener('abort', abort); resolve({ src: '/logo.svg', alt: 'Morfira demo', width: 160, height: 160, caption: t('Демо результата callback загрузки', 'Demo upload callback result') }); }, 1200);
+  if (signal.aborted) abort(); else signal.addEventListener('abort', abort, { once: true });
 });
 onMounted(async () => {
-  const [{ createEditor, createToolbar }, { tables, tableCommands }] = await Promise.all([import('@morfira-dev/wysiwyg'), import('@morfira-dev/wysiwyg/plugins/tables')]);
+  const [{ createEditor, createToolbar }, { tables, tableCommands }, { images, imageCommands }] = await Promise.all([import('@morfira-dev/wysiwyg'), import('@morfira-dev/wysiwyg/plugins/tables'), import('@morfira-dev/wysiwyg/plugins/images')]);
   if (cancelled) return;
   editor = createEditor(host.value!, {
-    label: t('Попробуйте Morfira', 'Try Morfira'), plugins: [tables({ onClipboardError: (error) => notify(error.message, true) })],
+    label: t('Попробуйте Morfira', 'Try Morfira'), plugins: [images({ upload: demoUpload }), tables({ onClipboardError: (error) => notify(error.message, true) })],
     value: props.full ? showcase() : article(),
     onChange: (change) => { source.value = change.source; refresh(); },
   });
-  commands = tableCommands(editor);
+  commands = tableCommands(editor); imageAPI = imageCommands(editor);
+  editor.surface.addEventListener('click', imageClick);
   const marks: ToolbarAction[] = [
     { label: t('Отменить', 'Undo'), text: '↶', run: (instance) => instance.undo(), enabled: (instance) => instance.canUndo() },
     { label: t('Повторить', 'Redo'), text: '↷', run: (instance) => instance.redo(), enabled: (instance) => instance.canRedo() },
@@ -132,7 +154,7 @@ onMounted(async () => {
   disposeToolbar = props.full ? createToolbar(toolbar.value!, editor, marks, { label: t('Форматирование', 'Formatting') }) : createToolbar(toolbar.value!, editor);
   unsubscribe = editor.subscribe(refresh); unselect = editor.onSelectionChange(refresh); ready.value = true; refresh();
 });
-onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); disposeToolbar?.(); editor?.destroy(); });
+onBeforeUnmount(() => { cancelled = true; editor?.surface.removeEventListener('click', imageClick); unsubscribe?.(); unselect?.(); disposeToolbar?.(); editor?.destroy(); });
 </script>
 
 <template>
@@ -143,7 +165,7 @@ onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); dispose
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <button v-else :disabled="!ready || readOnly" @click="insertTable">{{ t('+ Таблица 3 × 3', '+ Table 3 × 3') }}</button>
@@ -182,7 +204,10 @@ onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); dispose
         </fieldset></details>
         <details><summary>{{ t('Ссылки и изображения', 'Links and images') }}</summary><fieldset :disabled="!ready || readOnly">
           <label>{{ t('Адрес ссылки', 'Link URL') }}<input v-model="url" type="text"></label><label>{{ t('Заголовок ссылки', 'Link title') }}<input v-model="linkTitle" type="text"></label><label>{{ t('Подпись новой ссылки', 'New link text') }}<input v-model="linkText" type="text"></label><label class="lab-checkbox"><input v-model="linkNewTab" type="checkbox">{{ t('В новой вкладке', 'Open in new tab') }}</label><div class="lab-button-grid"><button @click="insertLink">{{ editingLink ? t('Обновить ссылку', 'Update link') : t('Создать ссылку', 'Create link') }}</button><button @click="format('link', false)">{{ t('Убрать ссылку', 'Remove link') }}</button></div>
-          <hr><label>{{ t('URL изображения', 'Image URL') }}<input v-model="imageURL" type="text"></label><div class="lab-fields"><label>Alt<input v-model="imageAlt" type="text"></label><label>{{ t('Ширина изображения', 'Image width') }}<input v-model.number="imageWidth" type="number" min="1" max="1000"></label></div><button @click="insertImage">{{ t('Вставить изображение', 'Insert image') }}</button><p class="lab-hint">{{ t('Вставка по URL. Загрузка файлов и resize изображения ещё не реализованы.', 'URL insertion. File uploads and image drag resizing are not implemented yet.') }}</p>
+          <hr><label>{{ t('URL изображения', 'Image URL') }}<input v-model="imageURL" type="text"></label><div class="lab-fields"><label>Alt<input v-model="imageAlt" type="text"></label><label>{{ t('Ширина изображения', 'Image width') }}<input v-model.number="imageWidth" type="number" min="1" max="1000"></label><label>{{ t('Высота изображения', 'Image height') }}<input v-model="imageHeight" type="number" min="1" max="1000"></label></div><label>{{ t('Подпись изображения', 'Image caption') }}<input v-model="imageCaption" type="text" maxlength="5000"></label><button @click="insertImage">{{ t('Вставить изображение', 'Insert image') }}</button><div class="lab-button-grid"><button :disabled="!selectedImage" @click="updateImage">{{ t('Обновить изображение', 'Update image') }}</button><button :disabled="!selectedImage" @click="run(() => imageAPI?.remove())">{{ t('Удалить изображение', 'Remove image') }}</button></div>
+          <label>{{ t('Файл для демо загрузки', 'Demo upload file') }}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif" :disabled="uploading" @change="uploadImage"></label>
+          <button :disabled="!uploading" @click="imageAPI?.cancelUpload()">{{ t('Отменить загрузку', 'Cancel upload') }}</button><p role="status" aria-live="polite">{{ uploading ? t('Загрузка…', 'Uploading…') : '' }}</p>
+          <p class="lab-hint">{{ t('Локальный callback возвращает логотип вместо файла. Файл не отправляется и не сохраняется. Для своего сервера передайте upload callback. Пустые размеры снимают ограничения; подпись редактируется и в документе. Resize мышью пока нет.', 'The local callback returns the logo instead of the file. Files are not uploaded or stored. Supply an upload callback for your server. Empty dimensions remove limits; captions are also editable in the document. Drag resizing is not implemented.') }}</p>
         </fieldset></details>
         <details><summary>{{ t('Оформление', 'Appearance') }}</summary><div class="lab-fields"><label>{{ t('Акцент', 'Accent') }}<input v-model="accent" type="color"></label><label>{{ t('Размер текста', 'Text size') }}<input v-model.number="fontSize" type="number" min="12" max="28"></label><label>{{ t('Отступы', 'Padding') }}<input v-model.number="padding" type="number" min="8" max="64"></label><label>{{ t('Скругление', 'Radius') }}<input v-model.number="radius" type="number" min="0" max="28"></label></div><p class="lab-hint">{{ t('Меняет CSS-переменные этого экземпляра. Содержимое документа не меняется.', 'Changes CSS variables for this instance without editing the document.') }}</p></details>
       </aside>
@@ -192,7 +217,7 @@ onBeforeUnmount(() => { cancelled = true; unsubscribe?.(); unselect?.(); dispose
         <details open><summary>{{ t('Буфер диапазона · HTML / TSV', 'Range buffer · HTML / TSV') }}</summary><label>{{ t('Формат буфера', 'Buffer format') }}<select :aria-label="t('Формат буфера', 'Buffer format')" v-model="bufferFormat"><option value="text">TSV</option><option value="html">HTML</option></select></label><label>{{ t('Содержимое буфера', 'Buffer contents') }}<textarea :aria-label="t('Содержимое буфера', 'Buffer contents')" v-model="buffer" class="lab-code" rows="5" spellcheck="false"></textarea></label><div class="lab-inline-actions"><button :disabled="!ready" @click="copyRange(false)">{{ t('Копировать диапазон', 'Copy range') }}</button><button :disabled="!ready || readOnly" @click="copyRange(true)">{{ t('Вырезать диапазон', 'Cut range') }}</button><button :disabled="!ready || readOnly" @click="pasteRange">{{ t('Вставить диапазон', 'Paste range') }}</button></div><p class="lab-hint">{{ t('Это буфер стенда без разрешений браузера. Системный буфер тоже работает: Ctrl/Cmd+C/X/V в редакторе. TSV разделяет столбцы табами.', 'This in-page buffer needs no browser permissions. Native Ctrl/Cmd+C/X/V also works in the editor. TSV uses tabs between columns.') }}</p></details>
         <details open><summary>{{ t('Документ · HTML / JSON', 'Document · HTML / JSON') }}</summary><label>{{ t('Формат документа', 'Document format') }}<select :aria-label="t('Формат документа', 'Document format')" v-model="outputFormat"><option value="html">HTML</option><option value="json">JSON v1</option></select></label><label>{{ t('Исходник документа', 'Document source') }}<textarea :aria-label="t('Исходник документа', 'Document source')" v-model="output" class="lab-code" rows="5" spellcheck="false"></textarea></label><div class="lab-inline-actions"><button :disabled="!ready" @click="snapshot(outputFormat)">{{ t('Получить снимок', 'Get snapshot') }}</button><button :disabled="!ready || readOnly" @click="applySource">{{ t('Применить документ', 'Apply document') }}</button></div><p class="lab-hint">{{ t('Снимок обновляется по кнопке. Применение заменяет документ и сбрасывает историю. Данные остаются в памяти вкладки.', 'Snapshots update on request. Applying replaces the document and resets history. Data stays in this browser tab.') }}</p></details>
       </div>
-      <p class="lab-limits">{{ t('Пока нет: совместного редактирования, комментариев, track changes, пагинации, DOCX/PDF, upload и resize изображений. Адаптеры Vue/React/Svelte и примеры подключения — в документации.', 'Not implemented: collaboration, comments, track changes, pagination, DOCX/PDF, image uploads and resizing. Vue/React/Svelte adapters and integration examples are in the docs.') }}</p>
+      <p class="lab-limits">{{ t('Пока нет: совместного редактирования, комментариев, track changes, пагинации, DOCX/PDF и resize изображений мышью. Адаптеры Vue/React/Svelte и примеры подключения — в документации.', 'Not implemented: collaboration, comments, track changes, pagination, DOCX/PDF and image drag resizing. Vue/React/Svelte adapters and integration examples are in the docs.') }}</p>
     </template>
     <pre v-else-if="output" class="demo-output">{{ output }}</pre>
   </section>

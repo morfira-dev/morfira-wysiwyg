@@ -31,7 +31,11 @@
       "import": "./dist/plugins/tables.js"
     },
     "./style.css": "./dist/style.css",
-    "./plugins/tables.css": "./dist/plugins/tables.css"
+    "./plugins/tables.css": "./dist/plugins/tables.css",
+    "./plugins/images": {
+      "types": "./dist/plugins/images.d.ts",
+      "import": "./dist/plugins/images.js"
+    }
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.2.0",

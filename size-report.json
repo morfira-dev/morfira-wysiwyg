@@ -1,13 +1,13 @@
 {
   "core.js": {
-    "raw": 33788,
-    "gzip": 11223,
-    "brotli": 10102
+    "raw": 34120,
+    "gzip": 11325,
+    "brotli": 10195
   },
   "core.css": {
-    "raw": 2866,
-    "gzip": 1040,
-    "brotli": 842
+    "raw": 3138,
+    "gzip": 1123,
+    "brotli": 923
   },
   "plugins.js": {
     "raw": 18415,
@@ -18,6 +18,11 @@
     "raw": 1813,
     "gzip": 716,
     "brotli": 543
+  },
+  "images.js": {
+    "raw": 7716,
+    "gzip": 2841,
+    "brotli": 2526
   },
   "vue.js": {
     "raw": 884,

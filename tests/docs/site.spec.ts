@@ -158,3 +158,51 @@ for (const english of [false, true]) test(`colors and link forms preserve caret 
   await page.locator('.demo-inspector details').first().locator('summary').click();
   await page.locator('.demo-workspace').screenshot({ path: `artifacts/colors-links-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
 });
+
+for (const english of [false, true]) test(`image metadata, captions and undo work on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'images', english);
+  await page.getByText(t('Ссылки и изображения', 'Links and images'), { exact: true }).click();
+  await page.locator('.mw-content img').evaluate((image, label) => {
+    image.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    [...document.querySelectorAll('label')].find((element) => element.textContent?.trim() === label)?.querySelector('input')?.focus();
+  }, t('Ширина изображения', 'Image width'));
+  await expect(page.getByLabel(t('Ширина изображения', 'Image width'), { exact: true })).toHaveValue('160');
+  await page.getByLabel('Alt', { exact: true }).fill(t('Описание', 'Description'));
+  await page.getByLabel(t('Ширина изображения', 'Image width'), { exact: true }).fill('120');
+  await page.getByLabel(t('Высота изображения', 'Image height'), { exact: true }).fill('90');
+  await page.getByLabel(t('Подпись изображения', 'Image caption'), { exact: true }).fill(t('Новая подпись', 'New caption'));
+  await page.getByRole('button', { name: t('Обновить изображение', 'Update image'), exact: true }).click();
+  await expect(page.locator('.mw-content img')).toHaveAttribute('width', '120');
+  await expect(page.locator('.mw-content img')).toHaveAttribute('height', '90');
+  await expect(page.locator('.mw-content img')).toHaveCSS('height', '90px');
+  await expect(page.locator('.mw-content img')).toHaveAttribute('alt', t('Описание', 'Description'));
+  await expect(page.locator('.mw-content figcaption')).toHaveText(t('Новая подпись', 'New caption'));
+  await page.getByLabel(t('URL изображения', 'Image URL'), { exact: true }).fill('javascript:evil()');
+  await page.getByRole('button', { name: t('Обновить изображение', 'Update image'), exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('unsafe'); await expect(page.locator('.mw-content img')).toHaveAttribute('src', '/logo.svg');
+  await page.getByRole('button', { name: t('Удалить изображение', 'Remove image'), exact: true }).click(); await expect(page.locator('.mw-content img')).toHaveCount(0);
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content figcaption')).toHaveText(t('Новая подпись', 'New caption'));
+  await page.locator('.mw-content img').click();
+  await page.locator('.demo-inspector details').first().locator('summary').click();
+  await page.locator('.demo-workspace').screenshot({ path: `artifacts/images-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
+});
+
+for (const english of [false, true]) test(`image upload cancellation, result and file errors are visible in ${english ? 'English' : 'Russian'} demo`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'empty', english);
+  await page.locator('.mw-content').click();
+  await page.getByText(t('Ссылки и изображения', 'Links and images'), { exact: true }).click();
+  const file = page.getByLabel(t('Файл для демо загрузки', 'Demo upload file'), { exact: true });
+  await file.setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from('local demo file') });
+  await expect(page.getByRole('button', { name: t('Отменить загрузку', 'Cancel upload'), exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: t('Отменить загрузку', 'Cancel upload'), exact: true }).click();
+  await expect(page.getByText(t('Загрузка отменена.', 'Upload cancelled.'), { exact: true })).toBeVisible(); await expect(page.locator('.mw-content img')).toHaveCount(0);
+  await file.setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from('local demo file') });
+  await expect(page.locator('.mw-content figure img')).toHaveAttribute('src', '/logo.svg');
+  await expect(page.locator('.mw-content figcaption')).toHaveText(t('Демо результата callback загрузки', 'Demo upload callback result'));
+  await expect(page.getByText(t('Демо-изображение вставлено. Файл не отправлялся.', 'Demo image inserted. The file was not uploaded.'), { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content img')).toHaveCount(0);
+  await file.setInputFiles({ name: 'bad.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
+  await expect(page.getByRole('alert')).toContainText('supported raster image'); await expect(page.locator('.mw-content img')).toHaveCount(0);
+});

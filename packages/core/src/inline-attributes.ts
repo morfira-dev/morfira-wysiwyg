@@ -3,7 +3,7 @@ import type { DocumentNode, EditorDocument, ElementNode } from './model.js';
 
 export interface LinkFormat { href: string; title?: string; target?: '_self' | '_blank'; text?: string; }
 export const inlineStyles: Record<string, string> = { color: 'color', background: 'background-color' };
-const blocks = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup']);
+const blocks = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup', 'figure', 'figcaption']);
 type Attributes = Record<string, string>;
 const checkedAttributes = (tag: 'span' | 'a', attributes: Attributes): Attributes => (validateDocument({ version: 1, children: [{ type: 'element', tag, attributes, children: [] }] }).children[0] as ElementNode).attributes;
 export const normalizeInlineStyle = (name: string, value: unknown): string | false => {

@@ -7,7 +7,7 @@ import { applyLink } from './links.js';
 import { applyList, indentList, listState, selectedBlocks } from './lists.js';
 
 export const inlineFormats: Record<string, DocumentTag> = { bold: 'strong', italic: 'em', underline: 'u', strike: 's', code: 'code', subscript: 'sub', superscript: 'sup' };
-const blockTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup']);
+const blockTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup', 'figure', 'figcaption']);
 interface Piece { node: DocumentNode; selected: boolean; }
 
 const inlineDocument = (value: EditorDocument, from: number, to: number, tag: DocumentTag, enabled: boolean): EditorDocument => {

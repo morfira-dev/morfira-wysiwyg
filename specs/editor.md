@@ -32,3 +32,5 @@ Caret regression: disabling an inline mark in the middle of marked text keeps th
 Lists, keyboard boundaries and toolbar extensions follow `specs/lists-toolbar.md`. Document schema v1 is unchanged.
 
 Inline color and enhanced link commands follow `specs/colors-links.md`. Invalid link command arguments now throw before mutation, replacing the earlier silent rejection; safe HTML/JSON imports still sanitize through schema v1.
+
+Image commands follow `specs/images.md`. Schema v1 adds figure/figcaption semantics; older readers may flatten those wrappers. Image commands remain an optional module.

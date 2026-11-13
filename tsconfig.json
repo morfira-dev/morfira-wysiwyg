@@ -28,6 +28,9 @@
       ],
       "@morfira-dev/wysiwyg-plugins/tables": [
         "./packages/plugins/src/tables.ts"
+      ],
+      "@morfira-dev/wysiwyg-plugins/images": [
+        "./packages/plugins/src/images.ts"
       ]
     }
   },

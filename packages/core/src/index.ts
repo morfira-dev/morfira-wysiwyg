@@ -69,7 +69,7 @@ const ensureDocument = (root: HTMLElement): boolean => {
     else
       paragraph = undefined;
   }
-  if (root.lastElementChild?.localName === 'table')
+  if (['table', 'figure'].includes(root.lastElementChild?.localName ?? ''))
     root.append(Object.assign(document.createElement('p'), { innerHTML: '<br>' }));
   root.dataset.empty = String(!root.textContent && !root.querySelector('table,img,hr'));
   return normalized;
@@ -89,7 +89,7 @@ const insertFragment = (root: HTMLElement, html: string): void => {
     const paragraph = fragment.firstChild;
     fragment.replaceChildren(...paragraph.childNodes);
   }
-  const hasBlocks = [...fragment.childNodes].some((node) => node instanceof HTMLElement && /^(p|h[1-6]|ul|ol|table|blockquote|pre)$/.test(node.localName));
+  const hasBlocks = [...fragment.childNodes].some((node) => node instanceof HTMLElement && /^(p|h[1-6]|ul|ol|table|figure|blockquote|pre)$/.test(node.localName));
   const last = fragment.lastChild!;
   if (hasBlocks && block && root.contains(block)) {
     const tailRange = document.createRange();

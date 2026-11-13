@@ -1,5 +1,5 @@
 /** Versioned, framework-independent document tree. Only supported HTML semantics are stored. */
-export const documentTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code', 'strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'br', 'hr', 'ul', 'ol', 'li', 'img', 'table', 'caption', 'colgroup', 'col', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'] as const;
+export const documentTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code', 'strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'br', 'hr', 'ul', 'ol', 'li', 'img', 'figure', 'figcaption', 'table', 'caption', 'colgroup', 'col', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'] as const;
 export type DocumentTag = typeof documentTags[number];
 export interface TextNode { type: 'text'; text: string; }
 export interface ElementNode { type: 'element'; tag: DocumentTag; attributes: Record<string, string>; children: DocumentNode[]; }
@@ -75,6 +75,11 @@ const attributesFor = (tag: DocumentTag, input: Record<string, unknown>): Record
     }
     else if (tag === 'th' && key === 'scope' && ['row', 'col', 'rowgroup', 'colgroup'].includes(value))
       output[key] = value;
+  }
+  if (tag === 'img' && (output.width || output.height)) {
+    const dimensions = ['width', 'height'].filter((key) => output[key]);
+    const styles = (output.style ?? '').split(';').map((part) => part.trim()).filter((part) => part && !dimensions.includes(part.slice(0, part.indexOf(':')).trim()));
+    output.style = [...styles, ...dimensions.map((key) => `${key}: ${output[key]}px`)].join('; ');
   }
   if (tag === 'a' && output.target === '_blank') output.rel = 'noopener noreferrer';
   return output;

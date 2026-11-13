@@ -68,3 +68,5 @@ The default toolbar has Russian labels; supply your own actions for localization
 Lists support nesting through `format('indent', 1 | -1)`. `format('clear', true)` removes inline formatting from selected text. See [Lists and formatting](/en/lists) for keyboard contracts, mixed states and examples.
 
 [Colors and links: parameters, caret behavior and limitations](/en/styling).
+
+[Images and upload callbacks](/en/images) use the optional `/plugins/images` module.

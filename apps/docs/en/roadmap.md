@@ -14,11 +14,11 @@ The persisted document format is now `EditorDocument` version 1. The previous pr
 
 1. Expand real Word/Excel fixtures beyond the implemented HTML/TSV range clipboard, including browser editing boundaries and malformed imported structure.
 2. Broad IME/mobile/touch and screen-reader coverage; keyboard-only resize/menu improvements.
-3. Image upload transport, resizing and captions. Link and color forms are already available in the demo.
+3. Images: connect application storage through the upload callback, then drag resizing and cropping. Dimensions, captions and an upload form are available in the demo.
 4. More formatting UI, find/replace, mentions and Markdown shortcuts as optional features.
 5. Large-document benchmarks, history memory profiling and expanded composition testing.
 
-Collaboration, track changes, comments, pagination and DOCX/PDF import/export are not implemented. Images have a checked source format but no complete upload flow. The native input surface still inherits browser editing behavior. Passing behavioral tests is not a security or accessibility certification.
+Collaboration, track changes, comments, pagination and DOCX/PDF import/export are not implemented. Applications own upload transport through a callback; the demo never uploads files. The native input surface still inherits browser editing behavior. Passing behavioral tests is not a security or accessibility certification.
 
 ## Licensing
 

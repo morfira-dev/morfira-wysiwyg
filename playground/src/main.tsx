@@ -1,5 +1,6 @@
 import { createEditor, createToolbar } from '@morfira-dev/wysiwyg';
 import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
+import { images, imageCommands } from '@morfira-dev/wysiwyg/plugins/images';
 import { tables, tableCommands } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
@@ -12,10 +13,10 @@ import { mount, unmount } from 'svelte';
 import SvelteHarness from './SvelteHarness.svelte';
 
 declare global {
-  interface Window { createEditor: typeof createEditor; createTables: typeof tables; editor: Editor; changes: EditorChange[]; dispose: () => void; tableCommands: typeof tableCommands; }
+  interface Window { createEditor: typeof createEditor; createTables: typeof tables; createImages: typeof images; imageCommands: typeof imageCommands; editor: Editor; changes: EditorChange[]; dispose: () => void; tableCommands: typeof tableCommands; }
 }
 window.createEditor = createEditor;
-window.createTables = tables;
+window.createTables = tables; window.createImages = images; window.imageCommands = imageCommands;
 window.changes = [];
 window.tableCommands = tableCommands;
 const ready = (editor: Editor) => { window.editor = editor; };

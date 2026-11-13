@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { cp, mkdir, rm } from 'node:fs/promises';
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 
 for (const name of ['core', 'plugins', 'vue', 'react']) {
   const outdir = `packages/${name}/dist`;
@@ -7,12 +7,18 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
   await mkdir(outdir, { recursive: true });
   const result = await build({
     metafile: true,
-    entryPoints: [`packages/${name}/src/${name === 'plugins' ? 'tables.ts' : name === 'react' ? 'index.tsx' : 'index.ts'}`],
+    entryPoints: name === 'plugins' ? ['tables', 'images'].map((entry) => `packages/plugins/src/${entry}.ts`) : [`packages/${name}/src/${name === 'react' ? 'index.tsx' : 'index.ts'}`],
     outdir, bundle: true, splitting: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true,
     sourcemap: true, jsx: 'automatic',
     external: ['@morfira-dev/*', 'vue', 'react', 'react/jsx-runtime'],
 
   });
+  if (name === 'plugins') {
+    const outputs = result.metafile!.outputs;
+    const closure = (path: string): string[] => [...new Set([path, ...outputs[path].imports.filter((entry) => !entry.external).flatMap((entry) => closure(entry.path))])];
+    const entries = Object.fromEntries(Object.entries(outputs).filter(([, output]) => output.entryPoint?.endsWith('.ts')).map(([path, output]) => [output.entryPoint!.split('/').at(-1)!.replace('.ts', ''), closure(path).map((file) => file.split('/').at(-1)!)]));
+    await writeFile(`${outdir}/entries.json`, JSON.stringify(entries));
+  }
   if (['core', 'plugins'].includes(name) && Object.keys(result.metafile!.inputs).some((input) => input.includes('node_modules/'))) throw new Error(`${name}: bundled runtime dependencies are forbidden.`);
   await cp('LICENSE', `${outdir}/LICENSE`);
   if (name === 'core' || name === 'plugins') {
@@ -21,7 +27,7 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
   }
 }
 await build({
-  entryPoints: ['index', 'vue', 'react', 'svelte', 'plugins/tables'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
+  entryPoints: ['index', 'vue', 'react', 'svelte', 'plugins/tables', 'plugins/images'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
   outdir: 'packages/wysiwyg/dist', outbase: 'packages/wysiwyg/src', bundle: true, format: 'esm', external: ['@morfira-dev/*'],
 });
 await mkdir('packages/wysiwyg/dist/plugins', { recursive: true });
