@@ -16,27 +16,45 @@ export const inspectListItem = (root: HTMLElement, item: HTMLElement): ListItemB
   if (item.localName !== 'li' || item.namespaceURI !== 'http://www.w3.org/1999/xhtml' || !root.contains(item) || !list || !isList(list) || item.hasAttribute('data-mw-node') || list.hasAttribute('data-mw-node')) return;
   const ownNodes: ChildNode[] = [];
   const nestedLists: HTMLElement[] = [];
+  let body = item;
   for (const node of item.childNodes) {
     if (isList(node)) nestedLists.push(node);
     else {
       // Moving text that follows a branch would silently reorder a partial shape.
-      if (nestedLists.length || !inlineNode(node)) return;
-      ownNodes.push(node);
+      if (nestedLists.length || body !== item) return;
+      if (node instanceof HTMLElement && /^(p|h[1-6])$/.test(node.localName) && node.namespaceURI === item.namespaceURI && !node.hasAttribute('data-mw-node') && !ownNodes.length && [...node.childNodes].every(inlineNode)) {
+        body = node;
+        ownNodes.push(...node.childNodes);
+      } else {
+        if (!inlineNode(node)) return;
+        ownNodes.push(node);
+      }
     }
   }
+  const ownStart = item.ownerDocument.createRange();
+  ownStart.selectNodeContents(body);
+  ownStart.collapse(true);
   const ownEnd = item.ownerDocument.createRange();
-  ownEnd.selectNodeContents(item);
-  if (nestedLists.length) ownEnd.setEndBefore(nestedLists[0]);
+  ownEnd.selectNodeContents(body);
+  if (body === item && nestedLists.length) ownEnd.setEndBefore(nestedLists[0]);
   ownEnd.collapse(false);
   const breaks = ownNodes.reduce((count, node) => count + (node instanceof Element ? node.querySelectorAll('br').length + Number(node.localName === 'br') : 0), 0);
-  return { item: item as HTMLLIElement, ownNodes, nestedLists, ownEnd, ownEmpty: ownNodes.every((node) => !node.textContent) && breaks <= 1 };
+  return { item: item as HTMLLIElement, body, ownNodes, nestedLists, ownStart, ownEnd, ownEmpty: ownNodes.every((node) => !node.textContent) && breaks <= 1 };
 };
 
 const blocked = (reason: string): ListSelectionResult => ({ status: 'blocked', reason });
-const withinOwnBody = (range: Range, boundary: ListItemBoundary, end: boolean): boolean => {
+/** Translate only unambiguous item-level edges; never mutate the active Range. */
+export const normalizeListBodyRange = (range: Range, boundary: ListItemBoundary, end: boolean): Range | undefined => {
   const point = range.cloneRange();
   point.collapse(!end);
-  return point.compareBoundaryPoints(Range.START_TO_START, boundary.ownEnd) <= 0;
+  if (boundary.body !== boundary.item && point.startContainer === boundary.item) {
+    if (point.startOffset > 1) return;
+    const edge = point.startOffset === 0 ? boundary.ownStart : boundary.ownEnd;
+    point.setStart(edge.startContainer, edge.startOffset);
+    point.collapse(true);
+  }
+  if (point.compareBoundaryPoints(Range.START_TO_START, boundary.ownStart) < 0 || point.compareBoundaryPoints(Range.START_TO_START, boundary.ownEnd) > 0) return;
+  return point;
 };
 
 /** A list-owned unsupported partial shape is blocked rather than natively cut. */
@@ -49,7 +67,12 @@ export const listSelectionReplacement = (root: HTMLElement, range: Range | undef
   if (firstItem.parentElement !== lastItem.parentElement) return blocked('Select sibling items in one list.');
   const first = inspectListItem(root, firstItem);
   const last = inspectListItem(root, lastItem);
-  if (!first || !last || !withinOwnBody(range, first, false) || !withinOwnBody(range, last, true)) return blocked('List replacement requires direct inline item bodies.');
+  const start = first && normalizeListBodyRange(range, first, false);
+  const end = last && normalizeListBodyRange(range, last, true);
+  if (!first || !last || !start || !end) return blocked('List replacement requires inline content or one ordinary paragraph/heading body.');
+  const workingRange = range.cloneRange();
+  workingRange.setStart(start.startContainer, start.startOffset);
+  workingRange.setEnd(end.startContainer, end.startOffset);
   const leaves: HTMLLIElement[] = [];
   const gaps: ChildNode[] = [];
   let node: ChildNode | null = first.item;
@@ -60,7 +83,7 @@ export const listSelectionReplacement = (root: HTMLElement, range: Range | undef
       const item = inspectListItem(root, node);
       if (!item || (item.item !== last.item && item.nestedLists.length)) return blocked('A selected item contains an unsupported body or nested branch.');
       leaves.push(item.item);
-      if (item.item === last.item) return { status: 'eligible', range, leaves, gaps, first, last };
+      if (item.item === last.item) return { status: 'eligible', range: workingRange, leaves, gaps, first, last };
     }
     node = node.nextSibling;
   }

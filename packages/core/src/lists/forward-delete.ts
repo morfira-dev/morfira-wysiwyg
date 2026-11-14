@@ -75,10 +75,10 @@ export const editListForwardDelete = (root: HTMLElement): boolean => {
   if (left.ownEmpty) removeOwnPlaceholder(left.ownNodes);
   if (right.ownEmpty) removeOwnPlaceholder(right.ownNodes);
   const join = root.ownerDocument.createRange();
-  join.selectNodeContents(item);
+  join.selectNodeContents(left.body);
   join.collapse(false);
-  item.append(...right.ownNodes.filter((node) => node.parentNode === right.item));
-  finishSelectionReplacement(item, join);
+  left.body.append(...right.ownNodes.filter((node) => node.parentNode === right.body));
+  finishSelectionReplacement(left.body, join);
   item.append(...left.nestedLists, ...right.nestedLists);
   right.item.remove();
   return true;

@@ -38,9 +38,9 @@ export const selectionReplacement = (root: HTMLElement, range: Range | undefined
 };
 
 /** Shared live cut, called only after eligibility and detached import validation. */
-export const cutSelectionReplacement = ({ range, leaves }: SelectionReplacement): CutSelectionReplacement => {
-  const left = leaves[0];
-  const right = leaves[leaves.length - 1];
+export const cutSelectionReplacement = ({ range, leaves, contentRoots }: SelectionReplacement): CutSelectionReplacement => {
+  const left = contentRoots?.left ?? leaves[0];
+  const right = contentRoots?.right ?? leaves[leaves.length - 1];
   const document = left.ownerDocument;
   const emptyLeft = !left.textContent && left.querySelectorAll('br').length <= 1;
   const emptyRight = !right.textContent && right.querySelectorAll('br').length <= 1;

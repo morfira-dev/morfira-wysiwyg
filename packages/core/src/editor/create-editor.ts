@@ -6,6 +6,7 @@ import {
   editListInput, handlesListInput, indentList, listState, selectedBlocks,
   listSelectionReplacement, prepareListSelectionPaste, replaceListSelection,
   replaceListSelectionWithFragment, handlesListForwardDelete, editListForwardDelete,
+  inspectWrappedListInput, editWrappedListInput,
 } from '../lists/index.js';
 import { editBlockInput, handlesBlockInput, handlesSelectionReplacement, replaceSelection, prepareSelectionPaste, replaceSelectionWithFragment } from '../input/index.js';
 import { applyFormat, inlineFormats, readFormats } from '../formatting/index.js';
@@ -605,6 +606,21 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       });
       return;
     }
+    const wrappedInput = inspectWrappedListInput(surface, event.inputType);
+    if (wrappedInput === 'eligible' || wrappedInput === 'blocked') {
+      if (!event.cancelable) {
+        // Native default cannot be suppressed; do not also run legacy list edits.
+        pendingInput = capture();
+        return;
+      }
+      event.preventDefault();
+      pendingInput = undefined;
+      if (wrappedInput === 'blocked') return;
+      runTransaction(() => {
+        if (editWrappedListInput(surface, event.inputType)) clearTyping();
+      });
+      return;
+    }
     if (!composing && !event.isComposing && handlesListInput(surface, event.inputType)) {
       event.preventDefault();
       clearTyping();
@@ -729,7 +745,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       return;
     if (!composing && !event.isComposing && !readOnly && !event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'Enter' || event.key === 'Backspace' || event.key === 'Delete')) {
       const type = event.key === 'Backspace' ? 'deleteContentBackward' : event.key === 'Delete' ? 'deleteContentForward' : event.shiftKey ? 'insertLineBreak' : 'insertParagraph';
-      if (handlesListInput(surface, type)) {
+      const wrappedInput = inspectWrappedListInput(surface, type);
+      if (wrappedInput !== 'eligible' && wrappedInput !== 'blocked' && handlesListInput(surface, type)) {
         event.preventDefault();
         clearTyping();
         pendingInput = undefined;

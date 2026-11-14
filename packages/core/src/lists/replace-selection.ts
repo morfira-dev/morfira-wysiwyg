@@ -24,10 +24,10 @@ export const prepareListSelectionPaste = (root: HTMLElement, fragment: DocumentF
 
 const cutListSelection = (selected: ListSelectionPlan) => {
   const branches = selected.last.nestedLists;
-  const cut = cutSelectionReplacement({ range: selected.range, leaves: selected.leaves });
-  // The right branches are wholly outside the selected body. Keep their actual
-  // nodes apart until the retained own body has received its placeholder/caret.
+  // Keep unselected branches out of the generic cut: for a direct empty LI,
+  // their placeholders must not be mistaken for the own-body placeholder.
   for (const branch of branches) branch.remove();
+  const cut = cutSelectionReplacement({ range: selected.range, leaves: selected.leaves, contentRoots: { left: selected.first.body, right: selected.last.body } });
   if (selected.last.ownEmpty) {
     for (const placeholder of cut.tail.querySelectorAll('br')) placeholder.remove();
   }
@@ -48,7 +48,7 @@ export const replaceListSelection = (root: HTMLElement, text: string): boolean =
   }
   left.append(tail);
   finishSelectionReplacement(left, caret);
-  left.append(...branches);
+  selected.first.item.append(...branches);
   return true;
 };
 
@@ -64,6 +64,6 @@ export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: Do
   insertInlineFragment(left, caret, fragment);
   left.append(tail);
   finishSelectionReplacement(left, caret);
-  left.append(...branches);
+  selected.first.item.append(...branches);
   return true;
 };

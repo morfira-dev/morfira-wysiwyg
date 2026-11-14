@@ -1,3 +1,4 @@
+export { inspectWrappedListInput, editWrappedListInput } from './wrapped-input.js';
 import { activeRange, placeCaret, preserveRange } from '../selection/index.js';
 export { handlesListForwardDelete, editListForwardDelete } from './forward-delete.js';
 export { inspectListItem, listSelectionReplacement } from './selection-boundaries.js';

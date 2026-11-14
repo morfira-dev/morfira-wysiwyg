@@ -1,7 +1,9 @@
 export interface ListItemBoundary {
   item: HTMLLIElement;
+  body: HTMLElement;
   ownNodes: ChildNode[];
   nestedLists: HTMLElement[];
+  ownStart: Range;
   ownEnd: Range;
   ownEmpty: boolean;
 }
