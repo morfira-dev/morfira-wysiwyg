@@ -2,6 +2,8 @@
 
 [Try it on the homepage](/en/#editor): select **“Lists and nesting”** and click “Load sample”. Loading a sample replaces the document and resets history.
 
+Task items use the separate [checklist plugin](/en/checklists). It is explicitly installed and supports ordinary/task items mixed within `ul`/`ol`; task metadata is not retained without the plugin.
+
 ## Working with lists
 
 Multiple selected paragraphs become one list. Changing or removing the list type affects selected items, preserving unselected siblings and nested lists.

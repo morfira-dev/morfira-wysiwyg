@@ -13,8 +13,22 @@ export interface SchemaNodeSpec {
   readonly attributes?: Readonly<Record<string, SchemaAttributeSpec>>;
 }
 
+type OptionalSchemaAttributeSpec = SchemaAttributeSpec & { readonly required?: false };
+
+export interface SchemaAttributesSpec {
+  readonly name: string;
+  readonly kind: 'attributes';
+  readonly tag: DocumentTag;
+  readonly attributes: Readonly<Record<string, OptionalSchemaAttributeSpec>>;
+  readonly split?: Readonly<Record<string, string>>;
+}
+
+export type SchemaContribution = SchemaNodeSpec | SchemaAttributesSpec;
+
 /** A compiled immutable schema with safe HTML/JSON import and rendering boundaries. */
 export interface DocumentSchema {
+  /** Reset patches for present registered attributes on an owned LI split. */
+  readonly attributesForSplit: (tag: DocumentTag, attributes: Readonly<Record<string, string>>) => Record<string, string>;
   readonly parseHTML: (html: string) => EditorDocument;
   readonly validateDocument: (input: unknown) => EditorDocument;
   readonly renderDocument: (value: EditorDocument) => DocumentFragment;

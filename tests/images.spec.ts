@@ -189,3 +189,47 @@ test('core figure HTML insertion splits paragraphs and imports leave a trailing 
   await page.evaluate(() => window.editor.setHTML('<figure><img src="/logo.svg"><figcaption>Last</figcaption></figure>'));
   await expect(content(page).locator(':scope > p:last-child br')).toHaveCount(1);
 });
+
+test('composition cancels an upload without restoring its bookmark or starting a new transport', async ({ page }) => {
+  await initialize(page);
+  await startUpload(page);
+  const result = await page.evaluate(async () => {
+    const editor = window.editor;
+    editor.setSelection(4);
+    const point = document.getSelection()!.anchorNode;
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    const abortedImmediately = window.uploadSignals[0].aborted;
+    const uploading = window.imageAPI.isUploading();
+    const skipped = await window.imageAPI.upload(new File(['png'], 'during.png', { type: 'image/png' }));
+    window.completeUploads[0]({ src: '/logo.svg', caption: 'Late' });
+    const outcome = await window.uploadOutcome;
+    const selection = editor.getSelection();
+    const sameNode = document.getSelection()!.anchorNode === point;
+    editor.surface.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }));
+    await Promise.resolve();
+    return { abortedImmediately, uploading, skipped, outcome, selection, sameNode, transports: window.uploadSignals.length, html: editor.getHTML(), undo: editor.canUndo() };
+  });
+  expect(result).toEqual({ abortedImmediately: true, uploading: false, skipped: false, outcome: 'cancelled', selection: { index: 4, length: 0 }, sameNode: true, transports: 1, html: '<p>abcd</p>', undo: false });
+  expect(await page.evaluate(async () => {
+    const editor = window.editor;
+    const file = new File(['png'], 'resumed.png', { type: 'image/png' });
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    editor.setJSON({ version: 1, children: [{ type: 'element', tag: 'p', attributes: {}, children: [{ type: 'text', text: 'External' }] }] });
+    editor.setSelection(2);
+    const afterExternal = window.imageAPI.upload(file);
+    await Promise.resolve();
+    window.completeUploads[1]({ src: '/logo.svg', alt: 'After external' });
+    const externalInserted = await afterExternal;
+    const externalAlt = editor.surface.querySelector('img')?.getAttribute('alt');
+    editor.setHTML('<p>Ready</p>');
+    editor.setSelection(2);
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    editor.setReadOnly(true);
+    editor.setReadOnly(false);
+    editor.setSelection(2);
+    const afterReadOnly = window.imageAPI.upload(file);
+    await Promise.resolve();
+    window.completeUploads[2]({ src: '/logo.svg', alt: 'After read-only' });
+    return { externalInserted, externalAlt, readonlyInserted: await afterReadOnly, readonlyAlt: editor.surface.querySelector('img')?.getAttribute('alt'), transports: window.uploadSignals.length };
+  })).toEqual({ externalInserted: true, externalAlt: 'After external', readonlyInserted: true, readonlyAlt: 'After read-only', transports: 3 });
+});

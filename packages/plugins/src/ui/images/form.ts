@@ -25,6 +25,7 @@ const selectedImage = (editor: Editor, range: Range | undefined): HTMLImageEleme
 };
 
 export const createImageForm = (host: HTMLElement, editor: Editor, options: ImageFormOptions = {}): ImageFormController => {
+  if (editor.surface.contains(host)) throw new Error('Mount image forms outside persisted editor content.');
   const api = imageCommands(editor);
   const initial = checkedValues(options.initialValues ?? {});
   if (options.label !== undefined && typeof options.label !== 'string') throw new TypeError('Image form label must be a string.');

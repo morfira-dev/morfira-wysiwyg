@@ -8,9 +8,11 @@ import { createSuggestionMenu } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import { createLinkForm } from '@morfira-dev/wysiwyg/ui/links';
 import { createImageForm } from '@morfira-dev/wysiwyg/ui/images';
 import { createSearchForm } from '@morfira-dev/wysiwyg/ui/search';
+import { checklists } from '@morfira-dev/wysiwyg/plugins/checklists';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
+import '@morfira-dev/wysiwyg/plugins/checklists.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 import '@morfira-dev/wysiwyg/ui/editor.css';
 
@@ -41,7 +43,7 @@ const sdkPlugin: EditorPlugin = {
   }),
 };
 export const plugins: EditorPlugin[] = createExtendedPreset({
-  plugins: [sdkPlugin],
+  plugins: [sdkPlugin, checklists()],
   mentions: { provide: () => [{ id: 'anna', label: 'Anna' }], debounceMs: 0 },
   slash: {
     provide: () => [{ id: 'heading', label: 'Heading 2', action: 'heading2' }],

@@ -4,6 +4,7 @@ import { useData } from 'vitepress';
 import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
 import type { MentionOption, SlashOption, SuggestionController, SuggestionState, SuggestionOption, SuggestionQuery } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import type { MarkdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
+import type { ChecklistCommands, ChecklistState } from '@morfira-dev/wysiwyg/plugins/checklists';
 import type { StatisticsCommands, StatisticsState } from '@morfira-dev/wysiwyg/plugins/statistics';
 import type { ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
 import type { LinkFormController } from '@morfira-dev/wysiwyg/ui/links';
@@ -15,6 +16,7 @@ import '@morfira-dev/wysiwyg/ui/forms.css';
 import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
+import '@morfira-dev/wysiwyg/plugins/checklists.css';
 
 const props = defineProps<{ full?: boolean }>();
 const { lang } = useData();
@@ -38,6 +40,11 @@ const slashState = ref<SuggestionState<SlashOption>>({ status: 'closed', query: 
 let mentionAPI: SuggestionController<MentionOption> | undefined; let slashAPI: SuggestionController<SlashOption> | undefined;
 let unmention: (() => void) | undefined; let unslash: (() => void) | undefined;
 const suggestionStatus = computed(() => { const state = mentionState.value.status !== 'closed' ? mentionState.value : slashState.value; return state.status === 'closed' ? t('Подсказки закрыты', 'Suggestions closed') : state.status === 'loading' ? t('Загрузка вариантов…', 'Loading choices…') : state.status === 'error' ? t('Ошибка: попробуйте открыть подсказки снова.', 'Error: try opening suggestions again.') : t(`Найдено вариантов: ${state.items.length}`, `Choices found: ${state.items.length}`); });
+const checklistState = ref<ChecklistState>({ disabled: true, active: false, checked: undefined });
+let checklistAPI: ChecklistCommands | undefined;
+const checklistStatus = computed(() => checklistState.value.active
+  ? (checklistState.value.checked ? t('Выбранная задача выполнена.', 'The selected task is complete.') : t('Выбранная задача не выполнена.', 'The selected task is incomplete.'))
+  : t('Выбери текст одного пункта или обычного абзаца.', 'Select text in one item or an ordinary paragraph.'));
 const sample = ref('showcase'); const markdownEnabled = ref(true); let markdownAPI: MarkdownCommands | undefined;
 const statisticsState = ref<StatisticsState>({ document: { characters: 0, charactersWithoutWhitespace: 0, words: 0 }, selection: { characters: 0, charactersWithoutWhitespace: 0, words: 0 } });
 let statisticsAPI: StatisticsCommands | undefined; let unstatistics: (() => void) | undefined;
@@ -86,11 +93,12 @@ const listSelectionSample = () => {
   return `<ul><li>${body('Alpha <strong>one</strong>', false)}</li><li>${body('<em>Beta</em> tail', true)}<ul><li>Nested branch</li></ul></li><li>Keep item</li></ul><p>Keep paragraph</p>`;
 };
 const imageSample = () => `<h2>${t('Изображения с подписью', 'Images with captions')}</h2><p>${t('Нажми на изображение и измени размеры, alt или подпись справа.', 'Click the image and edit dimensions, alt text or caption on the right.')}</p><figure><img src="/logo.svg" alt="Morfira" width="160" height="160"><figcaption>${t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption')}</figcaption></figure><p>${t('Здесь можно продолжить текст.', 'Continue writing here.')}</p>`;
+const checklistSample = () => `<h2>${t('Задачи без лишнего', 'Tasks without the weight')}</h2><ul title="Checklist sample"><li title="Checklist first" data-checklist-checked="false">${t('Написать', 'Write')} <strong>${t('идею', 'an idea')}</strong></li><li title="Checklist done" data-checklist-checked="true">${t('Сохранить результат', 'Save the result')}</li><li title="Checklist ordinary">${t('Обычный пункт того же списка', 'An ordinary item in the same list')}</li></ul><p title="Checklist outside">${t('Этот абзац можно превратить в задачу.', 'This paragraph can become a task.')}</p>`;
 const statisticsSample = () => `<h2>${t('Unicode и статистика', 'Unicode and statistics')}</h2><p>e<strong>́</strong> · 👨‍👩‍👧‍👦 · 🇷🇺 · ${t('Привет, мир!', 'Hello, world!')}</p><p>${t('Выдели букву с комбинируемым знаком или эмодзи и открой панель статистики: считаются видимые графемы, а не UTF-16 единицы.', 'Select a combining sequence or emoji and open Statistics: the counter measures visible graphemes rather than UTF-16 units.')}</p>`;
 const suggestionSample = () => `<h2>${t('Упоминания и slash-шаблоны', 'Mentions and slash snippets')}</h2><p>${t('Вводи @an для людей или /sig в начале абзаца для текстового шаблона. ArrowUp/Down выбирают, Enter вставляет, Escape закрывает.', 'Type @an for people or /sig at the beginning of a paragraph for a text snippet. ArrowUp/Down navigate, Enter inserts, Escape dismisses.')}</p><p>@an</p><p>/sig</p><p>/h2 · /bullet · /ordered · /quote · /code · /table</p><p>${t('Загруженные примеры буквальны. Кликни в конец токена и открой подсказки кнопкой справа, либо начни новый пример.', 'Loaded examples stay literal. Place the caret at a token end and use Open suggestions on the right, or start a new example.')}</p><p><br></p>`;
 const markdownSample = () => `<h2>Markdown shortcuts</h2><p>${t('Эти примеры загружены как обычный текст. Для преобразования введи маркеры сам и нажми Space; для code fence или разделителя доступен также Enter.', 'These examples are loaded as literal text. Type markers yourself and press Space to transform; code fences and horizontal rules also accept Enter.')}</p><p># ${t('Заголовок', 'Heading')}</p><p>- ${t('Пункт', 'Item')}</p><p>&gt; ${t('Цитата', 'Quote')}</p><p>**${t('полужирный', 'bold')}** · _${t('курсив', 'italic')}_ · ~~${t('зачёркнутый', 'strike')}~~ · \`${t('код', 'code')}\`</p><p>${t('Последняя пустая строка — для твоего ввода. Undo возвращает текст до клавиши-триггера.', 'Use the final empty line for typing. Undo restores text before the trigger key.')}</p><p><br></p>`;
 const searchSample = () => `<h2>${t('Поиск и замена', 'Find and replace')}</h2><p><strong>Mor</strong>fira ${t('помогает писать', 'helps you write')}. <em>Morfira</em> ${t('сохраняет стили', 'preserves styles')}.</p><p><a href="https://example.com">MORFIRA</a> · morfira</p><ul><li>Morfira ${t('в списке', 'in a list')}</li></ul><table><tbody><tr><td rowspan="2"><p>Morfira</p></td><td>A</td></tr><tr><td>B</td></tr></tbody></table><figure><img src="/logo.svg" alt="Morfira" width="64"><figcaption>Morfira</figcaption></figure><p>MorfiraPlus — ${t('совпадение только без целого слова', 'a match only with whole word disabled')}.</p>`;
-const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + markdownSample() + suggestionSample() + searchSample() + tableSample();
+const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + checklistSample() + markdownSample() + suggestionSample() + searchSample() + tableSample();
 const updateStatistics = (state: StatisticsState) => { statisticsState.value = state; count.value = state.document.characters; words.value = state.document.words; };
 const refresh = () => {
   if (!editor) return;
@@ -102,6 +110,7 @@ const refresh = () => {
     const selection = window.getSelection()!;
     labBackward = !range.collapsed && selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset;
   }
+  if (checklistAPI) checklistState.value = checklistAPI.getState();
   const formats = editor.getFormats(); const mixed = formats.mixed as string[] | undefined;
   heading.value = mixed?.includes('header') ? 'mixed' : String(formats.header ?? 0);
   list.value = mixed?.includes('list') ? 'mixed' : String(formats.list || '');
@@ -123,6 +132,16 @@ const run = (action: (instance: Editor) => void, mutation = true) => {
 };
 const tableRun = (action: (api: TableCommands) => void, mutation = true) => run(() => { if (commands) action(commands); }, mutation);
 const format = (name: string, value: unknown) => run((instance) => instance.format(name, value));
+const runChecklist = (action: 'insert' | 'check' | 'uncheck' | 'toggle' | 'remove') => run(() => {
+  if (!checklistAPI) return;
+  if (action === 'check') checklistAPI.setChecked(true);
+  else if (action === 'uncheck') checklistAPI.setChecked(false);
+  else checklistAPI[action]();
+});
+const loadChecklistSample = () => {
+  sample.value = 'checklists';
+  loadSample();
+};
 const toggleMarkdown = () => { markdownAPI?.setEnabled(markdownEnabled.value); };
 const updateEditorLocale = () => {
   editor?.setLocale(editorLocale.value);
@@ -134,7 +153,7 @@ const startStructuralSlash = (command: string) => run((instance) => { const text
 const startSuggestions = (kind: 'mentions' | 'slash') => run((instance) => { const text = kind === 'mentions' ? '@an' : '/sig'; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); (kind === 'mentions' ? mentionAPI : slashAPI)?.open(); });
 const sampleFactories: Record<string, () => string> = {
   empty: () => '<p><br></p>', input: inputSample, paste: inputSample, 'list-selection': listSelectionSample, suggestions: suggestionSample,
-  markdown: markdownSample, statistics: statisticsSample, search: searchSample,
+  checklists: checklistSample, markdown: markdownSample, statistics: statisticsSample, search: searchSample,
   images: imageSample, styling: stylingSample, lists: listSample,
   tables: tableSample, article, showcase,
 };
@@ -412,6 +431,7 @@ onMounted(async () => {
     { tableCommands },
     { statisticsCommands },
     { markdownCommands },
+    { checklists, checklistCommands },
     { mentionCommands },
     { slashCommands, createSlashActions },
     { createLinkForm },
@@ -426,6 +446,7 @@ onMounted(async () => {
     import('@morfira-dev/wysiwyg/plugins/tables'),
     import('@morfira-dev/wysiwyg/plugins/statistics'),
     import('@morfira-dev/wysiwyg/plugins/markdown'),
+    import('@morfira-dev/wysiwyg/plugins/checklists'),
     import('@morfira-dev/wysiwyg/plugins/mentions'),
     import('@morfira-dev/wysiwyg/plugins/slash'),
     import('@morfira-dev/wysiwyg/ui/links'),
@@ -445,6 +466,7 @@ onMounted(async () => {
   };
   const preset = props.full ? createExtendedPreset({
     ...common,
+    plugins: [checklists()],
     mentions: { provide: people, debounceMs: 0 },
     slash: { provide: snippets, debounceMs: 0, actions: { ...createSlashActions(), table: (instance: Editor) => tableCommands(instance).insert(3, 3) } },
     images: { upload: demoUpload },
@@ -453,6 +475,7 @@ onMounted(async () => {
   }) : createMinimalPreset(common);
   editor = createEditor(host.value!, preset);
   if (props.full) {
+    checklistAPI = checklistCommands(editor);
     mentionAPI = mentionCommands(editor); slashAPI = slashCommands(editor);
     mentionState.value = mentionAPI.getState(); slashState.value = slashAPI.getState();
     unmention = mentionAPI.subscribe((state) => { mentionState.value = state; }); unslash = slashAPI.subscribe((state) => { slashState.value = state; });
@@ -503,7 +526,7 @@ onBeforeUnmount(() => {
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="paste">{{ t('Вставка между блоками', 'Paste between blocks') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="list-selection">{{ t('Выделение пунктов списка', 'List item selection') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="paste">{{ t('Вставка между блоками', 'Paste between blocks') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="list-selection">{{ t('Выделение пунктов списка', 'List item selection') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="checklists">{{ t('Чек-листы', 'Checklists') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <label>{{ t('Язык редактора', 'Editor language') }}<select v-model="editorLocale" :disabled="!ready" :aria-label="t('Язык интерфейса редактора', 'Editor interface language')" @change="updateEditorLocale"><option value="ru">Русский</option><option value="en">English</option></select></label>
@@ -526,7 +549,7 @@ onBeforeUnmount(() => {
           <label>{{ t('Выделение цветом', 'Highlight color') }}<input v-model="highlight" type="color"></label><button @click="format('background', highlight)">{{ t('Применить выделение', 'Apply highlight') }}</button><button @click="format('background', false)">{{ t('Сбросить выделение', 'Reset highlight') }}</button>
           <span>{{ t('Текст / фон', 'Text / background') }}: {{ activeStyles }}</span>
         </fieldset>
-        <div ref="toolbar"></div><div ref="host"></div>
+        <div ref="toolbar"></div><div ref="host" @compositionstart="refresh" @compositionend="refresh"></div>
         <div class="demo-status"><span>{{ count }} {{ t('символов', 'characters') }}<template v-if="full"> · {{ words }} {{ t('слов', 'words') }}</template></span><span v-if="full">undo {{ undoAvailable ? '●' : '○' }} · redo {{ redoAvailable ? '●' : '○' }} · {{ source }}</span><span v-else>{{ t('Минимальный пресет · готовая панель', 'Minimal preset · ready toolbar') }}</span></div>
         <p v-if="full" class="lab-hint">{{ t('Выделяй текст перед форматированием. Кликни в ячейку перед табличной командой. Ctrl/Cmd+Z — отмена; Ctrl/Cmd+B/I/U — формат; Enter — новый пункт, пустой — выход; Tab/Shift+Tab — вложенность. В таблице Tab — следующая ячейка.', 'Select text before formatting. Click a cell before a table command. Ctrl/Cmd+Z undoes; Ctrl/Cmd+B/I/U formats; Enter splits an item; an empty item exits. Tab/Shift+Tab nests lists; in tables Tab moves to the next cell.') }}</p>
       </div>
@@ -623,6 +646,18 @@ onBeforeUnmount(() => {
           <button @click="selectListBackspace">{{ t('Курсор перед Backspace', 'Caret before Backspace') }}</button>
           <p class="lab-hint">{{ t('Загрузка заменяет документ. Затем поставь курсор кнопкой и нажми настоящий Backspace: первый блок соединится с последним блоком предыдущего пункта, первый корневой пункт выйдет из списка, а первый вложенный поднимется на уровень. Последующие тела и ветки сохраняются; Undo возвращает исходный документ. Результаты проверок — в дорожной карте.', 'Loading replaces the document. Then use the caret button and press actual Backspace: the first body joins the previous item’s final body, the first root item exits the list, or the first nested item lifts one level. Later bodies and branches remain; Undo restores the original document. These scenarios are written but not validated yet.') }}</p>
           <p v-if="listBackspaceScenario === 'nested-followed'" class="lab-hint">{{ t('В этом примере ранняя ветка остаётся у родителя. Под поднятым пунктом идут его собственная ветка, оставшиеся пункты исходного списка, затем две поздние ветки родителя в прежнем порядке. Типы списков и выравнивание сохраняются; ветки не склеиваются.', 'In this sample the earlier branch stays with the owner. The lifted item retains its own branch, then the source list’s remaining items, then the owner’s two later branches in their original order. List kinds and alignment remain; branches are not coalesced.') }}</p>
+        </fieldset></details>
+        <details class="lab-checklists"><summary>{{ t('Чек-листы', 'Checklists') }}</summary><fieldset :disabled="!ready || readOnly">
+          <button @click="loadChecklistSample">{{ t('Загрузить чек-лист', 'Load checklist') }}</button>
+          <div class="lab-button-grid">
+            <button :disabled="checklistState.disabled" @click="runChecklist('insert')">{{ t('Сделать задачей', 'Make a task') }}</button>
+            <button :disabled="checklistState.disabled || !checklistState.active" :aria-pressed="checklistState.active ? checklistState.checked : undefined" @click="runChecklist('toggle')">{{ t('Переключить выполнение', 'Toggle completion') }}</button>
+            <button :disabled="checklistState.disabled || !checklistState.active" @click="runChecklist('check')">{{ t('Отметить выполненной', 'Mark complete') }}</button>
+            <button :disabled="checklistState.disabled || !checklistState.active" @click="runChecklist('uncheck')">{{ t('Снять выполнение', 'Mark incomplete') }}</button>
+            <button :disabled="checklistState.disabled || !checklistState.active" @click="runChecklist('remove')">{{ t('Сделать обычным пунктом', 'Make an ordinary item') }}</button>
+          </div>
+          <p role="status" aria-live="polite">{{ checklistStatus }}</p>
+          <p class="lab-hint">{{ t('Загрузка заменяет документ. Поставь курсор в текст одного пункта и используй внешние кнопки; обычный абзац превращается в маркированный пункт-задачу. Enter сохраняет состояние исходной задачи и создаёт новую невыполненную; Shift+Enter оставляет состояние прежним. Маркер — оформление CSS, а не нативный checkbox: клик по полю маркера и отдельный shortcut не добавлены. Плагин подключён явно только в полной демке; без него метаданные задачи теряются. Команды участвуют в общей истории и соблюдают read-only.', 'Loading replaces the document. Place the caret in one item and use the external buttons; an ordinary paragraph becomes a bullet task item. Enter preserves the original task state and creates a new incomplete item; Shift+Enter keeps the state. The marker is CSS decoration, not a native checkbox: gutter clicks and a custom shortcut are not added. The plugin is explicitly installed in the full demo; without it task metadata is lost. Commands share editor history and respect read-only.') }}</p>
         </fieldset></details>
         <details class="lab-suggestions"><summary>{{ t('Упоминания и slash-шаблоны', 'Mentions and slash snippets') }}</summary><fieldset :disabled="!ready">
           <div class="lab-button-grid"><button :disabled="readOnly" @click="startSuggestions('mentions')">{{ t('Новый пример @an', 'New @an example') }}</button><button :disabled="readOnly" @click="startSuggestions('slash')">{{ t('Новый пример /sig', 'New /sig example') }}</button></div>

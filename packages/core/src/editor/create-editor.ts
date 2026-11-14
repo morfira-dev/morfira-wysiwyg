@@ -92,6 +92,10 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   if (!Number.isInteger(limit) || limit < 1 || limit > 10000)
     throw new RangeError('historyLimit must be an integer from 1 to 10000.');
   const schema = createDocumentSchema([...(options.schema ?? []), ...plugins.flatMap((plugin) => plugin.schema ?? [])]);
+  const prepareListSplit = (item: HTMLLIElement): void => {
+    const attributes = Object.fromEntries([...item.attributes].map(({ name, value }) => [name, value]));
+    for (const [name, value] of Object.entries(schema.attributesForSplit('li', attributes))) item.setAttribute(name, value);
+  };
   const initialDocument = schema.parseHTML(options.value ?? '');
   let locale = createLocale(options.locale ?? 'ru', options.translations);
   const container = document.createElement('div');
@@ -618,7 +622,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       pendingInput = undefined;
       if (wrappedInput === 'blocked') return;
       runTransaction(() => {
-        if (editWrappedListInput(surface, event.inputType)) clearTyping();
+        if (editWrappedListInput(surface, event.inputType, prepareListSplit)) clearTyping();
       });
       return;
     }
@@ -626,7 +630,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       event.preventDefault();
       clearTyping();
       pendingInput = undefined;
-      runTransaction(() => editListInput(surface, event.inputType));
+      runTransaction(() => editListInput(surface, event.inputType, prepareListSplit));
       return;
     }
     if (handlesBlockInput(surface, event.inputType)) {
@@ -762,7 +766,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         event.preventDefault();
         clearTyping();
         pendingInput = undefined;
-        runTransaction(() => editListInput(surface, type));
+        runTransaction(() => editListInput(surface, type, prepareListSplit));
         return;
       }
       // Enter must reach beforeinput so optional typing rules can consume it first.

@@ -12,6 +12,8 @@ Import each JS entry separately. CSS is explicit; importing UI registers no glob
 
 Shared CSS: `@morfira-dev/wysiwyg/ui/forms.css`. A missing required plugin is detected before mounting a view. No UI module is required to use core.
 
+Hosts for image and search forms must be outside `editor.surface`: the surface itself or any descendant is rejected before mounting or installing listeners. Use a separate sibling container. See [security boundaries](/en/security).
+
 ## Links without a framework
 
 Add two empty containers:

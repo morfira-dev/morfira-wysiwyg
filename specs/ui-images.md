@@ -1,5 +1,7 @@
 # Optional image form
 
+The host must be outside the persisted editor surface: the surface itself and every descendant are rejected before creating view DOM, listeners or subscriptions. Rejection preserves document, selection and history.
+
 Status: implementation contract; document schema v1 is unchanged.
 
 `createImageForm(host, editor, options?)` requires the images plugin and mounts one owned section with role=form. It can be embedded inside an application form without nested HTML form elements. Buttons have type=button; Enter in a single-line metadata field executes image insertion and does not submit the outer application form. Draft controls have no native name attributes and do not add fields to application FormData. The controller exposes element, refresh, copied getValues/partial setValues and idempotent destroy. Draft values are strings: src, alt, width, height and caption. Options accept initialValues, an explicit accessible label and onError for original diagnostics. Built-in RU/EN messages use ui.images.* and live editor locale/overrides; fields retain drafts while focused.

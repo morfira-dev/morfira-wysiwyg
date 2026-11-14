@@ -1,5 +1,7 @@
 # Optional search and replacement form
 
+The host must be outside the persisted editor surface: the surface itself and every descendant are rejected before creating view DOM, listeners or subscriptions. Rejection preserves document, selection and history.
+
 Status: implementation contract; the search plugin and document schema remain unchanged.
 
 `createSearchForm(host, editor, options?)` requires an installed search plugin before mounting any DOM. It returns `element`, `refresh`, `getValues`, `setValues`, `destroy`. Values are copied drafts `{ query, replacement, caseSensitive, wholeWord }`; options provide partial initial values, an explicit accessible form label and a diagnostic `onError` callback. Invalid value types reject atomically. Public commands on a disposed controller reject; destroy is idempotent and detached controls are inert.

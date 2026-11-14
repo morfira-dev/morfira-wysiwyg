@@ -159,6 +159,7 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
   return {
     name: 'images', setup: (editor) => {
       let disposed = false;
+      let composing = false;
       let pending: AbortController | undefined;
       const active = () => {
         if (disposed)
@@ -237,7 +238,7 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
           const signal = request.signal;
           if (signal && (typeof signal.aborted !== 'boolean' || typeof signal.addEventListener !== 'function' || typeof signal.removeEventListener !== 'function'))
             throw new TypeError('Upload signal must be an AbortSignal.');
-          if (editor.isReadOnly() || signal?.aborted)
+          if (editor.isReadOnly() || composing || signal?.aborted)
             return false;
           if (!options.upload)
             throw new Error('Configure an application upload callback first.');
@@ -257,7 +258,7 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
           const cancelled = new Promise<undefined>((resolve) => { abort = () => resolve(undefined); controller.signal.addEventListener('abort', abort, { once: true }); });
           try {
             const result = await Promise.race([Promise.resolve().then(() => controller.signal.aborted ? undefined : options.upload!(file, { signal: controller.signal })), cancelled]);
-            if (pending !== controller || disposed || controller.signal.aborted || editor.isReadOnly())
+            if (pending !== controller || disposed || controller.signal.aborted || editor.isReadOnly() || composing)
               return false;
             if (!result)
               throw new TypeError('Upload callback must return image metadata.');
@@ -287,13 +288,34 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
           api.select(event.target);
         }
       };
+      const compositionStart = () => {
+        composing = true;
+        cancel();
+      };
+      const compositionEnd = () => { composing = false; };
+      editor.surface.addEventListener('compositionstart', compositionStart);
+      editor.surface.addEventListener('compositionend', compositionEnd);
       editor.surface.addEventListener('click', click);
-      const unsubscribe = editor.subscribe(cancel);
-      const unselect = editor.onSelectionChange(() => {
-        if (editor.isReadOnly())
-          cancel();
+      const unsubscribe = editor.subscribe((change) => {
+        if (change.source === 'api') composing = false;
+        cancel();
       });
-      return () => { disposed = true; cancel(); unsubscribe(); unselect(); unprovide(); editor.surface.removeEventListener('click', click); };
+      const unreadonly = editor.events.on('readonlychange', (readOnly) => {
+        if (readOnly) {
+          composing = false;
+          cancel();
+        }
+      });
+      return () => {
+        disposed = true;
+        cancel();
+        unsubscribe();
+        unreadonly();
+        unprovide();
+        editor.surface.removeEventListener('compositionstart', compositionStart);
+        editor.surface.removeEventListener('compositionend', compositionEnd);
+        editor.surface.removeEventListener('click', click);
+      };
     }
   };
 };

@@ -1,42 +1,79 @@
-# Verification record — list editing slice
+# Verification record — list editing, optional checklists and security
 
-Status: execution was previously explicitly deferred for this list-editing work. The user has now requested checks of all preceding work; the current verification run must record its actual results separately. Historical entries below describe written scenarios and earlier deferral, not passing evidence. This document does not authorize a push, package publication or deployment.
+Status: the current optional checklist and security-hardening slice completed project, full browser, documentation and packed-consumer verification with successful exit status. Earlier baseline results and diagnostic runs are recorded separately; current success is established by the final runs below. No push, package publication or deployment is authorized by this record.
 
-## Current verification results
+## Current checklist and security verification — completed
 
-The full verification was requested after the original deferral. Commands below apply to the current working tree based on `cabb619`; completion and final evidence are recorded before the local commit. No remote push or publication is part of these checks.
+The working tree follows test consolidation `c97ff95` and adds optional checklists, generic non-owning schema attributes/split policy, exports, live documentation and security hardening. Security changes bound normalized serialized output, prevent resource fetches during string serialization, cancel image uploads on composition and reject image/search form hosts inside editable content. Static/build gates and final full-suite results passed; earlier diagnostic findings remain separately identified below.
 
-| Check | Actual status |
+| Check | Actual current status |
 | --- | --- |
-| Project contracts, package/declaration build, archive boundaries, tree-shaking, budgets, TypeScript/Vue/Svelte checks | Passed in the current verification pipeline |
-| Complete editor suite, Chromium / Firefox / WebKit | Passed: `pnpm run check --workers=7`, exit 0; 3573 browser executions (1191 cases × Chromium/Firefox/WebKit), 14.6 minutes. Earlier full run had 3516 passes and 15 WebKit failures; the bounded key-protocol fix and cancellation regressions passed in the final run. |
+| Project contracts, package/declaration builds, public-package boundaries, tree-shaking, size budgets and TypeScript/Vue/Svelte checks | Passed for the current security working tree |
+| Complete editor suite, Chromium / Firefox / WebKit | Passed: final `pnpm run check`, exit 0; **3462/3462 browser executions = 1154 registered cases × 3 engines**, 12.2 minutes. The earlier checklist-only full run was interrupted by the parent with exit 130 to apply security corrections; it was not a pass |
+| RU/EN documentation build and complete Chromium suite | Passed: final `pnpm run docs:build` and **157/157** Chromium scenarios, 2.0 minutes, exit 0. The prior 155-case run recorded **154 passes and one fixture timing failure**; the slash-history fixture was corrected to use single real keys H/C |
+| Packed consumers against current security tarballs | **18/18 passed**: 15 default-wrapper browser scenarios plus 3 Angular 22 scenarios |
+| Release automation | Earlier **10/10** passed for `0f2face`; release automation is unchanged, but this is not a new security-run claim |
+| Focused security/image/form diagnostic | **201 executions: 200 passed, one WebKit text-chunk expectation failed**. The full text was intact across 77 chunks; only the test expectation was corrected. A subsequent security-codec rerun passed **15/15**, 9.4 seconds |
+
+The editor total is **1191 baseline cases − 58 consolidated cases + 14 checklist cases + 5 security cases + 2 image/form cases = 1154 cases**. Checklists added 42 browser executions; security and image/form cases add another 21. A browser execution is not a distinct user scenario. Documentation is **153 baseline + 2 checklist integration + 2 security-guide scenarios = 157**. The final full-run results above, rather than targeted diagnostics, establish completion for this source.
+
+The slash fixture failure was timing-dependent: multi-character typing exceeded the 600 ms history grouping window, so two Undo clicks could leave an empty heading. Single-key H/C fixtures still verify command history and subsequent real input without relying on typing duration. This was not evidence of an ambiguous checklist selector or editor mutation defect.
+
+The checklist read-only diagnostic also corrected a test expectation: core external `setHTML` synchronization emits an API-origin change (`source: 'api'`); adapters suppress controlled-value feedback separately. Read-only does not promise a silent core `setHTML`. These expectation corrections are distinct from the actual codec, resource-fetch and keyboard defects recorded in this document and `security.md`.
+
+## Completed baseline — `0f2face`
+
+These are historical successful results for the completed list/quote/editor slice before test consolidation and optional checklists. They must not be described as a full green result for the current checklist/security source or merely as a working tree “based on cabb619”.
+
+| Check | Recorded baseline result |
+| --- | --- |
+| Project contracts, package/declaration build, archive boundaries, tree-shaking, budgets and TypeScript/Vue/Svelte checks | Passed |
+| Complete editor suite, Chromium / Firefox / WebKit | Passed: `pnpm run check --workers=7`, exit 0; **3573 browser executions = 1191 cases × 3 engines**, 14.6 minutes. An earlier full run recorded 3516 passes and 15 WebKit failures; the bounded key-protocol fix and cancellation regressions passed in this final baseline run |
 | RU/EN documentation build | Passed: `pnpm run docs:build` |
-| Complete documentation suite, Chromium | Passed: 153 scenarios, `pnpm run test:docs --workers=1`; includes 390 px RU and 1280 px EN inner-quote scenarios |
-| Release automation | Passed: 10 tests, `pnpm run test:release`; isolated local fixture remotes only |
-| Packed consumers, Vue / React / Svelte / Angular 21 / Web Component | Passed: 15 production-browser scenarios in three engines, `pnpm run consumers:check` |
-| Packed Angular 22 consumer | Passed: 3 production-browser scenarios in three engines, `pnpm run consumers:angular22` with Node 24.16.0 |
+| Complete documentation suite, Chromium | Passed: **153/153**, `pnpm run test:docs --workers=1`; includes 390px RU and 1280px EN inner-quote scenarios |
+| Release automation | Passed: **10/10**, `pnpm run test:release`; isolated local fixture remotes only |
+| Packed consumers, Vue / React / Svelte / Angular 21 / Web Component | Passed: **15** production-browser scenarios across three engines, `pnpm run consumers:check` |
+| Packed Angular 22 consumer | Passed: **3** production-browser scenarios across three engines, `pnpm run consumers:angular22` with Node 24.16.0 |
 
-Editor totals count browser executions: 3573 executions correspond to 1191 registered scenarios across three engines, not 3573 distinct behaviors. The coverage audit below establishes existing definitions, not that every Cartesian combination is necessary. Repeated payload/route/direction matrices, adapter lifecycle tails and documentation assertions are candidates for consolidation; preserving unique boundary, identity, rollback and browser regressions takes priority over test count. No tests were removed during the current verification.
+The baseline used Node 22.22.2 and pnpm 11.0.7 for ordinary workspace runs; Angular 22 used the isolated supported Node toolchain. Consumers installed the actual eight tarballs offline without workspace source aliases. No tests were removed during that baseline verification; the later consolidation is recorded separately. These results do not certify real OS/mobile IME, complete accessibility, arbitrary Office HTML fidelity or performance capacity. Documentation browser tests use Chromium only.
 
-The ordinary workspace runs use Node 22.22.2 and pnpm 11.0.7. Angular 22 uses the already installed isolated toolchain with its supported Node version. Consumers install the actual eight tarballs offline without workspace source aliases. These results do not certify real OS/mobile IME, complete accessibility, arbitrary Office HTML fidelity, or performance capacity. Documentation browser tests currently use Chromium only.
+## Test consolidation — `c97ff95`
+
+The separately committed cleanup reduced repeated Cartesian core-paste combinations by **58 registered editor cases**, or **174 browser executions** across the three engines: **1191 → 1133 cases**, **3573 → 3399 executions** before the new checklist cases. The focused affected-contract run passed **435 browser executions**. This is targeted consolidation evidence, not a replacement for the subsequent complete checklist run. Unique boundary, node-identity, rollback, history and browser regressions remain the priority over raw test count.
+
+## Historical diagnostic findings and fixes
 
 Diagnostic runs exposed a real codec defect: valid `ol.start` was removed on import. The additive, bounded attribute contract and regression tests are now in `document-attributes.md` and `tests/list-attributes.spec.ts`. Other fixes corrected test contracts: literal text checks use `textContent` rather than browser-dependent `innerText` block separators; expected styles use canonical serialized spacing; an expanded-range Undo does not revive an override from an earlier caret; ordinary key-input scenarios use real key events. In the measured Firefox automation diagnostic, `keyboard.insertText` produced noncancelable composition input, while `keyboard.type` produced ordinary cancelable `insertText`. Composition-specific and explicit synthetic-input scenarios retain their own protocols. Assertions about content, selection, formatting, history and node identity remain in place.
 
-A complete run then exposed two WebKit key-protocol differences: first-body Backspace could omit `beforeinput`, and Shift+Enter could report `insertParagraph`. Owned list keys now dispatch one normalized, cancelable `beforeinput` through the existing mutation pipeline; capture cancellation, composition/read-only/modifier guards, selection and one-operation history have dedicated regressions in `tests/list-keyboard-protocol.spec.ts`. The synthetic event has `isTrusted === false`, as documented in `lists-toolbar.md`. A focused cancellation/boundary rerun passed 120 scenarios across all three engines. The final complete run passed and is the authority for overall status.
+A complete run then exposed two WebKit key-protocol differences: first-body Backspace could omit `beforeinput`, and Shift+Enter could report `insertParagraph`. Owned list keys now dispatch one normalized, cancelable `beforeinput` through the existing mutation pipeline; capture cancellation, composition/read-only/modifier guards, selection and one-operation history have dedicated regressions in `tests/list-keyboard-protocol.spec.ts`. The synthetic event has `isTrusted === false`, as documented in `lists-toolbar.md`. A focused cancellation/boundary rerun passed 120 scenarios across all three engines. The final baseline run passed and is the authority for the `0f2face` baseline status, not for the later checklist source.
 
-Initial diagnostic runs were stopped after identifying these shared causes; they are not counted as successful complete runs. The completed current-tree editor and documentation results above were recorded from exit status 0.
+Initial diagnostic runs were stopped after identifying these shared causes; they are not counted as successful complete runs. The completed `0f2face` baseline editor and documentation results were recorded from exit status 0.
 
-## Current generated bundle measurements
+## Current generated bundle measurements — security working tree
 
-Measured by the build tooling in `size-report.json`; JavaScript is minified, CSS is separate, and shared chunks are counted once within a selected profile. Framework runtimes, declarations and source maps are excluded. This is bundle evidence, not an input-latency or memory benchmark.
+Read from the current build-generated `size-report.json`. JavaScript is minified; raw, gzip and Brotli are separate. CSS is measured separately. Selected profiles count their shared closure once and exclude framework runtimes, declarations and source maps. This is bundle evidence, not an input-latency or memory benchmark. Do not add standalone entries to profile totals and assume shared code is counted correctly.
 
-| Entry / selected profile | JS bytes | gzip bytes | Brotli bytes | CSS bytes |
+| Entry / selected profile | JS bytes | gzip bytes | Brotli bytes | Raw CSS bytes |
 | --- | ---: | ---: | ---: | ---: |
-| Core entry | 83983 | 25779 | 22577 | 3138 |
-| Standard with ready UI | 184496 | 53539 | 45701 | 10506 |
-| Extended with ready UI | 205652 | 59604 | 50736 | 11702 |
+| Core entry | 86408 | 26551 | 23275 | 3138 |
+| Optional checklists entry | 2709 | 1159 | 995 | 436 |
+| Minimal headless | 82885 | 25029 | 21922 | 3138 |
+| Minimal with ready UI | 101118 | 30427 | 26589 | 7187 |
+| Standard headless | 132476 | 40391 | 35066 | 4951 |
+| Standard with ready UI | 187681 | 54399 | 46611 | 10506 |
+| Extended headless | 144996 | 44303 | 38215 | 4951 |
+| Extended with ready UI | 208838 | 60856 | 51734 | 11702 |
 
-All enforced budgets passed. The full core entry remains 3983 bytes above the working 80000-byte target; the enforced 200000-byte guard is unchanged. The earlier baseline below remains historical rather than the current bundle measurement.
+| CSS entry | Raw bytes | gzip bytes | Brotli bytes |
+| --- | ---: | ---: | ---: |
+| Core | 3138 | 1123 | 923 |
+| Optional checklists | 436 | 240 | 187 |
+| Standard with ready UI | 10506 | 3565 | 2883 |
+| Extended with ready UI | 11702 | 4057 | 3259 |
+
+All enforced bundle budgets passed. The full core entry is **86408 raw minified bytes**, **6408 bytes above** the working 80000-byte target; the enforced 200000-byte guard remains unchanged. The earlier `0f2face` core was 83983 / 25779 / 22577 raw/gzip/Brotli bytes, so schema-attribute support and subsequent security bounds have a measurable core cost. Standalone checklist behavior is 2709 / 1159 / 995 JS bytes, with 436 / 240 / 187 CSS bytes.
+
+Standard/extended preset defaults do **not** include the new checklist plugin or its stylesheet. Their measured profiles above retain those defaults; the full documentation demo explicitly adds checklists. No dedicated combined ready-UI-plus-checklists profile is implied by adding standalone totals. The older `cbfb30d` table below remains a historical paste baseline, not a current measurement.
 
 ## Current bounded work
 

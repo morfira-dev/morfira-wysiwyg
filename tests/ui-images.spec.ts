@@ -268,3 +268,31 @@ test('embedded image controls do not create or submit a nested application form'
   await expect(page.locator('.outer-application-form')).toHaveAttribute('data-submitted', '0');
   expect(await page.locator('.outer-application-form').evaluate((element) => [...new FormData(element as HTMLFormElement).keys()])).toEqual([]);
 });
+
+test('image and search forms reject persisted-surface hosts before changing document or selection', async ({ page }) => {
+  await initialize(page);
+  const result = await page.evaluate(async () => {
+    const imagePath = '/packages/plugins/dist/ui/images.js';
+    const searchPath = '/packages/plugins/dist/ui/search.js';
+    const { createImageForm } = await import(imagePath) as typeof import('@morfira-dev/wysiwyg/ui/images');
+    const { createSearchForm } = await import(searchPath) as typeof import('@morfira-dev/wysiwyg/ui/search');
+    const host = document.createElement('div');
+    document.body.append(host);
+    const editor = window.createEditor(host, { value: '<p><strong>Keep</strong></p>', plugins: [window.createImages(), window.createSearch()] });
+    editor.setSelection(1, 2);
+    const before = editor.getHTML();
+    const selected = document.getSelection()!.anchorNode;
+    const rejected: boolean[] = [];
+    for (const create of [createImageForm, createSearchForm]) {
+      for (const target of [editor.surface, editor.surface.querySelector('strong')!]) {
+        try { create(target as HTMLElement, editor); rejected.push(false); }
+        catch { rejected.push(true); }
+      }
+    }
+    const after = { rejected, html: editor.getHTML(), before, selection: editor.getSelection(), sameNode: document.getSelection()!.anchorNode === selected, forms: editor.surface.querySelectorAll('.mw-form').length, undo: editor.canUndo() };
+    editor.destroy();
+    host.remove();
+    return after;
+  });
+  expect(result).toEqual({ rejected: [true, true, true, true], html: '<p><strong>Keep</strong></p>', before: '<p><strong>Keep</strong></p>', selection: { index: 1, length: 2 }, sameNode: true, forms: 0, undo: false });
+});

@@ -1,4 +1,4 @@
-import type { EditorOptions, SchemaNodeSpec, SchemaAttributeSpec } from '@morfira-dev/wysiwyg-core';
+import type { EditorOptions, SchemaContribution, SchemaAttributeSpec } from '@morfira-dev/wysiwyg-core';
 import type { MinimalPresetOptions } from '../minimal/types.js';
 
 const coreKeys = ['value', 'readOnly', 'placeholder', 'label', 'locale', 'translations', 'plugins', 'schema', 'onChange', 'historyLimit'];
@@ -20,9 +20,9 @@ export const featureOptions = <T extends object>(value: T | false | undefined, n
   return { ...value };
 };
 
-const cloneSchema = (nodes: readonly SchemaNodeSpec[]): SchemaNodeSpec[] => {
+const cloneSchema = (nodes: readonly SchemaContribution[]): SchemaContribution[] => {
   if (!Array.isArray(nodes)) throw new TypeError('Preset schema must be an array.');
-  return nodes.map((node: SchemaNodeSpec) => {
+  return nodes.map((node: SchemaContribution) => {
     if (!node || typeof node !== 'object' || Array.isArray(node)) throw new TypeError('Preset schema nodes must be records.');
     if (node.attributes === undefined) return { ...node };
     if (!node.attributes || typeof node.attributes !== 'object' || Array.isArray(node.attributes))
@@ -35,7 +35,13 @@ const cloneSchema = (nodes: readonly SchemaNodeSpec[]): SchemaNodeSpec[] => {
       }
       return [name, { ...rule }];
     }));
-    return { ...node, attributes };
+    if (node.kind === 'attributes' && node.split !== undefined) {
+      if (!node.split || typeof node.split !== 'object' || Array.isArray(node.split)
+        || ![Object.prototype, null].includes(Object.getPrototypeOf(node.split)))
+        throw new TypeError('Preset split policies must be plain records.');
+      return { ...node, attributes, split: { ...node.split } } as SchemaContribution;
+    }
+    return { ...node, attributes } as SchemaContribution;
   });
 };
 

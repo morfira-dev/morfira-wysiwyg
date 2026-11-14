@@ -230,7 +230,7 @@ export const handlesListInput = (root: HTMLElement, inputType: string): boolean 
     return false;
   return ['insertParagraph', 'insertLineBreak'].includes(inputType) || (inputType === 'deleteContentBackward' && range.collapsed && atStart(item, range));
 };
-export const editListInput = (root: HTMLElement, inputType: string): void => {
+export const editListInput = (root: HTMLElement, inputType: string, prepareSplit?: (item: HTMLLIElement) => void): void => {
   const range = activeRange(root)!;
   const item = blockAt(root, range.startContainer) as HTMLLIElement;
   if (inputType === 'insertParagraph') {
@@ -249,6 +249,7 @@ export const editListInput = (root: HTMLElement, inputType: string): void => {
     tail.selectNodeContents(item);
     tail.setStart(range.startContainer, range.startOffset);
     const next = item.cloneNode(false) as HTMLLIElement;
+    prepareSplit?.(next);
     next.append(tail.extractContents());
     item.after(next);
     placeholder(item);

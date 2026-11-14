@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { build } from 'esbuild';
 
-const features = ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions'];
+const features = ['checklists', 'tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions'];
 const forms = ['ui/links', 'ui/images', 'ui/search'];
 const standardFeatures = ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink'];
 const standardUI = ['ui/editor', 'ui/shared', 'ui/standard', ...forms, 'tables', 'images', 'search'];
@@ -23,7 +23,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component', allowed: [] },
   ...features.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/plugins/${feature}`,
-    symbol: ({ tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],
+    symbol: ({ checklists: 'checklists', tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],
     feature,
     allowed: feature === 'suggestions' ? ['suggestions-core', 'suggestions-menu'] : [feature, ...(['mentions', 'slash'].includes(feature) ? ['suggestions-core'] : [])],
   })),
@@ -63,8 +63,8 @@ for (const { entry, symbol, feature, allowed } of cases) {
   const text = result.outputFiles[0].text;
   if (['sanitizer', 'schema', 'command-token'].includes(feature)) assert.ok(!text.includes('mw-editor') && !text.includes('mw-toolbar'), `${feature}: editor UI retained`);
   if (feature === 'sanitizer') assert.ok(!text.includes('toolbar.bold') && !text.includes('editor.placeholder'), 'sanitizer: UI dictionaries retained');
-  if (feature === 'sanitizer') assert.ok(!text.includes('Command is not registered') && !text.includes('Schema node names'), 'sanitizer: optional SDK definitions retained');
-  if (feature === 'command-token') assert.ok(!text.includes('Schema node names') && !text.includes('Invalid document node'), 'command-token: schema codec retained');
+  if (feature === 'sanitizer') assert.ok(!text.includes('Command is not registered') && !/Schema (?:node )?names/.test(text), 'sanitizer: optional SDK definitions retained');
+  if (feature === 'command-token') assert.ok(!/Schema (?:node )?names/.test(text) && !text.includes('Invalid document node'), 'command-token: schema codec retained');
   if (feature === 'localization') assert.ok(!text.includes('mw-editor') && !text.includes('mw-toolbar') && !text.includes('toolbar.bold'), 'localization: editor UI retained');
   console.log(`${feature}: selective public import passed (${result.outputFiles[0].contents.length} minified bytes)`);
 }

@@ -1,5 +1,6 @@
 import { safeURL } from './security.js';
-import type { DocumentAttributeResolver } from './internal-types.js';
+import { countText, countElement, maximumHTMLLength, maximumNodes, maximumDepth } from './budget.js';
+import type { DocumentAttributeResolver, DocumentBudget } from './internal-types.js';
 import type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
 export type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
 /** Versioned, framework-independent document tree. Only supported HTML semantics are stored. */
@@ -7,8 +8,6 @@ export const documentTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquot
 const tags = new Set<string>(documentTags);
 const omitted = new Set(['script', 'style', 'iframe', 'object', 'embed', 'svg', 'math', 'template', 'form', 'input', 'button', 'textarea', 'select', 'noscript', 'link', 'meta', 'base']);
 const aliases: Record<string, string> = { b: 'strong', i: 'em', strike: 's', div: 'p' };
-const MAX_NODES = 100000;
-const MAX_DEPTH = 100;
 const safeStyle = (value: string): string => {
   const result: string[] = [];
   for (const declaration of value.split(';')) {
@@ -86,13 +85,14 @@ const attributesFor = (tag: DocumentTag, input: Record<string, unknown>, source:
     throw new TypeError('Unregistered schema node.');
   return output;
 };
-const readDOM = (node: Node, depth: number, budget: {
-  count: number;
-}, resolve?: DocumentAttributeResolver): DocumentNode[] => {
-  if (++budget.count > MAX_NODES || depth > MAX_DEPTH)
+const readDOM = (node: Node, depth: number, budget: DocumentBudget, resolve?: DocumentAttributeResolver): DocumentNode[] => {
+  if (++budget.count > maximumNodes || depth > maximumDepth)
     throw new RangeError('Document exceeds structural limits.');
-  if (node.nodeType === 3)
-    return [{ type: 'text', text: node.textContent ?? '' }];
+  if (node.nodeType === 3) {
+    const text = node.textContent ?? '';
+    countText(budget, text);
+    return [{ type: 'text', text }];
+  }
   if (node.nodeType !== 1)
     return [];
   const element = node as Element;
@@ -109,48 +109,57 @@ const readDOM = (node: Node, depth: number, budget: {
   const attributes = attributesFor(tag as DocumentTag, Object.fromEntries([...element.attributes].map((attr) => [attr.name, attr.value])), 'html', resolve, original);
   if (tag === 'img' && !attributes.src)
     return [];
+  countElement(budget, tag, attributes);
   return [{ type: 'element', tag: tag as DocumentTag, attributes, children }];
 };
 export const parseHTML = (html: string, resolve?: DocumentAttributeResolver): EditorDocument => {
-  if (html.length > 5000000)
+  if (html.length > maximumHTMLLength)
     throw new RangeError('HTML exceeds the document size limit.');
   // A template is inert: script execution and active resource loading are never used for import.
   const template = document.createElement('template');
   template.innerHTML = html;
-  const budget = { count: 0 };
+  const budget: DocumentBudget = { count: 0, htmlLength: 0 };
   return { version: 1, children: [...template.content.childNodes].flatMap((node) => readDOM(node, 0, budget, resolve)) };
 };
 export const validateDocument = (input: unknown, resolve?: DocumentAttributeResolver): EditorDocument => {
   if (!input || typeof input !== 'object' || !('version' in input) || input.version !== 1 || !('children' in input) || !Array.isArray(input.children))
     throw new TypeError('Expected a version 1 document.');
-  let count = 0;
-  let textLength = 0;
+  const budget: DocumentBudget = { count: 0, htmlLength: 0 };
   const visit = (value: unknown, depth: number): DocumentNode => {
-    if (++count > MAX_NODES || depth > MAX_DEPTH)
+    if (++budget.count > maximumNodes || depth > maximumDepth)
       throw new RangeError('Document exceeds structural limits.');
     if (!value || typeof value !== 'object' || !('type' in value))
       throw new TypeError('Invalid document node.');
     if (value.type === 'text' && 'text' in value && typeof value.text === 'string') {
-      textLength += value.text.length;
-      if (textLength > 5000000)
-        throw new RangeError('Document text exceeds size limit.');
+      countText(budget, value.text);
       return { type: 'text', text: value.text };
     }
     if (value.type !== 'element' || !('tag' in value) || typeof value.tag !== 'string' || !tags.has(value.tag) || !('children' in value) || !Array.isArray(value.children))
       throw new TypeError('Invalid document element.');
     const attrs = 'attributes' in value && value.attributes && typeof value.attributes === 'object' && !Array.isArray(value.attributes) ? value.attributes : {};
-    return { type: 'element', tag: value.tag as DocumentTag, attributes: attributesFor(value.tag as DocumentTag, attrs as Record<string, unknown>, 'json', resolve), children: value.children.map((child) => visit(child, depth + 1)) };
+    const attributes = attributesFor(value.tag as DocumentTag, attrs as Record<string, unknown>, 'json', resolve);
+    countElement(budget, value.tag, attributes);
+    return { type: 'element', tag: value.tag as DocumentTag, attributes, children: children(value.children, depth + 1) };
   };
-  return { version: 1, children: input.children.map((child) => visit(child, 0)) };
+  const children = (values: unknown[], depth: number): DocumentNode[] => {
+    if (values.length > maximumNodes) throw new RangeError('Document children exceed node limit.');
+    const output: DocumentNode[] = [];
+    for (let index = 0; index < values.length; index++) {
+      if (!Object.hasOwn(values, index)) throw new TypeError('Document children must be dense arrays.');
+      output.push(visit(values[index], depth));
+    }
+    return output;
+  };
+  return { version: 1, children: children(input.children, 0) };
 };
-export const renderDocument = (value: EditorDocument): DocumentFragment => {
-  const fragment = document.createDocumentFragment();
+export const renderDocument = (value: EditorDocument, owner: Document = document): DocumentFragment => {
+  const fragment = owner.createDocumentFragment();
   const append = (parent: Node, node: DocumentNode) => {
     if (node.type === 'text') {
-      parent.appendChild(document.createTextNode(node.text));
+      parent.appendChild(owner.createTextNode(node.text));
       return;
     }
-    const element = document.createElement(node.tag);
+    const element = owner.createElement(node.tag);
     for (const [key, value] of Object.entries(node.attributes))
       element.setAttribute(key, value);
     for (const child of node.children)
@@ -162,8 +171,8 @@ export const renderDocument = (value: EditorDocument): DocumentFragment => {
   return fragment;
 };
 export const documentHTML = (value: EditorDocument): string => {
-  const container = document.createElement('div');
-  container.append(renderDocument(value));
+  const container = document.createElement('template');
+  container.content.append(renderDocument(value, container.content.ownerDocument));
   return container.innerHTML;
 };
 export const sanitizeHTML = (html: string): string => { return documentHTML(parseHTML(html)); };

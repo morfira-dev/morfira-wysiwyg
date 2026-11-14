@@ -10,6 +10,8 @@ A preset is a pure `EditorOptions` factory: it selects ready behavior, copies it
 
 These compose current features: Markdown shortcuts are not Markdown import/export, mentions remain ordinary editable text, and autolink runs after a native Space. Atomic mentions, node views, decorations and future video/formula modules are not silently included.
 
+Optional [checklists](/en/checklists) are not part of these default sets yet. Pass `checklists()` explicitly through `plugins: [checklists()]` and import its CSS separately; controls in the full demo do not imply automatic preset loading.
+
 Ready controls and a live example are described in [Modern editor UI](/en/editor-ui).
 
 ## Minimal: a small editor

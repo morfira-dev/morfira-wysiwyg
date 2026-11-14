@@ -67,3 +67,7 @@ Malformed quoting, nested/multiple source tables, over-limit ranges and selectio
 [Mentions and slash snippets](/en/suggestions): `/plugins/mentions`, `/plugins/slash`, optional `/plugins/suggestions` and `/plugins/suggestions.css`. Phase 1 inserts ordinary text without persisted IDs.
 
 See [events, plugin cooperation and composable transactions](/en/events). Structural slash actions are documented [here](/en/suggestions#structural-slash-commands).
+
+## Checklists
+
+Install the separate [checklist plugin](/en/checklists) and its CSS through explicit imports. The guide documents single-item commands, checked state and first-slice limits; core-only editors do not load the plugin.

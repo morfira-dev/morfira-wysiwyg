@@ -1,0 +1,18 @@
+.mw-content li[data-checklist-checked] {
+  list-style-type: none;
+  position: relative;
+}
+
+.mw-content li[data-checklist-checked]::before {
+  content: "□";
+  position: absolute;
+  inset-inline-end: calc(100% + var(--mw-checklist-gap, 0.45em));
+  color: var(--mw-checklist-color, currentColor);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.mw-content li[data-checklist-checked="true"]::before {
+  content: "☑";
+  color: var(--mw-checklist-checked-color, var(--mw-accent, #6259e8));
+}

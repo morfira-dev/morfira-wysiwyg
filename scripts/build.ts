@@ -7,7 +7,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'web-component']) {
   await mkdir(outdir, { recursive: true });
   const result = await build({
     metafile: true,
-    entryPoints: name === 'plugins' ? Object.fromEntries(['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended'].map((entry) => [entry, `packages/plugins/src/${entry}/index.ts`])) : name === 'core' ? {
+    entryPoints: name === 'plugins' ? Object.fromEntries(['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended'].map((entry) => [entry, `packages/plugins/src/${entry}/index.ts`])) : name === 'core' ? {
       index: 'packages/core/src/index.ts',
       'private-editor-messages': 'packages/core/src/localization/messages.ts',
       'private-toolbar-messages': 'packages/core/src/ui/toolbar/messages.ts',
@@ -28,7 +28,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'web-component']) {
   if (['core', 'plugins'].includes(name) && Object.keys(result.metafile!.inputs).some((input) => input.includes('node_modules/'))) throw new Error(`${name}: bundled runtime dependencies are forbidden.`);
   await cp('LICENSE', `${outdir}/LICENSE`);
   if (name === 'core' || name === 'plugins') {
-    for (const file of name === 'core' ? ['style'] : ['tables', 'suggestions']) await build({ entryPoints: [name === 'core' ? `packages/core/src/${file}.css` : `packages/plugins/src/${file}/style.css`], outfile: `${outdir}/${file}.css`, bundle: true, minify: true });
+    for (const file of name === 'core' ? ['style'] : ['tables', 'suggestions', 'checklists']) await build({ entryPoints: [name === 'core' ? `packages/core/src/${file}.css` : `packages/plugins/src/${file}/style.css`], outfile: `${outdir}/${file}.css`, bundle: true, minify: true });
   }
   if (name === 'plugins') {
     await build({ entryPoints: ['packages/plugins/src/ui/style.css'], outfile: `${outdir}/ui/forms.css`, bundle: true, minify: true });
@@ -36,13 +36,14 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'web-component']) {
   }
 }
 await build({
-  entryPoints: ['index', 'vue', 'react', 'svelte', 'angular', 'web-component', 'plugins/tables', 'plugins/images', 'plugins/search', 'plugins/statistics', 'plugins/markdown', 'plugins/autolink', 'plugins/mentions', 'plugins/slash', 'plugins/suggestions', 'ui/links', 'ui/images', 'ui/search', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
+  entryPoints: ['index', 'vue', 'react', 'svelte', 'angular', 'web-component', 'plugins/tables', 'plugins/images', 'plugins/search', 'plugins/statistics', 'plugins/markdown', 'plugins/autolink', 'plugins/checklists', 'plugins/mentions', 'plugins/slash', 'plugins/suggestions', 'ui/links', 'ui/images', 'ui/search', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
   outdir: 'packages/wysiwyg/dist', outbase: 'packages/wysiwyg/src', bundle: true, format: 'esm', external: ['@morfira-dev/*'],
 });
 await mkdir('packages/wysiwyg/dist/plugins', { recursive: true });
 await cp('packages/core/dist/style.css', 'packages/wysiwyg/dist/style.css');
 await cp('packages/plugins/dist/tables.css', 'packages/wysiwyg/dist/plugins/tables.css');
 await cp('packages/plugins/dist/suggestions.css', 'packages/wysiwyg/dist/plugins/suggestions.css');
+await cp('packages/plugins/dist/checklists.css', 'packages/wysiwyg/dist/plugins/checklists.css');
 await mkdir('packages/wysiwyg/dist/ui', { recursive: true });
 await cp('packages/plugins/dist/ui/forms.css', 'packages/wysiwyg/dist/ui/forms.css');
 await cp('packages/plugins/dist/ui/editor.css', 'packages/wysiwyg/dist/ui/editor.css');

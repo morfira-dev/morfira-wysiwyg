@@ -250,6 +250,8 @@ Inside one item, selecting from after `Alpha ` to after `Mid` removes covered bo
 <ul><li><p>Alpha <u>X</u>dle</p><p>After body</p></li></ul>
 ```
 
+Optional [checklists](/en/checklists) use a separate plugin: state belongs to one `li`, and commands/external controls do not extend the core toolbar. Presets do not install the plugin automatically.
+
 ## Formatting
 
 Inline: `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`. Blocks: `header` (1–6 or false), `blockquote`, `code-block`, `list` (`bullet`, `ordered`, false), `align` (`left`, `center`, `right`, `justify`). `color` and `background` accept a CSS color or false. `link` accepts a URL, `LinkFormat` or false: a selection changes only that fragment; a caret inside a link edits the whole anchor. Unsafe API options throw before document mutation. Collapsed inline formatting establishes a typing position; complex cursor-boundary cases remain part of browser compatibility work.

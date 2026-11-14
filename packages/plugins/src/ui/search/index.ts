@@ -26,6 +26,7 @@ const mergeValues = (values: SearchFormValues, patch: Partial<SearchFormValues>)
 });
 
 export const createSearchForm = (host: HTMLElement, editor: Editor, options: SearchFormOptions = {}): SearchFormController => {
+  if (editor.surface.contains(host)) throw new Error('Mount search forms outside persisted editor content.');
   const api = searchCommands(editor);
   editor.getLocale();
   if (options.label !== undefined && typeof options.label !== 'string') throw new TypeError('Search form label must be a string.');

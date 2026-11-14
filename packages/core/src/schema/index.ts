@@ -1,11 +1,11 @@
-import { parseHTML, validateDocument, renderDocument, documentHTML } from '../document/index.js';
+import { documentTags, parseHTML, validateDocument, renderDocument, documentHTML } from '../document/index.js';
 import { safeURL } from '../document/security.js';
 import type { DocumentAttributeResolver } from '../document/internal-types.js';
 import type { CompiledAttribute, CompiledSchemaNode } from './internal-types.js';
 import type { DocumentTag, EditorDocument } from '../document/types.js';
-import type { DocumentSchema, SchemaNodeSpec } from './types.js';
+import type { DocumentSchema, SchemaContribution } from './types.js';
 
-export type { DocumentSchema, SchemaAttributeSpec, SchemaNodeSpec } from './types.js';
+export type { DocumentSchema, SchemaAttributeSpec, SchemaNodeSpec, SchemaAttributesSpec, SchemaContribution } from './types.js';
 
 const inlineTags = ['span', 'strong', 'em', 'u', 's', 'sub', 'sup', 'code'];
 const blockTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'figure', 'figcaption'];
@@ -67,37 +67,77 @@ const compileAttribute = (input: unknown): CompiledAttribute => {
   });
 };
 
-export const createDocumentSchema = (nodes: readonly SchemaNodeSpec[] = []): DocumentSchema => {
-  if (!Array.isArray(nodes) || nodes.length > 128) throw new TypeError('Schema nodes must be an array of at most 128 definitions.');
+export const createDocumentSchema = (nodes: readonly SchemaContribution[] = []): DocumentSchema => {
+  if (!Array.isArray(nodes) || nodes.length > 128) throw new TypeError('Schema contributions must be an array of at most 128 definitions.');
   const registry = new Map<string, CompiledSchemaNode>();
+  const names = new Set<string>();
+  // The document boundary also resolves unsupported source tags to reject semantic mismatches.
+  const tagAttributes = new Map<string, Map<string, CompiledAttribute>>();
+  const splitPolicies = new Map<DocumentTag, Map<string, string>>();
   for (const node of nodes) {
-    if (!record(node)) throw new TypeError('Schema node must be an object.');
-    keysWithin(node, ['name', 'kind', 'tag', 'attributes']);
+    if (!record(node)) throw new TypeError('Schema contribution must be an object.');
+    keysWithin(node, node.kind === 'attributes' ? ['name', 'kind', 'tag', 'attributes', 'split'] : ['name', 'kind', 'tag', 'attributes']);
     if (typeof node.name !== 'string' || node.name.length > 128 || !/^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)+$/.test(node.name))
-      throw new TypeError('Schema node names must be bounded namespaced identifiers.');
-    if (registry.has(node.name)) throw new Error(`Duplicate schema node: ${node.name}`);
-    if (!supportedTag(node.kind, node.tag))
-      throw new TypeError('Schema node tag must match its supported block or inline kind.');
-    const rules = node.attributes ?? {};
-    if (!record(rules) || Object.keys(rules).length > 64) throw new TypeError('Schema node attributes must be a bounded record.');
+      throw new TypeError('Schema names must be bounded namespaced identifiers.');
+    if (names.has(node.name)) throw new Error(`Duplicate schema contribution: ${node.name}`);
+    names.add(node.name);
+    const nonOwning = node.kind === 'attributes';
+    if (nonOwning ? !documentTags.includes(node.tag as DocumentTag) : !supportedTag(node.kind, node.tag))
+      throw new TypeError('Schema tag must match its supported kind.');
+    const tag = node.tag as DocumentTag;
+    const rules = node.attributes ?? (nonOwning ? undefined : {});
+    if (!record(rules) || Object.keys(rules).length > 64) throw new TypeError('Schema attributes must be a bounded record.');
     const attributes = new Map<string, CompiledAttribute>();
     for (const [name, rule] of Object.entries(rules)) {
       if (!/^data-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name) || name.startsWith('data-mw-'))
         throw new TypeError('Schema attributes must use non-reserved lowercase data-* names.');
-      attributes.set(name, compileAttribute(rule));
+      const compiled = compileAttribute(rule);
+      if (nonOwning && compiled.required) throw new TypeError('Non-owning attributes must be optional.');
+      attributes.set(name, compiled);
     }
-    registry.set(node.name, Object.freeze({ tag: node.tag, attributes }));
+    if (!nonOwning) {
+      registry.set(node.name, Object.freeze({ tag, attributes }));
+      continue;
+    }
+    const existing = tagAttributes.get(tag) ?? new Map<string, CompiledAttribute>();
+    for (const [name, rule] of attributes) {
+      if (existing.has(name)) throw new TypeError(`Duplicate schema tag attribute: ${name}`);
+      existing.set(name, rule);
+    }
+    if (existing.size > 64) throw new RangeError('Schema tag attributes exceed their bound.');
+    tagAttributes.set(tag, existing);
+    if (node.split !== undefined) {
+      if (tag !== 'li' || !record(node.split)) throw new TypeError('Schema split policy must be an LI attribute record.');
+      const policies = splitPolicies.get(tag) ?? new Map<string, string>();
+      for (const [name, reset] of Object.entries(node.split)) {
+        const rule = attributes.get(name);
+        if (!rule) throw new TypeError('Schema split policy must reference its declared attribute.');
+        policies.set(name, rule.read(reset));
+      }
+      splitPolicies.set(tag, policies);
+    }
+  }
+  for (const node of registry.values()) {
+    if ([...node.attributes.keys()].some((name) => tagAttributes.get(node.tag)?.has(name)))
+      throw new TypeError('Non-owning and semantic attribute definitions must not overlap.');
   }
   const resolve: DocumentAttributeResolver = (tag, input, source, originalTag) => {
-    if (!Object.hasOwn(input, 'data-mw-node')) return {};
+    const output: Record<string, string> = {};
+    for (const [name, rule] of tagAttributes.get(tag) ?? []) {
+      if (Object.hasOwn(input, name)) {
+        if (originalTag !== undefined && originalTag !== tag) throw new TypeError('Schema attribute does not match its original tag.');
+        output[name] = rule.read(input[name]);
+      }
+    }
+    if (!Object.hasOwn(input, 'data-mw-node')) return output;
     const marker = input['data-mw-node'];
     const node = typeof marker === 'string' ? registry.get(marker) : undefined;
     if (typeof marker !== 'string' || !node) {
       if (source === 'json') throw new TypeError('Unregistered schema node.');
-      return {};
+      return output;
     }
     if (tag !== node.tag || (originalTag !== undefined && originalTag !== node.tag)) throw new TypeError('Schema node marker does not match its tag.');
-    const output: Record<string, string> = { 'data-mw-node': marker };
+    output['data-mw-node'] = marker;
     for (const [name, rule] of node.attributes) {
       if (Object.hasOwn(input, name)) output[name] = rule.read(input[name]);
       else if (rule.required) throw new TypeError(`Missing required schema attribute: ${name}`);
@@ -107,6 +147,17 @@ export const createDocumentSchema = (nodes: readonly SchemaNodeSpec[] = []): Doc
   const validate: DocumentSchema['validateDocument'] = (input) => validateDocument(input, resolve);
   const parse: DocumentSchema['parseHTML'] = (html) => parseHTML(html, resolve);
   return Object.freeze({
+    attributesForSplit: (tag: DocumentTag, input: Readonly<Record<string, string>>) => {
+      if (!documentTags.includes(tag) || !record(input)) throw new TypeError('Expected a safe tag and attribute record.');
+      const output: Record<string, string> = {};
+      for (const [name, reset] of splitPolicies.get(tag) ?? []) {
+        if (Object.hasOwn(input, name)) {
+          tagAttributes.get(tag)!.get(name)!.read(input[name]);
+          output[name] = reset;
+        }
+      }
+      return output;
+    },
     parseHTML: parse,
     validateDocument: validate,
     renderDocument: (value: EditorDocument) => renderDocument(validate(value)),

@@ -63,7 +63,7 @@ const ensurePlaceholder = (body: HTMLElement): void => {
 };
 
 /** Called only by the guarded cancelable-beforeinput transaction owner. */
-export const editWrappedListInput = (root: HTMLElement, inputType: string): boolean => {
+export const editWrappedListInput = (root: HTMLElement, inputType: string, prepareSplit?: (item: HTMLLIElement) => void): boolean => {
   if (inspectWrappedListInput(root, inputType) !== 'eligible') return false;
   let range = activeRange(root)!;
   let boundary = inspectListItem(root, itemAt(root, range.startContainer)!)!;
@@ -123,6 +123,7 @@ export const editWrappedListInput = (root: HTMLElement, inputType: string): bool
   tail.selectNodeContents(body);
   tail.setStart(caret.startContainer, caret.startOffset);
   const nextItem = boundary.item.cloneNode(false) as HTMLLIElement;
+  prepareSplit?.(nextItem);
   const nextBody = body.cloneNode(false) as HTMLElement;
   nextBody.append(tail.extractContents());
   const laterBodies = boundary.bodies.slice(boundary.bodies.indexOf(body) + 1);

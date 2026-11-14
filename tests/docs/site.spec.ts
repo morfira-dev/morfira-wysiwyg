@@ -403,16 +403,17 @@ for (const english of [false, true]) test(`structural slash headings and tables 
   await expect(suggestions.getByRole('option', { name: /Заголовок 2|Heading 2/ })).toBeVisible();
   await page.keyboard.press('Enter');
   await expect(page.locator('.mw-content h2')).toHaveCount(1);
-  await page.keyboard.type('Heading');
-  await expect(page.locator('.mw-content h2')).toHaveText('Heading');
+  // One real key avoids coupling command-history proof to the 600ms typing-burst window.
+  await page.keyboard.type('H');
+  await expect(page.locator('.mw-content h2')).toHaveText('H');
   await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
   await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
   await expect(page.locator('.mw-content p')).toHaveText('/h2');
   await panel.getByRole('button', { name: t('Новый пример /table', 'New /table example'), exact: true }).click();
   await suggestions.getByRole('option', { name: /Таблица 3 × 3|Table 3 × 3/ }).click();
   await expect(page.locator('.mw-content td')).toHaveCount(9);
-  await page.keyboard.type('Cell');
-  await expect(page.locator('.mw-content td').first()).toHaveText('Cell');
+  await page.keyboard.type('C');
+  await expect(page.locator('.mw-content td').first()).toHaveText('C');
   await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
   await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
   await expect(page.locator('.mw-content p')).toHaveText('/table');
@@ -431,6 +432,20 @@ for (const english of [false, true]) test(`performance guide documents explicit 
   await expect(page.locator('.vp-doc h1')).toContainText(english ? 'Performance and history' : 'Производительность и история');
   await expect(page.locator('.vp-doc')).toContainText('pnpm run benchmark');
   await expect(page.locator('.vp-doc')).toContainText('nativeDispatch');
+  await expect(page.locator('.mw-editor')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+for (const english of [false, true]) test(`security guide explains deployment boundaries in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(english ? '/en/security' : '/security');
+  const article = page.locator('.vp-doc');
+  await expect(article.locator('h1')).toHaveText(english ? 'Security and trust boundaries' : 'Безопасность и границы доверия');
+  await expect(article).toContainText("require-trusted-types-for 'script'");
+  await expect(article).toContainText('style-src-attr');
+  await expect(article).toContainText('SSRF');
+  await expect(article.getByRole('link', { name: 'MDN: style-src-attr', exact: true })).toHaveAttribute('href', 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/style-src-attr');
   await expect(page.locator('.mw-editor')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

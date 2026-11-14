@@ -88,7 +88,12 @@
     "./ui/extended": {
       "types": "./dist/ui/extended/index.d.ts",
       "import": "./dist/ui/extended.js"
-    }
+    },
+    "./checklists": {
+      "types": "./dist/checklists/index.d.ts",
+      "import": "./dist/checklists.js"
+    },
+    "./checklists.css": "./dist/checklists.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.6.0"

@@ -21,6 +21,7 @@ Use pnpm 11.0.7 for installation and all workspace scripts. Keep only pnpm-lock.
 ## Editing invariants
 
 - A versioned typed document schema owns persisted data. Validate both HTML and JSON boundaries. Rebuild allowed DOM nodes/attributes; never accept executable markup, event attributes, unchecked URLs, arbitrary style declarations, or foreign namespaces.
+- Treat security as an acceptance criterion for every input, rendering and upload boundary. Follow `specs/security.md`: bound normalized document resources before rendering, keep codec-only processing inert, and distinguish untrusted content from trusted application/plugin code. Add focused regressions for concrete bypasses and races. Document backend validation, upload authorization and CSP requirements; frontend filtering is not a server trust boundary or a security certification.
 - Do not use `document.execCommand`. Use explicit document operations and Selection/Range APIs. Undo/redo must cover native input, formatting, paste, and plugin edits, restore selection, and clear appropriately on external document replacement.
 - Plugin state is per instance. Every listener, observer, pointer capture, menu, and subscription needs cleanup. Read-only must block user mutations and allow external value synchronization.
 - Tables use a logical grid for rowspan/colspan. Structural operations must preserve unaffected cell content, reject invalid selections atomically, and participate in history. Test merged cells, not only rectangular unmerged grids.
@@ -30,6 +31,7 @@ Use pnpm 11.0.7 for installation and all workspace scripts. Keep only pnpm-lock.
 ## Required validation and documentation
 
 - Add behavior tests for changed editing contracts; exercise Chromium, Firefox, and WebKit. Do not replace a regression test with implementation-matching assertions.
+- Cover distinct behavior and failure risks rather than multiplying every factor combination. Prefer representative or pairwise cases when they preserve the relevant interactions. Keep unique boundary, rollback and browser regressions; adapters test synchronization/lifecycle, and documentation tests public controls/localization instead of repeating the complete core matrix. Test counts are not a product-quality metric.
 - `pnpm run check`: package builds, declarations, selective-import/tree-shaking checks, bundle budgets, type checks, and editor/adapter tests. `pnpm run docs:build` and `pnpm run test:docs`: bilingual site and live examples. Report which checks actually ran and material unverified behavior.
 - For package-integration work, run `pnpm run consumers:check` after build: actual tarball consumers must not resolve workspace source aliases. Performance work follows `specs/performance.md`; run explicit observational benchmarks without concurrent builds/tests and never turn local timings into universal capacity claims.
 - Keep Russian and English API/example pages consistent. Mark unsupported and experimental behavior honestly; do not claim full compatibility or complete accessibility without evidence.
