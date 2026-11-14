@@ -1,4 +1,6 @@
-import { documentHTML, parseHTML, renderDocument, validateDocument } from '../document/index.js';
+import { createDocumentSchema } from '../schema/index.js';
+import type { DocumentSchema } from '../schema/types.js';
+import { createCommandRegistry } from '../commands/index.js';
 import { activeRange, bookmark, placeCaret, readTextSelection, restoreBookmark, selectText } from '../selection/index.js';
 import type { SelectionBookmark } from '../selection/index.js';
 import { editListInput, handlesListInput, indentList, listState, selectedBlocks } from '../lists/index.js';
@@ -37,11 +39,11 @@ const ensureDocument = (root: HTMLElement): boolean => {
   root.dataset.empty = String(!root.textContent && !root.querySelector('table,img,hr'));
   return normalized;
 };
-const insertFragment = (root: HTMLElement, html: string): void => {
+const insertFragment = (root: HTMLElement, html: string, schema: DocumentSchema): void => {
   const range = activeRange(root);
   if (!range)
     return;
-  const fragment = renderDocument(parseHTML(html));
+  const fragment = schema.renderDocument(schema.parseHTML(html));
   if (!fragment.childNodes.length)
     return;
   range.deleteContents();
@@ -83,7 +85,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   const limit = options.historyLimit ?? 100;
   if (!Number.isInteger(limit) || limit < 1 || limit > 10000)
     throw new RangeError('historyLimit must be an integer from 1 to 10000.');
-  const initialDocument = parseHTML(options.value ?? '');
+  const schema = createDocumentSchema([...(options.schema ?? []), ...plugins.flatMap((plugin) => plugin.schema ?? [])]);
+  const initialDocument = schema.parseHTML(options.value ?? '');
   let locale = createLocale(options.locale ?? 'ru', options.translations);
   const container = document.createElement('div');
   container.className = 'mw-editor';
@@ -98,7 +101,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   updateLocale();
   container.append(surface);
   host.append(container);
-  surface.append(renderDocument(initialDocument));
+  surface.append(schema.renderDocument(initialDocument));
   ensureDocument(surface);
   let destroyed = false;
   let readOnly = options.readOnly ?? false;
@@ -145,7 +148,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       eventHub.events.emit(event, payload);
     },
   };
-  const htmlSnapshots = createHTMLSnapshots(surface);
+  const htmlSnapshots = createHTMLSnapshots(surface, schema.sanitizeHTML);
   const capture = (): Snapshot => ({ html: htmlSnapshots.read(), selection: bookmark(surface), ...(typingOffset !== undefined && Object.keys(typingOverrides).length && typingAtCaret() ? { typing: { offset: typingOffset, formats: { ...typingOverrides } } } : {}) });
   const restoreTyping = (snapshot: Snapshot) => {
     clearTyping();
@@ -332,8 +335,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     else if (selectionChanged)
       notifySelection();
   };
+  const registry = createCommandRegistry({ editor: () => editor, isComposing: () => composing, assertActive });
   const editor: Editor = {
-    element: container, surface, events,
+    element: container, surface, events, schema, commands: registry.commands,
     getLocale: () => {
       assertActive();
       return { locale: locale.locale, translations: { ...locale.translations } };
@@ -351,11 +355,11 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     },
     getHTML: () => { assertActive(); return htmlSnapshots.read(); },
     getText: () => { assertActive(); return surface.innerText; },
-    getJSON: () => { assertActive(); return parseHTML(surface.innerHTML); },
+    getJSON: () => { assertActive(); return schema.parseHTML(surface.innerHTML); },
     setHTML: (html) => {
       assertActive();
       rejectDuringTransaction('setHTML');
-      const content = documentHTML(parseHTML(html));
+      const content = schema.documentHTML(schema.parseHTML(html));
       if (content === editor.getHTML())
         return;
       cancelComposition(false);
@@ -372,8 +376,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     setJSON: (value) => {
       assertActive();
       rejectDuringTransaction('setJSON');
-      const validated = validateDocument(value);
-      editor.setHTML(documentHTML(validated));
+      const validated = schema.validateDocument(value);
+      editor.setHTML(schema.documentHTML(validated));
     },
     getSelection: () => { assertActive(); return readTextSelection(surface); },
     setSelection: (index, length = 0) => { assertActive(); selectText(surface, index, length); notifySelection(); },
@@ -423,9 +427,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         return;
       }
       clearTyping();
-      editor.transact(() => applyFormat(surface, name, value));
+      editor.transact(() => applyFormat(surface, name, value, schema));
     },
-    insertHTML: (html) => editor.transact(() => insertFragment(surface, html)),
+    insertHTML: (html) => editor.transact(() => insertFragment(surface, html, schema)),
     focus: () => {
       assertActive();
       surface.focus({ preventScroll: true });
@@ -494,6 +498,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
           failures.push(error);
         }
       }
+      registry.destroy();
       pluginAPIs.clear();
       undoStack.length = 0;
       redoStack.length = 0;
@@ -565,7 +570,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         selectText(surface, start, text.length);
         for (const [name, enabled] of Object.entries(overrides))
           if ((Object.hasOwn(inlineStyles, name) ? readFormats(surface)[name] ?? false : Boolean(readFormats(surface)[name])) !== enabled)
-            applyFormat(surface, name, enabled);
+            applyFormat(surface, name, enabled, schema);
         selectText(surface, start + text.length);
         typingOffset = start + text.length;
       }, 'insertText');

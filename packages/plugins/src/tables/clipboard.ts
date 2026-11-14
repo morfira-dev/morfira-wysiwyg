@@ -93,14 +93,14 @@ const plainCell = (value: string, row: number, column: number): GridCell => {
   cell.element.replaceChildren(paragraph);
   return cell;
 };
-export const readClipboardTable = (data: TableClipboardInput): HTMLTableElement => {
+export const readClipboardTable = (data: TableClipboardInput, sanitize = sanitizeHTML): HTMLTableElement => {
   if (data.html !== undefined)
     checkLength(data.html);
   if (data.text !== undefined)
     checkLength(data.text);
   if (data.html) {
     const template = document.createElement('template');
-    template.innerHTML = sanitizeHTML(data.html);
+    template.innerHTML = sanitize(data.html);
     const tables = template.content.querySelectorAll('table');
     if (tables.length) {
       if (tables.length !== 1)
@@ -153,7 +153,7 @@ const cellText = (cell: HTMLTableCellElement): string => {
   return [...cell.childNodes].map(visit).join('').replace(/\n$/, '');
 };
 const quoteTSV = (value: string): string => /[\t\r\n"]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
-export const copyTableRange = (table: HTMLTableElement, cells: HTMLTableCellElement[]): TableClipboardData => {
+export const copyTableRange = (table: HTMLTableElement, cells: HTMLTableCellElement[], sanitize = sanitizeHTML): TableClipboardData => {
   const grid = readGrid(table);
   const rectangle = selectionRectangle(grid, cells);
   const selected = cellsInRectangle(grid, rectangle);
@@ -169,7 +169,7 @@ export const copyTableRange = (table: HTMLTableElement, cells: HTMLTableCellElem
     }
     rows.push(fields.join('\t'));
   }
-  return { html: sanitizeHTML(output.outerHTML), text: rows.join('\r\n') };
+  return { html: sanitize(output.outerHTML), text: rows.join('\r\n') };
 };
 const intersects = (cell: GridCell, area: CellRectangle): boolean => cell.row <= area.bottom && cell.column <= area.right && cell.row + cell.rowspan - 1 >= area.top && cell.column + cell.colspan - 1 >= area.left;
 const contained = (cell: GridCell, area: CellRectangle): boolean => cell.row >= area.top && cell.column >= area.left && cell.row + cell.rowspan - 1 <= area.bottom && cell.column + cell.colspan - 1 <= area.right;

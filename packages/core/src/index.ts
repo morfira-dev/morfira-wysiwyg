@@ -12,3 +12,8 @@ export { localize, editorMessages } from './localization/index.js';
 export type { EditorLocale, EditorTranslations, LocaleDictionaries, EditorTranslationKey } from './localization/types.js';
 export { toolbarMessages } from './ui/toolbar/messages.js';
 export type { ToolbarTranslationKey } from './ui/toolbar/types.js';
+
+export { createDocumentSchema } from './schema/index.js';
+export type { DocumentSchema, SchemaNodeSpec, SchemaAttributeSpec } from './schema/types.js';
+export { createEditorCommand } from './commands/index.js';
+export type { EditorCommand, EditorCommandDefinition, EditorCommandState, EditorCommands } from './commands/types.js';

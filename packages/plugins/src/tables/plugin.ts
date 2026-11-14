@@ -146,10 +146,10 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       });
     };
     const commands: TableCommands = {
-      copy: () => { const { table, cells } = clipboardCells(); return copyTableRange(table, cells); },
+      copy: () => { const { table, cells } = clipboardCells(); return copyTableRange(table, cells, editor.schema.sanitizeHTML); },
       cut: () => {
         const { table, cells } = clipboardCells();
-        const data = copyTableRange(table, cells);
+        const data = copyTableRange(table, cells, editor.schema.sanitizeHTML);
         if (!editor.isReadOnly())
           clearCellContents(cells);
         return data;
@@ -159,7 +159,7 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
           return;
         const explicit = selected.some((cell) => root.contains(cell));
         const { table, cells } = clipboardCells();
-        const source = readClipboardTable(data);
+        const source = readClipboardTable(data, editor.schema.sanitizeHTML);
         const plan = planTablePaste(table, cells, source, explicit);
         editor.transact(() => {
           plan.apply();

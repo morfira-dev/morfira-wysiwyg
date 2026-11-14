@@ -29,7 +29,7 @@ export const inlineDocument = (value: EditorDocument, from: number, to: number, 
       return [{ node, selected: false }];
     }
     const children = node.children.flatMap(visit);
-    if (blockTags.has(node.tag))
+    if (blockTags.has(node.tag) || node.attributes['data-mw-node'])
       return [{ node: { ...node, children: children.map((piece) => piece.node) }, selected: false }];
     if (!children.length)
       return [{ node, selected: false }];

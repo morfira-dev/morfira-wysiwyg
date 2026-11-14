@@ -1,3 +1,4 @@
+import { createEditorCommand } from '@morfira-dev/wysiwyg';
 import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg';
 import type { ConsumerProbe } from './types.js';
 import { tables } from '@morfira-dev/wysiwyg/plugins/tables';
@@ -18,8 +19,32 @@ import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const probe: ConsumerProbe = { changes: 0 };
 window.morfiraConsumer = probe;
+const insertNoteCommand = createEditorCommand<{ text: string }>('consumer:insert-note');
+const sdkPlugin: EditorPlugin = {
+  name: 'consumer-sdk',
+  schema: [{
+    name: 'consumer:note',
+    kind: 'block',
+    tag: 'blockquote',
+    attributes: { 'data-tone': { type: 'enum', values: ['note', 'warning'], required: true } },
+  }],
+  setup: (editor) => editor.commands.register(insertNoteCommand, {
+    validate: (payload) => {
+      if (!payload || typeof payload !== 'object' || !('text' in payload) || typeof payload.text !== 'string')
+        throw new TypeError('Expected note text.');
+      return { text: payload.text };
+    },
+    execute: (instance, payload) => {
+      const note = instance.surface.ownerDocument.createElement('blockquote');
+      note.setAttribute('data-mw-node', 'consumer:note');
+      note.setAttribute('data-tone', 'note');
+      note.textContent = payload.text;
+      instance.insertHTML(note.outerHTML);
+    },
+  }),
+};
 export const plugins: EditorPlugin[] = [
-  tables(), images(), search(), statistics(), markdownShortcuts(),
+  sdkPlugin, tables(), images(), search(), statistics(), markdownShortcuts(),
   mentions({ provide: () => [{ id: 'anna', label: 'Anna' }], debounceMs: 0 }),
   slash({
     provide: () => [{ id: 'heading', label: 'Heading 2', action: 'heading2' }],
@@ -29,6 +54,8 @@ export const plugins: EditorPlugin[] = [
 ];
 export const ready = (editor: Editor) => {
   probe.editor = editor;
+  const insertNote = (text: string) => editor.commands.execute(insertNoteCommand, { text });
+  probe.insertNote = insertNote;
   createSuggestionMenu(editor, slashCommands(editor));
   const host = document.createElement('div');
   host.dataset.consumerUi = '';
@@ -49,6 +76,7 @@ export const ready = (editor: Editor) => {
     forms.search.destroy();
     host.remove();
     if (probe.forms === forms) delete probe.forms;
+    if (probe.insertNote === insertNote) delete probe.insertNote;
   });
 };
 export const changed = (_change: EditorChange) => { probe.changes++; };

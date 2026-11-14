@@ -1,3 +1,4 @@
+import type { DocumentSchema } from '../schema/types.js';
 import type { DocumentTag } from '../document/index.js';
 import { documentHTML, parseHTML } from '../document/index.js';
 import { activeRange, readTextSelection, selectText, preserveRange } from '../selection/index.js';
@@ -67,12 +68,12 @@ export const readFormats = (root: HTMLElement): Record<string, unknown> => {
   }
   return { ...formats, align: formats.align ?? 'left', mixed: [...mixed], ...listState(root) };
 };
-export const applyFormat = (root: HTMLElement, name: string, value: unknown): void => {
+export const applyFormat = (root: HTMLElement, name: string, value: unknown, schema?: DocumentSchema): void => {
   const range = activeRange(root);
   if (!range)
     return;
   const tag = inlineFormats[name];
-  if (tag && !range.collapsed && applyLocalInline(root, range, tag, Boolean(value)))
+  if (tag && !range.collapsed && applyLocalInline(root, range, tag, Boolean(value), schema))
     return;
   const selection = readTextSelection(root)!;
   if (name === 'list') {
@@ -86,29 +87,29 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown): vo
   if (name === 'clear') {
     if (value !== true || !selection.length)
       return;
-    let content = parseHTML(root.innerHTML);
+    let content = (schema?.parseHTML ?? parseHTML)(root.innerHTML);
     for (const tag of [...Object.values(inlineFormats), 'a', 'span'] as DocumentTag[])
       content = inlineDocument(content, selection.index, selection.index + selection.length, tag, false);
-    root.innerHTML = documentHTML(content);
+    root.innerHTML = (schema?.documentHTML ?? documentHTML)(content);
     selectText(root, selection.index, selection.length);
     return;
   }
   if (tag) {
     if (range.collapsed)
       return;
-    root.innerHTML = documentHTML(inlineDocument(parseHTML(root.innerHTML), selection.index, selection.index + selection.length, tag, Boolean(value)));
+    root.innerHTML = (schema?.documentHTML ?? documentHTML)(inlineDocument((schema?.parseHTML ?? parseHTML)(root.innerHTML), selection.index, selection.index + selection.length, tag, Boolean(value)));
     selectText(root, selection.index, selection.length);
     return;
   }
   if (name === 'link') {
-    applyLink(root, value);
+    applyLink(root, value, schema);
     return;
   }
   if (Object.hasOwn(inlineStyles, name)) {
     const color = normalizeInlineStyle(name, value);
     if (!selection.length)
       return;
-    root.innerHTML = documentHTML(transformInlineAttributes(parseHTML(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'style', property: inlineStyles[name], value: color }));
+    root.innerHTML = (schema?.documentHTML ?? documentHTML)(transformInlineAttributes((schema?.parseHTML ?? parseHTML)(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'style', property: inlineStyles[name], value: color }));
     selectText(root, selection.index, selection.length);
     return;
   }
@@ -131,6 +132,8 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown): vo
         : name === 'blockquote' ? (value ? 'blockquote' : 'p')
           : name === 'code-block' ? (value ? 'pre' : 'p') : undefined;
       if (nextTag) {
+        if (block.hasAttribute('data-mw-node') && block.localName !== nextTag)
+          throw new RangeError('Cannot change the tag of a registered semantic node.');
         const replacement = document.createElement(nextTag);
         if (block.localName === 'li') {
           const content = [...block.childNodes].filter((node) => !(node instanceof Element && /^(ul|ol|p|h[1-6]|pre|blockquote)$/.test(node.localName)));

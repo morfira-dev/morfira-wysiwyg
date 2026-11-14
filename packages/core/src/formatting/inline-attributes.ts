@@ -91,7 +91,7 @@ const compact = (nodes: DocumentNode[]): DocumentNode[] => {
     const previous = result.at(-1);
     if (next.type === 'text' && previous?.type === 'text')
       previous.text += next.text;
-    else if (next.type === 'element' && previous?.type === 'element' && !blocks.has(next.tag) && !['img', 'br', 'hr'].includes(next.tag) && previous.tag === next.tag && equalAttributes(previous.attributes, next.attributes))
+    else if (next.type === 'element' && previous?.type === 'element' && !blocks.has(next.tag) && !next.attributes['data-mw-node'] && !['img', 'br', 'hr'].includes(next.tag) && previous.tag === next.tag && equalAttributes(previous.attributes, next.attributes))
       previous.children = compact([...previous.children, ...next.children]);
     else
       result.push(next);
@@ -124,7 +124,7 @@ export const transformInlineAttributes = (document: EditorDocument, from: number
     const children = node.children.flatMap((child) => visit(child, link));
     if (operation.kind === 'link' && node.tag === 'a')
       return children;
-    if (blocks.has(node.tag))
+    if (blocks.has(node.tag) || node.attributes['data-mw-node'])
       return [{ node: { ...node, children: wrap(children) }, selected: false }];
     return groupPieces(children).flatMap<Piece>((group) => {
       const attrs = operation.kind === 'style' && group.selected ? withoutProperty(node.attributes, operation.property) : node.attributes;

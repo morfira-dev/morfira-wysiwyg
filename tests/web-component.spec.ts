@@ -149,3 +149,134 @@ test('Web Component public entry imports in Node without browser globals or regi
   `], { cwd: process.cwd(), encoding: 'utf8' });
   expect(JSON.parse(output)).toEqual({ type: 'function', rejected: true, window: 'undefined', element: 'undefined' });
 });
+
+test('schema-aware controlled command feedback preserves metadata, caret and history while external updates stay silent', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const modulePath = '/packages/core/dist/index.js';
+    const { createEditorCommand } = await import(/* @vite-ignore */ modulePath) as typeof import('@morfira-dev/wysiwyg');
+    const insert = createEditorCommand<string>('test:insert-note');
+    const Constructor = window.webComponentHarness.define('sdk-controlled-editor');
+    const element = new Constructor();
+    element.plugins = [{
+      name: 'note',
+      schema: [{ name: 'test:note', kind: 'block', tag: 'blockquote', attributes: { 'data-tone': { type: 'enum', values: ['note', 'warning'], required: true } } }],
+      setup: (editor) => editor.commands.register(insert, {
+        validate: (payload) => {
+          if (typeof payload !== 'string') throw new TypeError('Expected text.');
+          return payload;
+        },
+        execute: (editor, text) => {
+          const note = document.createElement('blockquote');
+          note.dataset.mwNode = 'test:note';
+          note.dataset.tone = 'note';
+          note.textContent = text;
+          editor.insertHTML(note.outerHTML);
+        },
+      }),
+    }];
+    element.value = '<p>Start</p>';
+    const changes: string[] = [];
+    element.addEventListener('value-change', (event) => {
+      const value = (event as CustomEvent<string>).detail;
+      changes.push(value);
+      element.value = value;
+    });
+    document.body.append(element);
+    const editor = element.getEditor()!;
+    editor.setSelection(5);
+    editor.commands.execute(insert, '<sdk> & note');
+    const html = editor.getHTML();
+    const selection = editor.getSelection();
+    element.value = html;
+    const feedbackSelection = editor.getSelection();
+    editor.undo();
+    const undo = editor.getHTML();
+    const canUndo = editor.canUndo();
+    editor.redo();
+    const redo = editor.getHTML();
+    const count = changes.length;
+    element.readOnly = true;
+    element.setAttribute('value', '<blockquote data-mw-node="test:note" data-tone="warning">External</blockquote>');
+    const external = editor.getHTML();
+    let rejected = false;
+    try { element.value = '<blockquote data-mw-node="test:note">Invalid</blockquote>'; }
+    catch { rejected = true; }
+    const final = { html, selection, feedbackSelection, undo, canUndo, redo, count, silent: changes.length === count, external, value: element.value, rejected, finalHTML: editor.getHTML(), finalUndo: editor.canUndo() };
+    element.remove();
+    return final;
+  });
+  expect(result.html).toContain('<blockquote data-mw-node="test:note" data-tone="note">&lt;sdk&gt; &amp; note</blockquote>');
+  expect(result.feedbackSelection).toEqual(result.selection);
+  expect(result.undo).toBe('<p>Start</p>');
+  expect(result.canUndo).toBe(false);
+  expect(result.redo).toBe(result.html);
+  expect(result.count).toBe(3);
+  expect(result.silent).toBe(true);
+  expect(result.external).toBe('<blockquote data-mw-node="test:note" data-tone="warning">External</blockquote>');
+  expect(result.value).toBe(result.external);
+  expect(result.finalHTML).toBe(result.external);
+  expect(result.rejected).toBe(true);
+  expect(result.finalUndo).toBe(false);
+});
+
+test('value-before-plugins configuration and disconnect reconnect retain the configured schema', async ({ page }) => {
+  const result = await page.evaluate(() => {
+    const Constructor = window.webComponentHarness.define('sdk-preconfigured-editor');
+    const element = new Constructor();
+    const original = '<blockquote data-mw-node="test:note" data-tone="note">Before</blockquote>';
+    element.value = original;
+    let setup = 0;
+    let cleanup = 0;
+    element.plugins = [{
+      name: 'note',
+      schema: [{ name: 'test:note', kind: 'block', tag: 'blockquote', attributes: { 'data-tone': { type: 'enum', values: ['note'], required: true } } }],
+      setup: () => { setup++; return () => { cleanup++; }; },
+    }];
+    const configured = element.value;
+    document.body.append(element);
+    const first = element.getEditor()!;
+    const initial = first.getHTML();
+    element.remove();
+    const disconnected = element.value;
+    document.body.append(element);
+    const second = element.getEditor()!;
+    const reconnected = second.getHTML();
+    let stale = false;
+    try { first.getHTML(); }
+    catch { stale = true; }
+    element.remove();
+    return { configured, initial, disconnected, reconnected, different: second !== first, stale, setup, cleanup };
+  });
+  const original = '<blockquote data-mw-node="test:note" data-tone="note">Before</blockquote>';
+  expect(result).toEqual({ configured: original, initial: original, disconnected: original, reconnected: original, different: true, stale: true, setup: 2, cleanup: 2 });
+});
+
+test('schema properties adopted before upgrade preserve metadata and invalid disconnected updates are atomic', async ({ page }) => {
+  const result = await page.evaluate(() => {
+    const element = document.createElement('sdk-upgraded-editor') as MorfiraEditorElement;
+    const original = '<blockquote data-mw-node="test:note" data-tone="note">Adopted</blockquote>';
+    element.value = original;
+    element.plugins = [{
+      name: 'note',
+      schema: [{ name: 'test:note', kind: 'block', tag: 'blockquote', attributes: { 'data-tone': { type: 'enum', values: ['note'], required: true } } }],
+      setup: () => {},
+    }];
+    window.webComponentHarness.define('sdk-upgraded-editor');
+    customElements.upgrade(element);
+    let rejected = 0;
+    try { element.value = '<blockquote data-mw-node="test:note">Missing</blockquote>'; }
+    catch { rejected++; }
+    try {
+      element.plugins = [{ name: 'bad', schema: [{ name: 'test:bad', kind: 'inline', tag: 'span', attributes: { 'data-v': { type: 'enum', values: [] } } }], setup: () => {} }];
+    }
+    catch { rejected++; }
+    const configured = element.value;
+    const plugins = element.plugins.map((plugin) => plugin.name);
+    document.body.append(element);
+    const initial = element.getEditor()!.getHTML();
+    element.remove();
+    return { rejected, configured, plugins, initial };
+  });
+  const original = '<blockquote data-mw-node="test:note" data-tone="note">Adopted</blockquote>';
+  expect(result).toEqual({ rejected: 2, configured: original, plugins: ['note'], initial: original });
+});

@@ -6,6 +6,7 @@ import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
 export interface ConsumerProbe {
   editor?: Editor;
   changes: number;
+  insertNote?: (text: string) => boolean;
   forms?: {
     links: LinkFormController;
     images: ImageFormController;

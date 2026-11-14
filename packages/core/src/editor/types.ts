@@ -1,3 +1,5 @@
+import type { DocumentSchema, SchemaNodeSpec } from '../schema/types.js';
+import type { EditorCommands } from '../commands/types.js';
 import type { EditorDocument } from '../document/index.js';
 import type { SelectionBookmark, TextSelection } from '../selection/index.js';
 import type { EditorEvents } from '../events/types.js';
@@ -9,6 +11,7 @@ export interface EditorChange {
 }
 export interface EditorPlugin {
   name: string;
+  schema?: readonly SchemaNodeSpec[];
   setup(editor: Editor): void | (() => void);
 }
 export interface EditorOptions {
@@ -19,6 +22,7 @@ export interface EditorOptions {
   readOnly?: boolean;
   label?: string;
   plugins?: EditorPlugin[];
+  schema?: readonly SchemaNodeSpec[];
   onChange?: (change: EditorChange) => void;
   historyLimit?: number;
 }
@@ -26,6 +30,8 @@ export interface Editor {
   readonly element: HTMLElement;
   readonly surface: HTMLElement;
   readonly events: EditorEvents;
+  readonly schema: DocumentSchema;
+  readonly commands: EditorCommands;
   getLocale(): EditorLocale;
   setLocale(locale: string, translations?: EditorTranslations): void;
   getHTML(): string;

@@ -30,6 +30,7 @@ export interface ConsumerScenario {
   browserVersion: string;
   userChanges: number;
   uiForms: true;
+  sdk: true;
 }
 export interface ConsumerReport {
   profile: ConsumerProfile;

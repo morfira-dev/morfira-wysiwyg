@@ -1,3 +1,5 @@
+import { safeURL } from './security.js';
+import type { DocumentAttributeResolver } from './internal-types.js';
 import type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
 export type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
 /** Versioned, framework-independent document tree. Only supported HTML semantics are stored. */
@@ -7,18 +9,6 @@ const omitted = new Set(['script', 'style', 'iframe', 'object', 'embed', 'svg', 
 const aliases: Record<string, string> = { b: 'strong', i: 'em', strike: 's', div: 'p' };
 const MAX_NODES = 100000;
 const MAX_DEPTH = 100;
-const safeURL = (value: string, image: boolean): string | undefined => {
-  const trimmed = value.trim();
-  if (!trimmed || /[\u0000-\u0020\u007f]/.test(trimmed))
-    return;
-  // Explicit protocols and relative references only. Never data:, blob:, or script URLs.
-  const protocol = /^([a-z][a-z\d+.-]*):/i.exec(trimmed)?.[1].toLowerCase();
-  if (protocol && !(image ? ['http', 'https'] : ['http', 'https', 'mailto', 'tel']).includes(protocol))
-    return;
-  if (trimmed.startsWith('\\') || trimmed.startsWith('//'))
-    return;
-  return trimmed;
-};
 const safeStyle = (value: string): string => {
   const result: string[] = [];
   for (const declaration of value.split(';')) {
@@ -41,7 +31,7 @@ const safeStyle = (value: string): string => {
   }
   return result.join('; ');
 };
-const attributesFor = (tag: DocumentTag, input: Record<string, unknown>): Record<string, string> => {
+const attributesFor = (tag: DocumentTag, input: Record<string, unknown>, source: 'html' | 'json', resolve?: DocumentAttributeResolver, originalTag?: string): Record<string, string> => {
   const output: Record<string, string> = {};
   for (const [key, value] of Object.entries(input)) {
     if (typeof value !== 'string' || value.length > 20000)
@@ -79,11 +69,14 @@ const attributesFor = (tag: DocumentTag, input: Record<string, unknown>): Record
   }
   if (tag === 'a' && output.target === '_blank')
     output.rel = 'noopener noreferrer';
+  if (resolve) Object.assign(output, resolve(tag, input, source, originalTag));
+  else if (source === 'json' && Object.hasOwn(input, 'data-mw-node'))
+    throw new TypeError('Unregistered schema node.');
   return output;
 };
 const readDOM = (node: Node, depth: number, budget: {
   count: number;
-}): DocumentNode[] => {
+}, resolve?: DocumentAttributeResolver): DocumentNode[] => {
   if (++budget.count > MAX_NODES || depth > MAX_DEPTH)
     throw new RangeError('Document exceeds structural limits.');
   if (node.nodeType === 3)
@@ -94,25 +87,28 @@ const readDOM = (node: Node, depth: number, budget: {
   const original = element.localName.toLowerCase();
   if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml' || omitted.has(original))
     return [];
-  const children = [...element.childNodes].flatMap((child) => readDOM(child, depth + 1, budget));
+  const children = [...element.childNodes].flatMap((child) => readDOM(child, depth + 1, budget, resolve));
   const tag = aliases[original] ?? original;
-  if (!tags.has(tag))
+  if (!tags.has(tag)) {
+    if (resolve && element.hasAttribute('data-mw-node'))
+      resolve(tag, Object.fromEntries([...element.attributes].map((attr) => [attr.name, attr.value])), 'html', original);
     return children;
-  const attributes = attributesFor(tag as DocumentTag, Object.fromEntries([...element.attributes].map((attr) => [attr.name, attr.value])));
+  }
+  const attributes = attributesFor(tag as DocumentTag, Object.fromEntries([...element.attributes].map((attr) => [attr.name, attr.value])), 'html', resolve, original);
   if (tag === 'img' && !attributes.src)
     return [];
   return [{ type: 'element', tag: tag as DocumentTag, attributes, children }];
 };
-export const parseHTML = (html: string): EditorDocument => {
+export const parseHTML = (html: string, resolve?: DocumentAttributeResolver): EditorDocument => {
   if (html.length > 5000000)
     throw new RangeError('HTML exceeds the document size limit.');
   // A template is inert: script execution and active resource loading are never used for import.
   const template = document.createElement('template');
   template.innerHTML = html;
   const budget = { count: 0 };
-  return { version: 1, children: [...template.content.childNodes].flatMap((node) => readDOM(node, 0, budget)) };
+  return { version: 1, children: [...template.content.childNodes].flatMap((node) => readDOM(node, 0, budget, resolve)) };
 };
-export const validateDocument = (input: unknown): EditorDocument => {
+export const validateDocument = (input: unknown, resolve?: DocumentAttributeResolver): EditorDocument => {
   if (!input || typeof input !== 'object' || !('version' in input) || input.version !== 1 || !('children' in input) || !Array.isArray(input.children))
     throw new TypeError('Expected a version 1 document.');
   let count = 0;
@@ -131,7 +127,7 @@ export const validateDocument = (input: unknown): EditorDocument => {
     if (value.type !== 'element' || !('tag' in value) || typeof value.tag !== 'string' || !tags.has(value.tag) || !('children' in value) || !Array.isArray(value.children))
       throw new TypeError('Invalid document element.');
     const attrs = 'attributes' in value && value.attributes && typeof value.attributes === 'object' && !Array.isArray(value.attributes) ? value.attributes : {};
-    return { type: 'element', tag: value.tag as DocumentTag, attributes: attributesFor(value.tag as DocumentTag, attrs as Record<string, unknown>), children: value.children.map((child) => visit(child, depth + 1)) };
+    return { type: 'element', tag: value.tag as DocumentTag, attributes: attributesFor(value.tag as DocumentTag, attrs as Record<string, unknown>, 'json', resolve), children: value.children.map((child) => visit(child, depth + 1)) };
   };
   return { version: 1, children: input.children.map((child) => visit(child, 0)) };
 };

@@ -81,7 +81,11 @@
       "types": "./dist/ui/search.d.ts",
       "import": "./dist/ui/search.js"
     },
-    "./ui/forms.css": "./dist/ui/forms.css"
+    "./ui/forms.css": "./dist/ui/forms.css",
+    "./plugins/autolink": {
+      "types": "./dist/plugins/autolink.d.ts",
+      "import": "./dist/plugins/autolink.js"
+    }
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.5.2",

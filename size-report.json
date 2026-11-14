@@ -1,8 +1,8 @@
 {
   "core.js": {
-    "raw": 46868,
-    "gzip": 15423,
-    "brotli": 13856
+    "raw": 53520,
+    "gzip": 17371,
+    "brotli": 15591
   },
   "core.css": {
     "raw": 3138,
@@ -10,9 +10,9 @@
     "brotli": 923
   },
   "plugins.js": {
-    "raw": 20447,
-    "gzip": 7039,
-    "brotli": 6353
+    "raw": 20523,
+    "gzip": 7066,
+    "brotli": 6375
   },
   "plugins.css": {
     "raw": 1813,
@@ -25,9 +25,9 @@
     "brotli": 7026
   },
   "all-plugins.js": {
-    "raw": 66079,
-    "gzip": 25520,
-    "brotli": 22876
+    "raw": 69429,
+    "gzip": 27150,
+    "brotli": 24350
   },
   "ui-forms.js": {
     "raw": 44334,
@@ -63,6 +63,11 @@
     "raw": 6923,
     "gzip": 2891,
     "brotli": 2625
+  },
+  "autolink.js": {
+    "raw": 3274,
+    "gzip": 1603,
+    "brotli": 1452
   },
   "mentions.js": {
     "raw": 10951,
@@ -115,8 +120,8 @@
     "brotli": 1368
   },
   "web-component.js": {
-    "raw": 4045,
-    "gzip": 1754,
-    "brotli": 1516
+    "raw": 4224,
+    "gzip": 1833,
+    "brotli": 1588
   }
 }

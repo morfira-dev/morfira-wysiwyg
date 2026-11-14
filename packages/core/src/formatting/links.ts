@@ -1,7 +1,8 @@
+import type { DocumentSchema } from '../schema/types.js';
 import { documentHTML, parseHTML } from '../document/index.js';
 import { normalizeLink, mergeLinkAttributes, transformInlineAttributes } from './inline-attributes.js';
 import { activeRange, readTextSelection, selectText, preserveRange } from '../selection/index.js';
-export const applyLink = (root: HTMLElement, value: unknown): void => {
+export const applyLink = (root: HTMLElement, value: unknown, schema?: DocumentSchema): void => {
   const link = normalizeLink(value);
   const range = activeRange(root);
   if (!range)
@@ -13,7 +14,7 @@ export const applyLink = (root: HTMLElement, value: unknown): void => {
   if (link && link.text !== undefined && (!range.collapsed || existing))
     throw new TypeError('Link text is only supported for insertion at a caret outside links.');
   if (!range.collapsed) {
-    root.innerHTML = documentHTML(transformInlineAttributes(parseHTML(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'link', attributes: link && link.attributes }));
+    root.innerHTML = (schema?.documentHTML ?? documentHTML)(transformInlineAttributes((schema?.parseHTML ?? parseHTML)(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'link', attributes: link && link.attributes }));
     selectText(root, selection.index, selection.length);
     return;
   }

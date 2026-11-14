@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
-const features = ['tables', 'images', 'search', 'statistics', 'markdown', 'mentions', 'slash', 'suggestions'];
+const features = ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions'];
 const forms = ['ui/links', 'ui/images', 'ui/search'];
 const cases = [
   { entry: '@morfira-dev/wysiwyg', symbol: 'createEditor', feature: 'core' },
   { entry: '@morfira-dev/wysiwyg', symbol: 'sanitizeHTML', feature: 'sanitizer' },
   { entry: '@morfira-dev/wysiwyg', symbol: 'localize', feature: 'localization' },
+  { entry: '@morfira-dev/wysiwyg', symbol: 'createDocumentSchema', feature: 'schema' },
+  { entry: '@morfira-dev/wysiwyg', symbol: 'createEditorCommand', feature: 'command-token' },
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component' },
-  ...features.map((feature) => ({ entry: `@morfira-dev/wysiwyg/plugins/${feature}`, symbol: ({ tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature], feature })),
+  ...features.map((feature) => ({ entry: `@morfira-dev/wysiwyg/plugins/${feature}`, symbol: ({ tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature], feature })),
   ...forms.map((feature) => ({ entry: `@morfira-dev/wysiwyg/${feature}`, symbol: ({ 'ui/links': 'createLinkForm', 'ui/images': 'createImageForm', 'ui/search': 'createSearchForm' } as Record<string, string>)[feature], feature })),
 ];
 for (const { entry, symbol, feature } of cases) {
@@ -26,10 +28,12 @@ for (const { entry, symbol, feature } of cases) {
   for (const other of [...features, ...forms].filter((other) => other !== feature)) {
     assert.ok(!inputs.some((path) => path === `packages/plugins/dist/${other}.js`), `${feature}: loaded unrelated ${other}`);
   }
-  if (feature === 'core' || feature === 'sanitizer' || feature === 'localization') assert.ok(!inputs.some((path) => path.startsWith('packages/plugins/')), `${feature}: plugin leaked into core`);
+  if (feature === 'core' || feature === 'sanitizer' || feature === 'localization' || feature === 'schema' || feature === 'command-token') assert.ok(!inputs.some((path) => path.startsWith('packages/plugins/')), `${feature}: plugin leaked into core`);
   const text = result.outputFiles[0].text;
-  if (feature === 'sanitizer') assert.ok(!text.includes('mw-editor') && !text.includes('mw-toolbar'), 'sanitizer: editor UI retained');
+  if (['sanitizer', 'schema', 'command-token'].includes(feature)) assert.ok(!text.includes('mw-editor') && !text.includes('mw-toolbar'), 'sanitizer: editor UI retained');
   if (feature === 'sanitizer') assert.ok(!text.includes('toolbar.bold') && !text.includes('editor.placeholder'), 'sanitizer: UI dictionaries retained');
+  if (feature === 'sanitizer') assert.ok(!text.includes('Command is not registered') && !text.includes('Schema node names'), 'sanitizer: optional SDK definitions retained');
+  if (feature === 'command-token') assert.ok(!text.includes('Schema node names') && !text.includes('Invalid document node'), 'command-token: schema codec retained');
   if (feature === 'localization') assert.ok(!text.includes('mw-editor') && !text.includes('mw-toolbar') && !text.includes('toolbar.bold'), 'localization: editor UI retained');
   console.log(`${feature}: selective public import passed (${result.outputFiles[0].contents.length} minified bytes)`);
 }

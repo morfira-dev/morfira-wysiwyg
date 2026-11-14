@@ -1,4 +1,4 @@
-import { createEditor, editorMessages, localize, sanitizeHTML } from '@morfira-dev/wysiwyg-core';
+import { createEditor, createDocumentSchema, editorMessages, localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor, EditorPlugin, EditorTranslations } from '@morfira-dev/wysiwyg-core';
 import type { ElementLifecycle, ElementState } from './internal-types.js';
 import type { MorfiraEditorElement } from './types.js';
@@ -21,6 +21,8 @@ export const createElementLifecycle = (element: MorfiraEditorElement): ElementLi
   let editor: Editor | undefined;
   let mount: HTMLElement | undefined;
   let applying = false;
+  // Retain inert source until all creation-time properties have been configured.
+  let pendingValue: string | undefined;
   let unsubscribe: (() => void) | undefined;
   const adopted: Record<string, unknown> = {};
   for (const key of Object.keys(state).concat(['label', 'placeholder'])) {
@@ -50,13 +52,15 @@ export const createElementLifecycle = (element: MorfiraEditorElement): ElementLi
       get: () => state.value,
       set: (value: string) => {
         if (typeof value !== 'string') throw new TypeError('The editor value must be a string.');
-        const html = sanitizeHTML(value);
+        const schema = editor?.schema ?? createDocumentSchema(state.plugins.flatMap((plugin) => plugin.schema ?? []));
+        const html = schema.sanitizeHTML(value);
         if (editor && html !== editor.getHTML()) {
           applying = true;
           try { editor.setHTML(html); }
           finally { applying = false; }
         }
         state.value = editor?.getHTML() ?? html;
+        pendingValue = editor ? undefined : value;
       },
     },
     readOnly: {
@@ -74,7 +78,11 @@ export const createElementLifecycle = (element: MorfiraEditorElement): ElementLi
       set: (value: EditorPlugin[]) => {
         if (!Array.isArray(value) || value.some((plugin) => !plugin || typeof plugin.name !== 'string' || typeof plugin.setup !== 'function') || new Set(value.map((plugin) => plugin.name)).size !== value.length) throw new TypeError('Expected distinct editor plugins.');
         if (editor) throw new Error('Plugins are creation-time options; disconnect the element before replacing them.');
-        state.plugins = [...value];
+        const plugins = [...value];
+        const schema = createDocumentSchema(plugins.flatMap((plugin) => plugin.schema ?? []));
+        const html = schema.sanitizeHTML(pendingValue ?? state.value);
+        state.plugins = plugins;
+        state.value = html;
       },
     },
     ...Object.fromEntries((['label', 'placeholder'] as const).map((key) => [key, {
@@ -108,6 +116,7 @@ export const createElementLifecycle = (element: MorfiraEditorElement): ElementLi
           },
         });
         state.value = editor.getHTML();
+        pendingValue = undefined;
         unsubscribe = editor.events.on('localechange', (next) => {
           state.locale = next.locale;
           state.translations = { ...next.translations };
@@ -134,6 +143,7 @@ export const createElementLifecycle = (element: MorfiraEditorElement): ElementLi
         try { state.value = previous.getHTML(); }
         catch { /* Retain the last valid value. */ }
       }
+      pendingValue = state.value;
       try { previous?.destroy(); }
       finally {
         mount?.remove();
