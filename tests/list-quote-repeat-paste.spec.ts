@@ -147,7 +147,7 @@ test('quote then heading then several blocks can be inserted without resetting t
   }
 });
 
-for (const position of ['inside', 'crossing', 'item-edge', 'cross-items', 'middle-item']) test(`a ${position} quote selection is an atomic block-paste barrier`, async ({ page }) => {
+for (const position of ['inside', 'crossing', 'item-edge', 'cross-items', 'middle-item']) test(`${position === 'inside' ? 'a nested quote payload inside a quote' : `a ${position} quote selection`} is an atomic block-paste barrier`, async ({ page }) => {
   const value = position === 'middle-item'
     ? '<ul><li><p title="Before">AB</p></li><li><blockquote>Quote</blockquote></li><li><p title="Other">EF</p></li></ul>'
     : '<ul><li title="Owner"><p title="Before">AB</p><blockquote title="Quote"><p>Quote</p></blockquote><h2 title="After">CD</h2></li><li><p title="Other">EF</p></li></ul>';
@@ -168,7 +168,8 @@ for (const position of ['inside', 'crossing', 'item-edge', 'cross-items', 'middl
       selection.setBaseAndExtent(end, 1, start, 1);
     }
   }, position);
-  const result = await page.evaluate(() => {
+  const payload = position === 'inside' ? '<blockquote>Nested</blockquote>' : '<p>X</p><h3>Y</h3>';
+  const result = await page.evaluate((payload) => {
     const editor = window.editor;
     const selection = document.getSelection()!;
     const anchor = selection.anchorNode;
@@ -177,13 +178,13 @@ for (const position of ['inside', 'crossing', 'item-edge', 'cross-items', 'middl
     const observer = new MutationObserver(() => {});
     observer.observe(editor.surface, { subtree: true, childList: true, attributes: true });
     let rejected = false;
-    try { editor.insertHTML('<p>X</p><h3>Y</h3>'); } catch { rejected = true; }
+    try { editor.insertHTML(payload); } catch { rejected = true; }
     const mutations = observer.takeRecords().length;
     observer.disconnect();
     return { rejected, mutations, same: anchor === selection.anchorNode && focus === selection.focusNode, offsets: offsets.join(',') === [selection.anchorOffset, selection.focusOffset].join(','), changes: window.changes.length, undo: editor.canUndo() };
-  });
+  }, payload);
   expect(result).toEqual({ rejected: true, mutations: 0, same: true, offsets: true, changes: 0, undo: false });
-  expect(await paste(page, '<h3>New</h3>')).toBe(true);
+  expect(await paste(page, position === 'inside' ? '<blockquote>Nested</blockquote>' : '<h3>New</h3>')).toBe(true);
   expect(await html(page)).toBe(before);
 });
 

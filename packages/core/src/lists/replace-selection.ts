@@ -54,9 +54,13 @@ const requireSupported = (selected: ListSelectionResult): ListSelectionPlan | un
 };
 
 /** The transaction owner clears old caret formats only for this validated path. */
-export const handlesCollapsedListBlockPaste = (root: HTMLElement, fragment: DocumentFragment, range: Range | undefined = activeRange(root)): boolean => Boolean(range?.collapsed
-  && (ordinaryBlocks(fragment) || ordinaryHeading(fragment) || ordinaryQuote(fragment))
-  && listPasteSelection(root, range, true).status === 'eligible');
+export const handlesCollapsedListBlockPaste = (root: HTMLElement, fragment: DocumentFragment, range: Range | undefined = activeRange(root)): boolean => {
+  if (!range?.collapsed) return false;
+  const innerPayload = Boolean(ordinaryBlocks(fragment) || ordinaryHeading(fragment));
+  if (!innerPayload && !ordinaryQuote(fragment)) return false;
+  const selected = listPasteSelection(root, range, true);
+  return selected.status === 'eligible' && (!selected.quote || innerPayload);
+};
 
 /** Detached import preflight: an empty sanitized fragment stays a no-op for any source. */
 export const prepareListSelectionPaste = (root: HTMLElement, fragment: DocumentFragment, range?: Range): void => {
@@ -67,6 +71,8 @@ export const prepareListSelectionPaste = (root: HTMLElement, fragment: DocumentF
   const candidate = blockPasteCandidate(fragment);
   const selected = requireSupported(listPasteSelection(root, range, candidate));
   if (!selected) return;
+  if (selected.quote && !blocks && !heading)
+    throw new TypeError('Insertion inside a list quote supports multiple ordinary paragraphs/headings or one ordinary heading.');
   if (![...fragment.childNodes].every(inlinePayloadNode) && !ordinaryParagraph(fragment) && !blocks && !heading && !quote)
     throw new TypeError('List selection insertion supports inline HTML, an ordinary paragraph, heading or bounded quote, or multiple ordinary paragraphs/headings.');
   if (blocks || heading || quote) {
@@ -78,41 +84,52 @@ export const prepareListSelectionPaste = (root: HTMLElement, fragment: DocumentF
 };
 
 const cutListSelection = (selected: ListSelectionPlan, forceParagraph = false) => {
+  const context = selected.quote;
+  const container = context?.container ?? selected.first.item;
   const sameItem = selected.first.item === selected.last.item;
-  const startIndex = selected.first.bodies.indexOf(selected.startBody);
-  const endIndex = selected.last.bodies.indexOf(selected.endBody);
-  const following = selected.last.bodies.slice(endIndex + 1);
-  const branches = selected.last.nestedLists;
+  const firstBodies = context?.bodies ?? selected.first.bodies;
+  const lastBodies = context?.bodies ?? selected.last.bodies;
+  const startIndex = firstBodies.indexOf(selected.startBody);
+  const endIndex = lastBodies.indexOf(selected.endBody);
+  const following: ChildNode[] = context ? [] : lastBodies.slice(endIndex + 1);
+  if (context && selected.endBody !== container) {
+    let node = selected.endBody.nextSibling;
+    while (node) {
+      following.push(node);
+      node = node.nextSibling;
+    }
+  }
+  const branches = context ? [] : selected.last.nestedLists;
   // Keep unselected branches out of the generic cut: for a direct empty LI,
   // their placeholders must not be mistaken for the own-body placeholder.
   for (const branch of branches) branch.remove();
   for (const body of following) body.remove();
-  const leaves = sameItem ? selected.first.bodies.slice(startIndex, endIndex + 1) : selected.leaves;
+  const leaves = context || sameItem ? firstBodies.slice(startIndex, endIndex + 1) : selected.leaves;
   const cut = cutSelectionReplacement({ range: selected.range, leaves, contentRoots: { left: selected.startBody, right: selected.endBody } });
-  if (!sameItem) {
+  if (!context && !sameItem) {
     for (const body of selected.first.bodies.slice(startIndex + 1)) body.remove();
   }
   // A direct-inline start needs a wrapper when surviving or incoming blocks
   // would otherwise create a mixed inline/block item. Keep actual descendants.
-  if (cut.left === selected.first.item && (following.length || forceParagraph)) {
-    const container = cut.caret.startContainer;
+  if (cut.left === container && (following.length || forceParagraph)) {
+    const caretContainer = cut.caret.startContainer;
     const offset = cut.caret.startOffset;
     const paragraph = cut.left.ownerDocument.createElement('p');
     paragraph.append(...cut.left.childNodes);
     cut.left.append(paragraph);
-    cut.caret.setStart(container === cut.left ? paragraph : container, offset);
+    cut.caret.setStart(caretContainer === cut.left ? paragraph : caretContainer, offset);
     cut.caret.collapse(true);
     cut.left = paragraph;
   }
-  for (const gap of selected.gaps) gap.remove();
-  return { ...cut, following, branches };
+  for (const gap of context?.gaps ?? selected.gaps) gap.remove();
+  return { ...cut, following, branches, container };
 };
 
 /** Called only inside the editor transaction after native ownership was chosen. */
 export const replaceListSelection = (root: HTMLElement, text: string): boolean => {
   const selected = requireSupported(listSelectionReplacement(root));
   if (!selected) return false;
-  const { left, tail, caret, following, branches } = cutListSelection(selected);
+  const { left, tail, caret, following, branches, container } = cutListSelection(selected);
   if (text) {
     const inserted = root.ownerDocument.createTextNode(text);
     caret.insertNode(inserted);
@@ -121,7 +138,7 @@ export const replaceListSelection = (root: HTMLElement, text: string): boolean =
   }
   left.append(tail);
   finishSelectionReplacement(left, caret);
-  selected.first.item.append(...following, ...branches);
+  container.append(...following, ...branches);
   return true;
 };
 
@@ -138,9 +155,9 @@ export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: Do
   prepareListSelectionPaste(root, fragment, selected.range);
   const paragraph = ordinaryParagraph(fragment);
   // Keep the original end wrapper before a direct start is promoted by the cut.
-  const suffix = standalone ? (selected.endBody === selected.last.item
+  const suffix = standalone ? (selected.endBody === (selected.quote?.container ?? selected.last.item)
     ? root.ownerDocument.createElement('p') : selected.endBody.cloneNode(false) as HTMLElement) : undefined;
-  const { left, tail, caret, following, branches } = cutListSelection(selected, Boolean(blocks || standalone));
+  const { left, tail, caret, following, branches, container } = cutListSelection(selected, Boolean(blocks || standalone));
   if (standalone && suffix) {
     left.after(standalone, suffix);
     ensureReplacementPlaceholder(left, caret);
@@ -155,7 +172,7 @@ export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: Do
     end.selectNodeContents(suffix);
     end.collapse(true);
     finishSelectionReplacement(suffix, end);
-    selected.first.item.append(...following, ...branches);
+    container.append(...following, ...branches);
     return true;
   }
   if (blocks) {
@@ -176,13 +193,13 @@ export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: Do
     end.collapse(false);
     last.append(tail);
     finishSelectionReplacement(last, end);
-    selected.first.item.append(...following, ...branches);
+    container.append(...following, ...branches);
     return true;
   }
   if (paragraph) fragment.replaceChildren(...paragraph.childNodes);
   insertInlineFragment(left, caret, fragment);
   left.append(tail);
   finishSelectionReplacement(left, caret);
-  selected.first.item.append(...following, ...branches);
+  container.append(...following, ...branches);
   return true;
 };

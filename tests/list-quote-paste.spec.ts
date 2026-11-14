@@ -207,7 +207,7 @@ for (const collapsed of [false, true]) {
   });
 }
 
-test('insertion inside an existing quote stays blocked while ordinary suffix typing remains available', async ({ page }) => {
+test('nested quote insertion inside an existing quote stays blocked while ordinary suffix typing remains available', async ({ page }) => {
   const before = await initialize(page, '<ul><li><p title="Body">AB</p></li></ul>');
   await caret(page, '[title="Body"]', 1);
   await page.evaluate(() => window.editor.insertHTML('<blockquote title="Quote">Q</blockquote>'));

@@ -18,6 +18,21 @@ export interface ListSelectionPlan {
   last: ListItemBoundary;
   startBody: HTMLElement;
   endBody: HTMLElement;
+  quote?: QuotePasteContext;
+}
+
+export interface QuotePasteContext {
+  container: HTMLElement;
+  bodies: HTMLElement[];
+  range: Range;
+  startBody: HTMLElement;
+  endBody: HTMLElement;
+  gaps: ChildNode[];
+}
+
+export interface QuoteBodyPoint {
+  body: HTMLElement;
+  range: Range;
 }
 
 export type ListSelectionResult =

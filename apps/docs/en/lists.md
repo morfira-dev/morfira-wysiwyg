@@ -93,7 +93,15 @@ Load the source list sample, choose a caret position or select text/items, then 
 
 Click **Load repeated insertion sample → Caret after existing quote**, then **Insert quote → Insert heading → Replace with multiple blocks** consecutively. The original quote, following bodies and nested branch remain without reloading; every step has its own Undo. **Caret before existing quote** places insertion on the other side. Loading replaces the document.
 
-Only the new block API/clipboard path treats ordinary source quotes as whole preserved nodes. Selection endpoints must be in ordinary text bodies; ranges inside a quote or crossing it, including complete coverage, remain blocked. An item-level position resolving into a quote is also a barrier. Unsupported or semantic quotes reject the operation even outside the selection. Native boundary operations, inline insertion and single-paragraph insertion are not extended. This slice does not claim complete quote editing or verified browser compatibility; see the [API](/en/api#list-item-selections-and-boundaries) for the bounded contract.
+Only the new block API/clipboard path treats ordinary source quotes as whole preserved nodes. For insertion outside a quote, selection endpoints must be in ordinary text bodies; ranges crossing the quote, including complete coverage, remain blocked. An item-level position resolving to the whole quote is also a barrier. Unsupported or semantic quotes reject the operation even outside the selection. Native boundary operations, inline insertion and single-paragraph insertion are not extended. This slice does not claim complete quote editing or verified browser compatibility; see the [API](/en/api#list-item-selections-and-boundaries) for the bounded contract.
+
+### Block insertion inside one quote
+
+Click **Load insertion-inside-quote sample**, then **Caret inside quote** or **Select blocks inside quote**. **Replace with multiple blocks** and **Insert heading** insert ordinary `p`/`h1`–`h6` bodies inside that same actual `blockquote`. Its wrapper/attributes, untouched child bodies, outer item bodies and nested list remain. Loading the sample replaces the document.
+
+For several incoming blocks, the prefix joins the first body and the suffix joins the last; a single heading remains separate between the prefix and suffix. Direct inline quote content receives a `p` wrapper around its text body. The caret precedes the suffix, empty bodies remain editable and Undo restores the exact original caret or selection direction.
+
+A caret or range across ordinary bodies of **one** quote is supported. Leaving the quote, crossing between quotes, inserting a new nested quote, semantic block roots, original images and unsupported structures are atomic refusals. Inline/single-paragraph insertion and native boundary operations retain their previous rules. This is a bounded insertion path; tests, builds, types and fresh sizes have not been checked yet.
 
 ## Current boundaries
 

@@ -1,5 +1,6 @@
 import { activeRange } from '../selection/index.js';
 import { isOrdinaryQuote } from './paste-payload.js';
+import { directQuoteAt, quotePasteContext } from './quote-selection.js';
 import type { ListItemBoundary, ListSelectionOptions, ListSelectionResult } from './internal-types.js';
 
 const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br']);
@@ -90,6 +91,17 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
   if (firstItem.parentElement !== lastItem.parentElement) return blocked('Select sibling items in one list.');
   const first = inspectItem(root, firstItem, preserveQuotes);
   const last = inspectItem(root, lastItem, preserveQuotes);
+  if (preserveQuotes && first && last && first.item === last.item) {
+    const quote = directQuoteAt(first.item, range.startContainer);
+    const endQuote = directQuoteAt(last.item, range.endContainer);
+    if (quote || endQuote) {
+      if (!quote || quote !== endQuote) return blocked('A block insertion cannot cross a quote boundary.');
+      const context = quotePasteContext(quote, range);
+      if (!context) return blocked('Block insertion inside a quote requires ordinary inline or paragraph/heading source content.');
+      return { status: 'eligible', range: context.range, leaves: [first.item], gaps: [], first, last,
+        startBody: context.startBody, endBody: context.endBody, quote: context };
+    }
+  }
   const start = first && normalizeListBodyRange(range, first, false);
   const startBody = first && listBodyAt(range, first, false);
   // A collapsed li-level point between blocks denotes the next body's start.
