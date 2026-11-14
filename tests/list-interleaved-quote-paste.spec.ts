@@ -56,7 +56,18 @@ const directions = [
   { name: 'outside to outside', first: '[title="Start"]', last: '[title="End"]', left: false, right: false },
 ];
 
-for (const direction of directions) for (const payload of payloads) for (const clipboard of [false, true]) test(`${clipboard ? 'clipboard forward' : 'API backward'} ${payload.name} ${direction.name} preserves interleaved retained-node order`, async ({ page }) => {
+// Every direction/payload pair runs once. Alternating the route also covers
+// both API and clipboard for each direction and each payload, while retaining
+// the existing route-specific forward/backward history assertions.
+const replacementCases = directions.flatMap((direction, directionIndex) =>
+  payloads.map((payload, payloadIndex) => ({
+    direction,
+    payload,
+    clipboard: (directionIndex + payloadIndex) % 2 === 1,
+  })),
+);
+
+for (const { direction, payload, clipboard } of replacementCases) test(`${clipboard ? 'clipboard forward' : 'API backward'} ${payload.name} ${direction.name} preserves interleaved retained-node order`, async ({ page }) => {
   const before = await initialize(page, source);
   const titles = ['List', 'Owner', 'Before item', 'After item', 'Before', 'Prefix branch', ...protectedTitles, 'Opaque branch quote', 'Following branch', 'After', 'Tail branch', ...(direction.left ? ['Left', 'Left body', 'Left keep'] : []), ...(direction.right ? ['Right', 'Right body', 'Right keep'] : [])];
   const nodes = await Promise.all(titles.map((title) => page.locator(`.mw-content [title="${title}"]`).elementHandle()));

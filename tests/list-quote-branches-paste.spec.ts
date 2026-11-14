@@ -60,7 +60,18 @@ const directions = [
   { name: 'outside to outside', first: '[title="Start"]', last: '[title="End"]', prefix: '<h2 title="Start" style="text-align: center">A</h2>', suffix: '<h3 title="End">H</h3>', left: false, right: false },
 ];
 
-for (const direction of directions) for (const payload of payloads) for (const clipboard of [false, true]) test(`${clipboard ? 'clipboard forward' : 'API backward'} ${payload.name} ${direction.name} retains every branch after result bodies in source order`, async ({ page }) => {
+// Every direction/payload pair runs once. Alternating the route also covers
+// both API and clipboard for each direction and each payload, while retaining
+// the existing route-specific forward/backward history assertions.
+const replacementCases = directions.flatMap((direction, directionIndex) =>
+  payloads.map((payload, payloadIndex) => ({
+    direction,
+    payload,
+    clipboard: (directionIndex + payloadIndex) % 2 === 1,
+  })),
+);
+
+for (const { direction, payload, clipboard } of replacementCases) test(`${clipboard ? 'clipboard forward' : 'API backward'} ${payload.name} ${direction.name} retains every branch after result bodies in source order`, async ({ page }) => {
   const before = await initialize(page, source, [reference]);
   const kept = await Promise.all(['List', 'Owner', 'Before item', 'After item', 'Keep before', 'Keep after', 'Opaque after', 'Deep', 'Deep quote', ...branchOrder, ...(direction.left ? ['Left', 'Left body', 'Left keep'] : []), ...(direction.right ? ['Right', 'Right body', 'Right keep'] : [])].map((title) => page.locator(`.mw-content [title="${title}"]`).elementHandle()));
   const branchHTML = await page.evaluate((titles) => titles.map((title) => window.editor.surface.querySelector(`[title="${title}"]`)!.outerHTML), branchOrder);

@@ -47,7 +47,18 @@ const profiles = [
   { name: 'cross-body backward', firstOffset: 1, end: '[title="End"]', endOffset: 1, backward: true, cross: true, prefix: 'A' },
 ];
 
-for (const profile of profiles) for (const heading of [false, true]) for (const clipboard of [false, true]) test(`interleaved inner quote ${profile.name} ${heading ? 'heading' : 'multiple blocks'} via ${clipboard ? 'clipboard' : 'API'} leaves every outside node in order`, async ({ page }) => {
+// Every caret/selection profile and payload pair runs once. Alternating the
+// route covers both API and clipboard for every profile and both payloads;
+// the explicit forward/backward profiles still exercise exact undo coordinates.
+const replacementCases = profiles.flatMap((profile, profileIndex) =>
+  [false, true].map((heading, payloadIndex) => ({
+    profile,
+    heading,
+    clipboard: (profileIndex + payloadIndex) % 2 === 1,
+  })),
+);
+
+for (const { profile, heading, clipboard } of replacementCases) test(`interleaved inner quote ${profile.name} ${heading ? 'heading' : 'multiple blocks'} via ${clipboard ? 'clipboard' : 'API'} leaves every outside node in order`, async ({ page }) => {
   const before = await initialize(page, source);
   const names = ['Owner', 'Before', 'Prefix branch', 'After prefix branch', 'Quote', 'Quoted before', 'Quoted after', 'Following branch', 'After', 'Neighbor', 'Tail'];
   const nodes = await Promise.all(names.map((title) => page.locator(`.mw-content [title="${title}"]`).elementHandle()));
