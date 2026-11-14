@@ -2,7 +2,7 @@
 
 Morfira is an independently implemented lightweight modular TypeScript editor under MIT. The target is ready everyday authoring close to mature editors in common tasks, with a small selected bundle, understandable extensions, modern UI and detailed documentation. Improvements require concrete scenarios and measurements. Full enterprise or office-suite parity is not a commitment.
 
-The new same-list multi-item selection, boundary deletion and multiple paragraph/heading item-body slice, including cross-body replacement, splitting and first-body Backspace (sibling joins, root exits and nested lifts) is written locally but **has not been verified**: tests, builds and new measurements are deferred at the user's request. See its boundaries and limits in the [API](/en/api#list-item-selections-and-boundaries) and the resumption checklist in `specs/verification-backlog.md`. This does not invalidate the earlier verified ordinary-block insertion results.
+The new same-list multi-item selection, boundary deletion and multiple paragraph/heading item-body slice, including cross-body replacement, splitting and first-body Backspace (sibling joins, root exits and nested lifts, including nonfinal branches with preserved content order) is written locally but **has not been verified**: tests, builds and new measurements are deferred at the user's request. See its boundaries and limits in the [API](/en/api#list-item-selections-and-boundaries) and the resumption checklist in `specs/verification-backlog.md`. This does not invalidate the earlier verified ordinary-block insertion results.
 
 ## Implemented baseline
 

@@ -49,7 +49,7 @@ const pasteHTML = ref('<p><strong>First</strong></p><h3><u>Second</u></h3>');
 const listReplacement = ref('X');
 const listInlineHTML = ref('<u>Inserted</u>');
 const listBodyMode = ref<'inline' | 'paragraph' | 'heading' | 'mixed' | 'multiblock'>('inline');
-const listBackspaceScenario = ref<'join' | 'root' | 'nested'>('join');
+const listBackspaceScenario = ref<'join' | 'root' | 'nested' | 'nested-followed'>('join');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
 const cellColor = ref('#eeeaff'); const borderColor = ref('#6658e8'); const widthColumn = ref(1); const widthValue = ref(180);
 const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛицензия\tMIT'); const bufferFormat = ref<'text' | 'html'>('text');
@@ -149,7 +149,9 @@ const loadListBackspaceSample = () => run((instance) => {
     ? `<ul><li>${body}</li><li title="Backspace target"><h3 style="text-align: right"><em>Beta</em> tail</h3><p>After body</p>${branch}</li><li>Keep item</li></ul><p>Keep paragraph</p>`
     : listBackspaceScenario.value === 'root'
       ? `<ul title="Backspace list"><li title="Backspace target">${body}${branch}</li><li>Keep item</li></ul><p>Keep paragraph</p>`
-      : `<ul><li>Owner<ul title="Backspace list"><li title="Backspace target"><p><em>Beta</em> tail</p><h3>After body</h3>${branch}</li><li>Tail sibling</li></ul></li><li>Keep item</li></ul><p>Keep paragraph</p>`;
+      : listBackspaceScenario.value === 'nested-followed'
+        ? `<ul><li title="Backspace owner">Owner<ul title="Earlier branch"><li>Earlier branch</li></ul><ol title="Backspace list"><li title="Backspace target"><p><em>Beta</em> tail</p><h3>After body</h3>${branch}</li><li>Tail sibling</li></ol><ul title="Later bullet branch" style="text-align: right"><li>Later bullet</li></ul><ol title="Later ordered branch" style="text-align: center"><li>Later ordered</li></ol></li><li>Keep item</li></ul><p>Keep paragraph</p>`
+        : `<ul><li>Owner<ul title="Backspace list"><li title="Backspace target"><p><em>Beta</em> tail</p><h3>After body</h3>${branch}</li><li>Tail sibling</li></ul></li><li>Keep item</li></ul><p>Keep paragraph</p>`;
   instance.setHTML(value);
   output.value = '';
 });
@@ -429,10 +431,11 @@ onBeforeUnmount(() => {
           <button @click="insertListExample(false)">{{ t('Заменить HTML', 'Replace with HTML') }}</button>
           <button @click="selectListItems(true)">{{ t('Курсор перед Delete', 'Caret before Delete') }}</button>
           <p class="lab-hint">{{ t('«Курсор перед Delete» ставит курсор в конец первого тела: в режиме «Несколько блоков» Delete соединяет два блока внутри пункта. Backspace в начале следующего блока тоже соединяет их. Выделения между списком и абзацем или разными контейнерами, семантические тела и многоабзацная вставка — отдельные этапы.', '“Caret before Delete” places the caret at the first body’s end: in Multiple blocks mode, Delete joins two bodies inside the item. Backspace at the next body’s start also joins them. Selections between a list and a paragraph or different containers, semantic bodies and multi-block insertion are separate milestones.') }}</p>
-          <label>{{ t('Сценарий Backspace', 'Backspace scenario') }}<select v-model="listBackspaceScenario" :aria-label="t('Сценарий Backspace', 'Backspace scenario')"><option value="join">{{ t('Соединить с предыдущим пунктом', 'Join the previous item') }}</option><option value="root">{{ t('Первый корневой пункт', 'First root item') }}</option><option value="nested">{{ t('Первый вложенный пункт', 'First nested item') }}</option></select></label>
+          <label>{{ t('Сценарий Backspace', 'Backspace scenario') }}<select v-model="listBackspaceScenario" :aria-label="t('Сценарий Backspace', 'Backspace scenario')"><option value="join">{{ t('Соединить с предыдущим пунктом', 'Join the previous item') }}</option><option value="root">{{ t('Первый корневой пункт', 'First root item') }}</option><option value="nested">{{ t('Первый вложенный пункт', 'First nested item') }}</option><option value="nested-followed">{{ t('Вложенная ветка перед другими', 'Nested branch before others') }}</option></select></label>
           <button @click="loadListBackspaceSample">{{ t('Загрузить пример Backspace', 'Load Backspace sample') }}</button>
           <button @click="selectListBackspace">{{ t('Курсор перед Backspace', 'Caret before Backspace') }}</button>
           <p class="lab-hint">{{ t('Загрузка заменяет документ. Затем поставь курсор кнопкой и нажми настоящий Backspace: первый блок соединится с последним блоком предыдущего пункта, первый корневой пункт выйдет из списка, а первый вложенный поднимется на уровень. Последующие тела и ветки сохраняются; Undo возвращает исходный документ. Сценарии написаны, но ещё не проверены.', 'Loading replaces the document. Then use the caret button and press actual Backspace: the first body joins the previous item’s final body, the first root item exits the list, or the first nested item lifts one level. Later bodies and branches remain; Undo restores the original document. These scenarios are written but not validated yet.') }}</p>
+          <p v-if="listBackspaceScenario === 'nested-followed'" class="lab-hint">{{ t('В этом примере ранняя ветка остаётся у родителя. Под поднятым пунктом идут его собственная ветка, оставшиеся пункты исходного списка, затем две поздние ветки родителя в прежнем порядке. Типы списков и выравнивание сохраняются; ветки не склеиваются.', 'In this sample the earlier branch stays with the owner. The lifted item retains its own branch, then the source list’s remaining items, then the owner’s two later branches in their original order. List kinds and alignment remain; branches are not coalesced.') }}</p>
         </fieldset></details>
         <details class="lab-suggestions"><summary>{{ t('Упоминания и slash-шаблоны', 'Mentions and slash snippets') }}</summary><fieldset :disabled="!ready">
           <div class="lab-button-grid"><button :disabled="readOnly" @click="startSuggestions('mentions')">{{ t('Новый пример @an', 'New @an example') }}</button><button :disabled="readOnly" @click="startSuggestions('slash')">{{ t('Новый пример /sig', 'New /sig example') }}</button></div>

@@ -25,16 +25,23 @@ const firstBodyBackspacePlan = (root: HTMLElement, boundary: ListItemBoundary): 
   const parent = list.parentElement;
   if (!(parent instanceof HTMLElement) || parent.namespaceURI !== 'http://www.w3.org/1999/xhtml') return;
   if (parent === root || ['blockquote', 'td', 'th'].includes(parent.localName)) return { kind: 'unwrap', list };
-  if (!(parent instanceof HTMLLIElement) || parent.lastElementChild !== list || !inspectListItem(root, parent)) return;
+  if (!(parent instanceof HTMLLIElement) || !inspectListItem(root, parent)) return;
   const outer = parent.parentElement;
   if (!outer || !supportedList(root, outer)) return;
+  const laterBranches: HTMLElement[] = [];
+  let branch = list.nextSibling;
+  while (branch) {
+    if (!(branch instanceof HTMLElement) || !supportedList(root, branch)) return;
+    laterBranches.push(branch);
+    branch = branch.nextSibling;
+  }
   const following: ChildNode[] = [];
   let next = boundary.item.nextSibling;
   while (next) {
     following.push(next);
     next = next.nextSibling;
   }
-  return { kind: 'lift', list, owner: parent, following };
+  return { kind: 'lift', list, owner: parent, following, laterBranches };
 };
 
 export const canEditFirstBodyBackspace = (root: HTMLElement, boundary: ListItemBoundary): boolean => Boolean(firstBodyBackspacePlan(root, boundary));
@@ -72,6 +79,9 @@ export const editFirstBodyBackspace = (root: HTMLElement, boundary: ListItemBoun
       trailing.append(...plan.following);
       boundary.item.append(trailing);
     }
+    // The remaining source siblings precede all later owner branches in the
+    // original depth-first order. Keep whole branches separate in that order.
+    boundary.item.append(...plan.laterBranches);
     plan.owner.after(boundary.item);
   }
   if (!plan.list.children.length) plan.list.remove();

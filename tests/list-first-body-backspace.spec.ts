@@ -188,7 +188,7 @@ for (const fixture of [
   '<ul><li><p data-mw-node="test:body" data-id="previous">Previous</p></li><li><p title="Start">Alpha</p><h2>Later</h2></li></ul>',
   '<ul><li><p title="Start">Alpha</p><pre>Unsupported</pre></li></ul>',
   '<ul><li><p title="Start">Alpha</p><h2>Later</h2></li><li><p data-mw-node="test:body" data-id="next">Next</p></li></ul>',
-  '<ul><li><p>Owner</p><ol><li><p title="Start">Alpha</p><h2>Later</h2></li></ol><ul><li>Other branch</li></ul></li></ul>',
+  '<ul><li><p>Owner</p><ol><li><p title="Start">Alpha</p><h2>Later</h2></li></ol><ul><li><p data-mw-node="test:body" data-id="later">Other branch</p></li></ul></li></ul>',
 ]) test(`unsupported first-body context rejects atomically: ${fixture}`, async ({ page }) => {
   const before = await initialize(page, fixture, [semanticBody]);
   await caret(page, '[title="Start"]');
