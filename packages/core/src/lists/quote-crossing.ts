@@ -3,7 +3,7 @@ import { quoteBodyBlocks } from './paste-payload.js';
 import { directQuoteAt, quoteEndpointPoint, quoteSourceBodies } from './quote-selection.js';
 import type { ListItemBoundary, QuoteCrossingContext } from './internal-types.js';
 
-/** Read-only inspection; only one quote in one item's selected body interval is owned. */
+/** Read-only inspection of ordinary quotes in one item's selected body interval. */
 export const quoteCrossingContext = (boundary: ListItemBoundary, range: Range, startRoot: HTMLElement, endRoot: HTMLElement,
   start: Range, end: Range): QuoteCrossingContext | undefined => {
   if (range.collapsed) return;
@@ -12,24 +12,22 @@ export const quoteCrossingContext = (boundary: ListItemBoundary, range: Range, s
   if (from < 0 || to <= from) return;
   const covered = boundary.bodies.slice(from + 1, to);
   const quotes = boundary.bodies.slice(from, to + 1).filter((body) => body.localName === 'blockquote');
-  if (quotes.length !== 1) return;
-  const quote = quotes[0];
-  if (!quoteSourceBodies(quote)) return;
-  const entering = endRoot === quote;
-  const exiting = startRoot === quote;
-  if ((entering && directQuoteAt(boundary.item, range.endContainer) !== quote)
-    || (exiting && directQuoteAt(boundary.item, range.startContainer) !== quote)) return;
-  const endpoint = entering ? quoteEndpointPoint(quote, range, true)
-    : exiting ? quoteEndpointPoint(quote, range, false) : undefined;
-  if ((entering || exiting) && !endpoint) return;
+  if (!quotes.length || !quotes.every((quote) => quoteSourceBodies(quote))) return;
+  const startQuoted = startRoot.localName === 'blockquote';
+  const endQuoted = endRoot.localName === 'blockquote';
+  if ((startQuoted && directQuoteAt(boundary.item, range.startContainer) !== startRoot)
+    || (endQuoted && directQuoteAt(boundary.item, range.endContainer) !== endRoot)) return;
+  const startPoint = startQuoted ? quoteEndpointPoint(startRoot, range, false) : undefined;
+  const endPoint = endQuoted ? quoteEndpointPoint(endRoot, range, true) : undefined;
+  if ((startQuoted && !startPoint) || (endQuoted && !endPoint)) return;
   const normalized = range.cloneRange();
-  const left = exiting && endpoint ? endpoint.range : start;
-  const right = entering && endpoint ? endpoint.range : end;
+  const left = startPoint?.range ?? start;
+  const right = endPoint?.range ?? end;
   if (left.compareBoundaryPoints(Range.START_TO_START, right) > 0) return;
   normalized.setStart(left.startContainer, left.startOffset);
   normalized.setEnd(right.startContainer, right.startOffset);
-  return { kind: entering ? 'enter' : exiting ? 'exit' : 'cover', quote, startRoot, endRoot,
-    quoteEndpointBody: endpoint?.body, range: normalized, covered };
+  return { startRoot, endRoot, startQuoteBody: startPoint?.body, endQuoteBody: endPoint?.body,
+    range: normalized, covered };
 };
 
 const ensureBody = (body: HTMLElement): void => {
@@ -41,7 +39,7 @@ const ensureBody = (body: HTMLElement): void => {
 
 /** Payload/source were fully validated before this transaction-owned mutation. */
 export const replaceQuoteCrossing = (context: QuoteCrossingContext, roots: HTMLElement[]): void => {
-  const { startRoot, endRoot, range, covered, quoteEndpointBody } = context;
+  const { startRoot, endRoot, range, covered, startQuoteBody, endQuoteBody } = context;
   const document = startRoot.ownerDocument;
   // Separate local ranges preserve both actual endpoint wrappers and all untouched
   // quote children/gaps; a cross-container delete would unwrap selected ancestry.
@@ -54,15 +52,15 @@ export const replaceQuoteCrossing = (context: QuoteCrossingContext, roots: HTMLE
   suffixCut.deleteContents();
   prefixCut.deleteContents();
   for (const body of covered) body.remove();
-  if (quoteEndpointBody) ensureBody(quoteEndpointBody);
-  if (context.kind !== 'exit') ensureBody(startRoot);
+  ensureBody(startQuoteBody ?? startRoot);
+  if (endQuoteBody) ensureBody(endQuoteBody);
   for (const root of roots) {
     const quoteBodies = root.localName === 'blockquote' && quoteBodyBlocks(root);
     if (quoteBodies) for (const body of quoteBodies) ensureBody(body);
     else ensureBody(root);
   }
-  const caretBody = context.kind === 'enter' ? document.createElement('p') : endRoot;
-  if (context.kind === 'enter') {
+  const caretBody = endQuoteBody ? document.createElement('p') : endRoot;
+  if (endQuoteBody) {
     ensureBody(caretBody);
     startRoot.after(...roots, caretBody);
   } else startRoot.after(...roots);

@@ -147,10 +147,10 @@ test('quote then heading then several blocks can be inserted without resetting t
   }
 });
 
-for (const position of ['inside', 'multiple-quotes', 'item-edge', 'cross-items', 'middle-item']) test(`${position === 'inside' ? 'a nested quote payload inside a quote' : `a ${position} quote selection`} is an atomic block-paste barrier`, async ({ page }) => {
+for (const position of ['inside', 'multiple-quotes-with-image', 'item-edge', 'cross-items', 'middle-item']) test(`${position === 'inside' ? 'a nested quote payload inside a quote' : `a ${position} quote selection`} is an atomic block-paste barrier`, async ({ page }) => {
   const value = position === 'middle-item'
     ? '<ul><li><p title="Before">AB</p></li><li><blockquote>Quote</blockquote></li><li><p title="Other">EF</p></li></ul>'
-    : `<ul><li title="Owner"><p title="Before">AB</p><blockquote title="Quote"><p>Quote</p></blockquote>${position === 'multiple-quotes' ? '<blockquote>Second quote</blockquote>' : ''}<h2 title="After">CD</h2></li><li><p title="Other">EF</p></li></ul>`;
+    : `<ul><li title="Owner"><p title="Before">AB</p><blockquote title="Quote"><p>Quote</p></blockquote>${position === 'multiple-quotes-with-image' ? '<blockquote>Second quote<img src="/logo.svg" alt="Original"></blockquote>' : ''}<h2 title="After">CD</h2></li><li><p title="Other">EF</p></li></ul>`;
   const before = await initialize(page, value);
   await page.evaluate((position) => {
     const root = window.editor.surface;
@@ -164,7 +164,7 @@ for (const position of ['inside', 'multiple-quotes', 'item-edge', 'cross-items',
       selection.setBaseAndExtent(item, 1, item, 1);
     } else {
       const start = root.querySelector('[title="Before"]')!.firstChild!;
-      const end = root.querySelector(position === 'multiple-quotes' ? '[title="After"]' : '[title="Other"]')!.firstChild!;
+      const end = root.querySelector(position === 'multiple-quotes-with-image' ? '[title="After"]' : '[title="Other"]')!.firstChild!;
       selection.setBaseAndExtent(end, 1, start, 1);
     }
   }, position);

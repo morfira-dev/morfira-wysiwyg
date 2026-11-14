@@ -101,7 +101,6 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
       return { status: 'eligible', range: context.range, leaves: [first.item], gaps: [], first, last,
         startBody: context.startBody, endBody: context.endBody, quote: context };
     }
-    if (quote && endQuote) return blocked('A block insertion cannot select between different quotes.');
   }
   const start = first && normalizeListBodyRange(range, first, false);
   const startBody = first && listBodyAt(range, first, false);
@@ -119,7 +118,7 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
     const to = first.bodies.indexOf(endBody);
     if (first.bodies.slice(from, to + 1).some((body) => body.localName === 'blockquote')) {
       const crossing = quoteCrossingContext(first, range, startBody, endBody, start, end);
-      if (!crossing) return blocked('A block insertion can cross only one ordinary editable quote within the same item.');
+      if (!crossing) return blocked('A block insertion can cross only ordinary editable quotes within the same item.');
       return { status: 'eligible', range: crossing.range, leaves: [first.item], gaps: [], first, last,
         startBody, endBody, crossing };
     }

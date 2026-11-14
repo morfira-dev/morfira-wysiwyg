@@ -23,11 +23,10 @@ export interface ListSelectionPlan {
 }
 
 export interface QuoteCrossingContext {
-  kind: 'enter' | 'exit' | 'cover';
-  quote: HTMLElement;
   startRoot: HTMLElement;
   endRoot: HTMLElement;
-  quoteEndpointBody?: HTMLElement;
+  startQuoteBody?: HTMLElement;
+  endQuoteBody?: HTMLElement;
   range: Range;
   covered: HTMLElement[];
 }

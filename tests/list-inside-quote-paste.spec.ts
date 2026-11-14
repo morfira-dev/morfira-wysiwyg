@@ -191,8 +191,8 @@ for (const payload of ['<blockquote>Nested</blockquote>', '<p>A</p><blockquote>B
   expect(await html(page)).toBe(before);
 });
 
-for (const kind of ['other-item', 'other-quote']) test(`an inside-quote range crossing to ${kind} remains an atomic barrier`, async ({ page }) => {
-  const before = await initialize(page, '<ul><li><blockquote title="Quote"><p title="Body">Alpha</p></blockquote><blockquote title="Other"><h2>Beta</h2></blockquote></li><li><p title="Outside">Outside</p></li></ul>');
+for (const kind of ['other-item', 'other-quote-with-image']) test(`an inside-quote range crossing to ${kind} remains an atomic barrier`, async ({ page }) => {
+  const before = await initialize(page, `<ul><li><blockquote title="Quote"><p title="Body">Alpha</p></blockquote><blockquote title="Other"><h2>Beta${kind === 'other-quote-with-image' ? '<img src="/logo.svg" alt="Original">' : ''}</h2></blockquote></li><li><p title="Outside">Outside</p></li></ul>`);
   await page.evaluate((kind) => {
     const root = window.editor.surface;
     root.focus();
