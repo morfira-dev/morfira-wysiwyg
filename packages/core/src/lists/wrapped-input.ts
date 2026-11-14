@@ -2,6 +2,7 @@ import { activeRange, placeCaret } from '../selection/index.js';
 import { finishSelectionReplacement } from '../input/index.js';
 import { inspectListItem, listBodyAt, listSelectionReplacement, normalizeListBodyRange } from './selection-boundaries.js';
 import { replaceListSelection } from './replace-selection.js';
+import { canEditFirstBodyBackspace, editFirstBodyBackspace } from './first-body-backspace.js';
 import type { WrappedListInputStatus } from './wrapped-input.types.js';
 
 const itemAt = (root: HTMLElement, node: Node): HTMLLIElement | undefined => {
@@ -34,6 +35,7 @@ export const inspectWrappedListInput = (root: HTMLElement, inputType: string): W
     if (inputType !== 'deleteContentBackward') return 'blocked';
     const element = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
     const body = element?.closest<HTMLElement>('p,h1,h2,h3,h4,h5,h6');
+    if (range.collapsed && range.startContainer === item && range.startOffset === 0) return 'blocked';
     return range.collapsed && body?.parentElement === item && atBodyStart(body, range) ? 'blocked' : 'unowned';
   }
   const body = listBodyAt(range, boundary, false);
@@ -48,7 +50,7 @@ export const inspectWrappedListInput = (root: HTMLElement, inputType: string): W
   if (inputType === 'deleteContentBackward') {
     if (!range.collapsed || !atBodyStart(body, start)) return 'unowned';
     if (boundary.bodies.indexOf(body) > 0) return 'eligible';
-    return boundary.bodies.length > 1 ? 'blocked' : 'unowned';
+    return boundary.bodies.length > 1 ? (canEditFirstBodyBackspace(root, boundary) ? 'eligible' : 'blocked') : 'unowned';
   }
   // Preserve the legacy empty-item exit/lift policy, including whitespace-only
   // bodies; branches make this an ordinary split rather than a list exit.
@@ -74,6 +76,7 @@ export const editWrappedListInput = (root: HTMLElement, inputType: string): bool
   const start = normalizeListBodyRange(range, boundary, false)!;
   const end = range.collapsed ? start : normalizeListBodyRange(range, boundary, true)!;
   if (inputType === 'deleteContentBackward') {
+    if (body === boundary.body) return editFirstBodyBackspace(root, boundary, start);
     const previous = boundary.bodies[boundary.bodies.indexOf(body) - 1];
     const empty = (node: HTMLElement) => !node.textContent && node.querySelectorAll('br').length <= 1;
     for (const node of [previous, body]) {

@@ -101,13 +101,9 @@ test('Delete promotes an inline left body only when subsequent right blocks must
   await expect(page.locator('.mw-content li > strong')).toHaveCount(0);
 });
 
-test('first-body Backspace and cross-item Enter/Shift+Enter are atomic barriers', async ({ page }) => {
+test('cross-item Enter/Shift+Enter remain atomic barriers', async ({ page }) => {
   const original = '<ul><li>Previous</li><li><p>AB</p><h2>CD</h2></li></ul>';
   await initialize(page, original);
-  await caret(page, 'p', 0);
-  await page.keyboard.press('Backspace');
-  expect(await html(page)).toBe(original);
-  expect(await page.evaluate(() => window.changes.length)).toBe(0);
   for (const key of ['Enter', 'Shift+Enter']) {
     await page.evaluate(() => {
       const root = window.editor.surface;
@@ -156,7 +152,7 @@ test('Delete at an item-level boundary resolves to the preceding body end and re
   expect(await page.evaluate(() => ({ onItem: document.getSelection()!.anchorNode === window.editor.surface.querySelector('li'), offset: document.getSelection()!.anchorOffset }))).toEqual({ onItem: true, offset: 1 });
 });
 
-for (const first of [false, true]) test(`Backspace after an empty body's placeholder ${first ? 'blocks the first-body boundary' : 'joins an interior body'}`, async ({ page }) => {
+for (const first of [false, true]) test(`Backspace after an empty body's placeholder ${first ? 'unwraps the first root item' : 'joins an interior body'}`, async ({ page }) => {
   const original = first ? '<ul><li><p><br></p><h2>After</h2></li></ul>' : '<ul><li><h2>Before</h2><p><br></p><h3>After</h3></li></ul>';
   await initialize(page, original);
   await page.evaluate(() => {
@@ -166,13 +162,11 @@ for (const first of [false, true]) test(`Backspace after an empty body's placeho
     document.getSelection()!.setBaseAndExtent(body, 1, body, 1);
   });
   await page.keyboard.press('Backspace');
-  expect(await html(page)).toBe(first ? original : '<ul><li><h2>Before</h2><h3>After</h3></li></ul>');
-  expect(await page.evaluate(() => window.changes.length)).toBe(first ? 0 : 1);
-  if (!first) {
-    await page.evaluate(() => window.editor.undo());
-    expect(await html(page)).toBe(original);
-    expect(await page.evaluate(() => document.getSelection()!.anchorOffset)).toBe(1);
-  }
+  expect(await html(page)).toBe(first ? '<p><br></p><h2>After</h2>' : '<ul><li><h2>Before</h2><h3>After</h3></li></ul>');
+  expect(await page.evaluate(() => window.changes.length)).toBe(1);
+  await page.evaluate(() => window.editor.undo());
+  expect(await html(page)).toBe(original);
+  expect(await page.evaluate(() => document.getSelection()!.anchorOffset)).toBe(1);
 });
 
 for (const guard of ['readonly', 'composition', 'canceled']) test(`${guard} prevents manual multi-body boundary input`, async ({ page }) => {

@@ -24,6 +24,8 @@ The subsequent bounded list-item replacement contract is `specs/list-selection.m
 
 ## Acceptance scenarios
 
+Collapsed Backspace at a supported multi-block item's first body follows the first-body contract in `lists-toolbar.md`: join the preceding sibling item's final body, unwrap the first root item into its actual body blocks, or lift the first nested item one level with its following siblings retained as a trailing branch. Validate every affected container before changing DOM; preserve body/branch content, exact history and cell boundaries. This local extension remains unverified under the same deferred-check policy.
+
 1. Select part of a sentence, toggle bold on/off, undo/redo and recover exact text and selection. Existing neighboring formats remain intact.
 2. Type text, undo a burst, redo; branch with a new edit and verify redo is empty. Replace external content and verify previous document cannot be undone.
 3. Paste safe rich text over a selection. Script markup, event handlers, unsafe URLs, arbitrary CSS, SVG/MathML and malformed JSON cannot enter an executable DOM.
