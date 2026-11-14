@@ -14,9 +14,9 @@ The persisted document format is now `EditorDocument` version 1. The previous pr
 
 1. Expand real Word/Excel fixtures beyond the implemented HTML/TSV range clipboard, including browser editing boundaries and malformed imported structure.
 2. Broad IME/mobile/touch and screen-reader coverage; keyboard-only resize/menu improvements.
-3. Images: connect application storage through the upload callback, then drag resizing and cropping. Dimensions, captions and an upload form are available in the demo.
-4. Mentions/slash commands and additional optional formatting controls. Markdown typing shortcuts, literal find/replace and Unicode text statistics are implemented in the local preview.
-5. Large-document benchmarks, history memory profiling and expanded composition testing.
+3. Reusable optional link/image/search forms outside the demo; image drag resizing and clipboard/drop file insertion. Applications connect storage through the existing upload callback.
+4. Table header/caption commands, autolink and other small plugins for concrete use cases. Mentions/slash, Markdown typing shortcuts, literal find/replace and Unicode statistics are already implemented.
+5. Expand real-document coverage of the existing [benchmarks](/en/performance) and installed-package checks. Composition event/history and ordinary paragraph/heading keyboard boundaries have dedicated tests; cross-block selection replacement still needs further normalization.
 
 Collaboration, track changes, comments, pagination and DOCX/PDF import/export are not implemented. Applications own upload transport through a callback; the demo never uploads files. The native input surface still inherits browser editing behavior. Passing behavioral tests is not a security or accessibility certification.
 
@@ -28,4 +28,4 @@ The local preview includes [literal find/replace](/en/search) and [Unicode stati
 
 [Markdown typing shortcuts](/en/markdown) are available in the local demo. Phase-1 [mentions/slash snippets](/en/suggestions) are implemented locally as editable text suggestions. Structural commands are available; persistent atoms remain a later phase. Durable identity-bearing mentions need an explicit document-model decision.
 
-Priority: a small reliable everyday editor with ready essential plugins, selective imports/tree-shaking and custom extensions. Heavy office-suite parity is not a goal. Next: real mobile/IME/accessibility checks and large-document/memory benchmarks; add further features for concrete use cases.
+Priority: a small reliable everyday editor with ready essential plugins, selective imports/tree-shaking and custom extensions. Heavy office-suite parity is not a goal. Next: real mobile/IME/accessibility checks, clipboard reliability and ready UI for essential modules; add further features for concrete use cases.

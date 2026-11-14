@@ -256,7 +256,7 @@ export const createSuggestions = <T extends SuggestionOption>(kind: Kind, option
       const keydown = (event: KeyboardEvent) => {
         if (disposed || event.defaultPrevented || state.status === 'closed')
           return;
-        if (composing || event.isComposing || editor.isReadOnly() || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) {
+        if (composing || event.isComposing || event.keyCode === 229 || editor.isReadOnly() || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) {
           close();
           return;
         }

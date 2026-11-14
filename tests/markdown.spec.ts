@@ -77,9 +77,16 @@ test('Enter converts only a complete code fence or horizontal marker', async ({ 
     await page.evaluate(() => window.editor.undo()); await expect(content(page).locator('p')).toHaveText(marker);
     expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: marker.length, length: 0 });
   }
-  await replace(page, '<p>```Tail</p>', 3); expect(await beforeInput(page, null, 'insertParagraph')).toBe(false);
+  await replace(page, '<p>```Tail</p>', 3);
+  await page.keyboard.press('Enter');
   await expect(content(page).locator('pre')).toHaveCount(0);
-  await replace(page, '<p>#</p>'); expect(await beforeInput(page, null, 'insertParagraph')).toBe(false);
+  expect(await page.evaluate(() => window.editor.getHTML())).toBe('<p>```</p><p>Tail</p>');
+  await page.evaluate(() => window.editor.undo());
+  expect(await page.evaluate(() => window.editor.getHTML())).toBe('<p>```Tail</p>');
+  await replace(page, '<p>#</p>');
+  await page.keyboard.press('Enter');
+  await expect(content(page).locator('h1')).toHaveCount(0);
+  expect(await page.evaluate(() => window.editor.getHTML())).toBe('<p>#</p><p><br></p>');
 });
 
 const inlineRules: [string, string, string][] = [

@@ -1,0 +1,17 @@
+# Composition and native IME lifecycle
+
+Status: implementation contract; document schema v1 and public APIs remain unchanged.
+
+The browser owns the active native composition DOM and selection. Capture one validated pre-composition snapshot on the first `compositionstart`. Intermediate composition input does not emit document changes or add history. A repeated start does not replace the original baseline. `compositionend` synchronously commits the resulting document as one isolated history revision; an unchanged/canceled result adds nothing.
+
+Browsers may dispatch the final composition-specific input before or after `compositionend`. An identical trailing input is a no-op. If a trailing `insertFromComposition` or `insertCompositionText` changes the document after the synchronous end commit, amend that composition's own undo entry rather than creating a second entry. An actual second document change is observable as a second notification; no timer, deferred commit or promise of one notification across two distinct documents is introduced. The next ordinary native input or user command ends this bounded trailing-input window. Undo restores the original document and selection; redo restores the final document and selection. Subsequent ordinary typing is a separate undo step.
+
+During an active composition, user-edit commands (formatting, transactions/insertion, undo/redo, paste, structural keys and shortcuts) do not mutate the document. Core key handling also respects the legacy IME `keyCode === 229` sentinel when `isComposing` is unavailable. Plugins must independently respect the same native event guards; core adds no plugin dependency or global composition bus.
+
+A genuinely different external HTML/JSON replacement is authoritative, clears history as usual and invalidates the pending composition snapshot. Same-value controlled acknowledgement leaves the native composition untouched. Switching to read-only cancels an active composition, silently restores its pre-composition content and selection, and preserves earlier history. Late events from a canceled composition cannot restore provisional text or create history; a new composition start begins a fresh session. Destroy clears pending snapshots and removes all event listeners.
+
+## Acceptance
+
+Exercise Chromium, Firefox and WebKit with controlled native-event sequences and explicit DOM mutations (dispatching untrusted input events does not itself edit content): intermediate Unicode revisions, final input before/end/after end, amended final text, unchanged cancellation, duplicate start, subsequent real keyboard input, original/replacement selection through undo/redo, same-value feedback, external replacement, read-only cancellation/resumption, blocked commands/legacy keys and disposal. These tests establish the editor event/history state machine, not real system candidate-window interaction or mobile/OS IME certification. Real-device Japanese/Chinese/Korean IME remains a separate manual validation task.
+
+Chromium's InputEvent constructor normalizes legacy `insertFromComposition` to an empty inputType. Legacy-protocol fixtures explicitly define that property and verify the declared value before dispatch; this does not claim Chromium generates that event naturally. A separate trailing `insertCompositionText` fixture retains the constructor-provided inputType without overriding it and exercises the same single-revision amendment contract.

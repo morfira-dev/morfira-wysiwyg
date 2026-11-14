@@ -1,5 +1,7 @@
 # Testing and releases
 
+Composition tests use `compositionstart`, intermediate `beforeinput`/`input`, `compositionend` and trailing composition input sequences with explicit DOM changes. They check Unicode, history, selection, external replacement, read-only and plugin candidate-confirmation guards. Synthetic events do not start a system IME: Japanese/Chinese/Korean candidate windows and mobile keyboards remain manual checks. Ordinary-block Enter/Shift+Enter and Backspace/Delete boundaries additionally use real browser keyboard input.
+
 ## Local checks
 
 `AGENTS.md`, `skills/morfira-sdd/SKILL.md`, and `specs/` define specification-driven changes. `pnpm run check:project` checks source conventions, licenses and runtime boundaries.

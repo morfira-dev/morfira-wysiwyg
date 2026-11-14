@@ -2,12 +2,14 @@ import { documentHTML, parseHTML, renderDocument, validateDocument } from '../do
 import { activeRange, bookmark, placeCaret, readTextSelection, restoreBookmark, selectText } from '../selection/index.js';
 import type { SelectionBookmark } from '../selection/index.js';
 import { editListInput, handlesListInput, indentList, listState, selectedBlocks } from '../lists/index.js';
+import { editBlockInput, handlesBlockInput } from '../input/index.js';
 import { applyFormat, inlineFormats, readFormats } from '../formatting/index.js';
 import { inlineStyles, normalizeInlineStyle } from '../formatting/inline-attributes.js';
 import { createEventHub } from '../events/index.js';
 import type { EditorEvents } from '../events/types.js';
 import type { Editor, EditorChange, EditorOptions, Snapshot } from './types.js';
 import { createHTMLSnapshots } from './html-snapshots.js';
+const isCompositionInput = (event: InputEvent): boolean => event.isComposing || event.inputType === 'insertCompositionText' || event.inputType === 'insertFromComposition' || event.inputType === 'deleteCompositionText';
 const ensureDocument = (root: HTMLElement): boolean => {
   let normalized = false;
   if (!root.childNodes.length) {
@@ -97,6 +99,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   let readOnly = options.readOnly ?? false;
   let composing = false;
   let compositionStart: Snapshot | undefined;
+  let canceledComposition = false;
+  let compositionTail: Snapshot | undefined;
+  let compositionUndoRecorded = false;
   let pendingInput: Snapshot | undefined;
   let lastInputTime = 0;
   let lastInputType = '';
@@ -147,6 +152,31 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   };
   let current = capture();
   let lastSelection = current.selection;
+  const clearCompositionTail = () => {
+    compositionTail = undefined;
+    compositionUndoRecorded = false;
+  };
+  const cancelComposition = (rollback: boolean) => {
+    const before = compositionStart;
+    canceledComposition = canceledComposition || composing || compositionTail !== undefined;
+    composing = false;
+    compositionStart = undefined;
+    pendingInput = undefined;
+    clearCompositionTail();
+    if (rollback && before) {
+      surface.innerHTML = before.html;
+      ensureDocument(surface);
+      restoreBookmark(surface, before.selection);
+      restoreTyping(before);
+      current = capture();
+      lastSelection = current.selection;
+    }
+  };
+  const restoreCurrentDOM = () => {
+    surface.innerHTML = current.html;
+    ensureDocument(surface);
+    restoreBookmark(surface, current.selection);
+  };
   const notifySelection = () => {
     if (destroyed)
       return;
@@ -221,8 +251,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   };
   const runTransaction = (mutate: (surface: HTMLElement) => void, inputType = '') => {
     assertActive();
-    if (readOnly)
+    if (readOnly || composing)
       return;
+    clearCompositionTail();
     const invoke = () => {
       if (typeof mutate !== 'function' || mutate.constructor.name === 'AsyncFunction')
         throw new TypeError('Transactions require a synchronous callback.');
@@ -307,6 +338,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       const content = documentHTML(parseHTML(html));
       if (content === editor.getHTML())
         return;
+      cancelComposition(false);
       clearTyping();
       surface.innerHTML = content;
       ensureDocument(surface);
@@ -330,6 +362,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       assertActive();
       rejectDuringTransaction('setReadOnly');
       const changed = readOnly !== value;
+      if (changed && value)
+        cancelComposition(true);
       readOnly = value;
       surface.contentEditable = String(!value);
       surface.setAttribute('aria-readonly', String(value));
@@ -355,8 +389,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     isReadOnly: () => { assertActive(); return readOnly; },
     format: (name, value) => {
       assertActive();
-      if (readOnly)
+      if (readOnly || composing)
         return;
+      clearCompositionTail();
       editor.focus();
       const selection = readTextSelection(surface);
       if (selection?.length === 0 && (Object.hasOwn(inlineFormats, name) || Object.hasOwn(inlineStyles, name))) {
@@ -384,8 +419,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     undo: () => {
       assertActive();
       rejectDuringTransaction('undo');
-      if (readOnly)
+      if (readOnly || composing)
         return;
+      clearCompositionTail();
       const previous = undoStack.pop();
       if (previous) {
         redoStack.push(capture());
@@ -395,8 +431,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     redo: () => {
       assertActive();
       rejectDuringTransaction('redo');
-      if (readOnly)
+      if (readOnly || composing)
         return;
+      clearCompositionTail();
       const next = redoStack.pop();
       if (next) {
         undoStack.push(capture());
@@ -420,6 +457,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       if (destroyed)
         return;
       rejectDuringTransaction('destroy');
+      cancelComposition(false);
       destroyed = true;
       const failures: unknown[] = [];
       try {
@@ -450,9 +488,22 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     disposers.push(() => surface.removeEventListener(type, handler));
   };
   listen('beforeinput', (event) => {
+    if (event.defaultPrevented)
+      return;
     if (readOnly) {
       event.preventDefault();
       return;
+    }
+    const compositionInput = isCompositionInput(event);
+    if (canceledComposition && compositionInput) {
+      event.preventDefault();
+      return;
+    }
+    if (composing || event.isComposing)
+      return;
+    if (!compositionInput) {
+      canceledComposition = false;
+      clearCompositionTail();
     }
     if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
       event.preventDefault();
@@ -467,6 +518,13 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       clearTyping();
       pendingInput = undefined;
       runTransaction(() => editListInput(surface, event.inputType));
+      return;
+    }
+    if (handlesBlockInput(surface, event.inputType)) {
+      event.preventDefault();
+      clearTyping();
+      pendingInput = undefined;
+      runTransaction(() => editBlockInput(surface, event.inputType));
       return;
     }
     if (event.inputType === 'insertText' && event.data && !composing && !event.isComposing && typingAtCaret() && Object.keys(typingOverrides).length) {
@@ -498,28 +556,66 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   });
   listen('input', (nativeEvent) => {
     const event = nativeEvent as InputEvent;
-    if (readOnly) {
-      surface.innerHTML = current.html;
+    const compositionInput = isCompositionInput(event);
+    if (readOnly || (canceledComposition && compositionInput)) {
+      restoreCurrentDOM();
       return;
     }
     if (composing || event.isComposing)
       return;
+    if (compositionTail && compositionInput) {
+      const before = compositionTail;
+      const changed = htmlSnapshots.read() !== current.html;
+      pendingInput = undefined;
+      if (!changed)
+        return;
+      // Replace only our own last undo entry, never an intervening application edit.
+      if (compositionUndoRecorded && undoStack.at(-1) === before)
+        undoStack.pop();
+      compositionUndoRecorded = commitMutation(before);
+      emit('user');
+      return;
+    }
+    canceledComposition = false;
+    clearCompositionTail();
     const before = pendingInput ?? current;
     pendingInput = undefined;
     commit(before, event.inputType);
   });
-  listen('compositionstart', () => { clearTyping(); composing = true; compositionStart = capture(); });
+  listen('compositionstart', () => {
+    if (readOnly) {
+      canceledComposition = true;
+      return;
+    }
+    if (composing)
+      return;
+    clearTyping();
+    clearCompositionTail();
+    pendingInput = undefined;
+    canceledComposition = false;
+    compositionStart = capture();
+    composing = true;
+  });
   listen('compositionend', () => {
+    if (canceledComposition) {
+      pendingInput = undefined;
+      restoreCurrentDOM();
+      return;
+    }
     composing = false;
     const before = compositionStart;
     compositionStart = undefined;
     pendingInput = undefined;
-    if (before)
-      commit(before);
+    if (before) {
+      compositionTail = before;
+      compositionUndoRecorded = commitMutation(before);
+      if (compositionUndoRecorded)
+        emit('user');
+    }
   });
   listen('paste', (event) => {
     event.preventDefault();
-    if (readOnly || !event.clipboardData)
+    if (readOnly || composing || !event.clipboardData)
       return;
     editor.focus();
     const html = event.clipboardData.getData('text/html');
@@ -534,13 +630,23 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   });
   listen('drop', (event) => { event.preventDefault(); });
   listen('keydown', (event) => {
-    if (!composing && !event.isComposing && !readOnly && !event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'Enter' || event.key === 'Backspace')) {
-      const type = event.key === 'Backspace' ? 'deleteContentBackward' : event.shiftKey ? 'insertLineBreak' : 'insertParagraph';
+    if (event.keyCode === 229)
+      return;
+    if (!composing && !event.isComposing && !readOnly && !event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'Enter' || event.key === 'Backspace' || event.key === 'Delete')) {
+      const type = event.key === 'Backspace' ? 'deleteContentBackward' : event.key === 'Delete' ? 'deleteContentForward' : event.shiftKey ? 'insertLineBreak' : 'insertParagraph';
       if (handlesListInput(surface, type)) {
         event.preventDefault();
         clearTyping();
         pendingInput = undefined;
         runTransaction(() => editListInput(surface, type));
+        return;
+      }
+      // Enter must reach beforeinput so optional typing rules can consume it first.
+      if ((event.key !== 'Enter' || event.shiftKey) && handlesBlockInput(surface, type)) {
+        event.preventDefault();
+        clearTyping();
+        pendingInput = undefined;
+        runTransaction(() => editBlockInput(surface, type));
         return;
       }
     }

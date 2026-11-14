@@ -11,6 +11,41 @@ const replaceHTML = async (page: Page, value: string) => {
   await page.getByRole('button', { name: 'Применить документ', exact: true }).click();
 };
 
+for (const english of [false, true]) test(`heading exit and block joins retain history on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  await page.getByLabel(t('Формат документа', 'Document format'), { exact: true }).selectOption('html');
+  await page.getByLabel(t('Исходник документа', 'Document source'), { exact: true }).fill('<h2>Title</h2>');
+  await page.getByRole('button', { name: t('Применить документ', 'Apply document'), exact: true }).click();
+  await content.evaluate((root) => {
+    const range = document.createRange();
+    range.selectNodeContents(root.querySelector('h2')!);
+    range.collapse(false);
+    document.getSelection()!.removeAllRanges();
+    document.getSelection()!.addRange(range);
+    (root as HTMLElement).focus();
+  });
+  await page.keyboard.press('Enter');
+  await expect(content.locator('h2')).toHaveText('Title');
+  await expect(content.locator('p')).toHaveCount(1);
+  await page.keyboard.type('Body');
+  await expect(content.locator('p')).toHaveText('Body');
+  await content.locator('p').evaluate((block) => {
+    const range = document.createRange();
+    range.selectNodeContents(block);
+    range.collapse(true);
+    document.getSelection()!.removeAllRanges();
+    document.getSelection()!.addRange(range);
+  });
+  await page.keyboard.press('Backspace');
+  await expect(content.locator('h2')).toHaveText('TitleBody');
+  await expect(content.locator('p')).toHaveCount(0);
+  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
+  await expect(content.locator('p')).toHaveText('Body');
+});
+
 test('homepage exposes the complete laboratory, tables, theme and HTML/JSON', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');

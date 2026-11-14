@@ -40,7 +40,7 @@ export interface Editor {
   redo(): void;
   canUndo(): boolean;
   canRedo(): boolean;
-  /** Execute a plugin edit as one undoable operation. Read-only mode blocks it. */
+  /** Execute one undoable plugin edit. Read-only and active composition block it. */
   transact(mutate: (surface: HTMLElement) => void): void;
   providePlugin<T>(name: string, api: T): () => void;
   getPlugin<T>(name: string): T | undefined;

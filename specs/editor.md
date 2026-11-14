@@ -9,10 +9,13 @@ Status: implemented preview contract. Acceptance scenarios are exercised in `tes
 - Persist `EditorDocument { version: 1, children: DocumentNode[] }`. Text and allowed semantic element nodes carry only validated attributes. HTML and JSON imports enforce schema, URLs, attribute/style allowlists, and resource limits. Unsupported executable or foreign content is omitted. Invalid JSON is rejected before live DOM mutation.
 - Instance API: HTML/text/JSON get/set; text-offset selection; formatting; insertHTML; read-only; focus; own undo/redo; atomic plugin transactions; subscriptions and disposal. No external engine escape hatch or browser execCommand.
 - Native typing and IME composition use the browser editing surface; our bounded history records semantic revisions with selection bookmarks. New edits clear redo; external document replacement clears history. IME is one history operation.
+
 - Formatting must preserve unaffected text, support partial removal and cross-paragraph selections, and restore selection. Document operations must be atomic on failure.
 - Paste replaces selection using validated HTML or plain text; unsupported drops are blocked. Read-only prevents user/programmatic user-edit commands while allowing external replacement.
 - Every instance owns listeners and plugin APIs. Destroy is idempotent and performs all cleanup even when a disposer fails. Imports are safe to evaluate during SSR; createEditor requires browser DOM.
 - Vue v-model, React controlled value including StrictMode, and Svelte bind:value share document/change semantics. External replacement emits no adapter feedback event. Same-value feedback preserves caret.
+
+Composition event ordering, interim edits, command guards and cancellation follow `specs/composition.md`. Ordinary paragraph/heading Enter and boundary deletion follow `specs/block-boundaries.md`; unsupported structures and cross-block selections retain their existing input paths.
 
 ## Acceptance scenarios
 

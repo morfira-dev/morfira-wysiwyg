@@ -38,6 +38,7 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       end: number;
     } | undefined;
     let disposed = false;
+    let composing = false;
     const status = document.createElement('div');
     status.className = 'mw-table-status';
     status.setAttribute('role', 'status');
@@ -377,6 +378,8 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       menu.style.top = `${event.clientY - rect.top}px`;
     };
     const keydown = (event: KeyboardEvent) => {
+      if (composing || event.isComposing || event.keyCode === 229)
+        return;
       if (event.key === 'Escape') {
         closeMenu();
         clearSelection();
@@ -446,10 +449,18 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       } handle.hidden = true;
     };
     const resizeCancel = () => { resizing = undefined; releaseResize(); handle.hidden = true; };
+    const compositionStart = () => {
+      composing = true;
+    };
+    const compositionEnd = () => {
+      composing = false;
+    };
     root.addEventListener('pointerdown', pointerDown);
     root.addEventListener('pointermove', pointerMove);
     root.addEventListener('contextmenu', contextMenu);
     root.addEventListener('keydown', keydown);
+    root.addEventListener('compositionstart', compositionStart, true);
+    root.addEventListener('compositionend', compositionEnd, true);
     document.addEventListener('pointerup', pointerUp);
     document.addEventListener('pointerdown', outside);
     handle.addEventListener('pointerdown', resizeStart);
@@ -473,6 +484,8 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       root.removeEventListener('pointermove', pointerMove);
       root.removeEventListener('contextmenu', contextMenu);
       root.removeEventListener('keydown', keydown);
+      root.removeEventListener('compositionstart', compositionStart, true);
+      root.removeEventListener('compositionend', compositionEnd, true);
       document.removeEventListener('pointerup', pointerUp);
       document.removeEventListener('pointerdown', outside);
       handle.removeEventListener('pointerdown', resizeStart);

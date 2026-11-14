@@ -1,8 +1,8 @@
 {
   "core.js": {
-    "raw": 38806,
-    "gzip": 12880,
-    "brotli": 11594
+    "raw": 42846,
+    "gzip": 13873,
+    "brotli": 12490
   },
   "core.css": {
     "raw": 3138,
@@ -10,9 +10,9 @@
     "brotli": 923
   },
   "plugins.js": {
-    "raw": 18415,
-    "gzip": 6523,
-    "brotli": 5863
+    "raw": 18677,
+    "gzip": 6591,
+    "brotli": 5930
   },
   "plugins.css": {
     "raw": 1813,
@@ -20,14 +20,14 @@
     "brotli": 543
   },
   "suggestions-set.js": {
-    "raw": 19278,
-    "gzip": 7639,
-    "brotli": 6815
+    "raw": 19295,
+    "gzip": 7651,
+    "brotli": 6827
   },
   "all-plugins.js": {
-    "raw": 62689,
-    "gzip": 24422,
-    "brotli": 21868
+    "raw": 62968,
+    "gzip": 24502,
+    "brotli": 21947
   },
   "suggestions.css": {
     "raw": 1196,
@@ -55,19 +55,19 @@
     "brotli": 2625
   },
   "mentions.js": {
-    "raw": 10934,
-    "gzip": 4439,
-    "brotli": 4029
+    "raw": 10951,
+    "gzip": 4450,
+    "brotli": 4044
   },
   "slash.js": {
-    "raw": 11794,
-    "gzip": 4801,
-    "brotli": 4315
+    "raw": 11811,
+    "gzip": 4813,
+    "brotli": 4326
   },
   "suggestions.js": {
-    "raw": 17914,
-    "gzip": 6861,
-    "brotli": 6161
+    "raw": 17931,
+    "gzip": 6874,
+    "brotli": 6171
   },
   "vue.js": {
     "raw": 884,
