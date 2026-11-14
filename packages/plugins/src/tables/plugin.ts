@@ -1,5 +1,7 @@
 import type { Editor, EditorPlugin } from '@morfira-dev/wysiwyg-core';
-import type { CellAddress, TableClipboardData, TableClipboardInput, TableCommands, TableOptions } from './types.js';
+import { localize } from '@morfira-dev/wysiwyg-core';
+import type { CellAddress, TableClipboardData, TableClipboardInput, TableCommands, TableOptions, TablesMessageKey } from './types.js';
+import { tablesMessages } from './messages.js';
 import { cellsInRectangle, deleteGridColumn, deleteGridRow, emptyCell, insertGridColumn, insertGridRow, readGrid, rebuildGrid, selectionRectangle } from './grid.js';
 import { copyTableRange, isTableClipboard, planTablePaste, readClipboardTable } from './clipboard.js';
 
@@ -39,6 +41,8 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
     } | undefined;
     let disposed = false;
     let composing = false;
+    let clipboardFailed = false;
+    const text = (key: TablesMessageKey): string => localize(editor.getLocale(), key, tablesMessages);
     const status = document.createElement('div');
     status.className = 'mw-table-status';
     status.setAttribute('role', 'status');
@@ -46,7 +50,8 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
     editor.element.append(status);
     const reportClipboardError = (reason: unknown) => {
       const error = reason instanceof Error ? reason : new Error(String(reason));
-      status.textContent = error.message;
+      clipboardFailed = true;
+      status.textContent = text('tables.clipboardError');
       options.onClipboardError?.(error);
     };
     const menu = document.createElement('div');
@@ -58,7 +63,7 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
     handle.type = 'button';
     handle.className = 'mw-table-resize';
     handle.hidden = true;
-    handle.setAttribute('aria-label', 'Изменить ширину столбца');
+    handle.setAttribute('aria-label', text('tables.resizeColumn'));
     editor.element.append(handle);
     let hover: {
       table: HTMLTableElement;
@@ -156,7 +161,14 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
         const { table, cells } = clipboardCells();
         const source = readClipboardTable(data);
         const plan = planTablePaste(table, cells, source, explicit);
-        editor.transact(() => { plan.apply(); clearSelection(); closeMenu(); status.textContent = ''; moveCaret(plan.firstCell); });
+        editor.transact(() => {
+          plan.apply();
+          clearSelection();
+          closeMenu();
+          clipboardFailed = false;
+          status.textContent = '';
+          moveCaret(plan.firstCell);
+        });
         currentTable = table;
       },
       insert: (rows, columns) => {
@@ -299,28 +311,40 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
     root.addEventListener('copy', copyRangeEvent, true);
     root.addEventListener('cut', cutRangeEvent, true);
     const menuActions: [
-      string,
+      TablesMessageKey,
       () => void
     ][] = [
-        ['Строка выше', commands.rowAbove], ['Строка ниже', commands.rowBelow], ['Столбец слева', commands.columnLeft], ['Столбец справа', commands.columnRight],
-        ['Объединить ячейки', commands.merge], ['Разделить ячейку', commands.split], ['Удалить строку', commands.deleteRow], ['Удалить столбец', commands.deleteColumn], ['Удалить таблицу', commands.remove],
+        ['tables.rowAbove', commands.rowAbove], ['tables.rowBelow', commands.rowBelow], ['tables.columnLeft', commands.columnLeft], ['tables.columnRight', commands.columnRight],
+        ['tables.merge', commands.merge], ['tables.split', commands.split], ['tables.deleteRow', commands.deleteRow], ['tables.deleteColumn', commands.deleteColumn], ['tables.remove', commands.remove],
       ];
-    for (const [label, run] of menuActions) {
+    const localeControls: { element: HTMLElement; key: TablesMessageKey; attribute?: string }[] = [];
+    for (const [key, run] of menuActions) {
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = label;
+      button.textContent = text(key);
+      localeControls.push({ element: button, key });
       button.setAttribute('role', 'menuitem');
       button.addEventListener('mousedown', (event) => event.preventDefault());
       button.addEventListener('click', () => { run(); closeMenu(); });
       menu.append(button);
     }
-    for (const [label, run] of [['Цвет ячейки', commands.background], ['Цвет границы', commands.border]] as const) {
+    for (const [key, run] of [['tables.background', commands.background], ['tables.border', commands.border]] as const) {
       const control = document.createElement('input');
       control.type = 'color';
-      control.setAttribute('aria-label', label);
+      control.setAttribute('aria-label', text(key));
+      localeControls.push({ element: control, key, attribute: 'aria-label' });
       control.addEventListener('input', () => run(control.value));
       menu.append(control);
     }
+    const updateLocale = () => {
+      handle.setAttribute('aria-label', text('tables.resizeColumn'));
+      for (const { element, key, attribute } of localeControls) {
+        if (attribute) element.setAttribute(attribute, text(key));
+        else element.textContent = text(key);
+      }
+      if (clipboardFailed) status.textContent = text('tables.clipboardError');
+    };
+    const unlocale = editor.events.on('localechange', updateLocale);
     const pointerDown = (event: PointerEvent) => {
       if (editor.isReadOnly() || event.button !== 0)
         return;
@@ -478,6 +502,7 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       resizeCancel();
       unsubscribe();
       unselect();
+      unlocale();
       removeAPI();
       clearSelection();
       root.removeEventListener('pointerdown', pointerDown);

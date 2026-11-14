@@ -1,10 +1,12 @@
-import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg-core';
+import type { Editor, EditorChange, EditorPlugin, EditorTranslations } from '@morfira-dev/wysiwyg-core';
 
 export interface MorfiraEditorProps {
   value?: string;
   readOnly?: boolean;
   placeholder?: string;
   label?: string;
+  locale?: string;
+  translations?: EditorTranslations;
   plugins?: EditorPlugin[];
   className?: string;
   onChange?: (change: EditorChange) => void;

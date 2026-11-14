@@ -1,5 +1,5 @@
 import { createEditor, createToolbar, createPluginEvent } from '@morfira-dev/wysiwyg';
-import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
+import type { Editor, EditorChange, EditorTranslations } from '@morfira-dev/wysiwyg';
 import { mentions, mentionCommands } from '@morfira-dev/wysiwyg/plugins/mentions';
 import { slash, slashCommands, createSlashActions } from '@morfira-dev/wysiwyg/plugins/slash';
 import { createSuggestionMenu } from '@morfira-dev/wysiwyg/plugins/suggestions';
@@ -47,10 +47,14 @@ if (adapter === 'vue') {
     setup: () => {
       const value = ref('<p>Initial content</p>');
       const readOnly = ref(false);
+      const locale = ref('ru');
+      const translations = ref<EditorTranslations>({});
       return () => h('div', [
         h('button', { onClick: () => { value.value = '<p>External update</p>'; } }, 'Update value'),
         h('button', { onClick: () => { readOnly.value = !readOnly.value; } }, 'Toggle readonly'),
-        h(VueEditor, { modelValue: value.value, 'onUpdate:modelValue': (next: string) => { value.value = next; }, readOnly: readOnly.value, plugins: suggestionPlugins, onReady: ready, onChange: change }),
+        h('button', { onClick: () => { locale.value = locale.value === 'ru' ? 'en' : 'ru'; } }, 'Switch locale'),
+        h('button', { onClick: () => { translations.value = { 'editor.label': 'Custom editor' }; } }, 'Override locale'),
+        h(VueEditor, { modelValue: value.value, 'onUpdate:modelValue': (next: string) => { value.value = next; }, readOnly: readOnly.value, locale: locale.value, translations: translations.value, plugins: suggestionPlugins, onReady: ready, onChange: change }),
       ]);
     }
   });
@@ -59,6 +63,8 @@ if (adapter === 'vue') {
   const App = () => {
     const [value, setValue] = useState('<p>Initial content</p>');
     const [readOnly, setReadOnly] = useState(false);
+    const [locale, setLocale] = useState('ru');
+    const [translations, setTranslations] = useState<EditorTranslations>({});
     const followed = useRef(false);
     useLayoutEffect(() => {
       if (new URLSearchParams(location.search).get('feedback') === 'layout' && value === '<p>Initial contentA</p>' && !followed.current) {
@@ -66,7 +72,7 @@ if (adapter === 'vue') {
         window.editor.insertHTML('B');
       }
     }, [value]);
-    return <><button onClick={() => setValue('<p>External update</p>')}>Update value</button><button onClick={() => setReadOnly(!readOnly)}>Toggle readonly</button><ReactEditor value={value} readOnly={readOnly} plugins={suggestionPlugins} onReady={ready} onChange={(event) => { setValue(event.html); change(event); }} /></>;
+    return <><button onClick={() => setValue('<p>External update</p>')}>Update value</button><button onClick={() => setReadOnly(!readOnly)}>Toggle readonly</button><button onClick={() => setLocale(locale === 'ru' ? 'en' : 'ru')}>Switch locale</button><button onClick={() => setTranslations({ 'editor.label': 'Custom editor' })}>Override locale</button><ReactEditor value={value} readOnly={readOnly} locale={locale} translations={translations} plugins={suggestionPlugins} onReady={ready} onChange={(event) => { setValue(event.html); change(event); }} /></>;
   };
   const root = createRoot(host); root.render(<StrictMode><App /></StrictMode>); window.dispose = () => root.unmount();
 } else if (adapter === 'svelte') {

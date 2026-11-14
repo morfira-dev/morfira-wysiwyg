@@ -1,22 +1,32 @@
 import type { Editor } from '@morfira-dev/wysiwyg-core';
+import { localize } from '@morfira-dev/wysiwyg-core';
 import type { SuggestionController, SuggestionOption, SuggestionState } from './types.js';
 import { getSuggestionEditor } from './engine.js';
 export type * from './types.js';
 import type { AriaOwner, SuggestionMenuLabels, SuggestionMenuOptions } from './menu.types.js';
+import { suggestionMessages } from './messages.js';
 export type { SuggestionMenuLabels, SuggestionMenuOptions } from './menu.types.js';
 const owners = new WeakMap<HTMLElement, AriaOwner>();
 const attached = new WeakSet<object>();
 let sequence = 0;
-const defaults: Record<'ru' | 'en', SuggestionMenuLabels> = {
-  en: { label: 'Suggestions', loading: 'Loading suggestions…', empty: 'No suggestions', error: 'Unable to load suggestions', results: '{count} suggestions' },
-  ru: { label: 'Подсказки', loading: 'Загрузка подсказок…', empty: 'Нет подсказок', error: 'Не удалось загрузить подсказки', results: 'Подсказок: {count}' },
-};
-const labelsFor = (options: SuggestionMenuOptions): SuggestionMenuLabels => {
+const labelKeys = {
+  label: 'suggestions.label', loading: 'suggestions.loading', empty: 'suggestions.empty',
+  error: 'suggestions.error', results: 'suggestions.results',
+} as const;
+const labelsFor = (editor: Editor, options: SuggestionMenuOptions): SuggestionMenuLabels => {
   if (!options || typeof options !== 'object' || Array.isArray(options) || (options.locale !== undefined && options.locale !== 'en' && options.locale !== 'ru'))
     throw new TypeError('Expected suggestion-menu options with locale en or ru.');
   if (options.labels !== undefined && (!options.labels || typeof options.labels !== 'object' || Array.isArray(options.labels)))
     throw new TypeError('Expected suggestion-menu labels.');
-  const labels = { ...defaults[options.locale ?? 'en'] };
+  const current = editor.getLocale();
+  const locale = options.locale ? { ...current, locale: options.locale } : current;
+  const labels: SuggestionMenuLabels = {
+    label: localize(locale, labelKeys.label, suggestionMessages),
+    loading: localize(locale, labelKeys.loading, suggestionMessages),
+    empty: localize(locale, labelKeys.empty, suggestionMessages),
+    error: localize(locale, labelKeys.error, suggestionMessages),
+    results: localize(locale, labelKeys.results, suggestionMessages),
+  };
   for (const key of Object.keys(labels) as (keyof SuggestionMenuLabels)[]) {
     const value = options.labels?.[key];
     if (value !== undefined) {
@@ -92,7 +102,8 @@ const nextID = (document: Document, surface: HTMLElement): string => {
 };
 /** Optional text-only view. WAI-ARIA 1.2 permits textbox + controlled listbox + active descendant. */
 export const createSuggestionMenu = <T extends SuggestionOption>(editor: Editor, controller: SuggestionController<T>, options: SuggestionMenuOptions = {}): (() => void) => {
-  const labels = labelsFor(options);
+  let labels = labelsFor(editor, options);
+  const configured = { locale: options.locale, labels: options.labels ? { ...options.labels } : undefined };
   if (getSuggestionEditor(controller) !== editor)
     throw new TypeError('Suggestion controller must belong to this live editor.');
   if (attached.has(controller))
@@ -127,6 +138,7 @@ export const createSuggestionMenu = <T extends SuggestionOption>(editor: Editor,
   let rows: HTMLElement[] = [];
   let unsubscribe = () => { };
   let detachDispose = () => { };
+  let unlocale = () => { };
   const cleanups: (() => void)[] = [];
   let rowCleanups: (() => void)[] = [];
   const clearRows = () => { rowCleanups.forEach((cleanup) => cleanup()); rowCleanups = []; list.replaceChildren(); rows = []; };
@@ -232,6 +244,7 @@ export const createSuggestionMenu = <T extends SuggestionOption>(editor: Editor,
     disposed = true;
     unsubscribe();
     detachDispose();
+    unlocale();
     cleanups.forEach((cleanup) => cleanup());
     clearRows();
     root.remove();
@@ -243,6 +256,11 @@ export const createSuggestionMenu = <T extends SuggestionOption>(editor: Editor,
   try {
     unsubscribe = controller.subscribe(render);
     detachDispose = controller.onDispose(dispose);
+    unlocale = editor.events.on('localechange', () => {
+      labels = labelsFor(editor, configured);
+      list.setAttribute('aria-label', labels.label);
+      render(controller.getState());
+    });
     render(controller.getState());
   }
   catch (error) {

@@ -1,0 +1,30 @@
+import { expect, test } from '@playwright/test';
+
+for (const adapter of ['vue', 'react', 'svelte']) test(`${adapter} reacts to locale and overrides without replacing controlled content or history`, async ({ page }) => {
+  await page.goto(`/?adapter=${adapter}`);
+  const content = page.getByRole('textbox');
+  await expect(content).toHaveText('Initial content');
+  await page.evaluate(() => window.editor.setSelection(15));
+  await page.keyboard.type('A');
+  await expect(content).toHaveText('Initial contentA');
+  const changes = await page.evaluate(() => window.changes.length);
+  await page.getByRole('button', { name: 'Switch locale', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.editor.getLocale().locale)).toBe('en');
+  await expect(content).toHaveAttribute('aria-label', 'Text editor');
+  expect(await page.evaluate(() => window.changes.length)).toBe(changes);
+  expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: 16, length: 0 });
+  await page.getByRole('button', { name: 'Override locale', exact: true }).click();
+  await expect(content).toHaveAttribute('aria-label', 'Custom editor');
+  await page.evaluate(() => window.editor.undo());
+  await expect(content).toHaveText('Initial content');
+  await page.evaluate(() => window.editor.redo());
+  await page.keyboard.type('B');
+  await expect(content).toHaveText('Initial contentAB');
+  await page.getByRole('button', { name: 'Toggle readonly', exact: true }).click();
+  await page.getByRole('button', { name: 'Switch locale', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.editor.getLocale().locale)).toBe('ru');
+  await expect(content).toHaveAttribute('contenteditable', 'false');
+  await expect(content).toHaveAttribute('aria-label', 'Custom editor');
+  await page.evaluate(() => window.dispose());
+  await expect(content).toHaveCount(0);
+});

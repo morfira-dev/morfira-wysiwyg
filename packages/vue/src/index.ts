@@ -1,7 +1,7 @@
 import { defineComponent, h, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { PropType } from 'vue';
 import { createEditor } from '@morfira-dev/wysiwyg-core';
-import type { Editor, EditorPlugin } from '@morfira-dev/wysiwyg-core';
+import type { Editor, EditorPlugin, EditorTranslations } from '@morfira-dev/wysiwyg-core';
 
 export const MorfiraEditor = defineComponent({
   name: 'MorfiraEditor',
@@ -10,6 +10,8 @@ export const MorfiraEditor = defineComponent({
     readOnly: Boolean,
     placeholder: String,
     label: String,
+    locale: { type: String, default: 'ru' },
+    translations: { type: Object as PropType<EditorTranslations>, default: () => ({}) },
     plugins: { type: Array as PropType<EditorPlugin[]>, default: () => [] },
   },
   emits: ['update:modelValue', 'change', 'ready'],
@@ -20,6 +22,7 @@ export const MorfiraEditor = defineComponent({
     onMounted(() => {
       editor = createEditor(host.value!, {
         value: props.modelValue, readOnly: props.readOnly, placeholder: props.placeholder, label: props.label, plugins: props.plugins,
+        locale: props.locale, translations: props.translations,
         onChange: (change) => {
           if (!applying) {
             emit('update:modelValue', change.html);
@@ -41,6 +44,7 @@ export const MorfiraEditor = defineComponent({
       }
     });
     watch(() => props.readOnly, (value) => editor?.setReadOnly(value));
+    watch(() => [props.locale, props.translations] as const, ([locale, translations]) => editor?.setLocale(locale, translations), { deep: true });
     onBeforeUnmount(() => editor?.destroy());
     expose({ getEditor: () => editor });
     return () => h('div', { ref: host, class: 'mw-host' });

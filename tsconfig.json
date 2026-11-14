@@ -50,7 +50,8 @@
       "@morfira-dev/wysiwyg-plugins/suggestions": [
         "./packages/plugins/src/suggestions/index.ts"
       ]
-    }
+    },
+    "experimentalDecorators": true
   },
   "include": [
     "packages/**/*.ts",

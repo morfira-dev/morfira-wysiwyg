@@ -1,3 +1,6 @@
+import type { tablesMessages } from './messages.js';
+export type TablesMessageKey = keyof typeof tablesMessages.en;
+
 export interface GridCell {
   element: HTMLTableCellElement;
   row: number;

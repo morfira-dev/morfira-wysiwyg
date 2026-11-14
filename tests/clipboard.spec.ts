@@ -4,7 +4,19 @@ import type { Page } from '@playwright/test';
 const fixture = '<table><tbody><tr><td><p>A</p></td><td><p>B</p></td></tr><tr><td><p>C</p></td><td><p>D</p></td></tr></tbody></table><p><br></p>';
 const initialize = async (page: Page, html = fixture): Promise<void> => {
   await page.goto('/'); await expect(page.getByRole('textbox')).toBeVisible();
-  await page.evaluate((value) => window.editor.setHTML(value), html);
+  await page.evaluate((value) => {
+    window.dispose();
+    const host = document.createElement('div');
+    document.body.append(host);
+    const failures: string[] = [];
+    window.changes = [];
+    window.editor = window.createEditor(host, {
+      value,
+      plugins: [window.createTables({ onClipboardError: (error) => failures.push(error.message) })],
+      onChange: (change) => window.changes.push(change),
+    });
+    window.editor.providePlugin('clipboard-errors', failures);
+  }, html);
 };
 const clipboard = async (page: Page, type: 'paste' | 'copy' | 'cut', input: { html?: string; text?: string } = {}, failWrite = false) => page.evaluate(({ type, input, failWrite }) => {
   const data = new DataTransfer();
@@ -72,7 +84,9 @@ test('failed clipboard write never cuts content or adds history', async ({ page 
   await initialize(page); await page.locator('.mw-content td').first().click(); await page.evaluate(() => window.tableCommands(window.editor).select({ row: 0, column: 0 }));
   const before = await page.evaluate(() => window.editor.getHTML()); await clipboard(page, 'cut', {}, true);
   expect(await page.evaluate(() => window.editor.getHTML())).toBe(before); expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
-  await expect(page.getByRole('status')).toContainText('Clipboard write unavailable'); expect(errors).toEqual([]);
+  await expect(page.getByRole('status')).toHaveText('Не удалось скопировать или вставить диапазон таблицы.');
+  expect(await page.evaluate(() => window.editor.getPlugin<string[]>('clipboard-errors'))).toEqual(['Clipboard write unavailable']);
+  expect(errors).toEqual([]);
 });
 
 test('partial destination merges reject paste atomically and browser handlers report errors', async ({ page }) => {
@@ -80,7 +94,9 @@ test('partial destination merges reject paste atomically and browser handlers re
   await initialize(page, '<table><tr><td rowspan="2"><p>Keep</p></td><td><p>A</p></td></tr><tr><td><p>B</p></td></tr></table><p><br></p>');
   await page.locator('.mw-content td').first().click(); const before = await page.evaluate(() => window.editor.getHTML());
   await clipboard(page, 'paste', { text: 'x\ty' }); expect(await page.evaluate(() => window.editor.getHTML())).toBe(before); expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
-  await expect(page.getByRole('status')).toContainText('merged cell'); expect(errors).toEqual([]);
+  await expect(page.getByRole('status')).toHaveText('Не удалось скопировать или вставить диапазон таблицы.');
+  expect(await page.evaluate(() => window.editor.getPlugin<string[]>('clipboard-errors'))).toEqual(['Paste would split an existing merged cell. Select its complete area first.']);
+  expect(errors).toEqual([]);
 });
 
 test('fully covered destination merges can be replaced by a rectangular source', async ({ page }) => {

@@ -12,12 +12,14 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm run test:release
       - run: pnpm run check
+      - run: pnpm run consumers:check
+      - run: pnpm run consumers:angular22
       - run: pnpm run docs:build
       - run: pnpm run test:docs
       - uses: actions/upload-artifact@v7

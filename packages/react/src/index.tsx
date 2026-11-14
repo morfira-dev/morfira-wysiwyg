@@ -47,5 +47,8 @@ export const MorfiraEditor = forwardRef<MorfiraEditorHandle, MorfiraEditorProps>
   useEditorLayoutEffect(() => {
     instance.current?.setReadOnly(props.readOnly ?? false);
   }, [props.readOnly]);
+  useEditorLayoutEffect(() => {
+    instance.current?.setLocale(props.locale ?? 'ru', props.translations);
+  }, [props.locale, props.translations]);
   return <div ref={host} className={props.className ?? 'mw-host'} />;
 });

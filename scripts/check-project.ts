@@ -28,7 +28,11 @@ const inspect = (sourceText: string, filename: string): void => {
     }
   };
   const visit = (node: ts.Node): void => {
-    if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isMethodDeclaration(node)) {
+    const platformCallback = ts.isMethodDeclaration(node)
+      && projectPath === 'packages/web-component/src/index.ts'
+      && ts.isClassDeclaration(node.parent) && node.parent.name?.text === 'MorfiraEditorElement'
+      && ts.isIdentifier(node.name) && ['connectedCallback', 'disconnectedCallback', 'attributeChangedCallback'].includes(node.name.text);
+    if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || (ts.isMethodDeclaration(node) && !platformCallback)) {
       const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
       errors.push(`${filename}:${line}: use const/property arrow functions.`);
     }
@@ -53,7 +57,7 @@ const walk = async (directory: string): Promise<void> => {
   }
 };
 for (const directory of ['packages', 'scripts', 'tests', 'playground', 'apps/docs/.vitepress']) await walk(directory);
-for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'wysiwyg']) {
+for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web-component', 'wysiwyg']) {
   const manifest = JSON.parse(await readFile(`packages/${name}/package.json`, 'utf8')) as { license?: string; dependencies?: Record<string, string>; };
   if (manifest.license !== 'MIT') errors.push(`${name}: package license must be MIT.`);
   if (['core', 'plugins'].includes(name) && Object.keys(manifest.dependencies ?? {}).length) errors.push(`${name}: runtime dependencies must be empty.`);

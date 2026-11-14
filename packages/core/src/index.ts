@@ -8,3 +8,7 @@ export { createToolbar } from './ui/toolbar/index.js';
 export type { ToolbarAction, ToolbarOptions } from './ui/toolbar/types.js';
 export { createPluginEvent } from './events/index.js';
 export type { EditorEvents, EditorEventMap, PluginEvent } from './events/types.js';
+export { localize, editorMessages } from './localization/index.js';
+export type { EditorLocale, EditorTranslations, LocaleDictionaries, EditorTranslationKey } from './localization/types.js';
+export { toolbarMessages } from './ui/toolbar/messages.js';
+export type { ToolbarTranslationKey } from './ui/toolbar/types.js';

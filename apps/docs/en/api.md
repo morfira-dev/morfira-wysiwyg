@@ -10,6 +10,8 @@
 | `readOnly` | `boolean` | Defaults to false |
 | `placeholder` | `string` | Empty-surface prompt |
 | `label` | `string` | Accessible textbox name |
+| `locale` | `string` | Interface language; defaults to `ru`, with built-in RU/EN |
+| `translations` | `EditorTranslations` | Instance-local keyed string overrides |
 | `plugins` | `EditorPlugin[]` | Fixed at creation; duplicate names rejected |
 | `historyLimit` | `number` | 1–10000 revisions, default 100 |
 | `onChange` | `(change: EditorChange) => void` | Changes after initialization |
@@ -29,6 +31,8 @@
 | `format(name, value)` | Undoable user-format command |
 | `insertHTML(html)` | Validated paste-like replacement of the current selection |
 | `setReadOnly(value) / isReadOnly()` | Control and query user editing |
+| `getLocale()` | Independent `EditorLocale` snapshot `{ locale, translations }` |
+| `setLocale(locale, translations?)` | Replace language/overrides without document/history changes |
 | `focus()` | Restore the last known selection when possible |
 | `undo() / redo()` | Own document history with selection bookmarks |
 | `canUndo() / canRedo()` | History availability |
@@ -65,7 +69,9 @@ const dispose = createToolbar(host, editor, [
 ]);
 ```
 
-The default toolbar has Russian labels; supply your own actions for localization. The fourth `{ label }` argument localizes the toolbar accessible name. It preserves DOM bookmarks including empty items, exposes disabled/pressed/mixed states and supports arrow/Home/End/Escape navigation. `ToolbarAction.enabled(instance)` controls command availability. A complete dropdown/dialog system and accessibility audit are future work.
+The default toolbar inherits editor language and reacts to `localechange`. Custom `ToolbarAction.label` values retain their supplied text; the fourth `{ label }` argument overrides the toolbar accessible name. It preserves DOM bookmarks including empty items, exposes disabled/pressed/mixed states and supports arrow/Home/End/Escape navigation. `ToolbarAction.enabled(instance)` controls command availability. A complete dropdown/dialog system and accessibility audit are future work.
+
+`editor.events.on('localechange', listener)` receives an independent `EditorLocale`; language changes emit no document `change` and work in read-only/composition, but are rejected inside a document transaction. `localize(state, key, dictionaries)` lets optional UI/plugins own dictionaries without adding their strings to core. [Full contract and key catalog](/en/localization).
 
 Lists support nesting through `format('indent', 1 | -1)`. `format('clear', true)` removes inline formatting from selected text. See [Lists and formatting](/en/lists) for keyboard contracts, mixed states and examples.
 

@@ -9,6 +9,7 @@ import { createEventHub } from '../events/index.js';
 import type { EditorEvents } from '../events/types.js';
 import type { Editor, EditorChange, EditorOptions, Snapshot } from './types.js';
 import { createHTMLSnapshots } from './html-snapshots.js';
+import { createLocale, editorMessages, localize } from '../localization/index.js';
 const isCompositionInput = (event: InputEvent): boolean => event.isComposing || event.inputType === 'insertCompositionText' || event.inputType === 'insertFromComposition' || event.inputType === 'deleteCompositionText';
 const ensureDocument = (root: HTMLElement): boolean => {
   let normalized = false;
@@ -83,14 +84,18 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   if (!Number.isInteger(limit) || limit < 1 || limit > 10000)
     throw new RangeError('historyLimit must be an integer from 1 to 10000.');
   const initialDocument = parseHTML(options.value ?? '');
+  let locale = createLocale(options.locale ?? 'ru', options.translations);
   const container = document.createElement('div');
   container.className = 'mw-editor';
   const surface = document.createElement('div');
   surface.className = 'mw-content';
   surface.setAttribute('role', 'textbox');
   surface.setAttribute('aria-multiline', 'true');
-  surface.setAttribute('aria-label', options.label ?? 'Текстовый редактор');
-  surface.dataset.placeholder = options.placeholder ?? 'Начните писать…';
+  const updateLocale = () => {
+    surface.setAttribute('aria-label', options.label ?? localize(locale, 'editor.label', editorMessages));
+    surface.dataset.placeholder = options.placeholder ?? localize(locale, 'editor.placeholder', editorMessages);
+  };
+  updateLocale();
   container.append(surface);
   host.append(container);
   surface.append(renderDocument(initialDocument));
@@ -329,6 +334,21 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   };
   const editor: Editor = {
     element: container, surface, events,
+    getLocale: () => {
+      assertActive();
+      return { locale: locale.locale, translations: { ...locale.translations } };
+    },
+    setLocale: (language, translations) => {
+      assertActive();
+      rejectDuringTransaction('setLocale');
+      const next = createLocale(language, translations);
+      const keys = Object.keys(next.translations);
+      if (locale.locale === next.locale && keys.length === Object.keys(locale.translations).length && keys.every((key) => Object.hasOwn(locale.translations, key) && locale.translations[key] === next.translations[key]))
+        return;
+      locale = next;
+      updateLocale();
+      eventHub.notify('localechange', editor.getLocale());
+    },
     getHTML: () => { assertActive(); return htmlSnapshots.read(); },
     getText: () => { assertActive(); return surface.innerText; },
     getJSON: () => { assertActive(); return parseHTML(surface.innerHTML); },

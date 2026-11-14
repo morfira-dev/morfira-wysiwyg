@@ -16,6 +16,7 @@ const props = defineProps<{ full?: boolean }>();
 const { lang } = useData();
 const ru = computed(() => lang.value === 'ru');
 const t = (russian: string, english: string) => ru.value ? russian : english;
+const editorLocale = ref(ru.value ? 'ru' : 'en');
 const host = ref<HTMLElement>(); const toolbar = ref<HTMLElement>();
 const dark = ref(false); const readOnly = ref(false); const ready = ref(false);
 const output = ref(''); const outputFormat = ref<'html' | 'json'>('html');
@@ -110,6 +111,9 @@ const replaceMatches = (all: boolean) => {
 };
 const clearSearch = () => { if (!searchAPI) return; searchAPI.clear(); query.value = ''; notify(''); };
 const toggleMarkdown = () => { markdownAPI?.setEnabled(markdownEnabled.value); };
+const updateEditorLocale = () => {
+  editor?.setLocale(editorLocale.value);
+};
 const startMarkdown = () => run((instance) => { instance.setHTML('<p><br></p>'); instance.setSelection(0); });
 const closeSuggestions = () => { mentionAPI?.close(); slashAPI?.close(); };
 const openSuggestions = () => run(() => { closeSuggestions(); if (!mentionAPI?.open()) slashAPI?.open(); }, false);
@@ -190,6 +194,7 @@ onMounted(async () => {
   const [{ createEditor, createToolbar }, { tables, tableCommands }, { images, imageCommands }, { search, searchCommands }, { statistics, statisticsCommands }, { markdownShortcuts, markdownCommands }, { mentions, mentionCommands }, { slash, slashCommands, createSlashActions }, { createSuggestionMenu }] = await Promise.all([import('@morfira-dev/wysiwyg'), import('@morfira-dev/wysiwyg/plugins/tables'), import('@morfira-dev/wysiwyg/plugins/images'), import('@morfira-dev/wysiwyg/plugins/search'), import('@morfira-dev/wysiwyg/plugins/statistics'), import('@morfira-dev/wysiwyg/plugins/markdown'), import('@morfira-dev/wysiwyg/plugins/mentions'), import('@morfira-dev/wysiwyg/plugins/slash'), import('@morfira-dev/wysiwyg/plugins/suggestions')]);
   if (cancelled) return;
   editor = createEditor(host.value!, {
+    locale: editorLocale.value,
     label: t('Попробуйте Morfira', 'Try Morfira'), plugins: [mentions({ provide: people, debounceMs: 0 }), slash({ provide: snippets, debounceMs: 0, actions: { ...createSlashActions(), table: (instance) => tableCommands(instance).insert(3, 3) } }), markdownShortcuts(), statistics({ locale: ru.value ? 'ru' : 'en' }), search(), images({ upload: demoUpload }), tables({ onClipboardError: (error) => notify(error.message, true) })],
     value: props.full ? showcase() : article(),
     onChange: (change) => { source.value = change.source; refresh(); },
@@ -197,8 +202,8 @@ onMounted(async () => {
   mentionAPI = mentionCommands(editor); slashAPI = slashCommands(editor);
   mentionState.value = mentionAPI.getState(); slashState.value = slashAPI.getState();
   unmention = mentionAPI.subscribe((state) => { mentionState.value = state; }); unslash = slashAPI.subscribe((state) => { slashState.value = state; });
-  disposeMentionMenu = createSuggestionMenu(editor, mentionAPI, { locale: ru.value ? 'ru' : 'en', labels: { label: t('Люди', 'People'), loading: t('Ищем людей…', 'Finding people…'), empty: t('Люди не найдены', 'No people found'), error: t('Ошибка поиска людей', 'People lookup failed'), results: t('Людей: {count}', 'People: {count}') } });
-  disposeSlashMenu = createSuggestionMenu(editor, slashAPI, { locale: ru.value ? 'ru' : 'en', labels: { label: t('Шаблоны', 'Snippets'), loading: t('Ищем шаблоны…', 'Finding snippets…'), empty: t('Шаблоны не найдены', 'No snippets found'), error: t('Ошибка поиска шаблонов', 'Snippet lookup failed'), results: t('Шаблонов: {count}', 'Snippets: {count}') } });
+  disposeMentionMenu = createSuggestionMenu(editor, mentionAPI, { labels: { label: t('Люди', 'People'), loading: t('Ищем людей…', 'Finding people…'), empty: t('Люди не найдены', 'No people found'), error: t('Ошибка поиска людей', 'People lookup failed'), results: t('Людей: {count}', 'People: {count}') } });
+  disposeSlashMenu = createSuggestionMenu(editor, slashAPI, { labels: { label: t('Шаблоны', 'Snippets'), loading: t('Ищем шаблоны…', 'Finding snippets…'), empty: t('Шаблоны не найдены', 'No snippets found'), error: t('Ошибка поиска шаблонов', 'Snippet lookup failed'), results: t('Шаблонов: {count}', 'Snippets: {count}') } });
   commands = tableCommands(editor); imageAPI = imageCommands(editor); searchAPI = searchCommands(editor);
   markdownAPI = markdownCommands(editor); markdownEnabled.value = markdownAPI.getState().enabled;
   statisticsAPI = statisticsCommands(editor); updateStatistics(statisticsAPI.getState()); unstatistics = statisticsAPI.subscribe(updateStatistics);
@@ -240,10 +245,12 @@ onBeforeUnmount(() => { cancelled = true; unmention?.(); unslash?.(); disposeMen
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <button v-else :disabled="!ready || readOnly" @click="insertTable">{{ t('+ Таблица 3 × 3', '+ Table 3 × 3') }}</button>
+      <label>{{ t('Язык редактора', 'Editor language') }}<select v-model="editorLocale" :disabled="!ready" :aria-label="t('Язык интерфейса редактора', 'Editor interface language')" @change="updateEditorLocale"><option value="ru">Русский</option><option value="en">English</option></select></label>
       <button @click="dark = !dark">{{ t('Сменить тему', 'Toggle theme') }}</button>
       <button :disabled="!ready" @click="toggleReadOnly">{{ readOnly ? t('Редактировать', 'Edit') : t('Только чтение', 'Read only') }}</button>
       <button :disabled="!ready" @click="snapshot('html')">HTML</button><button v-if="full" :disabled="!ready" @click="snapshot('json')">JSON</button>
     </div>
+    <p class="lab-hint">{{ t('Язык меняет встроенный интерфейс без замены документа. Собственные подписи панели, форм и подсказок в этом стенде остаются на языке страницы.', 'Language changes built-in editor UI without replacing the document. Custom toolbar, form and suggestion labels in this laboratory remain in the page language.') }}</p>
     <div v-if="message" class="lab-message" :class="{ 'is-error': failed }" :role="failed ? 'alert' : 'status'">{{ message }}</div>
     <div class="demo-workspace">
       <div class="demo-editing">

@@ -8,6 +8,7 @@
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
     "jsx": "react-jsx",
+    "experimentalDecorators": true,
     "noEmit": true,
     "types": ["vite/client", "node"]
   },

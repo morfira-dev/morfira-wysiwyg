@@ -1,3 +1,6 @@
+import type { suggestionMessages } from './messages.js';
+export type SuggestionMessageKey = keyof typeof suggestionMessages.en;
+
 export interface SuggestionMenuLabels {
   label: string;
   loading: string;

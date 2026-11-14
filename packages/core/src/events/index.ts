@@ -1,7 +1,7 @@
 import type { EditorEventMap, EditorEvents, EventHub, PluginEvent, QueuedEvent } from './types.js';
 export type { EditorEventMap, EditorEvents, PluginEvent } from './types.js';
 const tokens = new WeakSet<object>();
-const coreNames = new Set(['change', 'selectionchange', 'readonlychange', 'destroy']);
+const coreNames = new Set(['change', 'selectionchange', 'readonlychange', 'localechange', 'destroy']);
 export const createPluginEvent = <T>(name: string): PluginEvent<T> => {
   if (typeof name !== 'string' || !name.trim() || name.length > 200) {
     throw new TypeError('Expected an event name with 1–200 characters.');
@@ -41,7 +41,9 @@ export const createEventHub = (): EventHub => {
             continue;
           try {
             const payload = next.core && next.payload && typeof next.payload === 'object'
-              ? { ...next.payload }
+              ? next.key === 'localechange'
+                ? { ...next.payload, translations: { ...(next.payload as EditorEventMap['localechange']).translations } }
+                : { ...next.payload }
               : next.payload;
             listener(payload);
           }

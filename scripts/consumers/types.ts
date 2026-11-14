@@ -22,13 +22,17 @@ export interface PackedLibrary extends PackageManifest {
 export interface InstalledLibrary extends PackageManifest {
   location: string;
 }
+export type ConsumerAdapter = 'vue' | 'react' | 'svelte' | 'angular' | 'web-component';
+export type ConsumerProfile = 'default' | 'angular22';
 export interface ConsumerScenario {
-  adapter: 'vue' | 'react' | 'svelte';
+  adapter: ConsumerAdapter;
   browser: string;
   browserVersion: string;
   userChanges: number;
 }
 export interface ConsumerReport {
+  profile: ConsumerProfile;
+  toolchainSource: string;
   status: 'passed' | 'failed';
   node: string;
   pnpm: string;
@@ -40,6 +44,9 @@ export interface ConsumerReport {
   rootLockfileSHA256?: string;
   toolchainGraph?: ToolchainGraph;
   installedToolchainGraph?: ToolchainGraph;
+  frameworkFreeCoreConsumer?: boolean;
+  frameworkFreeCorePackages?: PackageManifest[];
+  frameworkFreeCoreFacade?: string;
   scenarios: ConsumerScenario[];
   temporaryDirectoryRemoved: boolean;
   error?: string;

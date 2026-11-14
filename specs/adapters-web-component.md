@@ -1,0 +1,15 @@
+# Native Web Component adapter
+
+Status: implementation contract. Public import `@morfira-dev/wysiwyg/web-component` and independently released `@morfira-dev/wysiwyg-web-component`. Core is its only peer; no framework or third-party runtime dependency.
+
+Importing the module is safe without window/document/HTMLElement and does not register anything. Explicit `defineMorfiraEditor(tagName = 'morfira-wysiwyg')` returns the registered constructor. Repeating this module's registration is idempotent; an occupied foreign name is rejected. Browser custom-element naming validation still applies.
+
+The element provides properties `value`, `readOnly`, `locale`, `translations`, `plugins`, `label`, `placeholder` and `getEditor()`. Values use HTML with core validation. Attributes `value`, `readonly`, `locale`, `label`, `placeholder` synchronize the corresponding properties; readonly is true whenever that attribute is present, including readonly="false". Property writes do not reflect HTML values into attributes. Properties configured before connection are applied on connection; own properties assigned before upgrade are adopted. Plugins are creation-time and may be replaced while disconnected, never silently swapped on a live editor. Label/placeholder and locale/translations update reactively without rebuilding document/history.
+
+`value-change` has string detail, `change` has EditorChange detail and `ready` has Editor detail. These CustomEvents bubble and are composed. External property/attribute replacement is silent; same-value feedback preserves selection/history. Different external values clear history as in core, including while read-only. Consumers own persistence and ordinary form submission; this first adapter does not implement form-associated ElementInternals/CVA semantics.
+
+Use light DOM with an owned mw-host mount and normal scoped --mw-* CSS variables. Consumers import core/plugin CSS explicitly. Unrelated light-DOM children are not document data. Disconnection captures validated content, destroys editor/listeners/menus and removes only the owned mount. Reconnection creates a fresh instance from the saved value; stale instances remain disposed. getEditor returns undefined while disconnected. Locale listeners and every DOM listener have cleanup.
+
+The only approved non-arrow methods are the platform-required prototype callbacks connectedCallback, disconnectedCallback and attributeChangedCallback on the owned custom-element class. All helpers, commands and ordinary callbacks remain const/property arrows. Do not generalize this exception to Angular or ordinary implementation methods.
+
+Acceptance in Chromium/Firefox/WebKit: explicit/idempotent registration and foreign collision; initial attributes and preconnection properties; controlled feedback, caret/history and silent external values; read-only presence/property updates; locale/translation/custom-label switching; table/plugin teardown, removal/reconnection and stale API cleanup. Node imports have no browser globals or registration side effects. Installed tarball consumers exercise the public facade entry rather than workspace aliases.

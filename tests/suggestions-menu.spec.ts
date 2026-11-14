@@ -11,7 +11,7 @@ const initialize = async (page: Page, mode: 'ready' | 'empty' | 'error' | 'loadi
   await page.evaluate(({ mode, count }) => {
     window.dispose(); const host = document.createElement('div'); host.className = 'view-test'; document.body.append(host); window.viewRequests = 0;
     const options: MentionOption[] = Array.from({ length: count }, (_, index) => ({ id: index === 0 ? '<not-a-dom-id>' : `person-${index}`, label: index === 0 ? 'Alice <b>' : `Person ${index}`, description: index === 0 ? '<img src=x onerror=bad>' : 'Designer' }));
-    window.editor = window.createEditor(host, { value: '<p>@a</p>', plugins: [
+    window.editor = window.createEditor(host, { value: '<p>@a</p>', locale: 'en', plugins: [
       window.createMentions({ debounceMs: 0, provide: ({ signal }) => {
         window.viewRequests++; if (mode === 'error') throw new Error('Private provider error'); if (mode === 'empty') return [];
         if (mode === 'loading') return new Promise<readonly MentionOption[]>((resolve) => { if (signal.aborted) resolve([]); else signal.addEventListener('abort', () => resolve([]), { once: true }); });

@@ -14,12 +14,17 @@ const stopSelection = editor.events.on('selectionchange', (selection) => {
 const stopReadOnly = editor.events.on('readonlychange', (value) => {
   console.log(value);
 });
+const stopLocale = editor.events.on('localechange', ({ locale, translations }) => {
+  console.log(locale, translations);
+});
 const stopDestroy = editor.events.on('destroy', () => {
   // Final cleanup. Editor commands are already unavailable.
 });
 ```
 
 `change` follows a user operation, undo/redo or an external replacement that actually changes the value (`source: 'user' | 'api'`). `selectionchange` provides a `TextSelection | undefined` snapshot; a notification does not promise the value changed on every call. `readonlychange` only reports actual transitions. Each core listener receives an independent small snapshot.
+
+`localechange` supplies an independent `EditorLocale` snapshot `{ locale, translations }` only when language configuration changes. It is not a document `change` and changes no content, selection or history. Its subscription has the same cleanup rules as other core events. See [localization](/en/localization) for keys, fallback and localizing custom UI.
 
 Existing `subscribe` and `onSelectionChange` remain compatible facades. Subscriptions are not immediate. Every returned disposer is idempotent, including after destroy. Subscriptions belong to the instance and are automatically cleared on teardown.
 
@@ -82,7 +87,7 @@ editor.transact(() => {
 
 Nested `transact`, ordinary formatting and `insertHTML` join the outer operation: one history entry and one final `change`. Intermediate selection notifications are deferred. A nested mutation failure rolls back the entire operation even if an inner callback catches it.
 
-`setHTML`, `setJSON`, undo/redo, destroy and read-only changes are forbidden inside a transaction. A read-only outer transaction is a no-op. Callbacks are trusted and **synchronous**: await data first, then call transact. Async functions/returned thenables are rejected; the editor cannot cancel arbitrary application-scheduled work. Do not mutate DOM after the callback returns.
+`setHTML`, `setJSON`, undo/redo, destroy, `setLocale` and read-only changes are forbidden inside a transaction. A read-only outer transaction is a no-op. Callbacks are trusted and **synchronous**: await data first, then call transact. Async functions/returned thenables are rejected; the editor cannot cancel arbitrary application-scheduled work. Do not mutate DOM after the callback returns.
 
 Transactions introduce no collaboration engine, command RPC bus or heavy background operations. See [structural slash commands](/en/suggestions#structural-slash-commands) for a concrete example.
 

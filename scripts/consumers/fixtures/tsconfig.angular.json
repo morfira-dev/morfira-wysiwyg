@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "experimentalDecorators": true,
+    "rootDir": "src",
+    "outDir": "src/angular-compiled"
+  },
+  "angularCompilerOptions": {
+    "compilationMode": "full",
+    "strictTemplates": true,
+    "strictInjectionParameters": true
+  },
+  "files": ["src/angular.ts"],
+  "include": [],
+  "exclude": ["src/angular-compiled"]
+}

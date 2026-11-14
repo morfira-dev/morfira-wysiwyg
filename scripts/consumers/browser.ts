@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { chromium, firefox, webkit, expect } from '@playwright/test';
-import type { ConsumerScenario } from './types.js';
+import type { ConsumerAdapter, ConsumerScenario } from './types.js';
 
-export const verifyConsumers = async (url: string): Promise<ConsumerScenario[]> => {
+export const verifyConsumers = async (url: string, adapters: readonly ConsumerAdapter[] = ['vue', 'react', 'svelte', 'angular', 'web-component']): Promise<ConsumerScenario[]> => {
   const scenarios: ConsumerScenario[] = [];
   for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
     const browser = await engine.launch();
     try {
-      for (const adapter of ['vue', 'react', 'svelte'] as const) {
+      for (const adapter of adapters) {
         const page = await browser.newPage();
         const errors: string[] = [];
         page.on('pageerror', (error) => errors.push(error.message));

@@ -1,13 +1,17 @@
 import { build } from 'esbuild';
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 
-for (const name of ['core', 'plugins', 'vue', 'react']) {
+for (const name of ['core', 'plugins', 'vue', 'react', 'web-component']) {
   const outdir = `packages/${name}/dist`;
   await rm(outdir, { recursive: true, force: true });
   await mkdir(outdir, { recursive: true });
   const result = await build({
     metafile: true,
-    entryPoints: name === 'plugins' ? Object.fromEntries(['tables', 'images', 'search', 'statistics', 'markdown', 'mentions', 'slash', 'suggestions'].map((entry) => [entry, `packages/plugins/src/${entry}/index.ts`])) : [`packages/${name}/src/${name === 'react' ? 'index.tsx' : 'index.ts'}`],
+    entryPoints: name === 'plugins' ? Object.fromEntries(['tables', 'images', 'search', 'statistics', 'markdown', 'mentions', 'slash', 'suggestions'].map((entry) => [entry, `packages/plugins/src/${entry}/index.ts`])) : name === 'core' ? {
+      index: 'packages/core/src/index.ts',
+      'private-editor-messages': 'packages/core/src/localization/messages.ts',
+      'private-toolbar-messages': 'packages/core/src/ui/toolbar/messages.ts',
+    } : [`packages/${name}/src/${name === 'react' ? 'index.tsx' : 'index.ts'}`],
     outdir, bundle: true, splitting: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true,
     sourcemap: true, jsx: 'automatic',
     external: ['@morfira-dev/*', 'vue', 'react', 'react/jsx-runtime'],
@@ -26,7 +30,7 @@ for (const name of ['core', 'plugins', 'vue', 'react']) {
   }
 }
 await build({
-  entryPoints: ['index', 'vue', 'react', 'svelte', 'plugins/tables', 'plugins/images', 'plugins/search', 'plugins/statistics', 'plugins/markdown', 'plugins/mentions', 'plugins/slash', 'plugins/suggestions'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
+  entryPoints: ['index', 'vue', 'react', 'svelte', 'angular', 'web-component', 'plugins/tables', 'plugins/images', 'plugins/search', 'plugins/statistics', 'plugins/markdown', 'plugins/mentions', 'plugins/slash', 'plugins/suggestions'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
   outdir: 'packages/wysiwyg/dist', outbase: 'packages/wysiwyg/src', bundle: true, format: 'esm', external: ['@morfira-dev/*'],
 });
 await mkdir('packages/wysiwyg/dist/plugins', { recursive: true });

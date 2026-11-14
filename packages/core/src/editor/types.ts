@@ -1,6 +1,7 @@
 import type { EditorDocument } from '../document/index.js';
 import type { SelectionBookmark, TextSelection } from '../selection/index.js';
 import type { EditorEvents } from '../events/types.js';
+import type { EditorLocale, EditorTranslations } from '../localization/types.js';
 export interface EditorChange {
   html: string;
   text: string;
@@ -11,6 +12,8 @@ export interface EditorPlugin {
   setup(editor: Editor): void | (() => void);
 }
 export interface EditorOptions {
+  locale?: string;
+  translations?: EditorTranslations;
   value?: string;
   placeholder?: string;
   readOnly?: boolean;
@@ -23,6 +26,8 @@ export interface Editor {
   readonly element: HTMLElement;
   readonly surface: HTMLElement;
   readonly events: EditorEvents;
+  getLocale(): EditorLocale;
+  setLocale(locale: string, translations?: EditorTranslations): void;
   getHTML(): string;
   getText(): string;
   getJSON(): EditorDocument;

@@ -1,0 +1,13 @@
+# Instance-local editor UI localization
+
+Status: implementation contract. Schema v1 and persisted content are unchanged.
+
+Editor options accept `locale?: string` and `translations?: Readonly<Record<string, string>>`. The default remains `ru` for compatibility. Built-in interface dictionaries provide Russian and English; exact language tags fall back to their base language and then English. Validate language tags and string overrides before changing any state. Overrides use feature-owned namespaced keys, are copied per instance and rendered as text, never HTML. Custom languages require no third-party i18n dependency or global mutable registry.
+
+`editor.getLocale()` returns an independent `EditorLocale` snapshot with `{ locale, translations }`; `editor.setLocale(locale, translations?)` atomically replaces locale/overrides and sends typed `localechange` only when changed. `localize(state, key, dictionaries)` resolves override, exact locale, base locale, English in that order. Dictionaries own their keys and live with the relevant core/UI/plugin feature; core never imports plugin dictionaries. The helper and locale types are public through core and facade.
+
+Changing interface language must not replace the editor, alter document/selection/history, emit a document change, or touch persisted HTML/JSON. Reject setLocale inside a document transaction consistently with other state replacements. Explicit application label/placeholder and custom toolbar/menu labels take precedence over translated defaults. Built-in editor labels/placeholder, default toolbar labels and accessible names, table UI/status text and suggestion menu strings use localization. Slash action registries contain callbacks only: visible action/provider labels belong to the application and must not be rewritten. Developer exceptions and application-supplied provider labels/errors are not translated as product copy.
+
+Vue/React/Svelte and Angular expose reactive locale/translations. Existing plugin/menu custom messages remain supported. Every locale subscription has instance cleanup. RU/EN docs and homepage editors select the matching language; provide a documented key catalog and a custom-language/override example. No core dependency on frameworks or optional UI.
+
+Acceptance in Chromium/Firefox/WebKit: both language packs, region/base/unknown-language fallback, custom overrides and escaping, invalid-input atomicity, per-instance independence, live switching of mounted UI, custom-label precedence, read-only and active-composition switching without content/history/caret loss, transaction rejection, adapter feedback and teardown.

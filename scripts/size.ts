@@ -5,7 +5,7 @@ import { transform } from 'esbuild';
 
 const report: Record<string, { raw: number; gzip: number; brotli: number; }> = {};
 let failed = false;
-for (const name of ['core', 'plugins', 'vue', 'react', 'svelte']) {
+for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web-component']) {
   const path = `packages/${name}/dist`;
   const files = (await readdir(path)).filter((file) => /\.(js|css)$/.test(file));
   for (const extension of ['js', 'css']) {
