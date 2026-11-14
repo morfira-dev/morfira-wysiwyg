@@ -73,7 +73,7 @@ for (const backward of [false, true]) test(`${backward ? 'Backspace' : 'Delete'}
   expect(await html(page)).toBe('<ol><li><p title="Before">Keep</p><h2 style="text-align: center"><strong>AB</strong><em>CD</em></h2><h3 title="After">After</h3><ul><li>Nested</li></ul></li></ol>');
   expect(await untouched!.evaluate((node) => node.isConnected)).toBe(true);
   expect(await page.evaluate(() => window.changes.length)).toBe(1);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content h2')).toHaveText('ABXCD');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(original);

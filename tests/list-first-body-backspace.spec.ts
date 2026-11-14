@@ -39,7 +39,7 @@ for (const tag of ['ul', 'ol']) test(`first-body Backspace joins ${tag} siblings
   for (const node of [previous, later, placeholder, right]) expect(await node!.evaluate((element) => element.isConnected)).toBe(true);
   expect(await later!.evaluate((element) => element.parentElement === window.editor.surface.querySelector('[title="Previous"]'))).toBe(true);
   expect(await page.evaluate(() => ({ changes: window.changes.length, selected: document.getSelection()!.isCollapsed }))).toEqual({ changes: 1, selected: true });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content h2')).toHaveText('A😀XBeta');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);
@@ -102,7 +102,7 @@ test('a sole root item unwraps without retaining an empty list and keeps the hea
   await caret(page, 'strong');
   await page.keyboard.press('Backspace');
   expect(await html(page)).toBe('<h2><strong>Alpha</strong></h2><p>Later</p>');
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content > h2')).toHaveText('XAlpha');
 });
 
@@ -172,15 +172,17 @@ test('cancellation at beforeinput is not bypassed by a preceding Backspace keydo
   await caret(page, 'p');
   expect(await page.evaluate(() => {
     const root = window.editor.surface;
+    const inputs: string[] = [];
+    // The owned key dispatches its guarded input immediately; install cancellation first.
+    root.addEventListener('beforeinput', (event) => {
+      inputs.push(event.inputType);
+      event.preventDefault();
+    }, { capture: true, once: true });
     const key = new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true });
     root.dispatchEvent(key);
-    const event = new InputEvent('beforeinput', { inputType: 'deleteContentBackward', bubbles: true, cancelable: true });
-    event.preventDefault();
-    root.dispatchEvent(event);
-    return key.defaultPrevented;
-  })).toBe(false);
+    return { keyPrevented: key.defaultPrevented, inputs, changes: window.changes.length, undo: window.editor.canUndo() };
+  })).toEqual({ keyPrevented: true, inputs: ['deleteContentBackward'], changes: 0, undo: false });
   expect(await html(page)).toBe(before);
-  expect(await page.evaluate(() => window.changes.length)).toBe(0);
 });
 
 const semanticBody: SchemaNodeSpec = { name: 'test:body', kind: 'block', tag: 'p', attributes: { 'data-id': { type: 'text', required: true } } };
@@ -238,7 +240,8 @@ test('a blocked first-body Backspace preserves pending caret formatting and its 
   });
   expect(await html(page)).toBe(before);
   expect(result).toEqual({ prevented: true, pending: true, undo: false, changes: 0, samePoint: true, notifications: 0 });
-  await page.keyboard.insertText('X');
+  // Exercise ordinary typing, not Firefox's composition-based insertText protocol.
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Start"] strong')).toHaveText('X');
   await expect(page.locator('.mw-content [title="Start"]')).toHaveText('XAlpha');
 });

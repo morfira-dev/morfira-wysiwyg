@@ -16,7 +16,8 @@ test('React StrictMode list replacement retains backward history branches and th
   });
   const branch = await content.locator(':scope > ul > li > ul').elementHandle();
   const outside = await content.locator(':scope > p').elementHandle();
-  await page.keyboard.insertText('X');
+  // Real key input: Firefox keyboard.insertText uses noncancelable composition events.
+  await page.keyboard.type('X');
   const replaced = '<ul><li>Alpha X<em>ta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
   expect(await page.evaluate(() => ({ selection: window.editor.getSelection(), changes: window.changes.map((change) => change.html) }))).toEqual({ selection: { index: 7, length: 0 }, changes: [replaced] });
@@ -32,7 +33,7 @@ test('React StrictMode list replacement retains backward history branches and th
   })).toEqual({ anchorIsRight: true, anchorOffset: 2, focusIsLeft: true, focusOffset: 6, selected: 'oneBe', undo: false });
   await page.evaluate(() => window.editor.redo());
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
-  await page.keyboard.insertText('!');
+  await page.keyboard.type('!');
   const typed = '<ul><li>Alpha X!<em>ta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(typed);
   expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: 8, length: 0 });

@@ -25,7 +25,7 @@ test('React StrictMode first-body Backspace preserves controlled feedback, exact
   expect(await page.evaluate(() => ({ onText: document.getSelection()!.anchorNode === window.editor.surface.querySelector('em')!.firstChild, offset: document.getSelection()!.anchorOffset, undo: window.editor.canUndo() }))).toEqual({ onText: true, offset: 0, undo: false });
   await page.evaluate(() => window.editor.redo());
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(merged);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(content.locator('h2')).toHaveText('PreviousXAlpha');
   const changes = await page.evaluate(() => window.changes.length);
   await page.getByRole('button', { name: 'Toggle readonly', exact: true }).click();

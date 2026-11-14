@@ -45,7 +45,7 @@ for (const clipboard of [false, true]) test(`ordinary quote ${clipboard ? 'clipb
   expect(await html(page)).toBe(inserted);
   for (const handle of [...handles, placeholder]) expect(await handle!.evaluate((node) => node.isConnected)).toBe(true);
   expect(await page.evaluate(() => ({ suffix: document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="Quote"]')!.nextElementSibling, offset: document.getSelection()!.anchorOffset, changes: window.changes.length }))).toEqual({ suffix: true, offset: 0, changes: 1 });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Quote"] + h3')).toHaveText('Xpha');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);
@@ -229,7 +229,7 @@ test('nested quote insertion inside an existing quote stays blocked while ordina
     const suffix = window.editor.surface.querySelector('[title="Quote"]')!.nextElementSibling!;
     document.getSelection()!.setBaseAndExtent(suffix, 0, suffix, 0);
   });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Quote"] + p')).toHaveText('XB');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);

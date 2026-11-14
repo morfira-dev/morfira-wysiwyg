@@ -41,7 +41,7 @@ for (const tag of ['ul', 'ol']) test(`nonfinal ${tag} lift preserves reading ord
   expect(await source!.evaluate((node) => node.isConnected)).toBe(false);
   expect(await page.locator('.mw-content [title="Current"] > ul, .mw-content [title="Current"] > ol').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('title')))).toEqual(['Own', 'Source', 'Later', 'Last']);
   expect(await page.evaluate(() => ({ changes: window.changes.length, node: document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="First"] strong')!.firstChild, offset: document.getSelection()!.anchorOffset }))).toEqual({ changes: 1, node: true, offset: 0 });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="First"]')).toHaveText('XA😀B');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);
@@ -127,13 +127,15 @@ for (const guard of ['readonly', 'composition', 'canceled', 'noncancelable']) te
     const root = editor.surface;
     if (guard === 'readonly') editor.setReadOnly(true);
     if (guard === 'composition') root.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
-    const key = new KeyboardEvent('keydown', { key: 'Backspace', cancelable: true, bubbles: true });
+    if (guard === 'canceled') root.addEventListener('beforeinput', (event) => event.preventDefault(), { capture: true, once: true });
+    const key = new KeyboardEvent('keydown', { key: 'Backspace', cancelable: guard !== 'noncancelable', bubbles: true });
     root.dispatchEvent(key);
-    const event = new InputEvent('beforeinput', { inputType: 'deleteContentBackward', cancelable: guard !== 'noncancelable', bubbles: true });
-    if (guard === 'canceled') event.preventDefault();
-    root.dispatchEvent(event);
+    if (guard !== 'canceled') {
+      const event = new InputEvent('beforeinput', { inputType: 'deleteContentBackward', cancelable: guard !== 'noncancelable', bubbles: true });
+      root.dispatchEvent(event);
+    }
     return { changes: window.changes.length, undo: editor.canUndo(), keyPrevented: key.defaultPrevented };
   }, guard);
   expect(await html(page)).toBe(before);
-  expect(state).toEqual({ changes: 0, undo: false, keyPrevented: false });
+  expect(state).toEqual({ changes: 0, undo: false, keyPrevented: guard === 'canceled' });
 });

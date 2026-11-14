@@ -71,7 +71,7 @@ test('direct inline start promotes to a paragraph only when untouched right bloc
   await page.evaluate(() => window.editor.insertHTML('<u>X</u>'));
   expect(await html(page)).toBe('<ul><li title="Start"><p>Alpha <u>X</u><em>ta</em> tail</p><p title="After">After</p></li></ul>');
   expect(await after!.evaluate((node) => node.isConnected)).toBe(true);
-  await page.keyboard.insertText('!');
+  await page.keyboard.type('!');
   await expect(page.locator('.mw-content [title="Start"] > p').first()).toHaveText('Alpha X!ta tail');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);

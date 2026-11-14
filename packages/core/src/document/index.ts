@@ -31,9 +31,21 @@ const safeStyle = (value: string): string => {
   }
   return result.join('; ');
 };
+/** Keep ordered-list numbering within the signed DOM integer range. */
+const orderedListStart = (value: unknown): string | undefined => {
+  if (typeof value !== 'string' || value.length > 20000 || !/^[+-]?\d+$/.test(value.trim())) return;
+  const number = Number(value);
+  if (Number.isSafeInteger(number) && number >= -2147483648 && number <= 2147483647) return String(number);
+};
 const attributesFor = (tag: DocumentTag, input: Record<string, unknown>, source: 'html' | 'json', resolve?: DocumentAttributeResolver, originalTag?: string): Record<string, string> => {
   const output: Record<string, string> = {};
   for (const [key, value] of Object.entries(input)) {
+    if (key === 'start') {
+      const clean = tag === 'ol' ? orderedListStart(value) : undefined;
+      if (clean !== undefined) output.start = clean;
+      else if (source === 'json') throw new TypeError('Ordered-list start must be a signed 32-bit decimal integer string on ol.');
+      continue;
+    }
     if (typeof value !== 'string' || value.length > 20000)
       continue;
     if (key === 'style') {

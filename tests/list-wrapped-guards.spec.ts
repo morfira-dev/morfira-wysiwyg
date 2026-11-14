@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import type { SchemaNodeSpec } from '@morfira-dev/wysiwyg';
 
-const original = '<ul><li><p style="text-align:center">Alpha <strong>one</strong></p></li><li><h3 style="text-align:right"><em>Beta</em> tail</h3><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
-const replaced = '<ul><li><p style="text-align:center">Alpha <u>X</u><em>ta</em> tail</p><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
+const original = '<ul><li><p style="text-align: center">Alpha <strong>one</strong></p></li><li><h3 style="text-align: right"><em>Beta</em> tail</h3><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
+const replaced = '<ul><li><p style="text-align: center">Alpha <u>X</u><em>ta</em> tail</p><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
 const reference: SchemaNodeSpec = { name: 'test:reference', kind: 'inline', tag: 'span', attributes: { 'data-id': { type: 'text', required: true } } };
 const body: SchemaNodeSpec = { name: 'test:body', kind: 'block', tag: 'p', attributes: { 'data-id': { type: 'text', required: true } } };
 

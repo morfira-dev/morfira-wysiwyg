@@ -19,14 +19,14 @@ test('React StrictMode list block paste preserves controlled feedback, insertion
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(inserted);
   expect(await page.evaluate(() => window.changes.map((change) => change.html))).toEqual([inserted]);
   for (const node of [after, branch]) expect(await node!.evaluate((node) => node.isConnected)).toBe(true);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(content.locator('[title="Last"]')).toHaveText('LastXta tail');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(original);
   expect(await page.evaluate(() => ({ anchor: document.getSelection()!.anchorNode === window.editor.surface.querySelector('em')!.firstChild, offset: document.getSelection()!.anchorOffset, focus: document.getSelection()!.focusOffset, undo: window.editor.canUndo() }))).toEqual({ anchor: true, offset: 2, focus: 6, undo: false });
   await page.evaluate(() => window.editor.redo());
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(inserted);
-  await page.keyboard.insertText('!');
+  await page.keyboard.type('!');
   await expect(content.locator('[title="Last"]')).toHaveText('Last!ta tail');
   const changes = await page.evaluate(() => window.changes.length);
   await page.getByRole('button', { name: 'Toggle readonly', exact: true }).click();

@@ -32,8 +32,9 @@ for (const kind of ['blocks', 'items'] as const) test(`${kind} API replacement c
     ? '<p>Alpha <u></u><em>ta</em> tail</p><p>Keep</p>'
     : '<ul><li>Alpha <u></u><em>ta</em> tail</li><li>Keep</li></ul>';
   expect(result).toEqual({ pendingBefore: true, boldAfter: false, selection: { index: 6, length: 0 }, html: replaced, changes: 1 });
-  await page.keyboard.insertText('!');
-  expect(await page.evaluate(() => ({ text: window.editor.getText(), selection: window.editor.getSelection(), bold: Boolean(window.editor.getFormats().bold) }))).toEqual({ text: 'Alpha !ta tailKeep', selection: { index: 7, length: 0 }, bold: false });
+  await page.keyboard.type('!');
+  // Compare literal content; browser innerText adds platform-specific block separators.
+  expect(await page.evaluate(() => ({ text: window.editor.surface.textContent, selection: window.editor.getSelection(), bold: Boolean(window.editor.getFormats().bold) }))).toEqual({ text: 'Alpha !ta tailKeep', selection: { index: 7, length: 0 }, bold: false });
   await expect(page.locator('.mw-content strong')).toHaveCount(0);
   await page.evaluate(() => window.editor.undo());
   expect(await page.evaluate(() => window.editor.getHTML())).toBe(replaced);

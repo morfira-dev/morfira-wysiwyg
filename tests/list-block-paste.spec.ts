@@ -49,7 +49,7 @@ test('empty final payload with an empty source suffix places the typing caret be
     const selection = document.getSelection()!;
     return { onLast: selection.anchorNode === window.editor.surface.querySelector('[title="Last"]'), offset: selection.anchorOffset, collapsed: selection.isCollapsed, changes: window.changes.length };
   })).toEqual({ onLast: true, offset: 0, collapsed: true, changes: 1 });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Last"]')).toHaveText('X');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);
@@ -75,7 +75,7 @@ for (const backward of [false, true]) {
       before.setEnd(range.startContainer, range.startOffset);
       return { prefix: before.toString(), collapsed: range.collapsed, changes: window.changes.length };
     })).toEqual({ prefix: 'Last', collapsed: true, changes: 1 });
-    await page.keyboard.insertText('X');
+    await page.keyboard.type('X');
     await expect(page.locator('.mw-content [title="Last"]')).toHaveText('LastXta tail');
     await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
     expect(await html(page)).toBe(before);
@@ -125,7 +125,7 @@ test('empty first and final payload placeholders do not add lines to joined edge
   await expect(page.locator('.mw-content [title="Empty"]')).toHaveJSProperty('innerHTML', '<br>');
   await expect(page.locator('.mw-content [title="Last"]')).toHaveJSProperty('innerHTML', '<em>ta</em> tail');
   await expect(page.locator('.mw-content [title="Branch"] p > br')).toHaveCount(1);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Last"]')).toHaveText('Xta tail');
 });
 

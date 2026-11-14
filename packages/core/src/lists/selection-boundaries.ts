@@ -107,7 +107,9 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
     const quote = directQuoteAt(first.item, range.startContainer);
     const endQuote = directQuoteAt(last.item, range.endContainer);
     if (quote && quote === endQuote) {
-      if (first.interleaved) return blocked('An interleaved item requires crossing distinct body roots through a quote.');
+      if (first.interleaved && first.nestedLists.some((branch) =>
+        branch.namespaceURI !== first.item.namespaceURI || branch.hasAttribute('data-mw-node')))
+        return blocked('Insertion inside an interleaved item quote requires ordinary branch roots.');
       const context = quotePasteContext(quote, range);
       if (!context) return blocked('Block insertion inside a quote requires ordinary inline or paragraph/heading source content.');
       return { status: 'eligible', range: context.range, leaves: [first.item], gaps: [], first, last,

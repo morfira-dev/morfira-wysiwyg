@@ -36,7 +36,8 @@ for (const tag of ['ul', 'ol']) for (const backward of [false, true]) test(`${ta
   const first = await page.locator('.mw-content [title="First"]').elementHandle();
   const branch = await page.locator('.mw-content [title="Branch"]').elementHandle();
   const keep = await page.locator('.mw-content [title="Keep"]').elementHandle();
-  await page.keyboard.insertText('X');
+  // Real key input: Firefox keyboard.insertText uses noncancelable composition events.
+  await page.keyboard.type('X');
   const replaced = `<${tag} title="Parent"><li title="First">Alpha X<em>ta</em> tail<ul title="Branch"><li>Nested</li></ul></li><li title="Keep">Keep</li></${tag}><p>Outside</p>`;
   expect(await html(page)).toBe(replaced);
   expect(await first!.evaluate((element) => element.isConnected && element === window.editor.surface.querySelector('[title="First"]'))).toBe(true);
@@ -48,7 +49,7 @@ for (const tag of ['ul', 'ol']) for (const backward of [false, true]) test(`${ta
   expect(await page.evaluate(() => ({ selection: window.editor.getSelection(), undo: window.editor.canUndo() }))).toEqual({ selection: { index: 6, length: 5 }, undo: false });
   expect(await page.evaluate(() => document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="Parent"] > li:nth-child(2) em')!.firstChild)).toBe(backward);
   await page.evaluate(() => window.editor.redo());
-  await page.keyboard.insertText('!');
+  await page.keyboard.type('!');
   await expect(page.locator('.mw-content [title="First"]')).toHaveText('Alpha X!ta tailNested');
   expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: 8, length: 0 });
   await page.evaluate(() => window.editor.undo());
@@ -80,7 +81,7 @@ for (const payload of ['', '<b>X</b>']) test(`beforeinput-only list insertion tr
   await expect(page.locator('.mw-content b')).toHaveCount(0);
   expect(await page.evaluate(() => window.changes.length)).toBe(1);
   const replaced = await html(page);
-  await page.keyboard.insertText('Y');
+  await page.keyboard.type('Y');
   await page.evaluate(() => window.editor.undo());
   expect(await html(page)).toBe(replaced);
   await page.evaluate(() => window.editor.undo());
@@ -124,7 +125,7 @@ test('incoming link remains outside the starting anchor while prefix and incomin
 test('fully selected inter-item formatting whitespace is removed while following whitespace remains untouched', async ({ page }) => {
   const before = await initialize(page, '<ul title="Parent"><li>Alpha <strong>one</strong></li>\n  <li><em>Beta</em> tail</li>\n<li>Keep</li></ul>');
   await selectItems(page);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   expect(await html(page)).toBe('<ul title="Parent"><li>Alpha X<em>ta</em> tail</li>\n<li>Keep</li></ul>');
   await page.evaluate(() => window.editor.undo());
   expect(await html(page)).toBe(before);
@@ -154,7 +155,7 @@ test('replacement inside a nested list retains the owner and its unrelated outer
   const before = await initialize(page, '<ul><li title="Owner">Owner<ol title="Parent"><li>Alpha <strong>one</strong></li><li><em>Beta</em> tail</li><li>Keep</li></ol></li><li>Outer keep</li></ul>');
   const owner = await page.locator('.mw-content [title="Owner"]').elementHandle();
   await selectItems(page);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   expect(await html(page)).toBe('<ul><li title="Owner">Owner<ol title="Parent"><li>Alpha X<em>ta</em> tail</li><li>Keep</li></ol></li><li>Outer keep</li></ul>');
   expect(await owner!.evaluate((element) => element.isConnected && element === window.editor.surface.querySelector('[title="Owner"]'))).toBe(true);
   await page.evaluate(() => window.editor.undo());

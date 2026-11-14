@@ -21,7 +21,7 @@ test('React StrictMode quote list paste retains controlled feedback, suffix care
   expect(await page.evaluate(() => window.changes.map((change) => change.html))).toEqual([inserted]);
   for (const handle of [after, branch]) expect(await handle!.evaluate((node) => node.isConnected)).toBe(true);
   expect(await page.evaluate(() => ({ suffix: document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="Quote"]')!.nextElementSibling, offset: document.getSelection()!.anchorOffset }))).toEqual({ suffix: true, offset: 0 });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(content.locator('[title="Quote"] + p')).toHaveText('XBeta');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(original);

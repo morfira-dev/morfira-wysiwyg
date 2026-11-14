@@ -19,7 +19,7 @@ test('React StrictMode interleaved quote paste preserves mixed sequence, control
   expect(await page.evaluate(() => window.changes.map((change) => change.html))).toEqual([inserted]);
   for (const node of nodes) expect(await node!.evaluate((node) => node.isConnected)).toBe(true);
   expect(await page.evaluate(() => ({ suffix: document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="Quote"]')!.previousElementSibling, offset: document.getSelection()!.anchorOffset }))).toEqual({ suffix: true, offset: 0 });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   expect(await content.locator('[title="Quote"]').evaluate((node) => node.previousElementSibling?.textContent)).toBe('X');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(original);

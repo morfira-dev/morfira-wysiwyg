@@ -30,7 +30,7 @@ for (const tag of ['p', 'h2']) test(`Enter splits a wrapped ${tag} and moves the
   expect(await page.evaluate(() => ({ html: window.editor.getHTML(), changes: window.changes.length }))).toEqual({ html: split, changes: 1 });
   expect(await body!.evaluate((node) => node.isConnected && node === window.editor.surface.querySelector('li')!.firstChild)).toBe(true);
   expect(await branch!.evaluate((node) => node.isConnected && node.parentElement === window.editor.surface.querySelectorAll(':scope > ul > li')[1])).toBe(true);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator(`.mw-content > ul > li`).nth(1)).toHaveText('XBBranch');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await page.evaluate(() => ({ html: window.editor.getHTML(), undo: window.editor.canUndo(), offset: document.getSelection()!.anchorOffset }))).toEqual({ html: original, undo: false, offset: 3 });
@@ -67,7 +67,7 @@ test('Shift+Enter at the body end puts both real break and terminal placeholder 
   await caretIn(page, 'h4', 2);
   await page.keyboard.press('Shift+Enter');
   expect(await page.evaluate(() => window.editor.getHTML())).toBe('<ul><li><h4>AB<br><br></h4><ol><li>Branch</li></ol></li></ul>');
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content h4')).toHaveText('ABX');
 });
 

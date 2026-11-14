@@ -52,7 +52,7 @@ for (const backward of [false, true]) {
     expect(await html(page)).toBe(result);
     for (const node of nodes) expect(await node!.evaluate((node) => node.isConnected)).toBe(true);
     expect(await page.evaluate(() => ({ quoteCount: window.editor.surface.querySelectorAll('blockquote').length, changes: window.changes.length, parent: window.editor.surface.querySelector('[title="Last"]')!.parentElement?.getAttribute('title') }))).toEqual({ quoteCount: 1, changes: 1, parent: 'Quote' });
-    await page.keyboard.insertText('X');
+    await page.keyboard.type('X');
     await expect(page.locator('.mw-content [title="Last"]')).toHaveText('LastXta tail');
     await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
     expect(await html(page)).toBe(before);
@@ -74,7 +74,7 @@ test('a heading at a caret stays inside its actual quote between source prefix a
   expect(await html(page)).toBe('<ul><li><p>Outside before</p><blockquote title="Quote"><h2 title="Body" style="text-align: center">Alpha </h2><h3 title="Incoming" style="text-align: right"><em>Title</em></h3><h2 title="Body" style="text-align: center">Beta</h2><p title="Keep">Keep</p></blockquote><p>Outside after</p><ol><li>Branch</li></ol></li></ul>');
   for (const node of [quote, keep]) expect(await node!.evaluate((node) => node.isConnected)).toBe(true);
   expect(await page.evaluate(() => ({ suffix: document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="Incoming"]')!.nextElementSibling, offset: document.getSelection()!.anchorOffset }))).toEqual({ suffix: true, offset: 0 });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Incoming"] + h2')).toHaveText('XBeta');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);

@@ -20,14 +20,14 @@ test('React StrictMode caret list block insertion preserves controlled feedback,
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(inserted);
   expect(await page.evaluate(() => window.changes.map((change) => change.html))).toEqual([inserted]);
   for (const node of [after, branch]) expect(await node!.evaluate((node) => node.isConnected)).toBe(true);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(content.locator('[title="Last"]')).toHaveText('LastXBeta');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(original);
   expect(await page.evaluate(() => ({ body: document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="Body"]')!.firstChild, offset: document.getSelection()!.anchorOffset, collapsed: document.getSelection()!.isCollapsed, undo: window.editor.canUndo() }))).toEqual({ body: true, offset: 6, collapsed: true, undo: false });
   await page.evaluate(() => window.editor.redo());
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(inserted);
-  await page.keyboard.insertText('!');
+  await page.keyboard.type('!');
   await expect(content.locator('[title="Last"]')).toHaveText('Last!Beta');
   const changes = await page.evaluate(() => window.changes.length);
   await page.getByRole('button', { name: 'Toggle readonly', exact: true }).click();

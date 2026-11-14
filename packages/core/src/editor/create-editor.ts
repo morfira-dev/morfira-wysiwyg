@@ -742,7 +742,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   });
   listen('drop', (event) => { event.preventDefault(); });
   listen('keydown', (event) => {
-    if (event.keyCode === 229)
+    if (event.defaultPrevented || event.keyCode === 229)
       return;
     if (!composing && !event.isComposing && !readOnly && !event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'Enter' || event.key === 'Backspace' || event.key === 'Delete')) {
       const type = event.key === 'Backspace' ? 'deleteContentBackward' : event.key === 'Delete' ? 'deleteContentForward' : event.shiftKey ? 'insertLineBreak' : 'insertParagraph';
@@ -751,6 +751,13 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         ? listSelectionReplacement(surface).status !== 'unowned' : false;
       const listOwned = listReplacement || wrappedInput === 'eligible' || wrappedInput === 'blocked'
         || handlesListForwardDelete(surface, type);
+      if (listOwned && event.cancelable) {
+        // Some native protocols omit boundary beforeinput or mislabel Shift+Enter.
+        // Keep one normalized, cancelable input path for core and plugin capture hooks.
+        event.preventDefault();
+        surface.dispatchEvent(new InputEvent('beforeinput', { inputType: type, bubbles: true, cancelable: true }));
+        return;
+      }
       if (!listOwned && handlesListInput(surface, type)) {
         event.preventDefault();
         clearTyping();

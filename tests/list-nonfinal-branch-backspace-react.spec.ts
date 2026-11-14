@@ -25,7 +25,7 @@ test('React StrictMode retains nonfinal branch order and its first-body caret du
   expect(await page.evaluate(() => ({ node: document.getSelection()!.anchorNode === window.editor.surface.querySelector('em')!.firstChild, offset: document.getSelection()!.anchorOffset, undo: window.editor.canUndo() }))).toEqual({ node: true, offset: 0, undo: false });
   await page.evaluate(() => window.editor.redo());
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(lifted);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(content.locator('em')).toHaveText('XAlpha');
   const changes = await page.evaluate(() => window.changes.length);
   await page.getByRole('button', { name: 'Toggle readonly', exact: true }).click();

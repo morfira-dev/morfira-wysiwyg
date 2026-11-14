@@ -63,7 +63,7 @@ for (const profile of ['blocks', 'heading', 'quote']) {
       prefix.setEnd(range.startContainer, range.startOffset);
       return { prefix: prefix.toString(), changes: window.changes.length, collapsed: range.collapsed };
     }, profile)).toEqual({ prefix: profile === 'blocks' ? 'Y' : '', changes: 1, collapsed: true });
-    await page.keyboard.insertText('!');
+    await page.keyboard.type('!');
     await expect(page.locator(profile === 'blocks' ? '.mw-content h3[title="Incoming"]' : '.mw-content [title="Incoming"] + h2')).toHaveText(profile === 'blocks' ? 'Y!Beta' : '!Beta');
     await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
     expect(await html(page)).toBe(before);
@@ -134,7 +134,7 @@ test('quote then heading then several blocks can be inserted without resetting t
   expect(await html(page)).toBe(third);
   expect(await quote!.evaluate((node) => node.isConnected)).toBe(true);
   expect(await page.evaluate(() => window.changes.length)).toBe(3);
-  await page.keyboard.insertText('!');
+  await page.keyboard.type('!');
   await expect(page.locator('.mw-content [title="Last"]')).toHaveText('Y!B');
   for (const expected of [third, second, first, before]) {
     await page.evaluate(() => window.editor.undo());

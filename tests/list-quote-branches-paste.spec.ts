@@ -84,7 +84,7 @@ for (const direction of directions) for (const payload of payloads) for (const c
     return { branches: branches.map((node) => node.getAttribute('title')), bodiesBeforeBranches: children.slice(children.indexOf(branches[0])).every((node) => ['ul', 'ol'].includes(node.localName)), caret: selection.anchorNode === incoming.nextElementSibling, offset: selection.anchorOffset, collapsed: selection.isCollapsed, changes: window.changes.length };
   })).toEqual({ branches: branchOrder, bodiesBeforeBranches: true, caret: true, offset: 0, collapsed: true, changes: 1 });
   expect(await page.evaluate((titles) => titles.map((title) => window.editor.surface.querySelector(`[title="${title}"]`)!.outerHTML), branchOrder)).toEqual(branchHTML);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Incoming"] + *')).toHaveText(direction.right ? 'X' : 'XH');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);
@@ -200,7 +200,7 @@ for (const title of ['First branch', 'Middle branch']) test(`a semantic ${title}
   }, title)).toEqual({ rejected: true, mutations: 0, unchanged: true, connected: true, anchor: true, focus: true, anchorOffset: 1, focusOffset: 1, changes: 0, undo: false });
 });
 
-test('branch-preserving quote paste clears a pending override and Undo restores its original caret', async ({ page }) => {
+test('branch-preserving quote paste clears stale caret formatting without reviving it after Undo restores a range', async ({ page }) => {
   const before = await initialize(page, source, [reference]);
   expect(await page.evaluate(() => {
     const editor = window.editor;
@@ -217,9 +217,10 @@ test('branch-preserving quote paste clears a pending override and Undo restores 
     editor.undo();
     const exact = selection.anchorNode === root.querySelector('[title="Right body"]')!.firstChild && selection.anchorOffset === 1 && selection.focusNode === root.querySelector('[title="Left body"]')!.firstChild && selection.focusOffset === 1;
     const original = root.querySelector('[title="Left body"]')!.firstChild!;
+    // Undo restored a range, not the old caret: moving back must not revive stale affinity.
     selection.setBaseAndExtent(original, 1, original, 1);
     return { cleared, exact, restored: Boolean(editor.getFormats().bold), undo: editor.canUndo() };
-  })).toEqual({ cleared: true, exact: true, restored: true, undo: false });
+  })).toEqual({ cleared: true, exact: true, restored: false, undo: false });
   expect(await html(page)).toBe(before);
 });
 

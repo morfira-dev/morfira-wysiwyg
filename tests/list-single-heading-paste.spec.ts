@@ -50,7 +50,7 @@ for (const tag of ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']) {
       const selection = document.getSelection()!;
       return { suffix: selection.anchorNode === heading.nextElementSibling, offset: selection.anchorOffset, collapsed: selection.isCollapsed, changes: window.changes.length };
     })).toEqual({ suffix: true, offset: 0, collapsed: true, changes: 1 });
-    await page.keyboard.insertText('X');
+    await page.keyboard.type('X');
     await expect(page.locator('.mw-content [title="Incoming"] + p')).toHaveText('Xpha');
     await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
     expect(await html(page)).toBe(before);
@@ -136,7 +136,7 @@ test('whole-body replacement retains empty source heading edges with the suffix 
   });
   expect(await html(page)).toBe('<ul><li><h3 title="Body"><br></h3><h2 title="Incoming">Title</h2><h3 title="Body"><br></h3></li></ul>');
   expect(await page.evaluate(() => ({ suffix: document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="Incoming"]')!.nextElementSibling, offset: document.getSelection()!.anchorOffset }))).toEqual({ suffix: true, offset: 0 });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Incoming"] + h3')).toHaveText('X');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);

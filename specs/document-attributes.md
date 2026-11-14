@@ -1,0 +1,11 @@
+# Built-in document attributes — ordered-list start
+
+Status: accepted additive schema-v1 attribute contract. Verification results belong to actual test runs; definitions alone do not establish passing browser evidence.
+
+An ordinary `ol` may persist the optional `start` attribute as a decimal integer string in `ElementNode.attributes`. Accept the signed 32-bit range `-2147483648` through `2147483647`, including zero and negative values. Input may have an optional `+`/`-`, leading zeros and outer whitespace; canonical output is `String(Number(value))`, so `+0004` becomes `4` and `-0` becomes `0`. Fractions, exponent/hex notation, empty/sign-only strings, nondecimal suffixes and values outside the range are invalid. The attribute remains optional; an omitted `start` is not materialized as a default value.
+
+HTML parsing/sanitization preserves only valid `ol.start`; invalid values and `start` on every other tag, including `ul` and `li`, are stripped. Explicit JSON boundaries reject an own `start` attribute with a nonstring, malformed/out-of-range value or a tag other than `ol` before any live DOM, selection or history mutation. This explicit recognized-attribute guard does not change the earlier sanitization policy for unrelated unknown attributes. The document codec is shared by initial import, HTML/JSON replacement, clipboard/API insertion, export, rendering and history, so a valid nested ordered-list start survives ordinary edits and Undo/Redo. No native numbering rewrite, `li.value`, `ol.reversed` or list-type API is introduced.
+
+The format version remains `1` because this is an optional built-in attribute on an existing tag. Older readers may remove `start`, which changes displayed numbering; no equivalent-numbering migration through such readers is promised. New writers must not claim lossless compatibility with readers that do not support this attribute.
+
+Acceptance covers positive/zero/negative and signed-range edge values, canonicalization, default omission, HTML stripping on invalid/wrong tags, JSON type/range/tag rejection with exact atomic state, HTML/JSON round trips, valid nested-list clipboard preservation and numbering attributes through editing/Undo/Redo. Strict URL/style/namespace and all other attribute boundaries remain unchanged.

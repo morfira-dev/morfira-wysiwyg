@@ -67,7 +67,7 @@ for (const direction of directions) for (const payload of payloads) for (const c
       const selection = document.getSelection()!;
       return { atSuffix: selection.anchorNode === incoming.nextElementSibling, offset: selection.anchorOffset, collapsed: selection.isCollapsed, parent: incoming.parentElement?.getAttribute('title'), nestedQuotes: root.querySelectorAll('blockquote blockquote').length, changes: window.changes.length };
     })).toEqual({ atSuffix: true, offset: 0, collapsed: true, parent: 'Owner', nestedQuotes: 0, changes: 1 });
-    await page.keyboard.insertText('X');
+    await page.keyboard.type('X');
     await expect(page.locator('.mw-content [title="Incoming"] + *')).toHaveText(direction.typing);
     await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
     expect(await html(page)).toBe(before);

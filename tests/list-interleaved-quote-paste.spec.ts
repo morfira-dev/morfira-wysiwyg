@@ -79,7 +79,7 @@ for (const direction of directions) for (const payload of payloads) for (const c
     const body = rightQuoted ? right.previousElementSibling : right;
     return { caret: selection.anchorNode === body, offset: selection.anchorOffset, collapsed: selection.isCollapsed, changes: window.changes.length, payloadBeforeBranches: root.querySelector('[title="Incoming"]')!.nextElementSibling?.getAttribute('title') === 'First interval', lastBranchBeforeSuffix: (rightQuoted ? body : right)?.previousElementSibling?.getAttribute('title') === 'Last interval' };
   }, direction.right)).toEqual({ caret: true, offset: 0, collapsed: true, changes: 1, payloadBeforeBranches: true, lastBranchBeforeSuffix: true });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   expect(await page.locator(direction.right ? '.mw-content [title="Right"]' : '.mw-content [title="End"]').evaluate((node, quoted) => (quoted ? node.previousElementSibling : node)?.textContent, direction.right)).toBe(direction.right ? 'X' : 'XH');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);
@@ -103,9 +103,9 @@ test('same-item interleaved quote replacement leaves prefix branches and followi
   expect(await html(page)).toBe(before);
 });
 
-for (const profile of ['same-body', 'same-quote', 'no-affected-quote', 'inline', 'native']) test(`${profile} stays outside the interleaved structural quote-crossing profile`, async ({ page }) => {
+for (const profile of ['same-body', 'nested-quote', 'no-affected-quote', 'inline', 'native']) test(`${profile} stays outside the interleaved structural quote-crossing profile`, async ({ page }) => {
   const before = await initialize(page, '<ul><li><p title="Start">AB</p><ul><li>Branch</li></ul><p title="End">CD</p><blockquote title="Quote"><p title="Body">EF</p><h2 title="Other">GH</h2></blockquote></li></ul>');
-  await select(page, profile === 'same-quote' ? '[title="Body"]' : '[title="Start"]', profile === 'same-quote' ? '[title="Other"]' : profile === 'same-body' ? '[title="Start"]' : profile === 'no-affected-quote' ? '[title="End"]' : '[title="Other"]', true);
+  await select(page, profile === 'nested-quote' ? '[title="Body"]' : '[title="Start"]', profile === 'nested-quote' ? '[title="Other"]' : profile === 'same-body' ? '[title="Start"]' : profile === 'no-affected-quote' ? '[title="End"]' : '[title="Other"]', true);
   if (profile === 'same-body') await page.evaluate(() => {
     const text = window.editor.surface.querySelector('[title="Start"]')!.firstChild!;
     document.getSelection()!.setBaseAndExtent(text, 1, text, 0);
@@ -116,7 +116,7 @@ for (const profile of ['same-body', 'same-quote', 'no-affected-quote', 'inline',
     return event.defaultPrevented;
   })).toBe(true);
   else {
-    const value = profile === 'inline' ? '<strong>X</strong>' : '<h3>H</h3>';
+    const value = profile === 'inline' ? '<strong>X</strong>' : profile === 'nested-quote' ? '<blockquote>Nested</blockquote>' : '<h3>H</h3>';
     expect(await page.evaluate((value) => { try { window.editor.insertHTML(value); return false; } catch { return true; } }, value)).toBe(true);
     await paste(page, value);
   }

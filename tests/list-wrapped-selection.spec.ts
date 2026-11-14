@@ -47,7 +47,7 @@ for (const [left, right] of [['p', 'h2'], ['h1', 'p'], ['h2', 'h6'], ['h5', 'h4'
     const body = left ? await page.locator('.mw-content [title="Body"]').elementHandle() : first;
     const branch = await page.locator('.mw-content [title="Branch"]').elementHandle();
     const keep = await page.locator('.mw-content [title="Keep"]').elementHandle();
-    await page.keyboard.insertText('X');
+    await page.keyboard.type('X');
     const result = `<ul title="Parent"><li title="First">${bodyHTML(left, 'Alpha X<em>ta</em> tail', 'Body')}<ol title="Branch"><li><p>Nested</p></li></ol></li><li title="Keep"><p>Keep</p></li></ul>`;
     expect(await html(page)).toBe(result);
     expect(await first!.evaluate((element) => element.isConnected && element === window.editor.surface.querySelector('[title="First"]'))).toBe(true);
@@ -60,7 +60,7 @@ for (const [left, right] of [['p', 'h2'], ['h1', 'p'], ['h2', 'h6'], ['h5', 'h4'
     expect(await page.evaluate(() => document.getSelection()!.anchorNode === window.editor.surface.querySelector('em')!.firstChild)).toBe(backward);
     await page.evaluate(() => window.editor.redo());
     expect(await html(page)).toBe(result);
-    await page.keyboard.insertText('!');
+    await page.keyboard.type('!');
     await expect(page.locator('.mw-content [title="First"]')).toHaveText('Alpha X!ta tailNested');
     await page.evaluate(() => window.editor.undo());
     expect(await html(page)).toBe(result);

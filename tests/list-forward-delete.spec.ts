@@ -41,7 +41,7 @@ test('Delete joins rich sibling items at an exact Unicode boundary with separate
   expect(await page.evaluate(() => ({ html: window.editor.getHTML(), selection: window.editor.getSelection(), changes: window.changes.length }))).toEqual({ html: joined, selection: { index: 3, length: 0 }, changes: 1 });
   expect(await first!.evaluate((node) => node.isConnected && node === window.editor.surface.querySelector('li'))).toBe(true);
   expect(await keep!.evaluate((node) => node.isConnected && node === window.editor.surface.lastElementChild)).toBe(true);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content > ul > li').first()).toHaveText('A😀XБв');
   expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: 4, length: 0 });
   await page.evaluate(() => window.editor.undo());
@@ -91,7 +91,7 @@ test('joining placeholder-only bodies keeps one editable break without losing em
   await expect(page.locator('.mw-content > ul > li:first-child > ol')).toHaveText('Left branch');
   await expect(page.locator('.mw-content > ul > li:first-child > ul')).toHaveText('Right branch');
   const joined = await page.evaluate(() => window.editor.getHTML());
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content > ul > li').first()).toHaveText('XLeft branchRight branch');
   await page.evaluate(() => window.editor.undo());
   expect(await page.evaluate(() => window.editor.getHTML())).toBe(joined);
@@ -200,7 +200,8 @@ test('an inert last-item barrier keeps pending bold formatting for the following
   expect(await page.evaluate(() => window.editor.getFormats().bold)).toBe(true);
   await page.keyboard.press('Delete');
   expect(await page.evaluate(() => ({ html: window.editor.getHTML(), bold: window.editor.getFormats().bold, undo: window.editor.canUndo(), changes: window.changes.length }))).toEqual({ html: original, bold: true, undo: false, changes: 0 });
-  await page.keyboard.insertText('X');
+  // Exercise ordinary typing, not Firefox's composition-based insertText protocol.
+  await page.keyboard.type('X');
   expect(await page.evaluate(() => window.editor.getHTML())).toBe('<ul><li>Only<strong>X</strong></li></ul><p>Outside</p>');
 });
 
@@ -215,7 +216,7 @@ test('a real trailing line break stays before the exact join and following nativ
     const range = document.getSelection()!.getRangeAt(0);
     return { html: window.editor.getHTML(), previousIsBreak: range.startContainer.childNodes[range.startOffset - 1] === root.querySelector('br'), nextIsSuffix: range.startContainer.childNodes[range.startOffset] === root.querySelector('em') };
   })).toEqual({ html: joined, previousIsBreak: true, nextIsSuffix: true });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content > ul > li')).toHaveText('AXB');
   expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: 2, length: 0 });
   await page.evaluate(() => window.editor.undo());

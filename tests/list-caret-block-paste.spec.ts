@@ -58,7 +58,7 @@ for (const clipboard of [false, true]) test(`collapsed list ${clipboard ? 'clipb
   await expect(page.locator('.mw-content > ul > li')).toHaveCount(2);
   await expect(page.locator('.mw-content p p, .mw-content p h3, .mw-content h2 h3, .mw-content p ol')).toHaveCount(0);
   expect(await page.evaluate(() => window.changes.length)).toBe(1);
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Last"]')).toHaveText('LastXBeta');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);
@@ -94,7 +94,7 @@ for (const offset of [0, 1]) test(`an empty source placeholder at body offset ${
   await page.evaluate(() => window.editor.insertHTML('<p><br></p><h3 title="Last"><br></h3>'));
   expect(await html(page)).toBe('<ul><li><p title="Body"><br></p><h3 title="Last"><br></h3><h2>After</h2></li></ul>');
   expect(await page.evaluate(() => ({ node: document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="Last"]'), offset: document.getSelection()!.anchorOffset }))).toEqual({ node: true, offset: 0 });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(page.locator('.mw-content [title="Last"]')).toHaveText('X');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   expect(await html(page)).toBe(before);

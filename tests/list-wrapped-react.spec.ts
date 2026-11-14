@@ -14,7 +14,7 @@ test('React StrictMode multi-block item replacement preserves surrounding blocks
   }, original);
   const after = await content.locator('h3').elementHandle();
   const branch = await content.locator('li > ul').elementHandle();
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   const replaced = '<ul><li><p>Before</p><h2>AlX<em>ta</em> tail</h2><h3>After</h3><ul><li>Branch</li></ul></li></ul>';
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
   expect(await page.evaluate(() => window.changes.map((change) => change.html))).toEqual([replaced]);
@@ -29,7 +29,7 @@ test('React StrictMode multi-block item replacement preserves surrounding blocks
   })).toEqual({ anchor: true, anchorOffset: 2, focus: true, focusOffset: 2 });
   await page.evaluate(() => window.editor.redo());
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
-  await page.keyboard.insertText('!');
+  await page.keyboard.type('!');
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced.replace('AlX', 'AlX!'));
   const changes = await page.evaluate(() => window.changes.length);
   await page.getByRole('button', { name: 'Toggle readonly', exact: true }).click();
@@ -44,7 +44,7 @@ test('React StrictMode paragraph/heading list replacement retains backward histo
   await page.goto('/?adapter=react');
   const content = page.getByRole('textbox');
   await expect(content).toHaveText('Initial content');
-  const original = '<ul><li><p style="text-align:center">Alpha <strong>one</strong></p></li><li><h3 style="text-align:right"><em>Beta</em> tail</h3><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
+  const original = '<ul><li><p style="text-align: center">Alpha <strong>one</strong></p></li><li><h3 style="text-align: right"><em>Beta</em> tail</h3><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
   await page.evaluate((html) => window.editor.setHTML(html), original);
   await expect(content).toHaveText('Alpha oneBeta tailNested keepKeep itemOutside');
   await page.evaluate(() => {
@@ -56,8 +56,8 @@ test('React StrictMode paragraph/heading list replacement retains backward histo
   });
   const branch = await content.locator(':scope > ul > li > ul').elementHandle();
   const outside = await content.locator(':scope > p').elementHandle();
-  await page.keyboard.insertText('X');
-  const replaced = '<ul><li><p style="text-align:center">Alpha X<em>ta</em> tail</p><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
+  await page.keyboard.type('X');
+  const replaced = '<ul><li><p style="text-align: center">Alpha X<em>ta</em> tail</p><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
   expect(await page.evaluate(() => ({ selection: window.editor.getSelection(), changes: window.changes.map((change) => change.html) }))).toEqual({ selection: { index: 7, length: 0 }, changes: [replaced] });
   expect(await branch!.evaluate((element) => element.isConnected && element === window.editor.surface.querySelector('li > ul'))).toBe(true);
@@ -72,8 +72,8 @@ test('React StrictMode paragraph/heading list replacement retains backward histo
   })).toEqual({ anchorIsRight: true, anchorOffset: 2, focusIsLeft: true, focusOffset: 6, selected: 'oneBe', undo: false });
   await page.evaluate(() => window.editor.redo());
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
-  await page.keyboard.insertText('!');
-  const typed = '<ul><li><p style="text-align:center">Alpha X!<em>ta</em> tail</p><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
+  await page.keyboard.type('!');
+  const typed = '<ul><li><p style="text-align: center">Alpha X!<em>ta</em> tail</p><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(typed);
   expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: 8, length: 0 });
   await expect(content.locator(':scope > ul > li > p')).toHaveCount(1);
@@ -84,7 +84,7 @@ test('React StrictMode paragraph/heading list replacement retains backward histo
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(original);
   const baseline = await page.evaluate(() => window.changes.length);
   await page.evaluate(() => window.editor.insertHTML('<u>API</u>'));
-  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe('<ul><li><p style="text-align:center">Alpha <u>API</u><em>ta</em> tail</p><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>');
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe('<ul><li><p style="text-align: center">Alpha <u>API</u><em>ta</em> tail</p><ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>');
   expect(await page.evaluate(() => ({ changes: window.changes.length, selection: window.editor.getSelection() }))).toEqual({ changes: baseline + 1, selection: { index: 9, length: 0 } });
   const count = await page.evaluate(() => window.changes.length);
   await page.getByRole('button', { name: 'Toggle readonly', exact: true }).click();

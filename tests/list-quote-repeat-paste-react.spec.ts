@@ -20,7 +20,7 @@ test('React StrictMode repeated list block paste preserves existing quotes, cont
   expect(await page.evaluate(() => window.changes.map((change) => change.html))).toEqual([inserted]);
   for (const node of handles) expect(await node!.evaluate((node) => node.isConnected)).toBe(true);
   expect(await page.evaluate(() => ({ suffix: document.getSelection()!.anchorNode === window.editor.surface.querySelector('[title="Incoming"]')!.nextElementSibling, offset: document.getSelection()!.anchorOffset }))).toEqual({ suffix: true, offset: 0 });
-  await page.keyboard.insertText('X');
+  await page.keyboard.type('X');
   await expect(content.locator('[title="Incoming"] + p')).toHaveText('XBeta');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
   await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(original);
