@@ -24,3 +24,9 @@ export type ListSelectionResult =
   | { status: 'unowned' }
   | { status: 'blocked'; reason: string }
   | ListSelectionPlan;
+
+export interface ListSelectionOptions {
+  includeSameBody: boolean;
+  includeCollapsed: boolean;
+  preserveQuotes: boolean;
+}

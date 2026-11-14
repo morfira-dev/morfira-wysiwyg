@@ -1,5 +1,6 @@
 import { activeRange } from '../selection/index.js';
-import type { ListItemBoundary, ListSelectionResult } from './internal-types.js';
+import { isOrdinaryQuote } from './paste-payload.js';
+import type { ListItemBoundary, ListSelectionOptions, ListSelectionResult } from './internal-types.js';
 
 const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br']);
 const inlineNode = (node: Node): boolean => node.nodeType === 3 || (node instanceof HTMLElement && node.namespaceURI === 'http://www.w3.org/1999/xhtml' && inlineTags.has(node.localName) && [...node.childNodes].every(inlineNode));
@@ -11,7 +12,7 @@ const itemAt = (root: HTMLElement, node: Node): HTMLElement | undefined => {
 };
 
 /** Own inline body ends before direct trailing branches; inspecting never edits DOM. */
-export const inspectListItem = (root: HTMLElement, item: HTMLElement): ListItemBoundary | undefined => {
+const inspectItem = (root: HTMLElement, item: HTMLElement, preserveQuotes: boolean): ListItemBoundary | undefined => {
   const list = item.parentElement;
   if (item.localName !== 'li' || item.namespaceURI !== 'http://www.w3.org/1999/xhtml' || !root.contains(item) || !list || !isList(list) || item.hasAttribute('data-mw-node') || list.hasAttribute('data-mw-node')) return;
   const ownNodes: ChildNode[] = [];
@@ -22,7 +23,10 @@ export const inspectListItem = (root: HTMLElement, item: HTMLElement): ListItemB
     else {
       // Moving text that follows a branch would silently reorder a partial shape.
       if (nestedLists.length) return;
-      if (node instanceof HTMLElement && /^(p|h[1-6])$/.test(node.localName) && node.namespaceURI === item.namespaceURI && !node.hasAttribute('data-mw-node') && (!ownNodes.length || bodies.length) && [...node.childNodes].every(inlineNode)) {
+      const paragraph = node instanceof HTMLElement && /^(p|h[1-6])$/.test(node.localName)
+        && node.namespaceURI === item.namespaceURI && !node.hasAttribute('data-mw-node') && [...node.childNodes].every(inlineNode);
+      const quote = preserveQuotes && isOrdinaryQuote(node);
+      if (node instanceof HTMLElement && (paragraph || quote) && (!ownNodes.length || bodies.length)) {
         bodies.push(node);
         ownNodes.push(...node.childNodes);
       } else {
@@ -43,6 +47,9 @@ export const inspectListItem = (root: HTMLElement, item: HTMLElement): ListItemB
   const breaks = ownNodes.reduce((count, node) => count + (node instanceof Element ? node.querySelectorAll('br').length + Number(node.localName === 'br') : 0), 0);
   return { item: item as HTMLLIElement, body, bodies, ownNodes, nestedLists, ownStart, ownEnd, ownEmpty: ownNodes.every((node) => !node.textContent) && breaks <= 1 };
 };
+
+/** Native/boundary callers deliberately keep the ordinary inline/p/h profile. */
+export const inspectListItem = (root: HTMLElement, item: HTMLElement): ListItemBoundary | undefined => inspectItem(root, item, false);
 
 const blocked = (reason: string): ListSelectionResult => ({ status: 'blocked', reason });
 /** Resolve an inline body or an unambiguous edge between direct body blocks. */
@@ -73,15 +80,16 @@ export const normalizeListBodyRange = (range: Range, boundary: ListItemBoundary,
 };
 
 /** A list-owned unsupported partial shape is blocked rather than natively cut. */
-export const listSelectionReplacement = (root: HTMLElement, range: Range | undefined = activeRange(root), includeSameBody = false, includeCollapsed = false): ListSelectionResult => {
+const selectionPlan = (root: HTMLElement, range: Range | undefined, options: ListSelectionOptions): ListSelectionResult => {
+  const { includeSameBody, includeCollapsed, preserveQuotes } = options;
   if (!range || (range.collapsed && !includeCollapsed) || !root.contains(range.startContainer) || !root.contains(range.endContainer)) return { status: 'unowned' };
   const firstItem = itemAt(root, range.startContainer);
   const lastItem = itemAt(root, range.endContainer);
   if (!firstItem && !lastItem) return { status: 'unowned' };
   if (!firstItem || !lastItem) return blocked('A list selection cannot cross into a different block container.');
   if (firstItem.parentElement !== lastItem.parentElement) return blocked('Select sibling items in one list.');
-  const first = inspectListItem(root, firstItem);
-  const last = inspectListItem(root, lastItem);
+  const first = inspectItem(root, firstItem, preserveQuotes);
+  const last = inspectItem(root, lastItem, preserveQuotes);
   const start = first && normalizeListBodyRange(range, first, false);
   const startBody = first && listBodyAt(range, first, false);
   // A collapsed li-level point between blocks denotes the next body's start.
@@ -93,6 +101,8 @@ export const listSelectionReplacement = (root: HTMLElement, range: Range | undef
     if (!includeSameBody && firstItem === lastItem && ![...firstItem.children].some((node) => /^(p|h[1-6])$/.test(node.localName))) return { status: 'unowned' };
     return blocked('List replacement requires inline content or ordinary paragraph/heading bodies.');
   }
+  if (preserveQuotes && (startBody.localName === 'blockquote' || endBody.localName === 'blockquote'))
+    return blocked('A block insertion endpoint cannot enter an existing quote.');
   if (!includeSameBody && firstItem === lastItem && startBody === endBody) return { status: 'unowned' };
   const workingRange = range.cloneRange();
   workingRange.setStart(start.startContainer, start.startOffset);
@@ -104,8 +114,14 @@ export const listSelectionReplacement = (root: HTMLElement, range: Range | undef
     if (node.nodeType === 3 && /^[\t\n\f\r ]*$/.test(node.textContent ?? '')) gaps.push(node);
     else {
       if (!(node instanceof HTMLElement)) return blocked('Unsupported content between list items.');
-      const item = inspectListItem(root, node);
+      const item = inspectItem(root, node, preserveQuotes);
       if (!item || (item.item !== last.item && item.nestedLists.length)) return blocked('A selected item contains an unsupported body or nested branch.');
+      if (preserveQuotes) {
+        const from = item.item === first.item ? item.bodies.indexOf(startBody) : 0;
+        const to = item.item === last.item ? item.bodies.indexOf(endBody) : item.bodies.length - 1;
+        if (item.bodies.slice(from, to + 1).some((body) => body.localName === 'blockquote'))
+          return blocked('A block insertion cannot cover or cross an existing quote.');
+      }
       leaves.push(item.item);
       if (item.item === last.item) return { status: 'eligible', range: workingRange, leaves, gaps, first, last, startBody, endBody };
     }
@@ -113,3 +129,13 @@ export const listSelectionReplacement = (root: HTMLElement, range: Range | undef
   }
   return blocked('Select consecutive items in one list.');
 };
+
+/** Existing callers keep their earlier native and ordinary insertion ownership. */
+export const listSelectionReplacement = (root: HTMLElement, range: Range | undefined = activeRange(root), includeSameBody = false, includeCollapsed = false): ListSelectionResult => selectionPlan(root, range, { includeSameBody, includeCollapsed, preserveQuotes: false });
+
+/** Only block payload candidates may preserve opaque quotes beside their range. */
+export const listPasteSelection = (root: HTMLElement, range: Range | undefined = activeRange(root), blockCandidate = false): ListSelectionResult => selectionPlan(root, range, {
+  includeSameBody: blockCandidate,
+  includeCollapsed: blockCandidate,
+  preserveQuotes: blockCandidate,
+});

@@ -6,7 +6,7 @@ The new same-list multi-item selection, boundary deletion and multiple paragraph
 
 ## Implemented baseline
 
-A single ordinary `blockquote` can be inserted as a separate block in an item at a caret or over a supported selection, preserving its wrapper, source text edges, neighboring bodies and branches. The quote accepts inline content or ordinary paragraphs/headings. An existing quote in the source item remains a barrier for bounded structural operations and repeated block insertion; ordinary input in the right suffix and Undo remain available. This is local incoming-fragment support, **not verified by execution**, rather than completed quote-boundary editing.
+A single ordinary `blockquote` can be inserted as a separate block in an item at a caret or over a supported selection, preserving its wrapper, source text edges, neighboring bodies and branches. The quote accepts inline content or ordinary paragraphs/headings. Repeated block insertion in ordinary bodies before or after existing quotes retains those quotes as whole actual nodes. Ranges inside or across quotes, semantic/unsupported quotes and native boundary editing remain outside the new path. This is a local implementation, **not verified by execution**, rather than complete quote editing.
 
 A single ordinary heading can be inserted at a caret or over a supported list selection as a separate body with its own attributes: the source prefix and suffix remain on either side, with the caret before the right suffix. Neighboring bodies, branches and history remain. The implementation and examples are local and **have not been verified by execution**.
 

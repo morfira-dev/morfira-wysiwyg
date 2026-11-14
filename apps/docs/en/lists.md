@@ -87,7 +87,13 @@ A single ordinary `blockquote` is inserted as a separate block: the source prefi
 
 An incoming quote may contain either inline content with allowed marks/links/images, or ordinary paragraphs and headings. A semantic quote wrapper or semantic body children, mixed inline/block content, nested quotes, lists, tables and other structures are refused before document mutation. Inline semantic nodes retain their metadata after schema validation.
 
-Load the source list sample, choose a caret position or select text/items, then **Quote HTML → Insert quote**. The default field contains a paragraph and heading inside the quote. **Limit:** an existing quote in the source item currently blocks bounded structural operations and repeated block insertion, including from neighboring text bodies. Ordinary input in the right suffix and Undo remain available; reload the sample for another scenario. This slice does not claim complete quote-boundary editing; tests, builds and fresh measurements are deferred.
+Load the source list sample, choose a caret position or select text/items, then **Quote HTML → Insert quote**. The default field contains a paragraph and heading inside the quote. Ordinary input in the right suffix and Undo remain available. Tests, builds and fresh measurements are deferred.
+
+### Repeated insertion beside a quote
+
+Click **Load repeated insertion sample → Caret after existing quote**, then **Insert quote → Insert heading → Replace with multiple blocks** consecutively. The original quote, following bodies and nested branch remain without reloading; every step has its own Undo. **Caret before existing quote** places insertion on the other side. Loading replaces the document.
+
+Only the new block API/clipboard path treats ordinary source quotes as whole preserved nodes. Selection endpoints must be in ordinary text bodies; ranges inside a quote or crossing it, including complete coverage, remain blocked. An item-level position resolving into a quote is also a barrier. Unsupported or semantic quotes reject the operation even outside the selection. Native boundary operations, inline insertion and single-paragraph insertion are not extended. This slice does not claim complete quote editing or verified browser compatibility; see the [API](/en/api#list-item-selections-and-boundaries) for the bounded contract.
 
 ## Current boundaries
 

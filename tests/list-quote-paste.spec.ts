@@ -207,23 +207,28 @@ for (const collapsed of [false, true]) {
   });
 }
 
-test('an inserted quote remains an explicit source barrier for repeated bounded structural insertion', async ({ page }) => {
+test('insertion inside an existing quote stays blocked while ordinary suffix typing remains available', async ({ page }) => {
   const before = await initialize(page, '<ul><li><p title="Body">AB</p></li></ul>');
   await caret(page, '[title="Body"]', 1);
   await page.evaluate(() => window.editor.insertHTML('<blockquote title="Quote">Q</blockquote>'));
   const inserted = await html(page);
   expect(await page.evaluate(() => {
     const editor = window.editor;
-    const suffix = editor.surface.querySelector('[title="Quote"]')!.nextElementSibling;
+    const point = editor.surface.querySelector('[title="Quote"]')!.firstChild!;
+    document.getSelection()!.setBaseAndExtent(point, 0, point, 0);
     const observer = new MutationObserver(() => {});
     observer.observe(editor.surface, { subtree: true, childList: true, attributes: true });
     let rejected = false;
     try { editor.insertHTML('<blockquote>Again</blockquote>'); } catch { rejected = true; }
     const mutations = observer.takeRecords().length;
     observer.disconnect();
-    return { rejected, mutations, atSuffix: document.getSelection()!.anchorNode === suffix, changes: window.changes.length };
-  })).toEqual({ rejected: true, mutations: 0, atSuffix: true, changes: 1 });
+    return { rejected, mutations, atQuote: document.getSelection()!.anchorNode === point, changes: window.changes.length };
+  })).toEqual({ rejected: true, mutations: 0, atQuote: true, changes: 1 });
   expect(await html(page)).toBe(inserted);
+  await page.evaluate(() => {
+    const suffix = window.editor.surface.querySelector('[title="Quote"]')!.nextElementSibling!;
+    document.getSelection()!.setBaseAndExtent(suffix, 0, suffix, 0);
+  });
   await page.keyboard.insertText('X');
   await expect(page.locator('.mw-content [title="Quote"] + p')).toHaveText('XB');
   await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });

@@ -1,15 +1,13 @@
 import { cutSelectionReplacement, ensureReplacementPlaceholder, finishSelectionReplacement, insertInlineFragment } from '../input/index.js';
 import { activeRange } from '../selection/index.js';
-import { listSelectionReplacement } from './selection-boundaries.js';
+import { listPasteSelection, listSelectionReplacement } from './selection-boundaries.js';
+import { formattingWhitespace, inlinePayloadNode, isOrdinaryQuote, ordinaryPayloadBody, quoteBodyBlocks } from './paste-payload.js';
 import type { ListSelectionPlan, ListSelectionResult } from './internal-types.js';
 
-const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br', 'img']);
-const inlinePayloadNode = (node: Node): boolean => node.nodeType === 3 || (node instanceof HTMLElement && node.namespaceURI === 'http://www.w3.org/1999/xhtml' && inlineTags.has(node.localName) && [...node.childNodes].every(inlinePayloadNode));
 const ordinaryParagraph = (fragment: DocumentFragment): HTMLElement | undefined => {
   const node = fragment.firstChild;
   return fragment.childNodes.length === 1 && node instanceof HTMLElement && node.localName === 'p' && !node.hasAttribute('data-mw-node') && [...node.childNodes].every(inlinePayloadNode) ? node : undefined;
 };
-const formattingWhitespace = (node: Node): boolean => node.nodeType === 3 && /^[\t\n\f\r ]*$/.test(node.textContent ?? '');
 const multiBlockCandidate = (fragment: DocumentFragment): boolean => {
   const nodes = [...fragment.childNodes].filter((node) => !formattingWhitespace(node));
   return nodes.length > 1 && nodes.some((node) => !inlinePayloadNode(node));
@@ -29,19 +27,9 @@ const quoteRoot = (fragment: DocumentFragment): Element | undefined => {
   const node = nodes[0];
   return nodes.length === 1 && node instanceof Element && node.localName === 'blockquote' ? node : undefined;
 };
-const ordinaryPayloadBody = (node: Node): node is HTMLElement => node instanceof HTMLElement
-  && node.namespaceURI === 'http://www.w3.org/1999/xhtml'
-  && /^(p|h[1-6])$/.test(node.localName) && !node.hasAttribute('data-mw-node')
-  && [...node.childNodes].every(inlinePayloadNode);
-const quoteBodyBlocks = (quote: HTMLElement): HTMLElement[] | undefined => {
-  const nodes = [...quote.childNodes].filter((node) => !formattingWhitespace(node));
-  return nodes.length > 0 && nodes.every(ordinaryPayloadBody) ? nodes : undefined;
-};
 const ordinaryQuote = (fragment: DocumentFragment): HTMLElement | undefined => {
   const node = quoteRoot(fragment);
-  return node instanceof HTMLElement && node.namespaceURI === 'http://www.w3.org/1999/xhtml'
-    && !node.hasAttribute('data-mw-node')
-    && ([...node.childNodes].every(inlinePayloadNode) || quoteBodyBlocks(node)) ? node : undefined;
+  return node && isOrdinaryQuote(node) ? node : undefined;
 };
 const blockPasteCandidate = (fragment: DocumentFragment): boolean => multiBlockCandidate(fragment)
   || Boolean(headingRoot(fragment) || quoteRoot(fragment));
@@ -68,7 +56,7 @@ const requireSupported = (selected: ListSelectionResult): ListSelectionPlan | un
 /** The transaction owner clears old caret formats only for this validated path. */
 export const handlesCollapsedListBlockPaste = (root: HTMLElement, fragment: DocumentFragment, range: Range | undefined = activeRange(root)): boolean => Boolean(range?.collapsed
   && (ordinaryBlocks(fragment) || ordinaryHeading(fragment) || ordinaryQuote(fragment))
-  && listSelectionReplacement(root, range, true, true).status === 'eligible');
+  && listPasteSelection(root, range, true).status === 'eligible');
 
 /** Detached import preflight: an empty sanitized fragment stays a no-op for any source. */
 export const prepareListSelectionPaste = (root: HTMLElement, fragment: DocumentFragment, range?: Range): void => {
@@ -77,7 +65,7 @@ export const prepareListSelectionPaste = (root: HTMLElement, fragment: DocumentF
   const heading = ordinaryHeading(fragment);
   const quote = ordinaryQuote(fragment);
   const candidate = blockPasteCandidate(fragment);
-  const selected = requireSupported(listSelectionReplacement(root, range, candidate, candidate));
+  const selected = requireSupported(listPasteSelection(root, range, candidate));
   if (!selected) return;
   if (![...fragment.childNodes].every(inlinePayloadNode) && !ordinaryParagraph(fragment) && !blocks && !heading && !quote)
     throw new TypeError('List selection insertion supports inline HTML, an ordinary paragraph, heading or bounded quote, or multiple ordinary paragraphs/headings.');
@@ -145,7 +133,7 @@ export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: Do
   const quote = ordinaryQuote(fragment);
   const standalone = heading ?? quote;
   const candidate = blockPasteCandidate(fragment);
-  const selected = requireSupported(listSelectionReplacement(root, undefined, candidate, candidate));
+  const selected = requireSupported(listPasteSelection(root, undefined, candidate));
   if (!selected) return false;
   prepareListSelectionPaste(root, fragment, selected.range);
   const paragraph = ordinaryParagraph(fragment);
