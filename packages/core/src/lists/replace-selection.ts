@@ -24,14 +24,30 @@ const ordinaryHeading = (fragment: DocumentFragment): HTMLElement | undefined =>
   return node instanceof HTMLElement && node.namespaceURI === 'http://www.w3.org/1999/xhtml'
     && !node.hasAttribute('data-mw-node') && [...node.childNodes].every(inlinePayloadNode) ? node : undefined;
 };
-const blockPasteCandidate = (fragment: DocumentFragment): boolean => multiBlockCandidate(fragment) || Boolean(headingRoot(fragment));
+const quoteRoot = (fragment: DocumentFragment): Element | undefined => {
+  const nodes = [...fragment.childNodes].filter((node) => !formattingWhitespace(node));
+  const node = nodes[0];
+  return nodes.length === 1 && node instanceof Element && node.localName === 'blockquote' ? node : undefined;
+};
+const ordinaryPayloadBody = (node: Node): node is HTMLElement => node instanceof HTMLElement
+  && node.namespaceURI === 'http://www.w3.org/1999/xhtml'
+  && /^(p|h[1-6])$/.test(node.localName) && !node.hasAttribute('data-mw-node')
+  && [...node.childNodes].every(inlinePayloadNode);
+const quoteBodyBlocks = (quote: HTMLElement): HTMLElement[] | undefined => {
+  const nodes = [...quote.childNodes].filter((node) => !formattingWhitespace(node));
+  return nodes.length > 0 && nodes.every(ordinaryPayloadBody) ? nodes : undefined;
+};
+const ordinaryQuote = (fragment: DocumentFragment): HTMLElement | undefined => {
+  const node = quoteRoot(fragment);
+  return node instanceof HTMLElement && node.namespaceURI === 'http://www.w3.org/1999/xhtml'
+    && !node.hasAttribute('data-mw-node')
+    && ([...node.childNodes].every(inlinePayloadNode) || quoteBodyBlocks(node)) ? node : undefined;
+};
+const blockPasteCandidate = (fragment: DocumentFragment): boolean => multiBlockCandidate(fragment)
+  || Boolean(headingRoot(fragment) || quoteRoot(fragment));
 const ordinaryBlocks = (fragment: DocumentFragment): HTMLElement[] | undefined => {
   const nodes = [...fragment.childNodes].filter((node) => !formattingWhitespace(node));
-  if (nodes.length < 2 || !nodes.every((node) => node instanceof HTMLElement
-    && node.namespaceURI === 'http://www.w3.org/1999/xhtml'
-    && /^(p|h[1-6])$/.test(node.localName) && !node.hasAttribute('data-mw-node')
-    && [...node.childNodes].every(inlinePayloadNode))) return;
-  return nodes as HTMLElement[];
+  return nodes.length > 1 && nodes.every(ordinaryPayloadBody) ? nodes : undefined;
 };
 const stripPlaceholder = (body: HTMLElement): void => {
   if (!body.textContent && !body.querySelector('img') && body.querySelectorAll('br').length <= 1) {
@@ -51,7 +67,7 @@ const requireSupported = (selected: ListSelectionResult): ListSelectionPlan | un
 
 /** The transaction owner clears old caret formats only for this validated path. */
 export const handlesCollapsedListBlockPaste = (root: HTMLElement, fragment: DocumentFragment, range: Range | undefined = activeRange(root)): boolean => Boolean(range?.collapsed
-  && (ordinaryBlocks(fragment) || ordinaryHeading(fragment))
+  && (ordinaryBlocks(fragment) || ordinaryHeading(fragment) || ordinaryQuote(fragment))
   && listSelectionReplacement(root, range, true, true).status === 'eligible');
 
 /** Detached import preflight: an empty sanitized fragment stays a no-op for any source. */
@@ -59,13 +75,17 @@ export const prepareListSelectionPaste = (root: HTMLElement, fragment: DocumentF
   if (!fragment.childNodes.length) return;
   const blocks = ordinaryBlocks(fragment);
   const heading = ordinaryHeading(fragment);
+  const quote = ordinaryQuote(fragment);
   const candidate = blockPasteCandidate(fragment);
   const selected = requireSupported(listSelectionReplacement(root, range, candidate, candidate));
   if (!selected) return;
-  if (![...fragment.childNodes].every(inlinePayloadNode) && !ordinaryParagraph(fragment) && !blocks && !heading)
-    throw new TypeError('List selection insertion supports inline HTML, an ordinary paragraph or heading, or multiple ordinary paragraphs/headings.');
-  if (blocks || heading) {
+  if (![...fragment.childNodes].every(inlinePayloadNode) && !ordinaryParagraph(fragment) && !blocks && !heading && !quote)
+    throw new TypeError('List selection insertion supports inline HTML, an ordinary paragraph, heading or bounded quote, or multiple ordinary paragraphs/headings.');
+  if (blocks || heading || quote) {
     for (const node of [...fragment.childNodes]) if (formattingWhitespace(node)) node.remove();
+  }
+  if (quote && quoteBodyBlocks(quote)) {
+    for (const node of [...quote.childNodes]) if (formattingWhitespace(node)) node.remove();
   }
 };
 
@@ -122,20 +142,26 @@ export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: Do
   if (!fragment.childNodes.length) return false;
   const blocks = ordinaryBlocks(fragment);
   const heading = ordinaryHeading(fragment);
+  const quote = ordinaryQuote(fragment);
+  const standalone = heading ?? quote;
   const candidate = blockPasteCandidate(fragment);
   const selected = requireSupported(listSelectionReplacement(root, undefined, candidate, candidate));
   if (!selected) return false;
   prepareListSelectionPaste(root, fragment, selected.range);
   const paragraph = ordinaryParagraph(fragment);
   // Keep the original end wrapper before a direct start is promoted by the cut.
-  const suffix = heading ? (selected.endBody === selected.last.item
+  const suffix = standalone ? (selected.endBody === selected.last.item
     ? root.ownerDocument.createElement('p') : selected.endBody.cloneNode(false) as HTMLElement) : undefined;
-  const { left, tail, caret, following, branches } = cutListSelection(selected, Boolean(blocks || heading));
-  if (heading && suffix) {
-    left.after(heading, suffix);
+  const { left, tail, caret, following, branches } = cutListSelection(selected, Boolean(blocks || standalone));
+  if (standalone && suffix) {
+    left.after(standalone, suffix);
     ensureReplacementPlaceholder(left, caret);
     left.normalize();
-    ensureBodyPlaceholder(heading);
+    const quoteBlocks = quote && quoteBodyBlocks(quote);
+    if (quoteBlocks) {
+      for (const body of quoteBlocks) ensureBodyPlaceholder(body);
+    }
+    else ensureBodyPlaceholder(standalone);
     suffix.append(tail);
     const end = root.ownerDocument.createRange();
     end.selectNodeContents(suffix);

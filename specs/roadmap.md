@@ -21,6 +21,8 @@ The new bounded list-item replacement and boundary-deletion paths support direct
 
 ## Milestones
 
+Single ordinary quote HTML insertion is implemented locally for list carets and supported selections, retaining prefix and suffix bodies around the standalone quote. Quote content accepts inline data or ordinary paragraph/heading children. Existing quotes as structural source bodies, nested structural quote content and semantic block payloads remain later work. Written tests and bilingual examples are tracked with deferred validation in `verification-backlog.md`.
+
 Single ordinary heading HTML insertion is implemented locally for list carets and supported selections: prefix body → preserved incoming heading → suffix body, with the caret before the suffix. It preserves item/branch structure and has atomic semantic/malformed heading barriers. Its contract is `list-selection.md`; tests, builds, type checks and sizes remain deferred.
 
 The local list-paste extension accepts at least two ordinary paragraph/heading payload blocks over supported list selections and at a collapsed caret within a supported item. It retains prefix/suffix formatting, unselected blocks and branches within one item and one history operation. Item-level caret boundaries resolve to the following body start or final body end. Pending caret formatting participates in undo without leaking into the new insertion point. Structural and semantic multi-root payloads remain outside this slice. Tests, builds, type checks and fresh sizes are deferred under `verification-backlog.md`.

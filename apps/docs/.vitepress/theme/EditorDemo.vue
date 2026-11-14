@@ -50,6 +50,7 @@ const listReplacement = ref('X');
 const listInlineHTML = ref('<u>Inserted</u>');
 const listBlockHTML = ref('<p><strong>First</strong></p>\n<h3 style="text-align: right"><em>Middle</em></h3>\n<p><u>Last</u></p>');
 const listHeadingHTML = ref('<h2 title="Inserted heading" style="text-align: right"><em>Title</em></h2>');
+const listQuoteHTML = ref('<blockquote title="Inserted quote" style="text-align: right"><p><em>Quote</em></p><h3>Source</h3></blockquote>');
 const listBlockCaret = ref<'start' | 'middle' | 'end'>('middle');
 const listBodyMode = ref<'inline' | 'paragraph' | 'heading' | 'mixed' | 'multiblock'>('inline');
 const listBackspaceScenario = ref<'join' | 'root' | 'nested' | 'nested-followed'>('join');
@@ -244,6 +245,7 @@ const selectListBodyCaret = () => run((instance) => {
 }, false);
 const insertListBlocks = () => run((instance) => instance.insertHTML(listBlockHTML.value));
 const insertListHeading = () => run((instance) => instance.insertHTML(listHeadingHTML.value));
+const insertListQuote = () => run((instance) => instance.insertHTML(listQuoteHTML.value));
 const insertListExample = (plain: boolean) => run((instance) => {
   if (!plain) { instance.insertHTML(listInlineHTML.value); return; }
   const holder = document.createElement('div');
@@ -470,6 +472,9 @@ onBeforeUnmount(() => {
           <button @click="insertListBlocks">{{ t('Заменить несколькими блоками', 'Replace with multiple blocks') }}</button>
           <label>{{ t('HTML одиночного заголовка', 'Single heading HTML') }}<textarea v-model="listHeadingHTML" :aria-label="t('HTML одиночного заголовка', 'Single heading HTML')" rows="2" spellcheck="false"></textarea></label>
           <button @click="insertListHeading">{{ t('Вставить заголовок', 'Insert heading') }}</button>
+          <label>{{ t('HTML цитаты', 'Quote HTML') }}<textarea v-model="listQuoteHTML" :aria-label="t('HTML цитаты', 'Quote HTML')" rows="3" spellcheck="false"></textarea></label>
+          <button @click="insertListQuote">{{ t('Вставить цитату', 'Insert quote') }}</button>
+          <p class="lab-hint">{{ t('Цитата вставляется отдельным blockquote между исходным началом и отдельным телом с остатком; курсор будет перед остатком. Внутри допустим строчный текст либо обычные абзацы/заголовки. Существующая цитата в исходном пункте пока блокирует ограниченные структурные операции и повторную блочную вставку: загрузка примера заново позволяет сравнить сценарии. Обычный ввод в правом остатке и Undo сохраняются; проверки отложены.', 'A quote is inserted as a separate blockquote between the source prefix and a separate suffix body; the caret starts before the suffix. It accepts inline content or ordinary paragraphs/headings. An existing quote in the source item currently blocks bounded structural operations and repeated block insertion: reload the sample to compare scenarios. Ordinary typing in the right suffix and Undo remain available; validation is deferred.') }}</p>
           <p class="lab-hint">{{ t('Одиночный обычный заголовок сохраняет свой тег и атрибуты отдельным телом пункта. Выдели текст или поставь курсор: перед заголовком останется исходное начало, после него — отдельное тело с остатком. Курсор будет в начале остатка; пустые края сохраняют редактируемый перенос. Соседние тела и ветки остаются на месте. Проверки отложены.', 'A single ordinary heading keeps its tag and attributes as a separate item body. Select text or place the caret: the source prefix stays before the heading and a separate body holds the suffix after it. The caret starts before that suffix; empty edges retain an editable placeholder. Neighboring bodies and branches remain. Validation is deferred.') }}</p>
           <p class="lab-hint">{{ t('Выдели текст или выбери позицию и поставь курсор кнопкой. «Заменить несколькими блоками» вставляет два и более обычных абзаца/заголовка и при пустом выделении: начало исходного блока соединяется с первым входящим, остаток — с последним. Невыделенные тела и ветки сохраняются. Другие одиночные структурные корни сохраняют прежние пути; семантические и смешанные фрагменты не входят в новый путь. Проверки пока отложены.', 'Select text or choose a position and place the caret with the button. “Replace with multiple blocks” also inserts two or more ordinary paragraphs/headings at a collapsed caret: the source prefix joins the first incoming body and its suffix joins the last. Unselected bodies and branches remain. Other single structural roots retain their previous paths; semantic and mixed fragments are outside the new path. Validation is deferred.') }}</p>
           <button @click="selectListItems(true)">{{ t('Курсор перед Delete', 'Caret before Delete') }}</button>
