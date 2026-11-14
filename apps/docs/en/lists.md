@@ -18,10 +18,11 @@ Indent one item or a consecutive sibling range at the same level. The first item
 
 | Key | Inside a list |
 | --- | --- |
-| Enter | Split at the caret; a selection within one item is replaced first |
-| Enter in an empty item | Lift one level; at the root level exit into a paragraph |
+| Enter | Split at the caret; replace a selection within one body first and move subsequent bodies into the new item |
+| Enter in a simple empty item | Lift one level; at the root level exit into a paragraph. An empty body among other bodies splits within the list structure |
 | Shift+Enter | Insert a line break within the item |
-| Backspace at the start | Join the previous sibling; lift/unwrap the first item |
+| Backspace at the start | Inside a multi-block item join the preceding body; currently blocked at its first body. Simple items retain previous sibling join/lift behavior |
+| Delete at a body end | Join the next body; after the last body, join the first body of the next suitable item |
 | Tab / Shift+Tab | Increase/decrease nesting outside tables |
 
 Within table cells, Tab keeps cell navigation. Use toolbar buttons to change list nesting inside cells. Shift+Enter and normal typing retain content inside the item. A sublist after the Enter position moves into the new item with the trailing content.
@@ -32,7 +33,7 @@ During composition, tables leave Tab/Shift+Tab/Escape to IME candidate handling:
 
 In a plain paragraph, Enter splits text at the caret while preserving formatting. Inside a heading it creates another heading; at its end it creates a paragraph. Enter in an empty heading converts it to a paragraph. Shift+Enter inserts a line break within the block. Selected text within one block is replaced first.
 
-Backspace at the start and Delete at the end join adjacent paragraphs/headings in the same container. The left block's formatting and a caret at the join are retained. Boundary deletion does not move text across a table, image, list or another cell. Lists follow the table above; selections spanning several blocks still use browser behavior. Every supported structural operation participates in undo/redo.
+Backspace at the start and Delete at the end join adjacent paragraphs/headings in the same container. The left block's formatting and a caret at the join are retained. Boundary deletion does not move text across a table, image, list or another cell. Lists follow the table above and the bounded [cross-body and cross-item selection contract](/en/api#list-item-selections-and-boundaries). Every supported structural operation participates in undo/redo.
 
 During active IME input, the browser owns provisional text. Core does not run structural commands or record every candidate in history. Markdown shortcuts and suggestion menus do not intercept candidate confirmation. After composition ends, one undo restores the previous document. Switching to read-only cancels unfinished input; external document replacement remains authoritative. These scenarios use controlled browser events in tests; real candidate windows and mobile keyboards still require separate manual validation.
 
@@ -64,6 +65,6 @@ Tab enters the toolbar through a single enabled button; Left/Right and Home/End 
 
 ## Current boundaries
 
-Arbitrary cross-item text replacement and ordinary deletion inside an item still rely on browser behavior. We do not promise identical normalization for arbitrary office-editor HTML. Real IME/mobile verification and a complete accessibility audit remain on the roadmap. Text color and link editing are described in the [separate guide](/en/styling).
+**The new local slice has not been executed or verified yet.** One item may contain multiple ordinary `p`/`h1`–`h6` bodies followed by nested lists. Replacement between bodies in one item or sibling items preserves unselected bodies; Enter moves subsequent bodies into the next item, while Delete/Backspace join adjacent bodies. Detailed limits, including semantic bodies and structural payloads, are in the [API](/en/api#list-item-selections-and-boundaries). In the demo open **List item selection → Item body: Multiple blocks → Load block-body sample**. Try **Select item blocks** or **Select items** and replacement; **Caret before Delete** prepares an internal boundary. Tests, builds and fresh size measurements are deferred. We do not promise identical normalization for arbitrary office-editor HTML. Real IME/mobile verification and a complete accessibility audit remain on the roadmap. Text color and link editing are described in the [separate guide](/en/styling).
 
 Boolean inline styles (bold/italic/underline/strike/code/subscript/superscript) use a local validated transformation when selection stays in one plain paragraph or heading. Unrelated blocks and their DOM listeners remain connected. Unsupported/complex and cross-block selections keep the general path. Adding an already inherited mark is a no-op; undo/redo and public HTML/JSON validation retain their contracts. No application configuration is required.

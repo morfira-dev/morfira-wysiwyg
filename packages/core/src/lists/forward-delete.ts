@@ -1,6 +1,6 @@
 import { activeRange } from '../selection/index.js';
 import { finishSelectionReplacement } from '../input/index.js';
-import { inspectListItem } from './selection-boundaries.js';
+import { inspectListItem, listBodyAt, normalizeListBodyRange } from './selection-boundaries.js';
 
 const isList = (node: Node): node is HTMLElement => node instanceof HTMLElement && (node.localName === 'ul' || node.localName === 'ol');
 
@@ -49,13 +49,38 @@ const removeOwnPlaceholder = (nodes: readonly ChildNode[]): void => {
   }
 };
 
+const atBodyEnd = (body: HTMLElement, point: Range): boolean => {
+  const suffix = body.ownerDocument.createRange();
+  suffix.selectNodeContents(body);
+  suffix.setStart(point.startContainer, point.startOffset);
+  const content = suffix.cloneContents();
+  if (!body.textContent && body.querySelectorAll('br').length <= 1) return true;
+  return !content.textContent && !content.querySelector('br,img');
+};
+
+const removeBodyPlaceholder = (body: HTMLElement): void => {
+  if (!body.textContent && body.querySelectorAll('br').length <= 1) removeOwnPlaceholder([...body.childNodes]);
+};
+
 /** Only the validated cancelable beforeinput path calls this handler. */
 export const handlesListForwardDelete = (root: HTMLElement, inputType: string): boolean => {
   if (inputType !== 'deleteContentForward') return false;
   const range = activeRange(root);
   if (!range?.collapsed) return false;
   const item = selectedItem(root, range);
-  return Boolean(item && atOwnEnd(item, range));
+  if (!item) return false;
+  const boundary = inspectListItem(root, item);
+  const previousEdge = range.startContainer === item && range.startOffset > 0;
+  const body = boundary && listBodyAt(range, boundary, previousEdge);
+  const point = boundary && normalizeListBodyRange(range, boundary, previousEdge);
+  if (body && point) {
+    if (body === item) return atOwnEnd(item, range);
+    return atBodyEnd(body, point);
+  }
+  const element = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+  const wrapped = element?.closest<HTMLElement>('p,h1,h2,h3,h4,h5,h6');
+  if (wrapped?.parentElement === item && atBodyEnd(wrapped, range)) return true;
+  return atOwnEnd(item, range);
 };
 
 /** Join one sibling pair inside the existing editor transaction; barriers are no-ops. */
@@ -63,23 +88,51 @@ export const editListForwardDelete = (root: HTMLElement): boolean => {
   const range = activeRange(root);
   if (!range?.collapsed) return false;
   const item = selectedItem(root, range);
-  if (!item || !atOwnEnd(item, range)) return false;
-  const rightItem = nextItem(item);
+  if (!item) return false;
   const left = inspectListItem(root, item);
+  const previousEdge = range.startContainer === item && range.startOffset > 0;
+  const current = left && listBodyAt(range, left, previousEdge);
+  const point = left && normalizeListBodyRange(range, left, previousEdge);
+  if (!left || !current || !point || !(current === item ? atOwnEnd(item, range) : atBodyEnd(current, point))) return false;
+  const following = left.bodies[left.bodies.indexOf(current) + 1];
+  if (following) {
+    removeBodyPlaceholder(current);
+    removeBodyPlaceholder(following);
+    const join = root.ownerDocument.createRange();
+    join.selectNodeContents(current);
+    join.collapse(false);
+    current.append(...following.childNodes);
+    following.remove();
+    finishSelectionReplacement(current, join);
+    return true;
+  }
+  const rightItem = nextItem(item);
   const right = rightItem && inspectListItem(root, rightItem);
-  if (!left || !right) return false;
+  if (!right) return false;
 
   // Branches stay independent: no list scan/coalescing, attribute rewrite or
   // descendant normalization is needed to join the items' own inline bodies.
   for (const branch of left.nestedLists) branch.remove();
-  if (left.ownEmpty) removeOwnPlaceholder(left.ownNodes);
-  if (right.ownEmpty) removeOwnPlaceholder(right.ownNodes);
+  for (const branch of right.nestedLists) branch.remove();
+  let target = current;
+  const rightBody = right.bodies[0];
+  const laterBodies = right.bodies.slice(1);
+  if (target === item && laterBodies.length) {
+    // A direct-inline item cannot also own block siblings. Promote only when
+    // preserving later right bodies requires that representation.
+    target = root.ownerDocument.createElement('p');
+    target.append(...left.ownNodes);
+    item.append(target);
+  }
+  removeBodyPlaceholder(target);
+  removeBodyPlaceholder(rightBody);
   const join = root.ownerDocument.createRange();
-  join.selectNodeContents(left.body);
+  join.selectNodeContents(target);
   join.collapse(false);
-  left.body.append(...right.ownNodes.filter((node) => node.parentNode === right.body));
-  finishSelectionReplacement(left.body, join);
-  item.append(...left.nestedLists, ...right.nestedLists);
+  const rightNodes = rightBody === right.item ? right.ownNodes : [...rightBody.childNodes];
+  target.append(...rightNodes.filter((node) => node.parentNode === rightBody));
+  finishSelectionReplacement(target, join);
+  item.append(...laterBodies, ...left.nestedLists, ...right.nestedLists);
   right.item.remove();
   return true;
 };

@@ -1,6 +1,7 @@
 export interface ListItemBoundary {
   item: HTMLLIElement;
   body: HTMLElement;
+  bodies: HTMLElement[];
   ownNodes: ChildNode[];
   nestedLists: HTMLElement[];
   ownStart: Range;
@@ -15,6 +16,8 @@ export interface ListSelectionPlan {
   gaps: ChildNode[];
   first: ListItemBoundary;
   last: ListItemBoundary;
+  startBody: HTMLElement;
+  endBody: HTMLElement;
 }
 
 export type ListSelectionResult =

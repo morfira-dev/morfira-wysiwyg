@@ -162,7 +162,7 @@ test('invalid inline schema data rejects before a list cut and retains existing 
 test('left nested branches and semantic block bodies are rejected without native partial deletion', async ({ page }) => {
   for (const html of [
     '<ul><li>Alpha <strong>one</strong><ul><li>Selected branch</li></ul></li><li><em>Beta</em> tail</li></ul><p>Outside</p>',
-    '<ul><li><p>Alpha <strong>one</strong></p><p>Second body</p></li><li><em>Beta</em> tail</li></ul><p>Outside</p>',
+    '<ul><li><p>Alpha <strong>one</strong></p><pre>Second body</pre></li><li><em>Beta</em> tail</li></ul><p>Outside</p>',
     '<ul><li><p data-mw-node="test:body" data-id="owned">Alpha <strong>one</strong></p></li><li><em>Beta</em> tail</li></ul><p>Outside</p>',
     '<ul><li>Alpha <img src="/logo.svg" alt="Original"><strong>one</strong></li><li><em>Beta</em> tail</li></ul><p>Outside</p>',
   ]) {

@@ -117,7 +117,7 @@ test('Delete at the last nested item does not lift or merge into a parent siblin
   expect(await page.evaluate(() => ({ html: window.editor.getHTML(), selection: window.editor.getSelection(), undo: window.editor.canUndo(), changes: window.changes.length }))).toEqual({ html: original, selection: before, undo: false, changes: 0 });
 });
 
-for (const body of ['<p>Block</p><p>body</p>', 'Image<img src="/logo.svg" alt="A">']) test(`unsupported next-item body is an atomic forward-Delete barrier: ${body}`, async ({ page }) => {
+for (const body of ['<p>Block</p><pre>body</pre>', 'Image<img src="/logo.svg" alt="A">']) test(`unsupported next-item body is an atomic forward-Delete barrier: ${body}`, async ({ page }) => {
   const original = `<ul><li>Left</li><li>${body}</li><li>Keep</li></ul>`;
   await initialize(page, original);
   await selectOwnEnd(page, ':scope > ul > li');
@@ -245,7 +245,7 @@ test('noncancelable beforeinput keeps native ownership without a manual list joi
   expect(result).toEqual({ prevented: false, html: original, changes: 0, undo: false });
 });
 
-for (const body of ['<p>Body</p><p>Other</p>', '<pre>Body</pre>', '<blockquote><p>Body</p></blockquote>']) test(`an unsupported block-body text endpoint is protected from a forward cross-item join: ${body}`, async ({ page }) => {
+for (const body of ['<p>Body</p><pre>Other</pre>', '<pre>Body</pre>', '<blockquote><p>Body</p></blockquote>']) test(`an unsupported block-body text endpoint is protected from a forward cross-item join: ${body}`, async ({ page }) => {
   const original = `<ul><li>${body}</li><li>Right</li></ul>`;
   await initialize(page, original);
   await page.evaluate(() => {

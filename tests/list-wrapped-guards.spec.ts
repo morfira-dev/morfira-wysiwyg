@@ -222,10 +222,10 @@ test('wrapped bodies: a cached backward selection survives toolbar focus without
   })).toEqual({ anchorRight: true, anchor: 2, focusLeft: true, focus: 6 });
 });
 
-test('wrapped bodies: semantic roots and multiple body blocks reject without touching original DOM', async ({ page }) => {
+test('wrapped bodies: semantic roots and unsupported structural bodies reject without touching original DOM', async ({ page }) => {
   for (const first of [
     '<p data-mw-node="test:body" data-id="owned">Alpha <strong>one</strong></p>',
-    '<p>Alpha <strong>one</strong></p><p>Second</p>',
+    '<p>Alpha <strong>one</strong></p><pre>Second</pre>',
     '<p>Alpha <strong>one</strong><img src="/logo.svg" alt="Original"></p>',
   ]) {
     await initialize(page, `<ul><li>${first}</li><li><h3><em>Beta</em> tail</h3></li></ul><p>Outside</p>`, [body]);

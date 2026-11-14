@@ -93,8 +93,8 @@ for (const left of ['<p style="text-align: center"><strong>A</strong></p>', 'A']
   expect(await page.evaluate(() => window.editor.getHTML())).toBe(original);
 });
 
-for (const inputType of ['insertParagraph', 'insertLineBreak']) test(`multiple wrapped blocks are an atomic ${inputType} barrier`, async ({ page }) => {
-  const original = '<ul><li><p>AB</p><p>CD</p></li></ul>';
+for (const inputType of ['insertParagraph', 'insertLineBreak']) test(`an interleaved list branch is an atomic ${inputType} barrier`, async ({ page }) => {
+  const original = '<ul><li><p>AB</p><ul><li>Branch</li></ul><p>CD</p></li></ul>';
   await initialize(page, original);
   await caretIn(page, 'p', 1);
   const prevented = await page.evaluate((inputType) => {

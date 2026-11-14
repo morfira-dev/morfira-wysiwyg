@@ -746,7 +746,11 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     if (!composing && !event.isComposing && !readOnly && !event.ctrlKey && !event.metaKey && !event.altKey && (event.key === 'Enter' || event.key === 'Backspace' || event.key === 'Delete')) {
       const type = event.key === 'Backspace' ? 'deleteContentBackward' : event.key === 'Delete' ? 'deleteContentForward' : event.shiftKey ? 'insertLineBreak' : 'insertParagraph';
       const wrappedInput = inspectWrappedListInput(surface, type);
-      if (wrappedInput !== 'eligible' && wrappedInput !== 'blocked' && handlesListInput(surface, type)) {
+      const listReplacement = type === 'deleteContentBackward' || type === 'deleteContentForward'
+        ? listSelectionReplacement(surface).status !== 'unowned' : false;
+      const listOwned = listReplacement || wrappedInput === 'eligible' || wrappedInput === 'blocked'
+        || handlesListForwardDelete(surface, type);
+      if (!listOwned && handlesListInput(surface, type)) {
         event.preventDefault();
         clearTyping();
         pendingInput = undefined;
@@ -754,7 +758,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         return;
       }
       // Enter must reach beforeinput so optional typing rules can consume it first.
-      if ((event.key !== 'Enter' || event.shiftKey) && handlesBlockInput(surface, type)) {
+      if (!listOwned && (event.key !== 'Enter' || event.shiftKey) && handlesBlockInput(surface, type)) {
         event.preventDefault();
         clearTyping();
         pendingInput = undefined;

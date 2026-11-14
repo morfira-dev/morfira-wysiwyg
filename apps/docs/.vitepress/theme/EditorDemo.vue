@@ -48,7 +48,7 @@ const pastePlain = ref('First <literal>\nSecond');
 const pasteHTML = ref('<p><strong>First</strong></p><h3><u>Second</u></h3>');
 const listReplacement = ref('X');
 const listInlineHTML = ref('<u>Inserted</u>');
-const listBodyMode = ref<'inline' | 'paragraph' | 'heading' | 'mixed'>('inline');
+const listBodyMode = ref<'inline' | 'paragraph' | 'heading' | 'mixed' | 'multiblock'>('inline');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
 const cellColor = ref('#eeeaff'); const borderColor = ref('#6658e8'); const widthColumn = ref(1); const widthValue = ref(180);
 const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛицензия\tMIT'); const bufferFormat = ref<'text' | 'html'>('text');
@@ -70,6 +70,8 @@ const listSample = () => t(
 const stylingSample = () => `<h2>${t('Цвета и ссылки', 'Colors and links')}</h2><p><span style="color: #6658e8">${t('Цветной текст', 'Colored text')}</span> · <span style="background-color: #fff59d">${t('Важная мысль', 'An important thought')}</span> · <a href="https://example.com" target="_blank" title="Example">${t('Редактируемая ссылка', 'Editable link')}</a></p><p>${t('Выдели часть текста или поставь курсор внутри ссылки. Поля справа сохраняют позицию.', 'Select some text or place the caret in a link. The fields on the right preserve your position.')}</p>`;
 const inputSample = () => '<p>Alpha <strong>one</strong></p><h2><em>Beta</em> tail</h2><p>Keep</p><blockquote><p>Quote <strong>one</strong></p><p><em>two</em> end</p></blockquote><table><tbody><tr><td rowspan="2"><p>Cell <strong>one</strong></p><h3><em>two</em> end</h3></td><td><p>Neighbor A</p></td></tr><tr><td><p>Neighbor B</p></td></tr></tbody></table><p><br></p>';
 const listSelectionSample = () => {
+  if (listBodyMode.value === 'multiblock')
+    return '<ul><li><p style="text-align: center">Alpha <strong>one</strong></p><h2>Middle</h2></li><li><h3 style="text-align: right"><em>Beta</em> tail</h3><p>After body</p><ul><li>Nested branch</li></ul></li><li>Keep item</li></ul><p>Keep paragraph</p>';
   const body = (html: string, last: boolean) => {
     const tag = listBodyMode.value === 'paragraph' ? 'p'
       : listBodyMode.value === 'heading' ? (last ? 'h3' : 'h2')
@@ -174,6 +176,14 @@ const selectListItems = (boundary = false) => run((instance) => {
     selection.addRange(range);
   }
   else selection.setBaseAndExtent(end, 2, start, start.textContent!.length);
+}, false);
+const selectListItemBlocks = () => run((instance) => {
+  const item = instance.surface.querySelector(':scope > ul > li');
+  const start = item?.querySelector(':scope > p')?.firstChild;
+  const end = item?.querySelector(':scope > h2')?.firstChild;
+  if (start?.nodeType !== 3 || end?.nodeType !== 3 || (end.textContent?.length ?? 0) < 3)
+    throw new Error(t('Загрузи пример «Несколько блоков» заново.', 'Load the “Multiple blocks” sample again.'));
+  document.getSelection()!.setBaseAndExtent(end, 3, start, start.textContent!.length);
 }, false);
 const insertListExample = (plain: boolean) => run((instance) => {
   if (!plain) { instance.insertHTML(listInlineHTML.value); return; }
@@ -385,16 +395,17 @@ onBeforeUnmount(() => {
         </fieldset></details>
         <details class="lab-list-selection"><summary>{{ t('Выделение пунктов списка', 'List item selection') }}</summary><fieldset :disabled="!ready || readOnly">
           <p class="lab-hint">{{ t('Новый сценарий: код добавлен, проверки отложены. Загрузи одноимённый пример в меню «Документ», выдели пункты и попробуй ввод, Backspace/Delete или вставку ниже. Вложенная ветка последнего пункта должна сохраниться.', 'New scenario: implemented with validation deferred. Load this sample from the Document menu, select its items, then try typing, Backspace/Delete or the insertion controls below. The last item’s nested branch must remain.') }}</p>
-          <label>{{ t('Содержимое пункта', 'Item body') }}<select v-model="listBodyMode" :aria-label="t('Содержимое пункта', 'Item body')"><option value="inline">{{ t('Строчный текст', 'Inline text') }}</option><option value="paragraph">{{ t('Абзацы', 'Paragraphs') }}</option><option value="heading">{{ t('Заголовки', 'Headings') }}</option><option value="mixed">{{ t('Абзац и заголовок', 'Paragraph and heading') }}</option></select></label>
+          <label>{{ t('Содержимое пункта', 'Item body') }}<select v-model="listBodyMode" :aria-label="t('Содержимое пункта', 'Item body')"><option value="inline">{{ t('Строчный текст', 'Inline text') }}</option><option value="paragraph">{{ t('Абзацы', 'Paragraphs') }}</option><option value="heading">{{ t('Заголовки', 'Headings') }}</option><option value="mixed">{{ t('Абзац и заголовок', 'Paragraph and heading') }}</option><option value="multiblock">{{ t('Несколько блоков', 'Multiple blocks') }}</option></select></label>
           <button @click="loadListBodySample">{{ t('Загрузить пример с блоками', 'Load block-body sample') }}</button>
-          <p class="lab-hint">{{ t('Кнопка заменяет документ выбранным примером. В режиме блоков первый абзац или заголовок и его выравнивание должны сохраняться при замене; вложенный список остаётся снаружи блока. Enter делит непустой пункт, Shift+Enter вставляет перенос внутри блока. Эти сценарии ещё не проверены.', 'The button replaces the document with the selected sample. In block modes, replacement must retain the first paragraph or heading and its alignment; the nested list stays outside that block. Enter splits a nonempty item; Shift+Enter inserts a line break inside its body. These scenarios are not validated yet.') }}</p>
+          <p class="lab-hint">{{ t('Кнопка заменяет документ выбранным примером. При замене сохраняются начальный блок и его выравнивание, невыделенные блоки после конечного тела и вложенные списки вне блоков. Enter делит пункт и переносит последующие блоки; Shift+Enter добавляет перенос внутри одного блока. Эти сценарии ещё не проверены.', 'The button replaces the document with the selected sample. Replacement retains the starting block and its alignment, unselected blocks after the ending body and nested lists outside bodies. Enter splits the item and moves subsequent blocks; Shift+Enter adds a line break inside one block. These scenarios are not validated yet.') }}</p>
           <button @click="selectListItems(false)">{{ t('Выделить пункты', 'Select items') }}</button>
+          <button v-if="listBodyMode === 'multiblock'" @click="selectListItemBlocks">{{ t('Выделить блоки пункта', 'Select item blocks') }}</button>
           <label>{{ t('Текст замены', 'Replacement text') }}<input v-model="listReplacement" :aria-label="t('Текст замены', 'Replacement text')"></label>
           <button @click="insertListExample(true)">{{ t('Заменить текстом', 'Replace with text') }}</button>
           <label>{{ t('Строчный HTML', 'Inline HTML') }}<textarea v-model="listInlineHTML" :aria-label="t('Строчный HTML', 'Inline HTML')" rows="3" spellcheck="false"></textarea></label>
           <button @click="insertListExample(false)">{{ t('Заменить HTML', 'Replace with HTML') }}</button>
           <button @click="selectListItems(true)">{{ t('Курсор перед Delete', 'Caret before Delete') }}</button>
-          <p class="lab-hint">{{ t('Последняя кнопка ставит курсор в конец первого пункта: нажми Delete в редакторе. Выделения между списком и абзацем или разными контейнерами, сложные тела пунктов и многоабзацная вставка — отдельные этапы.', 'The last button places the caret at the first item’s end: press Delete in the editor. Selections between a list and a paragraph or different containers, complex item bodies and multi-block insertion are separate milestones.') }}</p>
+          <p class="lab-hint">{{ t('«Курсор перед Delete» ставит курсор в конец первого тела: в режиме «Несколько блоков» Delete соединяет два блока внутри пункта. Backspace в начале следующего блока тоже соединяет их; в начале первого блока многоблочного пункта он пока заблокирован. Выделения между списком и абзацем или разными контейнерами, семантические тела и многоабзацная вставка — отдельные этапы.', '“Caret before Delete” places the caret at the first body’s end: in Multiple blocks mode, Delete joins two bodies inside the item. Backspace at the next body’s start also joins them; at the first body’s start in a multi-block item it is currently blocked. Selections between a list and a paragraph or different containers, semantic bodies and multi-block insertion are separate milestones.') }}</p>
         </fieldset></details>
         <details class="lab-suggestions"><summary>{{ t('Упоминания и slash-шаблоны', 'Mentions and slash snippets') }}</summary><fieldset :disabled="!ready">
           <div class="lab-button-grid"><button :disabled="readOnly" @click="startSuggestions('mentions')">{{ t('Новый пример @an', 'New @an example') }}</button><button :disabled="readOnly" @click="startSuggestions('slash')">{{ t('Новый пример /sig', 'New /sig example') }}</button></div>

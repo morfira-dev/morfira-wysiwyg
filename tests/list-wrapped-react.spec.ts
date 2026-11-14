@@ -1,5 +1,45 @@
 import { expect, test } from '@playwright/test';
 
+test('React StrictMode multi-block item replacement preserves surrounding blocks through controlled feedback', async ({ page }) => {
+  await page.goto('/?adapter=react');
+  const content = page.getByRole('textbox');
+  await expect(content).toHaveText('Initial content');
+  const original = '<ul><li><p>Before</p><h2>Alpha</h2><p><em>Beta</em> tail</p><h3>After</h3><ul><li>Branch</li></ul></li></ul>';
+  await page.evaluate((value) => {
+    window.editor.setHTML(value);
+    window.changes.length = 0;
+    const root = window.editor.surface;
+    root.focus();
+    document.getSelection()!.setBaseAndExtent(root.querySelector('em')!.firstChild!, 2, root.querySelector('h2')!.firstChild!, 2);
+  }, original);
+  const after = await content.locator('h3').elementHandle();
+  const branch = await content.locator('li > ul').elementHandle();
+  await page.keyboard.insertText('X');
+  const replaced = '<ul><li><p>Before</p><h2>AlX<em>ta</em> tail</h2><h3>After</h3><ul><li>Branch</li></ul></li></ul>';
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
+  expect(await page.evaluate(() => window.changes.map((change) => change.html))).toEqual([replaced]);
+  expect(await after!.evaluate((node) => node.isConnected && node === window.editor.surface.querySelector('h3'))).toBe(true);
+  expect(await branch!.evaluate((node) => node.isConnected && node === window.editor.surface.querySelector('li > ul'))).toBe(true);
+  await page.evaluate(() => window.editor.undo());
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(original);
+  expect(await page.evaluate(() => {
+    const root = window.editor.surface;
+    const selection = document.getSelection()!;
+    return { anchor: selection.anchorNode === root.querySelector('em')!.firstChild, anchorOffset: selection.anchorOffset, focus: selection.focusNode === root.querySelector('h2')!.firstChild, focusOffset: selection.focusOffset };
+  })).toEqual({ anchor: true, anchorOffset: 2, focus: true, focusOffset: 2 });
+  await page.evaluate(() => window.editor.redo());
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
+  await page.keyboard.insertText('!');
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced.replace('AlX', 'AlX!'));
+  const changes = await page.evaluate(() => window.changes.length);
+  await page.getByRole('button', { name: 'Toggle readonly', exact: true }).click();
+  await page.getByRole('button', { name: 'Update value', exact: true }).click();
+  await expect(content).toHaveText('External update');
+  expect(await page.evaluate(() => ({ changes: window.changes.length, undo: window.editor.canUndo() }))).toEqual({ changes, undo: false });
+  await page.evaluate(() => window.dispose());
+  await expect(content).toHaveCount(0);
+});
+
 test('React StrictMode paragraph/heading list replacement retains backward history branches and the next typing caret', async ({ page }) => {
   await page.goto('/?adapter=react');
   const content = page.getByRole('textbox');
