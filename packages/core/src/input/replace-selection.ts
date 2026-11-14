@@ -1,4 +1,5 @@
 import { activeRange } from '../selection/index.js';
+import type { SelectionReplacement, CutSelectionReplacement } from './internal-types.js';
 
 const leafTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
 const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br']);
@@ -28,18 +29,19 @@ const selectedLeaves = (root: HTMLElement, range: Range): HTMLElement[] | undefi
 
 export const handlesSelectionReplacement = (root: HTMLElement, inputType: string, data: string | null): boolean => {
   if (inputType !== 'deleteContentBackward' && inputType !== 'deleteContentForward' && !(inputType === 'insertText' && typeof data === 'string')) return false;
-  const range = activeRange(root);
-  return Boolean(range && !range.collapsed && selectedLeaves(root, range));
+  return Boolean(selectionReplacement(root));
 };
 
-/** Replace only ordinary sibling leaves inside the editor's validated transaction. */
-export const replaceSelection = (root: HTMLElement, text: string): void => {
-  const range = activeRange(root);
+export const selectionReplacement = (root: HTMLElement, range: Range | undefined = activeRange(root)): SelectionReplacement | undefined => {
   const leaves = range && !range.collapsed ? selectedLeaves(root, range) : undefined;
-  if (!range || !leaves) return;
+  return range && leaves ? { range, leaves } : undefined;
+};
+
+/** Shared live cut, called only after eligibility and detached import validation. */
+export const cutSelectionReplacement = ({ range, leaves }: SelectionReplacement): CutSelectionReplacement => {
   const left = leaves[0];
   const right = leaves[leaves.length - 1];
-  const document = root.ownerDocument;
+  const document = left.ownerDocument;
   const emptyLeft = !left.textContent && left.querySelectorAll('br').length <= 1;
   const emptyRight = !right.textContent && right.querySelectorAll('br').length <= 1;
   // deleteContents may collapse its own range outside a partially selected mark.
@@ -64,23 +66,38 @@ export const replaceSelection = (root: HTMLElement, text: string): void => {
     for (const placeholder of left.querySelectorAll('br')) placeholder.remove();
   }
   for (const leaf of leaves.slice(1)) leaf.remove();
+  return { left, right, tail, caret };
+};
 
+export const ensureReplacementPlaceholder = (leaf: HTMLElement, caret: Range): void => {
+  if (!leaf.textContent && !leaf.querySelector('br,img')) {
+    // An empty semantic inline still owns metadata; keep it and its insertion context.
+    const placeholder = leaf.ownerDocument.createElement('br');
+    caret.insertNode(placeholder);
+    caret.setStartBefore(placeholder);
+    caret.collapse(true);
+  }
+};
+
+export const finishSelectionReplacement = (leaf: HTMLElement, caret: Range): void => {
+  ensureReplacementPlaceholder(leaf, caret);
+  leaf.normalize();
+  const selection = leaf.ownerDocument.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(caret);
+};
+
+/** Replace only ordinary sibling leaves inside the editor's validated transaction. */
+export const replaceSelection = (root: HTMLElement, text: string): void => {
+  const selected = selectionReplacement(root);
+  if (!selected) return;
+  const { left, tail, caret } = cutSelectionReplacement(selected);
   if (text) {
-    const inserted = document.createTextNode(text);
+    const inserted = root.ownerDocument.createTextNode(text);
     caret.insertNode(inserted);
     caret.setStart(inserted, inserted.length);
     caret.collapse(true);
   }
   left.append(tail);
-  if (!left.textContent && !left.querySelector('br')) {
-    // An empty semantic inline still owns metadata; keep it and its insertion context.
-    const placeholder = document.createElement('br');
-    caret.insertNode(placeholder);
-    caret.setStartBefore(placeholder);
-    caret.collapse(true);
-  }
-  left.normalize();
-  const selection = document.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(caret);
+  finishSelectionReplacement(left, caret);
 };

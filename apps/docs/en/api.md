@@ -68,11 +68,45 @@ The caret is immediately after `X`, outside the right-hand `em`. One undo restor
 
 The replacement payload inherits the starting inline context; it does not force formatting on later native input. If replacement starts inside a link and its resulting caret is at the link edge, `X` and the immediate caret remain inside the link, while the next ordinary character follows the existing native link-boundary policy: outside the link, before the retained right suffix. Logical caret position and separate history are preserved; no new forced link-typing state is introduced.
 
-This path requires cancelable `beforeinput`; already canceled events, read-only and active composition retain their existing guards. It does not introduce a general structural-selection model. Replacement across containers/cells, across table/figure/list/pre/hr or an independent SDK semantic block, paste, drag/drop, word deletion and `insertReplacementText` receive no new normalization through this handler. Noncancelable events retain the previous native path. Synthetic event tests do not certify real mobile keyboards, autocorrection, dictation or system IME.
+This path requires cancelable `beforeinput`; already canceled events, read-only and active composition retain their existing guards. It does not introduce a general structural-selection model. Replacement across containers/cells, across table/figure/list/pre/hr or an independent SDK semantic block, drag/drop, word deletion and `insertReplacementText` receive no new normalization through this handler. Clipboard paste has a separate contract below. Noncancelable events retain the previous native path. Synthetic event tests do not certify real mobile keyboards, autocorrection, dictation or system IME.
 
 Public `{ index, length }` values are UTF-16 text offsets. Empty blocks and line breaks may have distinct DOM positions with identical text offsets; this API does not replace a structural selection model. Internal history uses DOM bookmarks to restore those positions. A changed external value replaces the document and clears history; do not retain a DOM Range from the old document for a later edit.
 
 A semantic paragraph/heading registered through the [SDK](/en/plugin-sdk) preserves its wrapper, `data-mw-node` and validated attributes when split inside its text. Enter at a semantic heading end adds an ordinary paragraph without semantic data; Enter in an empty semantic heading preserves the original empty node and adds an ordinary paragraph after it. Independent semantic blocks are barriers to generic Backspace/Delete joins and the multi-block replacement described above. Their identity is not copied onto an incompatible HTML tag or lost when exiting a heading. Replacement between ordinary child blocks inside one semantic blockquote is supported and preserves the ancestor's metadata.
+
+## Pasting over a selection between blocks
+
+`editor.insertHTML(html)` and clipboard paste share the replacement boundaries for the ordinary sibling blocks described above. Source leaves allow text, supported inline marks, links, `span`, `code` and `br`; a block containing an existing inline image is outside this path. The incoming fragment may still contain allowed images. The first block prefix, formatted last-block suffix, unrelated blocks and other cells are preserved. The entire incoming fragment passes the editor's schema before changing the live document.
+
+| Incoming fragment | Result composition |
+| --- | --- |
+| Inline markup or one ordinary `p` | Inserted in the original inline context. The incoming `p` wrapper is removed, the left block attributes remain, and the right suffix joins it |
+| Several ordinary `p`/`h1`–`h6` blocks | The first block's children continue the left block; its attributes take precedence over the first incoming wrapper. Middle and final incoming blocks retain their tags and attributes; the right suffix joins the final block |
+| Structural or mixed HTML | Incoming blocks are spliced between the retained left prefix and the right suffix in its original wrapper. Loose inline runs are wrapped in `p`; formatting-only whitespace between root blocks is discarded |
+
+In this path, a single incoming heading retains its own wrapper. Semantic `p`/heading wrappers with `data-mw-node` are not unwrapped or retagged here; this does not broaden the previous insertion contract within one block or across other structures. Incoming links do not nest in an existing link: when the selection starts there, the fragment is inserted after the retained starting `a`, preserving the incoming URL.
+
+For the `Alpha`/`Beta` selection above:
+
+```ts
+editor.insertHTML('<p><strong>First</strong></p><h3>Second</h3>');
+```
+
+the result is:
+
+```html
+<p>Alpha <strong>First</strong></p><h3>Second<em>ta</em> tail</h3><p>Keep</p>
+```
+
+The caret is after `Second`, before the retained `em`. For an inline fragment it stays after the payload inside the left block; after structural insertion it is at the start of the right suffix. If no suffix remains, an ordinary editable paragraph is created after the inserted blocks. Subsequent input continues there; undo/redo restore the document and exact selection direction. A standalone insertion is one isolated history operation with one `change`; a nested insertion joins the outer `transact`.
+
+The pasted fragment's formatting follows the rules above. Later native input uses the browser's formatting-boundary behavior: for example, after a trailing pasted `br` before a marked suffix, a new character may inherit that suffix's mark or remain outside it. The exact position before the suffix and separate history are preserved; identical later mark inheritance across engines is not promised.
+
+A nonempty clipboard `text/html` takes precedence over `text/plain`. Plain text stays literal: CRLF, LF and lone CR become `br`, and HTML-looking text does not become elements. If sanitization empties the HTML, the selection is not deleted and plain text is not used as a fallback. Empty fragments add no history. An already canceled `paste`, read-only and active composition block this insertion.
+
+Invalid data for a known semantic node and structure unsupported by this path are rejected before editing: `insertHTML` throws, while clipboard paste leaves the document unchanged without an uncaught event error. A nested `insertHTML` failure inside `transact` poisons the whole outer transaction even if the application catches it. A table payload inside `td/th`, nested tables and orphan root `li`, `figcaption` or table parts are not inserted through this path.
+
+Try **Paste between blocks** on the homepage or in the [playground](/en/playground): **Select sample**, then **Insert text** or **Insert HTML**. The example uses the public API; native clipboard is tested separately. Source selections across containers/cells or independent lists, tables and figures remain outside the new normalization. This insertion does not promise exact Word/Excel/Google Docs compatibility; synthetic ClipboardEvent cases do not establish OS clipboard permissions or real mobile IME support.
 
 ## Formatting
 

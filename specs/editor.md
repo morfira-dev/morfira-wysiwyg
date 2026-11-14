@@ -18,6 +18,8 @@ Status: implemented preview contract. Acceptance scenarios are exercised in `tes
 
 Composition event ordering, interim edits, command guards and cancellation follow `specs/composition.md`. Ordinary paragraph/heading Enter and boundary deletion follow `specs/block-boundaries.md`. Noncollapsed typing/deletion across ordinary sibling leaves follows `specs/input-replacement.md`; unsupported structural and cross-container selections retain their existing input paths.
 
+HTML/API insertion and clipboard replacement across those ordinary sibling leaves follow `specs/paste-replacement.md`. Incoming data is prepared before the outer live edit; inline, ordinary multi-block and structural payload composition have distinct documented boundaries. This does not establish general structural source selection, nested-table support or Office paste fidelity.
+
 ## Acceptance scenarios
 
 1. Select part of a sentence, toggle bold on/off, undo/redo and recover exact text and selection. Existing neighboring formats remain intact.

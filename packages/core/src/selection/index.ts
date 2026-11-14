@@ -33,22 +33,29 @@ export const bookmark = (root: HTMLElement): SelectionBookmark | undefined => {
   const [end, endOffset] = stableBoundary(range.endContainer, range.endOffset);
   return { start: nodePath(root, start), startOffset, end: nodePath(root, end), endOffset, backward: !range.collapsed && selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset };
 };
-export const restoreBookmark = (root: HTMLElement, saved: SelectionBookmark | undefined): void => {
+/** Resolve a remembered selection without changing focus or the document selection. */
+export const rangeFromBookmark = (root: HTMLElement, saved: SelectionBookmark | undefined): Range | undefined => {
   if (!saved)
     return;
   const resolve = (path: number[]) => path.reduce<Node>((node, index) => node.childNodes[index] ?? node, root);
   const start = resolve(saved.start);
   const end = resolve(saved.end);
   const limit = (node: Node, offset: number) => Math.min(offset, node.nodeType === 3 ? (node.textContent?.length ?? 0) : node.childNodes.length);
-  const selection = root.ownerDocument.getSelection();
-  if (!selection)
-    return;
   const startOffset = limit(start, saved.startOffset);
   const endOffset = limit(end, saved.endOffset);
+  const range = root.ownerDocument.createRange();
+  range.setStart(start, startOffset);
+  range.setEnd(end, endOffset);
+  return range;
+};
+export const restoreBookmark = (root: HTMLElement, saved: SelectionBookmark | undefined): void => {
+  const range = rangeFromBookmark(root, saved);
+  const selection = root.ownerDocument.getSelection();
+  if (!range || !saved || !selection) return;
   if (saved.backward)
-    selection.setBaseAndExtent(end, endOffset, start, startOffset);
+    selection.setBaseAndExtent(range.endContainer, range.endOffset, range.startContainer, range.startOffset);
   else
-    selection.setBaseAndExtent(start, startOffset, end, endOffset);
+    selection.setBaseAndExtent(range.startContainer, range.startOffset, range.endContainer, range.endOffset);
 };
 export const readTextSelection = (root: HTMLElement): TextSelection | undefined => {
   const range = activeRange(root);

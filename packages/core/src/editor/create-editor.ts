@@ -1,11 +1,9 @@
 import { createDocumentSchema } from '../schema/index.js';
-import type { DocumentSchema } from '../schema/types.js';
 import { createCommandRegistry } from '../commands/index.js';
-import { activeRange, bookmark, placeCaret, readTextSelection, restoreBookmark, selectText } from '../selection/index.js';
+import { activeRange, bookmark, placeCaret, rangeFromBookmark, readTextSelection, restoreBookmark, selectText } from '../selection/index.js';
 import type { SelectionBookmark } from '../selection/index.js';
 import { editListInput, handlesListInput, indentList, listState, selectedBlocks } from '../lists/index.js';
-import { editBlockInput, handlesBlockInput } from '../input/index.js';
-import { handlesSelectionReplacement, replaceSelection } from '../input/replace-selection.js';
+import { editBlockInput, handlesBlockInput, handlesSelectionReplacement, replaceSelection, prepareSelectionPaste, replaceSelectionWithFragment } from '../input/index.js';
 import { applyFormat, inlineFormats, readFormats } from '../formatting/index.js';
 import { inlineStyles, normalizeInlineStyle } from '../formatting/inline-attributes.js';
 import { createEventHub } from '../events/index.js';
@@ -40,13 +38,13 @@ const ensureDocument = (root: HTMLElement): boolean => {
   root.dataset.empty = String(!root.textContent && !root.querySelector('table,img,hr'));
   return normalized;
 };
-const insertFragment = (root: HTMLElement, html: string, schema: DocumentSchema): void => {
+const insertFragment = (root: HTMLElement, fragment: DocumentFragment): void => {
   const range = activeRange(root);
   if (!range)
     return;
-  const fragment = schema.renderDocument(schema.parseHTML(html));
   if (!fragment.childNodes.length)
     return;
+  if (replaceSelectionWithFragment(root, fragment)) return;
   range.deleteContents();
   const startElement = range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement;
   const block = startElement?.closest('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre');
@@ -337,6 +335,26 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       notifySelection();
   };
   const registry = createCommandRegistry({ editor: () => editor, isComposing: () => composing, assertActive });
+  const prepareHTML = (html: string): DocumentFragment => {
+    try {
+      const fragment = schema.renderDocument(schema.parseHTML(html));
+      prepareSelectionPaste(surface, fragment, activeRange(surface) ?? rangeFromBookmark(surface, lastSelection));
+      return fragment;
+    }
+    catch (error) {
+      // Invalid nested imports poison the outer edit even when its caller catches them.
+      if (transactionDepth) {
+        transactionFailed = true;
+        transactionError = error;
+      }
+      throw error;
+    }
+  };
+  const insertPrepared = (fragment: DocumentFragment): void => {
+    if (!fragment.childNodes.length) return;
+    if (!activeRange(surface) && lastSelection) restoreBookmark(surface, lastSelection);
+    runTransaction(() => insertFragment(surface, fragment));
+  };
   const editor: Editor = {
     element: container, surface, events, schema, commands: registry.commands,
     getLocale: () => {
@@ -430,7 +448,11 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       clearTyping();
       editor.transact(() => applyFormat(surface, name, value, schema));
     },
-    insertHTML: (html) => editor.transact(() => insertFragment(surface, html, schema)),
+    insertHTML: (html) => {
+      assertActive();
+      if (readOnly || composing) return;
+      insertPrepared(prepareHTML(html));
+    },
     focus: () => {
       assertActive();
       surface.focus({ preventScroll: true });
@@ -649,19 +671,22 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     }
   });
   listen('paste', (event) => {
+    if (event.defaultPrevented) return;
     event.preventDefault();
     if (readOnly || composing || !event.clipboardData)
       return;
-    editor.focus();
-    const html = event.clipboardData.getData('text/html');
-    if (html)
-      editor.insertHTML(html);
-    else {
+    let html = event.clipboardData.getData('text/html');
+    if (!html) {
       const text = event.clipboardData.getData('text/plain');
       const holder = document.createElement('div');
       holder.textContent = text;
-      editor.insertHTML(holder.innerHTML.replace(/\r?\n/g, '<br>'));
+      html = holder.innerHTML.replace(/\r\n?|\n/g, '<br>');
     }
+    let fragment: DocumentFragment;
+    try { fragment = prepareHTML(html); }
+    catch { return; }
+    // Commit/observer failures deliberately stay outside the import-only catch.
+    insertPrepared(fragment);
   });
   listen('drop', (event) => { event.preventDefault(); });
   listen('keydown', (event) => {

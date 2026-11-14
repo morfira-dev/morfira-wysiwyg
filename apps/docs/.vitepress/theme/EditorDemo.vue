@@ -41,7 +41,11 @@ const suggestionStatus = computed(() => { const state = mentionState.value.statu
 const sample = ref('showcase'); const markdownEnabled = ref(true); let markdownAPI: MarkdownCommands | undefined;
 const statisticsState = ref<StatisticsState>({ document: { characters: 0, charactersWithoutWhitespace: 0, words: 0 }, selection: { characters: 0, charactersWithoutWhitespace: 0, words: 0 } });
 let statisticsAPI: StatisticsCommands | undefined; let unstatistics: (() => void) | undefined;
-let labRange: Range | undefined; const heading = ref('0'); const list = ref(''); const alignment = ref('left');
+let labRange: Range | undefined; let labBackward = false;
+const heading = ref('0'); const list = ref(''); const alignment = ref('left');
+const pasteTarget = ref<'root' | 'quote' | 'cell'>('root');
+const pastePlain = ref('First <literal>\nSecond');
+const pasteHTML = ref('<p><strong>First</strong></p><h3><u>Second</u></h3>');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
 const cellColor = ref('#eeeaff'); const borderColor = ref('#6658e8'); const widthColumn = ref(1); const widthValue = ref(180);
 const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛицензия\tMIT'); const bufferFormat = ref<'text' | 'html'>('text');
@@ -74,7 +78,11 @@ const refresh = () => {
   if (!statisticsAPI) { const text = editor.getText().trim(); count.value = text.length; words.value = text ? text.split(/\s+/).length : 0; }
   undoAvailable.value = editor.canUndo(); redoAvailable.value = editor.canRedo();
   const range = window.getSelection()?.rangeCount ? window.getSelection()!.getRangeAt(0) : undefined;
-  if (range && editor.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer)) labRange = range.cloneRange();
+  if (range && editor.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer)) {
+    labRange = range.cloneRange();
+    const selection = window.getSelection()!;
+    labBackward = !range.collapsed && selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset;
+  }
   const formats = editor.getFormats(); const mixed = formats.mixed as string[] | undefined;
   heading.value = mixed?.includes('header') ? 'mixed' : String(formats.header ?? 0);
   list.value = mixed?.includes('list') ? 'mixed' : String(formats.list || '');
@@ -85,7 +93,11 @@ const notify = (text: string, error = false) => { message.value = text; failed.v
 const run = (action: (instance: Editor) => void, mutation = true) => {
   if (!editor || (mutation && readOnly.value)) return;
   try {
-    if (labRange && editor.surface.contains(labRange.startContainer) && editor.surface.contains(labRange.endContainer)) { const selection = window.getSelection()!; selection.removeAllRanges(); selection.addRange(labRange.cloneRange()); }
+    if (labRange && editor.surface.contains(labRange.startContainer) && editor.surface.contains(labRange.endContainer)) {
+      const selection = window.getSelection()!;
+      if (labBackward) selection.setBaseAndExtent(labRange.endContainer, labRange.endOffset, labRange.startContainer, labRange.startOffset);
+      else { selection.removeAllRanges(); selection.addRange(labRange.cloneRange()); }
+    }
     editor.focus(); action(editor); refresh(); notify('');
   }
   catch (error) { notify(error instanceof Error ? error.message : String(error), true); }
@@ -102,7 +114,7 @@ const openSuggestions = () => run(() => { closeSuggestions(); if (!mentionAPI?.o
 const startStructuralSlash = (command: string) => run((instance) => { const text = `/${command}`; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); slashAPI?.open(); });
 const startSuggestions = (kind: 'mentions' | 'slash') => run((instance) => { const text = kind === 'mentions' ? '@an' : '/sig'; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); (kind === 'mentions' ? mentionAPI : slashAPI)?.open(); });
 const sampleFactories: Record<string, () => string> = {
-  empty: () => '<p><br></p>', input: inputSample, suggestions: suggestionSample,
+  empty: () => '<p><br></p>', input: inputSample, paste: inputSample, suggestions: suggestionSample,
   markdown: markdownSample, statistics: statisticsSample, search: searchSample,
   images: imageSample, styling: stylingSample, lists: listSample,
   tables: tableSample, article, showcase,
@@ -110,6 +122,22 @@ const sampleFactories: Record<string, () => string> = {
 const loadSample = () => run((instance) => {
   instance.setHTML((sampleFactories[sample.value] ?? showcase)());
   output.value = '';
+});
+const selectPasteSample = () => run((instance) => {
+  const container = pasteTarget.value === 'root' ? instance.surface : instance.surface.querySelector(pasteTarget.value === 'quote' ? 'blockquote' : 'td[rowspan]');
+  const first = container?.firstElementChild;
+  const last = first?.nextElementSibling;
+  const start = first?.firstChild;
+  const end = last?.querySelector('em')?.firstChild;
+  if (first?.localName !== 'p' || !last || !/^h[1-6]$|^p$/.test(last.localName) || start?.nodeType !== 3 || end?.nodeType !== 3 || (end.textContent?.length ?? 0) < 2)
+    throw new Error(t('Загрузи пример «Вставка между блоками» заново.', 'Load the “Paste between blocks” sample again.'));
+  document.getSelection()!.setBaseAndExtent(end, 2, start, start.textContent!.length);
+}, false);
+const insertPasteExample = (plain: boolean) => run((instance) => {
+  if (!plain) { instance.insertHTML(pasteHTML.value); return; }
+  const holder = document.createElement('div');
+  holder.textContent = pastePlain.value.replace(/\r\n?/g, '\n');
+  instance.insertHTML(holder.innerHTML.replace(/\n/g, '<br>'));
 });
 const insertTable = () => tableRun((api) => api.insert(Number(rows.value), Number(columns.value)));
 const toggleReadOnly = () => { readOnly.value = !readOnly.value; editor?.setReadOnly(readOnly.value); refresh(); };
@@ -264,7 +292,7 @@ onBeforeUnmount(() => {
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="paste">{{ t('Вставка между блоками', 'Paste between blocks') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <label>{{ t('Язык редактора', 'Editor language') }}<select v-model="editorLocale" :disabled="!ready" :aria-label="t('Язык интерфейса редактора', 'Editor interface language')" @change="updateEditorLocale"><option value="ru">Русский</option><option value="en">English</option></select></label>
@@ -302,6 +330,16 @@ onBeforeUnmount(() => {
           <button @click="tableRun((api) => api.select({ row: fromRow - 1, column: fromColumn - 1 }, { row: toRow - 1, column: toColumn - 1 }), false)">{{ t('Выделить диапазон', 'Select range') }}</button>
           <div class="lab-fields"><label>{{ t('Фон ячеек', 'Cell background') }}<input v-model="cellColor" type="color" @change="tableRun((api) => api.background(cellColor))"></label><label>{{ t('Границы', 'Cell borders') }}<input v-model="borderColor" type="color" @change="tableRun((api) => api.border(borderColor))"></label><label>{{ t('Номер столбца', 'Column number') }}<input v-model.number="widthColumn" type="number" min="1"></label><label>{{ t('Ширина, px', 'Width, px') }}<input v-model.number="widthValue" type="number" min="40" max="4000"></label></div>
           <button @click="tableRun((api) => api.columnWidth(widthColumn - 1, widthValue))">{{ t('Применить ширину', 'Apply width') }}</button>
+        </fieldset></details>
+        <details class="lab-paste"><summary>{{ t('Вставка между блоками', 'Paste between blocks') }}</summary><fieldset :disabled="!ready || readOnly">
+          <p class="lab-hint">{{ t('Загрузи одноимённый пример в меню «Документ», выбери область и выдели пример. Вставка заменяет выделение; Undo возвращает исходный текст и направление выделения. Также можно использовать обычный Ctrl/Cmd+V в редакторе.', 'Load this sample from the Document menu, choose an area and select the sample. Insertion replaces the selection; Undo restores its original text and direction. You can also use ordinary Ctrl/Cmd+V in the editor.') }}</p>
+          <label>{{ t('Область вставки', 'Paste area') }}<select v-model="pasteTarget" :aria-label="t('Область вставки', 'Paste area')"><option value="root">{{ t('Основной текст', 'Main text') }}</option><option value="quote">{{ t('Цитата', 'Quote') }}</option><option value="cell">{{ t('Объединённая ячейка', 'Merged cell') }}</option></select></label>
+          <button @click="selectPasteSample">{{ t('Выделить пример', 'Select sample') }}</button>
+          <label>{{ t('Текст для вставки', 'Text to insert') }}<textarea v-model="pastePlain" :aria-label="t('Текст для вставки', 'Text to insert')" rows="3"></textarea></label>
+          <button @click="insertPasteExample(true)">{{ t('Вставить текст', 'Insert text') }}</button>
+          <label>{{ t('HTML для вставки', 'HTML to insert') }}<textarea v-model="pasteHTML" :aria-label="t('HTML для вставки', 'HTML to insert')" rows="4" spellcheck="false"></textarea></label>
+          <button @click="insertPasteExample(false)">{{ t('Вставить HTML', 'Insert HTML') }}</button>
+          <p class="lab-hint">{{ t('Текст вставляется буквально, переносы сохраняются. HTML проходит проверку схемы. Эти кнопки используют API редактора; доступ к системному буферу не запрашивается.', 'Text is inserted literally with line breaks preserved. HTML passes schema validation. These buttons use the editor API and do not request system clipboard access.') }}</p>
         </fieldset></details>
         <details class="lab-suggestions"><summary>{{ t('Упоминания и slash-шаблоны', 'Mentions and slash snippets') }}</summary><fieldset :disabled="!ready">
           <div class="lab-button-grid"><button :disabled="readOnly" @click="startSuggestions('mentions')">{{ t('Новый пример @an', 'New @an example') }}</button><button :disabled="readOnly" @click="startSuggestions('slash')">{{ t('Новый пример /sig', 'New /sig example') }}</button></div>
