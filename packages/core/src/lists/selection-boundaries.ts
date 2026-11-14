@@ -73,8 +73,8 @@ export const normalizeListBodyRange = (range: Range, boundary: ListItemBoundary,
 };
 
 /** A list-owned unsupported partial shape is blocked rather than natively cut. */
-export const listSelectionReplacement = (root: HTMLElement, range: Range | undefined = activeRange(root), includeSameBody = false): ListSelectionResult => {
-  if (!range || range.collapsed || !root.contains(range.startContainer) || !root.contains(range.endContainer)) return { status: 'unowned' };
+export const listSelectionReplacement = (root: HTMLElement, range: Range | undefined = activeRange(root), includeSameBody = false, includeCollapsed = false): ListSelectionResult => {
+  if (!range || (range.collapsed && !includeCollapsed) || !root.contains(range.startContainer) || !root.contains(range.endContainer)) return { status: 'unowned' };
   const firstItem = itemAt(root, range.startContainer);
   const lastItem = itemAt(root, range.endContainer);
   if (!firstItem && !lastItem) return { status: 'unowned' };
@@ -83,9 +83,11 @@ export const listSelectionReplacement = (root: HTMLElement, range: Range | undef
   const first = inspectListItem(root, firstItem);
   const last = inspectListItem(root, lastItem);
   const start = first && normalizeListBodyRange(range, first, false);
-  const end = last && normalizeListBodyRange(range, last, true);
   const startBody = first && listBodyAt(range, first, false);
-  const endBody = last && listBodyAt(range, last, true);
+  // A collapsed li-level point between blocks denotes the next body's start.
+  // Resolving its end independently would instead pick the preceding body.
+  const end = range.collapsed ? start : last && normalizeListBodyRange(range, last, true);
+  const endBody = range.collapsed ? startBody : last && listBodyAt(range, last, true);
   if (!first || !last || !start || !end || !startBody || !endBody) {
     // Preserve legacy same-item paths except an explicitly block-shaped source.
     if (!includeSameBody && firstItem === lastItem && ![...firstItem.children].some((node) => /^(p|h[1-6])$/.test(node.localName))) return { status: 'unowned' };

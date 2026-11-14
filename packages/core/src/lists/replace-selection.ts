@@ -1,4 +1,5 @@
 import { cutSelectionReplacement, ensureReplacementPlaceholder, finishSelectionReplacement, insertInlineFragment } from '../input/index.js';
+import { activeRange } from '../selection/index.js';
 import { listSelectionReplacement } from './selection-boundaries.js';
 import type { ListSelectionPlan, ListSelectionResult } from './internal-types.js';
 
@@ -37,11 +38,17 @@ const requireSupported = (selected: ListSelectionResult): ListSelectionPlan | un
   return selected.status === 'eligible' ? selected : undefined;
 };
 
+/** The transaction owner clears old caret formats only for this validated path. */
+export const handlesCollapsedListBlockPaste = (root: HTMLElement, fragment: DocumentFragment, range: Range | undefined = activeRange(root)): boolean => Boolean(range?.collapsed
+  && ordinaryBlocks(fragment)
+  && listSelectionReplacement(root, range, true, true).status === 'eligible');
+
 /** Detached import preflight: an empty sanitized fragment stays a no-op for any source. */
 export const prepareListSelectionPaste = (root: HTMLElement, fragment: DocumentFragment, range?: Range): void => {
   if (!fragment.childNodes.length) return;
   const blocks = ordinaryBlocks(fragment);
-  const selected = requireSupported(listSelectionReplacement(root, range, multiBlockCandidate(fragment)));
+  const candidate = multiBlockCandidate(fragment);
+  const selected = requireSupported(listSelectionReplacement(root, range, candidate, candidate));
   if (!selected) return;
   if (![...fragment.childNodes].every(inlinePayloadNode) && !ordinaryParagraph(fragment) && !blocks)
     throw new TypeError('List selection insertion supports inline HTML, one ordinary paragraph or multiple ordinary paragraphs/headings.');
@@ -102,7 +109,8 @@ export const replaceListSelection = (root: HTMLElement, text: string): boolean =
 export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: DocumentFragment): boolean => {
   if (!fragment.childNodes.length) return false;
   const blocks = ordinaryBlocks(fragment);
-  const selected = requireSupported(listSelectionReplacement(root, undefined, multiBlockCandidate(fragment)));
+  const candidate = multiBlockCandidate(fragment);
+  const selected = requireSupported(listSelectionReplacement(root, undefined, candidate, candidate));
   if (!selected) return false;
   prepareListSelectionPaste(root, fragment, selected.range);
   const paragraph = ordinaryParagraph(fragment);

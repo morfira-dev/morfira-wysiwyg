@@ -69,7 +69,9 @@ In the new local path, `editor.insertHTML` and HTML clipboard insertion replace 
 
 Try **Item body: Multiple blocks → Load block-body sample → Select items → Replace with multiple blocks**. Use **Select item blocks** for a selection within one item, or **Select text in one body** for a selection within one paragraph. **Multi-block HTML** edits the incoming fragment. Undo is intended to restore the original selection; these scenarios have not been executed yet.
 
-This extends only noncollapsed selections with supported source bodies. Collapsed insertion is not extended. A single heading, incoming semantic blocks, mixed inline/block fragments, lists and tables remain outside this path. Full rules and pre-mutation refusal are described in the [API](/en/api#list-item-selections-and-boundaries).
+The same multi-block fragment can be inserted at a collapsed caret inside a supported item. In the demo choose **Block insertion position → Body start, Inside a word or Body end → Caret for block insertion → Replace with multiple blocks**. The middle position is inside the first body's bold word. The source prefix joins the first incoming content and its suffix joins the last; neighboring bodies and nested branches remain. A direct inline body receives a `p` when the incoming sequence requires block siblings. No new `li` is created. Undo restores the original caret position; these scenarios have not been executed yet.
+
+A single heading, incoming semantic blocks, mixed inline/block fragments, lists and tables remain outside the new multi-block path. Native input, inline insertion and a single structural root retain their previous handlers. Full rules and pre-mutation refusal are described in the [API](/en/api#list-item-selections-and-boundaries).
 
 A single structural root, such as a heading or table, within one original body retains its earlier generic handler; the new path does not redefine that behavior.
 

@@ -49,6 +49,7 @@ const pasteHTML = ref('<p><strong>First</strong></p><h3><u>Second</u></h3>');
 const listReplacement = ref('X');
 const listInlineHTML = ref('<u>Inserted</u>');
 const listBlockHTML = ref('<p><strong>First</strong></p>\n<h3 style="text-align: right"><em>Middle</em></h3>\n<p><u>Last</u></p>');
+const listBlockCaret = ref<'start' | 'middle' | 'end'>('middle');
 const listBodyMode = ref<'inline' | 'paragraph' | 'heading' | 'mixed' | 'multiblock'>('inline');
 const listBackspaceScenario = ref<'join' | 'root' | 'nested' | 'nested-followed'>('join');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
@@ -219,6 +220,26 @@ const selectListBodyText = () => run((instance) => {
   if (start?.nodeType !== 3 || end?.nodeType !== 3)
     throw new Error(t('Загрузи пример выделения пунктов заново.', 'Reload the list item selection sample.'));
   document.getSelection()!.setBaseAndExtent(end, end.textContent!.length, start, start.textContent!.length);
+}, false);
+const selectListBodyCaret = () => run((instance) => {
+  const item = instance.surface.querySelector(':scope > ul > li');
+  const body = item?.firstElementChild?.matches('p,h1,h2,h3,h4,h5,h6') ? item.firstElementChild : item;
+  if (!body) throw new Error(t('Загрузи пример выделения пунктов заново.', 'Reload the list item selection sample.'));
+  const range = document.createRange();
+  if (listBlockCaret.value === 'middle') {
+    const text = body.querySelector(':scope > strong')?.firstChild;
+    if (text?.nodeType !== 3 || (text.textContent?.length ?? 0) < 1)
+      throw new Error(t('Загрузи пример выделения пунктов заново.', 'Reload the list item selection sample.'));
+    range.setStart(text, 1);
+    range.collapse(true);
+  }
+  else {
+    range.selectNodeContents(body);
+    range.collapse(listBlockCaret.value === 'start');
+  }
+  const selection = document.getSelection()!;
+  selection.removeAllRanges();
+  selection.addRange(range);
 }, false);
 const insertListBlocks = () => run((instance) => instance.insertHTML(listBlockHTML.value));
 const insertListExample = (plain: boolean) => run((instance) => {
@@ -441,9 +462,11 @@ onBeforeUnmount(() => {
           <label>{{ t('Строчный HTML', 'Inline HTML') }}<textarea v-model="listInlineHTML" :aria-label="t('Строчный HTML', 'Inline HTML')" rows="3" spellcheck="false"></textarea></label>
           <button @click="insertListExample(false)">{{ t('Заменить HTML', 'Replace with HTML') }}</button>
           <button @click="selectListBodyText">{{ t('Выделить текст одного блока', 'Select text in one body') }}</button>
+          <label>{{ t('Позиция вставки блоков', 'Block insertion position') }}<select v-model="listBlockCaret" :aria-label="t('Позиция вставки блоков', 'Block insertion position')"><option value="start">{{ t('Начало блока', 'Body start') }}</option><option value="middle">{{ t('Внутри слова', 'Inside a word') }}</option><option value="end">{{ t('Конец блока', 'Body end') }}</option></select></label>
+          <button @click="selectListBodyCaret">{{ t('Курсор для вставки блоков', 'Caret for block insertion') }}</button>
           <label>{{ t('HTML из нескольких блоков', 'Multi-block HTML') }}<textarea v-model="listBlockHTML" :aria-label="t('HTML из нескольких блоков', 'Multi-block HTML')" rows="4" spellcheck="false"></textarea></label>
           <button @click="insertListBlocks">{{ t('Заменить несколькими блоками', 'Replace with multiple blocks') }}</button>
-          <p class="lab-hint">{{ t('Выдели пункты, блоки пункта или текст одного блока. Два и более обычных абзаца/заголовка вставляются в сохранённый пункт: начало соединяется с первым блоком, строчный остаток — с последним. Невыделенные тела и ветки сохраняются. Одиночный заголовок, семантические блоки и смешанная структурная вставка остаются вне этого пути. Проверки пока отложены.', 'Select items, item bodies or text within one body. Two or more ordinary paragraphs/headings are inserted into the retained item: the prefix joins the first body and the inline suffix joins the last. Unselected bodies and branches remain. A single heading, semantic blocks and mixed structural insertion remain outside this path. Validation is deferred.') }}</p>
+          <p class="lab-hint">{{ t('Выдели текст или выбери позицию и поставь курсор кнопкой. «Заменить несколькими блоками» вставляет два и более обычных абзаца/заголовка и при пустом выделении: начало исходного блока соединяется с первым входящим, остаток — с последним. Невыделенные тела и ветки сохраняются. Одиночные структурные корни сохраняют прежние пути; семантические и смешанные многоузловые фрагменты не входят в этот путь. Проверки пока отложены.', 'Select text or choose a position and place the caret with the button. “Replace with multiple blocks” also inserts two or more ordinary paragraphs/headings at a collapsed caret: the source prefix joins the first incoming body and its suffix joins the last. Unselected bodies and branches remain. Single structural roots retain their previous paths; semantic and mixed multi-root fragments are outside this path. Validation is deferred.') }}</p>
           <button @click="selectListItems(true)">{{ t('Курсор перед Delete', 'Caret before Delete') }}</button>
           <p class="lab-hint">{{ t('«Курсор перед Delete» ставит курсор в конец первого тела: в режиме «Несколько блоков» Delete соединяет два блока внутри пункта. Backspace в начале следующего блока тоже соединяет их. Выделения между списком и абзацем или разными контейнерами, семантические тела и произвольная структурная вставка — отдельные этапы.', '“Caret before Delete” places the caret at the first body’s end: in Multiple blocks mode, Delete joins two bodies inside the item. Backspace at the next body’s start also joins them. Selections between a list and a paragraph or different containers, semantic bodies and arbitrary structural insertion are separate milestones.') }}</p>
           <label>{{ t('Сценарий Backspace', 'Backspace scenario') }}<select v-model="listBackspaceScenario" :aria-label="t('Сценарий Backspace', 'Backspace scenario')"><option value="join">{{ t('Соединить с предыдущим пунктом', 'Join the previous item') }}</option><option value="root">{{ t('Первый корневой пункт', 'First root item') }}</option><option value="nested">{{ t('Первый вложенный пункт', 'First nested item') }}</option><option value="nested-followed">{{ t('Вложенная ветка перед другими', 'Nested branch before others') }}</option></select></label>

@@ -6,7 +6,7 @@ The new same-list multi-item selection, boundary deletion and multiple paragraph
 
 ## Implemented baseline
 
-The local list-paste extension accepts two or more ordinary paragraphs/headings over a noncollapsed selection, including text within one body. Incoming bodies remain inside the retained item, preserving surrounding bodies, branches and history. This slice is also **not verified by execution**; arbitrary structural or semantic insertion is not claimed.
+The local list-paste extension accepts two or more ordinary paragraphs/headings over a noncollapsed selection, including text within one body, and at a collapsed caret. The source body splits into a prefix and suffix joined to the first and final incoming bodies respectively. Incoming bodies remain inside the retained item, preserving surrounding bodies, branches and history. This slice is also **not verified by execution**; arbitrary structural or semantic insertion is not claimed.
 
 The current local slice includes [minimal/standard/extended presets](/en/presets) and the [modern shell, standard panels and extended suggestion UI](/en/editor-ui).
 

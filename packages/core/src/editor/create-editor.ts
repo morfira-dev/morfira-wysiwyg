@@ -6,6 +6,7 @@ import {
   editListInput, handlesListInput, indentList, listState, selectedBlocks,
   listSelectionReplacement, prepareListSelectionPaste, replaceListSelection,
   replaceListSelectionWithFragment, handlesListForwardDelete, editListForwardDelete,
+  handlesCollapsedListBlockPaste,
   inspectWrappedListInput, editWrappedListInput,
 } from '../lists/index.js';
 import { editBlockInput, handlesBlockInput, handlesSelectionReplacement, replaceSelection, prepareSelectionPaste, replaceSelectionWithFragment } from '../input/index.js';
@@ -362,10 +363,10 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     if (!fragment.childNodes.length) return;
     if (!activeRange(surface) && lastSelection) restoreBookmark(surface, lastSelection);
     runTransaction(() => {
-      // A former collapsed-caret override must not reactivate at the same offset
-      // after replacing a selection. Capture the original snapshot first.
+      // Replacement or a new list body changes the caret's formatting context,
+      // even at the same text offset. Capture the original snapshot first.
       const range = activeRange(surface);
-      if (range && !range.collapsed) clearTyping();
+      if (range && (!range.collapsed || handlesCollapsedListBlockPaste(surface, fragment, range))) clearTyping();
       insertFragment(surface, fragment);
     });
   };

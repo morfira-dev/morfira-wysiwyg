@@ -2,7 +2,7 @@ export { inspectWrappedListInput, editWrappedListInput } from './wrapped-input.j
 import { activeRange, placeCaret, preserveRange } from '../selection/index.js';
 export { handlesListForwardDelete, editListForwardDelete } from './forward-delete.js';
 export { inspectListItem, listSelectionReplacement } from './selection-boundaries.js';
-export { prepareListSelectionPaste, replaceListSelection, replaceListSelectionWithFragment } from './replace-selection.js';
+export { prepareListSelectionPaste, replaceListSelection, replaceListSelectionWithFragment, handlesCollapsedListBlockPaste } from './replace-selection.js';
 const blocks = 'p,h1,h2,h3,h4,h5,h6,blockquote,pre,li';
 const isList = (element: Element | null): element is HTMLUListElement | HTMLOListElement => !!element && /^(ul|ol)$/.test(element.localName);
 const elementAt = (node: Node): Element | null => node instanceof Element ? node : node.parentElement;
