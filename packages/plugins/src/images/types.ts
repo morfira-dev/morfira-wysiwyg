@@ -15,13 +15,16 @@ export interface ImageOptions {
   }) => Promise<ImageValue>;
   maxFileSize?: number;
 }
+export interface ImageUploadOptions {
+  signal?: AbortSignal;
+}
 export interface ImageCommands {
   insert(value: ImageValue): void;
   select(image: HTMLImageElement): void;
   getSelected(): ImageValue | undefined;
   update(value: ImagePatch): void;
   remove(): void;
-  upload(file: File): Promise<boolean>;
+  upload(file: File, options?: ImageUploadOptions): Promise<boolean>;
   cancelUpload(): void;
   isUploading(): boolean;
 }

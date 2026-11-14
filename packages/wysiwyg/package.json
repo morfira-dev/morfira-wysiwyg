@@ -68,7 +68,20 @@
     "./web-component": {
       "types": "./dist/web-component.d.ts",
       "import": "./dist/web-component.js"
-    }
+    },
+    "./ui/links": {
+      "types": "./dist/ui/links.d.ts",
+      "import": "./dist/ui/links.js"
+    },
+    "./ui/images": {
+      "types": "./dist/ui/images.d.ts",
+      "import": "./dist/ui/images.js"
+    },
+    "./ui/search": {
+      "types": "./dist/ui/search.d.ts",
+      "import": "./dist/ui/search.js"
+    },
+    "./ui/forms.css": "./dist/ui/forms.css"
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.5.2",

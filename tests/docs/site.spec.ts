@@ -215,7 +215,7 @@ for (const english of [false, true]) test(`image metadata, captions and undo wor
   await expect(page.locator('.mw-content figcaption')).toHaveText(t('Новая подпись', 'New caption'));
   await page.getByLabel(t('URL изображения', 'Image URL'), { exact: true }).fill('javascript:evil()');
   await page.getByRole('button', { name: t('Обновить изображение', 'Update image'), exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('unsafe'); await expect(page.locator('.mw-content img')).toHaveAttribute('src', '/logo.svg');
+  await expect(page.locator('.mw-image-form [role=status]')).toHaveText(t('Не удалось применить изменения. Проверьте URL, размеры и выделение изображения.', 'Unable to apply image changes. Check the image URL, dimensions and selection.')); await expect(page.locator('.mw-content img')).toHaveAttribute('src', '/logo.svg');
   await page.getByRole('button', { name: t('Удалить изображение', 'Remove image'), exact: true }).click(); await expect(page.locator('.mw-content img')).toHaveCount(0);
   await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content figcaption')).toHaveText(t('Новая подпись', 'New caption'));
   await page.locator('.mw-content img').click();
@@ -228,7 +228,7 @@ for (const english of [false, true]) test(`image upload cancellation, result and
   await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'empty', english);
   await page.locator('.mw-content').click();
   await page.getByText(t('Ссылки и изображения', 'Links and images'), { exact: true }).click();
-  const file = page.getByLabel(t('Файл для демо загрузки', 'Demo upload file'), { exact: true });
+  const file = page.getByLabel(t('Файл изображения', 'Image file'), { exact: true });
   await file.setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from('local demo file') });
   await expect(page.getByRole('button', { name: t('Отменить загрузку', 'Cancel upload'), exact: true })).toBeEnabled();
   await page.getByRole('button', { name: t('Отменить загрузку', 'Cancel upload'), exact: true }).click();
@@ -236,10 +236,10 @@ for (const english of [false, true]) test(`image upload cancellation, result and
   await file.setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from('local demo file') });
   await expect(page.locator('.mw-content figure img')).toHaveAttribute('src', '/logo.svg');
   await expect(page.locator('.mw-content figcaption')).toHaveText(t('Демо результата callback загрузки', 'Demo upload callback result'));
-  await expect(page.getByText(t('Демо-изображение вставлено. Файл не отправлялся.', 'Demo image inserted. The file was not uploaded.'), { exact: true })).toBeVisible();
+  await expect(page.getByText(t('Изображение вставлено.', 'Image inserted.'), { exact: true })).toBeVisible();
   await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content img')).toHaveCount(0);
   await file.setInputFiles({ name: 'bad.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
-  await expect(page.getByRole('alert')).toContainText('supported raster image'); await expect(page.locator('.mw-content img')).toHaveCount(0);
+  await expect(page.locator('.mw-image-form [role=status]')).toHaveText(t('Не удалось загрузить изображение. Выберите поддерживаемый файл и повторите попытку.', 'Unable to upload this image. Choose a supported file and try again.')); await expect(page.locator('.mw-content img')).toHaveCount(0);
 });
 
 for (const english of [false, true]) test(`literal search, replacement forms and one-step undo on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
@@ -258,10 +258,11 @@ for (const english of [false, true]) test(`literal search, replacement forms and
   await panel.getByLabel(t('Заменить на', 'Replace with'), { exact: true }).fill('<b>$&</b>');
   await panel.getByRole('button', { name: t('Заменить совпадение', 'Replace match'), exact: true }).click();
   await expect(page.locator('.mw-content strong').first()).toHaveText('<b>$&</b>'); await expect(page.locator('.mw-content b')).toHaveCount(0);
-  await expect(panel.getByRole('status')).toContainText(t('из 7', 'of 7'));
+  await expect(panel.getByRole('status')).toHaveText(t('Заменено: 1', 'Replaced: 1'));
   await panel.getByLabel(t('Заменить на', 'Replace with'), { exact: true }).fill('Atlas');
   await panel.getByRole('button', { name: t('Заменить все', 'Replace all'), exact: true }).click();
   await expect(page.getByText(t('Заменено: 7', 'Replaced: 7'), { exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: t('Найти', 'Find'), exact: true }).click();
   await expect(panel.getByRole('status')).toHaveText(t('Ничего не найдено.', 'No matches found.'));
   await expect(page.locator('.mw-content td[rowspan="2"]')).toHaveText('Atlas'); await expect(page.locator('.mw-content figcaption')).toHaveText('Atlas'); await expect(page.locator('.mw-content img')).toHaveCount(1);
   await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(panel.getByRole('status')).toContainText(t('из 7', 'of 7'));

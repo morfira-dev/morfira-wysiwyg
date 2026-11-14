@@ -31,6 +31,18 @@ editor.setLocale('en', { 'tables.resizeColumn': 'Column width' });
 
 ## Локализация и новые обёртки
 
+Готовые формы подключаются отдельно: `/ui/links`, `/ui/images`, `/ui/search` и общий `/ui/forms.css`. Они не требуют фреймворка или CSS документации и не входят в граф ядра. `/ui/images` использует плагин изображений, `/ui/search` — поиска; ссылки работают с командами ядра.
+
+```ts
+import { createLinkForm } from '@morfira-dev/wysiwyg/ui/links';
+import '@morfira-dev/wysiwyg/ui/forms.css';
+
+const form = createLinkForm(document.querySelector<HTMLElement>('#link-controls')!, editor);
+// При удалении экрана: form.destroy(); затем editor.destroy().
+```
+
+Контроллеры предоставляют `element`, `refresh`, `getValues`, `setValues`, `destroy`, наследуют locale/read-only и сохраняют drafts. Примеры всех трёх форм: [RU](apps/docs/ui.md) / [EN](apps/docs/en/ui.md).
+
 `locale` и `translations` принадлежат экземпляру. Встроены RU/EN, неизвестные языки используют английский fallback; отдельные строки или свой язык задаются record переводов. `setLocale()` меняет встроенные подписи без изменения документа/истории; явные пользовательские labels остаются приоритетными. Полный каталог: [RU](apps/docs/localization.md) / [EN](apps/docs/en/localization.md).
 
 Angular 21/22: импортируйте standalone `MorfiraEditor` из `@morfira-dev/wysiwyg/angular` в `imports` компонента. Поддерживаются `[(value)]`, Reactive Forms и `ngModel` через CVA; не совмещайте form binding и `[value]` на одном экземпляре. Angular остаётся peer dependency. Примеры: [RU](apps/docs/adapters.md#angular-21--22) / [EN](apps/docs/en/adapters.md#angular-21--22).

@@ -1,5 +1,7 @@
 # Images
 
+The optional `createImageForm` is available through `@morfira-dev/wysiwyg/ui/images` and requires `images()`. It provides URL/alt/dimensions/caption, insertion/update/removal and cancellable file upload. [Standalone integration example](/en/ui#images-and-application-owned-upload). The application still owns transport and storage.
+
 Images are an optional module with no runtime dependencies. Core understands HTML `img`, `figure` and `figcaption`; the module adds selection, editing and upload commands. Import it separately:
 
 ```ts
@@ -66,6 +68,22 @@ api.cancelUpload();
 The client accepts nonempty PNG/JPEG/GIF/WebP/AVIF files by MIME and enforces a size limit (10 MiB by default). This is a preliminary gate; the server must validate files independently. SVG file uploads are rejected; existing safe SVG image URLs are allowed.
 
 Upload captures the DOM insertion position. Moving the caret does not relocate insertion. A new upload cancels the previous one. Any document edit, external replacement, read-only transition or editor destruction aborts the request via AbortSignal. Late results after cancellation are ignored; no temporary nodes or blob URLs are persisted. Editing while uploading requires restarting at a new position. Commands become unavailable after disposal; cancelUpload remains safe.
+
+### Owner-scoped upload cancellation
+
+The optional second `upload` argument has type `ImageUploadOptions`. Pass a dedicated `AbortSignal` when a particular panel or component owns the request:
+
+```ts
+import type { ImageUploadOptions } from '@morfira-dev/wysiwyg/plugins/images';
+
+const controller = new AbortController();
+const options: ImageUploadOptions = { signal: controller.signal };
+const pending = api.upload(file, options);
+controller.abort();
+const inserted = await pending; // false after cancellation
+```
+
+This signal cancels only its associated upload. Aborting an old signal cannot interrupt a newer upload; an already aborted signal starts no request and does not cancel the current one. `cancelUpload()` still cancels the editor's current upload regardless of its owner. The [ready image form](/en/ui#images-and-application-owned-upload) owns a dedicated signal and aborts it on disposal.
 
 ## Demo and appearance
 

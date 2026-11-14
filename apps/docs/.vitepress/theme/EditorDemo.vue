@@ -5,10 +5,13 @@ import type { Editor, ToolbarAction } from '@morfira-dev/wysiwyg';
 import type { MentionOption, SlashOption, SuggestionController, SuggestionState, SuggestionOption, SuggestionQuery } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import type { MarkdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
 import type { StatisticsCommands, StatisticsState } from '@morfira-dev/wysiwyg/plugins/statistics';
-import type { SearchCommands, SearchState } from '@morfira-dev/wysiwyg/plugins/search';
-import type { ImageCommands, ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
+import type { ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
+import type { LinkFormController } from '@morfira-dev/wysiwyg/ui/links';
+import type { ImageFormController } from '@morfira-dev/wysiwyg/ui/images';
+import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
 import type { TableCommands, TableClipboardData } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/style.css';
+import '@morfira-dev/wysiwyg/ui/forms.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 
@@ -18,6 +21,12 @@ const ru = computed(() => lang.value === 'ru');
 const t = (russian: string, english: string) => ru.value ? russian : english;
 const editorLocale = ref(ru.value ? 'ru' : 'en');
 const host = ref<HTMLElement>(); const toolbar = ref<HTMLElement>();
+const linkFormHost = ref<HTMLElement>();
+const imageFormHost = ref<HTMLElement>();
+const searchFormHost = ref<HTMLElement>();
+let linkForm: LinkFormController | undefined;
+let imageForm: ImageFormController | undefined;
+let searchForm: SearchFormController | undefined;
 const dark = ref(false); const readOnly = ref(false); const ready = ref(false);
 const output = ref(''); const outputFormat = ref<'html' | 'json'>('html');
 const message = ref(''); const failed = ref(false); const count = ref(0); const words = ref(0);
@@ -29,22 +38,15 @@ let mentionAPI: SuggestionController<MentionOption> | undefined; let slashAPI: S
 let unmention: (() => void) | undefined; let unslash: (() => void) | undefined; let disposeMentionMenu: (() => void) | undefined; let disposeSlashMenu: (() => void) | undefined;
 const suggestionStatus = computed(() => { const state = mentionState.value.status !== 'closed' ? mentionState.value : slashState.value; return state.status === 'closed' ? t('Подсказки закрыты', 'Suggestions closed') : state.status === 'loading' ? t('Загрузка вариантов…', 'Loading choices…') : state.status === 'error' ? t('Ошибка: попробуйте открыть подсказки снова.', 'Error: try opening suggestions again.') : t(`Найдено вариантов: ${state.items.length}`, `Choices found: ${state.items.length}`); });
 const sample = ref('showcase'); const markdownEnabled = ref(true); let markdownAPI: MarkdownCommands | undefined;
-const query = ref('Morfira'); const replacement = ref('Morfira Studio'); const matchCase = ref(false); const wholeWord = ref(false);
-const searchState = ref<SearchState>({ query: '', options: { caseSensitive: false, wholeWord: false }, matches: [], current: -1 });
 const statisticsState = ref<StatisticsState>({ document: { characters: 0, charactersWithoutWhitespace: 0, words: 0 }, selection: { characters: 0, charactersWithoutWhitespace: 0, words: 0 } });
 let statisticsAPI: StatisticsCommands | undefined; let unstatistics: (() => void) | undefined;
-let searchAPI: SearchCommands | undefined; let unsearch: (() => void) | undefined;
 let labRange: Range | undefined; const heading = ref('0'); const list = ref(''); const alignment = ref('left');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
 const cellColor = ref('#eeeaff'); const borderColor = ref('#6658e8'); const widthColumn = ref(1); const widthValue = ref(180);
 const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛицензия\tMIT'); const bufferFormat = ref<'text' | 'html'>('text');
-const url = ref('https://example.com'); const imageURL = ref('/logo.svg'); const imageAlt = ref('Morfira'); const imageWidth = ref<number | string>(64); const imageHeight = ref<number | string>(''); const imageCaption = ref('');
-const selectedImage = ref(false); const uploading = ref(false); let imageAPI: ImageCommands | undefined; let inspectedImage = '';
 const accent = ref('#6658e8'); const fontSize = ref(16); const padding = ref(28); const radius = ref(12);
 const themeStyle = computed(() => ({ '--mw-accent': accent.value, '--mw-font-size': `${fontSize.value}px`, '--mw-padding': `${padding.value}px`, '--mw-radius': `${radius.value}px` }));
 const textColor = ref('#6658e8'); const highlight = ref('#fff59d'); const activeStyles = ref('');
-const linkTitle = ref(''); const linkText = ref(''); const linkNewTab = ref(false); const editingLink = ref(false);
-let inspectedLink = '';
 let editor: Editor | undefined; let commands: TableCommands | undefined; let disposeToolbar: (() => void) | undefined;
 let unsubscribe: (() => void) | undefined; let unselect: (() => void) | undefined; let cancelled = false;
 
@@ -71,27 +73,12 @@ const refresh = () => {
   undoAvailable.value = editor.canUndo(); redoAvailable.value = editor.canRedo();
   const range = window.getSelection()?.rangeCount ? window.getSelection()!.getRangeAt(0) : undefined;
   if (range && editor.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer)) labRange = range.cloneRange();
-  uploading.value = imageAPI?.isUploading() ?? false;
-  if (range && editor.surface.contains(range.startContainer)) {
-    const image = imageAPI?.getSelected(); selectedImage.value = Boolean(image);
-    const signature = image ? JSON.stringify(image) : '';
-    if (image && signature !== inspectedImage) { imageURL.value = image.src; imageAlt.value = image.alt ?? ''; imageWidth.value = image.width ?? ''; imageHeight.value = image.height ?? ''; imageCaption.value = image.caption ?? ''; }
-    inspectedImage = signature;
-  }
   const formats = editor.getFormats(); const mixed = formats.mixed as string[] | undefined;
   heading.value = mixed?.includes('header') ? 'mixed' : String(formats.header ?? 0);
   list.value = mixed?.includes('list') ? 'mixed' : String(formats.list || '');
   activeStyles.value = ['color', 'background'].map((name) => mixed?.includes(name) ? t('Разное', 'Mixed') : String(formats[name] ?? '—')).join(' / ');
-  if (range && editor.surface.contains(range.startContainer)) {
-    const node = range.startContainer; const anchor = (node instanceof Element ? node : node.parentElement)?.closest('a');
-    editingLink.value = Boolean(anchor);
-    const signature = anchor?.outerHTML ?? '';
-    if (anchor && signature !== inspectedLink) { url.value = anchor.getAttribute('href') ?? ''; linkTitle.value = anchor.getAttribute('title') ?? ''; linkNewTab.value = anchor.getAttribute('target') === '_blank'; }
-    inspectedLink = signature;
-  }
   alignment.value = mixed?.includes('align') ? 'mixed' : String(formats.align ?? 'left');
 };
-const imageClick = (event: MouseEvent) => { if (event.target instanceof HTMLImageElement) refresh(); };
 const notify = (text: string, error = false) => { message.value = text; failed.value = error; };
 const run = (action: (instance: Editor) => void, mutation = true) => {
   if (!editor || (mutation && readOnly.value)) return;
@@ -103,13 +90,6 @@ const run = (action: (instance: Editor) => void, mutation = true) => {
 };
 const tableRun = (action: (api: TableCommands) => void, mutation = true) => run(() => { if (commands) action(commands); }, mutation);
 const format = (name: string, value: unknown) => run((instance) => instance.format(name, value));
-const find = () => run(() => { searchAPI?.setQuery(query.value, { caseSensitive: matchCase.value, wholeWord: wholeWord.value }); if (searchAPI?.getState().matches.length) searchAPI.select(0); }, false);
-const replaceMatches = (all: boolean) => {
-  let completed = false; let replaced = 0;
-  run(() => { replaced = all ? searchAPI!.replaceAll(replacement.value) : Number(searchAPI!.replaceCurrent(replacement.value)); completed = true; });
-  if (completed) notify(t(`Заменено: ${replaced}`, `Replaced: ${replaced}`));
-};
-const clearSearch = () => { if (!searchAPI) return; searchAPI.clear(); query.value = ''; notify(''); };
 const toggleMarkdown = () => { markdownAPI?.setEnabled(markdownEnabled.value); };
 const updateEditorLocale = () => {
   editor?.setLocale(editorLocale.value);
@@ -134,27 +114,13 @@ const copyRange = (cut: boolean) => tableRun((api) => {
 }, cut);
 const pasteRange = () => tableRun((api) => api.paste(bufferFormat.value === 'html' ? { html: buffer.value } : { text: buffer.value }));
 const preserveLabSelection = (event: PointerEvent) => {
+  if (event.target instanceof Element && event.target.closest('.mw-form')) return;
   const control = event.target instanceof Element ? event.target.closest('button,input,select,textarea,summary') : null;
   if (props.full && control && !editor?.element.contains(control)) {
     const selection = window.getSelection(); const range = selection?.rangeCount ? selection.getRangeAt(0) : undefined;
     if (range && editor?.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer)) labRange = range.cloneRange();
     event.stopPropagation();
   }
-};
-const insertLink = () => run((instance) => {
-  const create = !instance.getSelection()?.length && !instance.getFormats().link;
-  if (create && !linkText.value) throw new Error(t('Укажите подпись новой ссылки или выделите текст.', 'Enter new link text or select text.'));
-  instance.format('link', { href: url.value, title: linkTitle.value, target: linkNewTab.value ? '_blank' : '_self', ...(create ? { text: linkText.value } : {}) });
-});
-const imageValue = (): ImageValue => ({ src: imageURL.value, alt: imageAlt.value, caption: imageCaption.value, ...(imageWidth.value !== '' ? { width: Number(imageWidth.value) } : {}), ...(imageHeight.value !== '' ? { height: Number(imageHeight.value) } : {}) });
-const insertImage = () => run(() => imageAPI?.insert(imageValue()));
-const updateImage = () => run(() => imageAPI?.update({ ...imageValue(), width: imageWidth.value === '' ? null : Number(imageWidth.value), height: imageHeight.value === '' ? null : Number(imageHeight.value) }));
-const uploadImage = (event: Event) => {
-  const input = event.target as HTMLInputElement; const file = input.files?.[0]; if (!file) return;
-  run(() => {
-    const operation = imageAPI!.upload(file); uploading.value = imageAPI!.isUploading();
-    void operation.then((inserted) => { if (!cancelled) notify(inserted ? t('Демо-изображение вставлено. Файл не отправлялся.', 'Demo image inserted. The file was not uploaded.') : t('Загрузка отменена.', 'Upload cancelled.')); }).catch((error: unknown) => { if (!cancelled) notify(String(error), true); }).finally(() => { uploading.value = false; input.value = ''; });
-  });
 };
 const demoUpload = (_file: File, { signal }: { signal: AbortSignal }): Promise<ImageValue> => new Promise((resolve, reject) => {
   const abort = () => { window.clearTimeout(timer); signal.removeEventListener('abort', abort); reject(new DOMException('Cancelled', 'AbortError')); };
@@ -191,7 +157,33 @@ const snippets = (request: SuggestionQuery) => localSuggestions<SlashOption>([
   { id: 'review', label: t('На проверку', 'For review'), text: t('Готово к проверке', 'Ready for review') },
 ], request);
 onMounted(async () => {
-  const [{ createEditor, createToolbar }, { tables, tableCommands }, { images, imageCommands }, { search, searchCommands }, { statistics, statisticsCommands }, { markdownShortcuts, markdownCommands }, { mentions, mentionCommands }, { slash, slashCommands, createSlashActions }, { createSuggestionMenu }] = await Promise.all([import('@morfira-dev/wysiwyg'), import('@morfira-dev/wysiwyg/plugins/tables'), import('@morfira-dev/wysiwyg/plugins/images'), import('@morfira-dev/wysiwyg/plugins/search'), import('@morfira-dev/wysiwyg/plugins/statistics'), import('@morfira-dev/wysiwyg/plugins/markdown'), import('@morfira-dev/wysiwyg/plugins/mentions'), import('@morfira-dev/wysiwyg/plugins/slash'), import('@morfira-dev/wysiwyg/plugins/suggestions')]);
+  const [
+    { createEditor, createToolbar },
+    { tables, tableCommands },
+    { images },
+    { search },
+    { statistics, statisticsCommands },
+    { markdownShortcuts, markdownCommands },
+    { mentions, mentionCommands },
+    { slash, slashCommands, createSlashActions },
+    { createSuggestionMenu },
+    { createLinkForm },
+    { createImageForm },
+    { createSearchForm },
+  ] = await Promise.all([
+    import('@morfira-dev/wysiwyg'),
+    import('@morfira-dev/wysiwyg/plugins/tables'),
+    import('@morfira-dev/wysiwyg/plugins/images'),
+    import('@morfira-dev/wysiwyg/plugins/search'),
+    import('@morfira-dev/wysiwyg/plugins/statistics'),
+    import('@morfira-dev/wysiwyg/plugins/markdown'),
+    import('@morfira-dev/wysiwyg/plugins/mentions'),
+    import('@morfira-dev/wysiwyg/plugins/slash'),
+    import('@morfira-dev/wysiwyg/plugins/suggestions'),
+    import('@morfira-dev/wysiwyg/ui/links'),
+    import('@morfira-dev/wysiwyg/ui/images'),
+    import('@morfira-dev/wysiwyg/ui/search'),
+  ]);
   if (cancelled) return;
   editor = createEditor(host.value!, {
     locale: editorLocale.value,
@@ -204,11 +196,20 @@ onMounted(async () => {
   unmention = mentionAPI.subscribe((state) => { mentionState.value = state; }); unslash = slashAPI.subscribe((state) => { slashState.value = state; });
   disposeMentionMenu = createSuggestionMenu(editor, mentionAPI, { labels: { label: t('Люди', 'People'), loading: t('Ищем людей…', 'Finding people…'), empty: t('Люди не найдены', 'No people found'), error: t('Ошибка поиска людей', 'People lookup failed'), results: t('Людей: {count}', 'People: {count}') } });
   disposeSlashMenu = createSuggestionMenu(editor, slashAPI, { labels: { label: t('Шаблоны', 'Snippets'), loading: t('Ищем шаблоны…', 'Finding snippets…'), empty: t('Шаблоны не найдены', 'No snippets found'), error: t('Ошибка поиска шаблонов', 'Snippet lookup failed'), results: t('Шаблонов: {count}', 'Snippets: {count}') } });
-  commands = tableCommands(editor); imageAPI = imageCommands(editor); searchAPI = searchCommands(editor);
+  commands = tableCommands(editor);
   markdownAPI = markdownCommands(editor); markdownEnabled.value = markdownAPI.getState().enabled;
   statisticsAPI = statisticsCommands(editor); updateStatistics(statisticsAPI.getState()); unstatistics = statisticsAPI.subscribe(updateStatistics);
-  searchState.value = searchAPI.getState(); unsearch = searchAPI.subscribe((state) => { searchState.value = state; });
-  editor.surface.addEventListener('click', imageClick);
+  if (props.full) {
+    linkForm = createLinkForm(linkFormHost.value!, editor, {
+      initialValues: { href: 'https://example.com', title: '', text: '', newTab: false },
+    });
+    imageForm = createImageForm(imageFormHost.value!, editor, {
+      initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64', height: '', caption: '' },
+    });
+    searchForm = createSearchForm(searchFormHost.value!, editor, {
+      initialValues: { query: 'Morfira', replacement: 'Morfira Studio', caseSensitive: false, wholeWord: false },
+    });
+  }
   const marks: ToolbarAction[] = [
     { label: t('Отменить', 'Undo'), text: '↶', run: (instance) => instance.undo(), enabled: (instance) => instance.canUndo() },
     { label: t('Повторить', 'Redo'), text: '↷', run: (instance) => instance.redo(), enabled: (instance) => instance.canRedo() },
@@ -230,7 +231,21 @@ onMounted(async () => {
   disposeToolbar = props.full ? createToolbar(toolbar.value!, editor, marks, { label: t('Форматирование', 'Formatting') }) : createToolbar(toolbar.value!, editor);
   unsubscribe = editor.subscribe(refresh); unselect = editor.onSelectionChange(refresh); ready.value = true; refresh();
 });
-onBeforeUnmount(() => { cancelled = true; unmention?.(); unslash?.(); disposeMentionMenu?.(); disposeSlashMenu?.(); unstatistics?.(); unsearch?.(); editor?.surface.removeEventListener('click', imageClick); unsubscribe?.(); unselect?.(); disposeToolbar?.(); editor?.destroy(); });
+onBeforeUnmount(() => {
+  cancelled = true;
+  linkForm?.destroy();
+  imageForm?.destroy();
+  searchForm?.destroy();
+  unmention?.();
+  unslash?.();
+  disposeMentionMenu?.();
+  disposeSlashMenu?.();
+  unstatistics?.();
+  unsubscribe?.();
+  unselect?.();
+  disposeToolbar?.();
+  editor?.destroy();
+});
 </script>
 
 <template>
@@ -250,7 +265,7 @@ onBeforeUnmount(() => { cancelled = true; unmention?.(); unslash?.(); disposeMen
       <button :disabled="!ready" @click="toggleReadOnly">{{ readOnly ? t('Редактировать', 'Edit') : t('Только чтение', 'Read only') }}</button>
       <button :disabled="!ready" @click="snapshot('html')">HTML</button><button v-if="full" :disabled="!ready" @click="snapshot('json')">JSON</button>
     </div>
-    <p class="lab-hint">{{ t('Язык меняет встроенный интерфейс без замены документа. Собственные подписи панели, форм и подсказок в этом стенде остаются на языке страницы.', 'Language changes built-in editor UI without replacing the document. Custom toolbar, form and suggestion labels in this laboratory remain in the page language.') }}</p>
+    <p class="lab-hint">{{ t('Язык меняет встроенный интерфейс и переиспользуемые формы без замены документа. Собственные подписи панели и подсказок в этом стенде остаются на языке страницы.', 'Language changes built-in editor UI and reusable forms without replacing the document. Custom toolbar and suggestion labels in this laboratory remain in the page language.') }}</p>
     <div v-if="message" class="lab-message" :class="{ 'is-error': failed }" :role="failed ? 'alert' : 'status'">{{ message }}</div>
     <div class="demo-workspace">
       <div class="demo-editing">
@@ -297,18 +312,10 @@ onBeforeUnmount(() => { cancelled = true; unmention?.(); unslash?.(); disposeMen
           <ul class="lab-shortcuts"><li><code># … ###### + Space</code> — {{ t('заголовки', 'headings') }}</li><li><code>- / * / + / 1. / 1) + Space</code> — {{ t('списки', 'lists') }}</li><li><code>&gt; + Space</code> — {{ t('цитата', 'quote') }}</li><li><code>``` + Space / Enter</code> — {{ t('блок кода', 'code block') }}</li><li><code>--- / *** / ___ + Space / Enter</code> — {{ t('разделитель', 'horizontal rule') }}</li><li><code>**bold** / __bold__ / *italic* / _italic_ / ~~strike~~ / `code`</code></li></ul>
           <p class="lab-hint">{{ t('Строчные стили срабатывают на последнем символе закрывающего маркера. Undo возвращает документ до триггера. Это не Markdown-парсер: вставка и загрузка примеров не преобразуются; язык code fence и вложенный Markdown пока не поддерживаются.', 'Inline styles trigger on the final closing marker. Undo restores the document before that trigger. This is not a Markdown parser: paste/sample loading is not converted; language fences and nested Markdown are not supported yet.') }}</p>
         </fieldset></details>
-        <details class="lab-search"><summary>{{ t('Поиск и замена', 'Find and replace') }}</summary><fieldset :disabled="!ready">
-          <label>{{ t('Найти текст', 'Find text') }}<input v-model="query" type="text" maxlength="1000" @keydown.enter.prevent="find"></label>
-          <label class="lab-checkbox"><input v-model="matchCase" type="checkbox">{{ t('Учитывать регистр', 'Match case') }}</label>
-          <label class="lab-checkbox"><input v-model="wholeWord" type="checkbox">{{ t('Целое слово', 'Whole word') }}</label>
-          <button @click="find">{{ t('Найти', 'Find') }}</button>
-          <p class="lab-search-status" role="status" aria-live="polite">{{ searchState.error ? t('Слишком много совпадений: уточните запрос.', 'Too many matches: narrow the query.') : !searchState.query ? t('Введите запрос и нажмите «Найти».', 'Enter a query and press Find.') : !searchState.matches.length ? t('Ничего не найдено.', 'No matches found.') : t(`Совпадение ${searchState.current + 1} из ${searchState.matches.length}`, `Match ${searchState.current + 1} of ${searchState.matches.length}`) }}</p>
-          <div class="lab-button-grid"><button :disabled="!searchState.matches.length" @click="run(() => searchAPI?.previous(), false)">{{ t('Предыдущее совпадение', 'Previous match') }}</button><button :disabled="!searchState.matches.length" @click="run(() => searchAPI?.next(), false)">{{ t('Следующее совпадение', 'Next match') }}</button></div>
-          <label>{{ t('Заменить на', 'Replace with') }}<input v-model="replacement" type="text" maxlength="20000"></label>
-          <div class="lab-button-grid"><button :disabled="readOnly || !searchState.matches.length" @click="replaceMatches(false)">{{ t('Заменить совпадение', 'Replace match') }}</button><button :disabled="readOnly || !searchState.matches.length" @click="replaceMatches(true)">{{ t('Заменить все', 'Replace all') }}</button></div>
-          <button @click="clearSearch">{{ t('Очистить поиск', 'Clear search') }}</button>
+        <details class="lab-search"><summary>{{ t('Поиск и замена', 'Find and replace') }}</summary>
+          <div ref="searchFormHost"></div>
           <p class="lab-hint">{{ t('Буквальный поиск, без регулярных выражений. Совпадения пересекают стили, но не блоки, ячейки, переносы и изображения. Выделяется активное совпадение; поиск доступен в read-only.', 'Literal search without regular expressions. Matches cross inline styles, but not blocks, cells, line breaks or images. The active match is selected; search works in read-only.') }}</p>
-        </fieldset></details>
+        </details>
         <details class="lab-statistics"><summary>{{ t('Статистика', 'Statistics') }}</summary>
           <table class="lab-statistics-table"><caption>{{ t('Счётчики текста', 'Text counts') }}</caption><thead><tr><th>{{ t('Метрика', 'Metric') }}</th><th>{{ t('Документ', 'Document') }}</th><th>{{ t('Выделение', 'Selection') }}</th></tr></thead><tbody>
             <tr><th>{{ t('Символы (графемы)', 'Characters (graphemes)') }}</th><td data-stat="document-characters">{{ statisticsState.document.characters }}</td><td data-stat="selection-characters">{{ statisticsState.selection.characters }}</td></tr>
@@ -316,13 +323,12 @@ onBeforeUnmount(() => { cancelled = true; unmention?.(); unslash?.(); disposeMen
             <tr><th>{{ t('Слова', 'Words') }}</th><td data-stat="document-words">{{ statisticsState.document.words }}</td><td data-stat="selection-words">{{ statisticsState.selection.words }}</td></tr>
           </tbody></table><p class="lab-hint">{{ t('Считаются графемы Unicode: эмодзи и комбинируемые знаки не распадаются на UTF-16 единицы. Подписи входят в подсчёт, alt и URL — нет. Выделение вне редактора даёт нули. Счётчики не меняют документ и историю.', 'Unicode graphemes keep emoji and combining sequences together. Captions count; alt and URLs do not. Selection outside the editor reports zero. Counters never change the document or history.') }}</p>
         </details>
-        <details><summary>{{ t('Ссылки и изображения', 'Links and images') }}</summary><fieldset :disabled="!ready || readOnly">
-          <label>{{ t('Адрес ссылки', 'Link URL') }}<input v-model="url" type="text"></label><label>{{ t('Заголовок ссылки', 'Link title') }}<input v-model="linkTitle" type="text"></label><label>{{ t('Подпись новой ссылки', 'New link text') }}<input v-model="linkText" type="text"></label><label class="lab-checkbox"><input v-model="linkNewTab" type="checkbox">{{ t('В новой вкладке', 'Open in new tab') }}</label><div class="lab-button-grid"><button @click="insertLink">{{ editingLink ? t('Обновить ссылку', 'Update link') : t('Создать ссылку', 'Create link') }}</button><button @click="format('link', false)">{{ t('Убрать ссылку', 'Remove link') }}</button></div>
-          <hr><label>{{ t('URL изображения', 'Image URL') }}<input v-model="imageURL" type="text"></label><div class="lab-fields"><label>Alt<input v-model="imageAlt" type="text"></label><label>{{ t('Ширина изображения', 'Image width') }}<input v-model.number="imageWidth" type="number" min="1" max="1000"></label><label>{{ t('Высота изображения', 'Image height') }}<input v-model="imageHeight" type="number" min="1" max="1000"></label></div><label>{{ t('Подпись изображения', 'Image caption') }}<input v-model="imageCaption" type="text" maxlength="5000"></label><button @click="insertImage">{{ t('Вставить изображение', 'Insert image') }}</button><div class="lab-button-grid"><button :disabled="!selectedImage" @click="updateImage">{{ t('Обновить изображение', 'Update image') }}</button><button :disabled="!selectedImage" @click="run(() => imageAPI?.remove())">{{ t('Удалить изображение', 'Remove image') }}</button></div>
-          <label>{{ t('Файл для демо загрузки', 'Demo upload file') }}<input type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif" :disabled="uploading" @change="uploadImage"></label>
-          <button :disabled="!uploading" @click="imageAPI?.cancelUpload()">{{ t('Отменить загрузку', 'Cancel upload') }}</button><p role="status" aria-live="polite">{{ uploading ? t('Загрузка…', 'Uploading…') : '' }}</p>
+        <details><summary>{{ t('Ссылки и изображения', 'Links and images') }}</summary>
+          <div ref="linkFormHost"></div>
+          <hr>
+          <div ref="imageFormHost"></div>
           <p class="lab-hint">{{ t('Локальный callback возвращает логотип вместо файла. Файл не отправляется и не сохраняется. Для своего сервера передайте upload callback. Пустые размеры снимают ограничения; подпись редактируется и в документе. Resize мышью пока нет.', 'The local callback returns the logo instead of the file. Files are not uploaded or stored. Supply an upload callback for your server. Empty dimensions remove limits; captions are also editable in the document. Drag resizing is not implemented.') }}</p>
-        </fieldset></details>
+        </details>
         <details><summary>{{ t('Оформление', 'Appearance') }}</summary><div class="lab-fields"><label>{{ t('Акцент', 'Accent') }}<input v-model="accent" type="color"></label><label>{{ t('Размер текста', 'Text size') }}<input v-model.number="fontSize" type="number" min="12" max="28"></label><label>{{ t('Отступы', 'Padding') }}<input v-model.number="padding" type="number" min="8" max="64"></label><label>{{ t('Скругление', 'Radius') }}<input v-model.number="radius" type="number" min="0" max="28"></label></div><p class="lab-hint">{{ t('Меняет CSS-переменные этого экземпляра. Содержимое документа не меняется.', 'Changes CSS variables for this instance without editing the document.') }}</p></details>
       </aside>
     </div>

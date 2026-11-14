@@ -1,0 +1,13 @@
+# Optional link form
+
+Status: implementation contract; extends `specs/ui-forms.md` without changing link commands or schema v1.
+
+`createLinkForm(host, editor, options?)` mounts a nonmodal section with role=form using only core APIs. It never nests a native form, so it can live within an application's Angular/native form. Buttons are type=button; normal Enter in its inputs performs the same link action and prevents the outer application's implicit submit. IME confirmation keys are not intercepted. The controller exposes an HTMLElement `element`, `refresh`, `getValues`, `setValues` and idempotent `destroy`. Draft values are `{ href, title, text, newTab }`; setters validate an entire partial draft before updating controls. Options provide initial drafts, an explicit accessible form label and an optional original-error diagnostic callback.
+
+Create/update applies the current URL, title and target to the remembered editor selection. A caret outside a link requires nonempty new-label text. A caret inside a link updates that anchor and preserves its text. Unlink uses the same validated core operation and is disabled without a link target. Commands restore the real saved Range, preserve backwards selections and empty-block positions through the shared selection owner, and produce only the core command's history revision.
+
+Inspect a newly selected anchor to populate metadata; do not overwrite drafts merely because focus enters a control, read-only or interface language changes. External document replacement invalidates the old target. A stale form never applies to the new document until there is a fresh editor selection. Invalid URLs/metadata keep drafts and content/history unchanged, display a localized generic error and optionally deliver the original Error to the application.
+
+The feature exports `linkFormMessages` and its key type under `ui.links.*`. Strings update from the editor locale; custom form labels and translation overrides retain precedence. No user-provided label or diagnostic is interpreted as markup. Read-only disables edit controls and guards event handlers. Editor disposal or controller destruction removes all DOM/listeners/subscriptions; retained detached buttons are inert. Public refresh/getValues/setValues reject after destruction; destroy itself remains idempotent.
+
+Acceptance: rich selected-text creation, linked-caret update/unlink, new-label insertion in an empty block, focus and backwards Range restoration, exact undo/redo, draft retention through invalid input/language changes, external replacement rejection and recovery, read-only, two editors and teardown in Chromium/Firefox/WebKit.

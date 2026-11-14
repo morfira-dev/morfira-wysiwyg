@@ -1,8 +1,8 @@
 {
   "core.js": {
-    "raw": 46720,
-    "gzip": 15381,
-    "brotli": 13837
+    "raw": 46868,
+    "gzip": 15423,
+    "brotli": 13856
   },
   "core.css": {
     "raw": 3138,
@@ -25,24 +25,34 @@
     "brotli": 7026
   },
   "all-plugins.js": {
-    "raw": 65464,
-    "gzip": 25156,
-    "brotli": 22569
+    "raw": 66079,
+    "gzip": 25520,
+    "brotli": 22876
+  },
+  "ui-forms.js": {
+    "raw": 44334,
+    "gzip": 15123,
+    "brotli": 13392
   },
   "suggestions.css": {
     "raw": 1196,
     "gzip": 492,
     "brotli": 376
   },
+  "ui-forms.css": {
+    "raw": 1506,
+    "gzip": 599,
+    "brotli": 488
+  },
   "images.js": {
-    "raw": 7716,
-    "gzip": 2840,
-    "brotli": 2529
+    "raw": 8228,
+    "gzip": 3080,
+    "brotli": 2735
   },
   "search.js": {
-    "raw": 7369,
-    "gzip": 3145,
-    "brotli": 2814
+    "raw": 7472,
+    "gzip": 3269,
+    "brotli": 2915
   },
   "statistics.js": {
     "raw": 2988,
@@ -68,6 +78,21 @@
     "raw": 18657,
     "gzip": 7080,
     "brotli": 6370
+  },
+  "ui/links.js": {
+    "raw": 8424,
+    "gzip": 3073,
+    "brotli": 2692
+  },
+  "ui/images.js": {
+    "raw": 19248,
+    "gzip": 6607,
+    "brotli": 5864
+  },
+  "ui/search.js": {
+    "raw": 17684,
+    "gzip": 6002,
+    "brotli": 5323
   },
   "vue.js": {
     "raw": 1076,

@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
 const features = ['tables', 'images', 'search', 'statistics', 'markdown', 'mentions', 'slash', 'suggestions'];
+const forms = ['ui/links', 'ui/images', 'ui/search'];
 const cases = [
   { entry: '@morfira-dev/wysiwyg', symbol: 'createEditor', feature: 'core' },
   { entry: '@morfira-dev/wysiwyg', symbol: 'sanitizeHTML', feature: 'sanitizer' },
   { entry: '@morfira-dev/wysiwyg', symbol: 'localize', feature: 'localization' },
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component' },
   ...features.map((feature) => ({ entry: `@morfira-dev/wysiwyg/plugins/${feature}`, symbol: ({ tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature], feature })),
+  ...forms.map((feature) => ({ entry: `@morfira-dev/wysiwyg/${feature}`, symbol: ({ 'ui/links': 'createLinkForm', 'ui/images': 'createImageForm', 'ui/search': 'createSearchForm' } as Record<string, string>)[feature], feature })),
 ];
 for (const { entry, symbol, feature } of cases) {
   const result = await build({
@@ -21,7 +23,7 @@ for (const { entry, symbol, feature } of cases) {
   assert.ok(!inputs.some((path) => /node_modules\/(?:\.pnpm\/)?(?:react|vue|svelte)(?:@|\/)/.test(path)), `${feature}: framework runtime leaked`);
   assert.ok(!inputs.some((path) => path.includes('/@angular/') || /\/@angular\+/.test(path)), `${feature}: Angular runtime leaked`);
   assert.ok(!inputs.some((path) => path.endsWith('.css')), `${feature}: CSS must remain opt-in`);
-  for (const other of features.filter((other) => other !== feature)) {
+  for (const other of [...features, ...forms].filter((other) => other !== feature)) {
     assert.ok(!inputs.some((path) => path === `packages/plugins/dist/${other}.js`), `${feature}: loaded unrelated ${other}`);
   }
   if (feature === 'core' || feature === 'sanitizer' || feature === 'localization') assert.ok(!inputs.some((path) => path.startsWith('packages/plugins/')), `${feature}: plugin leaked into core`);

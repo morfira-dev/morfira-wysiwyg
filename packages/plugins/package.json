@@ -46,7 +46,20 @@
       "types": "./dist/suggestions/index.d.ts",
       "import": "./dist/suggestions.js"
     },
-    "./suggestions.css": "./dist/suggestions.css"
+    "./suggestions.css": "./dist/suggestions.css",
+    "./ui/links": {
+      "types": "./dist/ui/links/index.d.ts",
+      "import": "./dist/ui/links.js"
+    },
+    "./ui/images": {
+      "types": "./dist/ui/images/index.d.ts",
+      "import": "./dist/ui/images.js"
+    },
+    "./ui/search": {
+      "types": "./dist/ui/search/index.d.ts",
+      "import": "./dist/ui/search.js"
+    },
+    "./ui/forms.css": "./dist/ui/forms.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.5.2"

@@ -230,9 +230,14 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
         },
         cancelUpload: cancel,
         isUploading: () => { active(); return Boolean(pending); },
-        upload: async (file) => {
+        upload: async (file, request = {}) => {
           active();
-          if (editor.isReadOnly())
+          if (!request || typeof request !== 'object')
+            throw new TypeError('Upload options must be an object.');
+          const signal = request.signal;
+          if (signal && (typeof signal.aborted !== 'boolean' || typeof signal.addEventListener !== 'function' || typeof signal.removeEventListener !== 'function'))
+            throw new TypeError('Upload signal must be an AbortSignal.');
+          if (editor.isReadOnly() || signal?.aborted)
             return false;
           if (!options.upload)
             throw new Error('Configure an application upload callback first.');
@@ -242,6 +247,12 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
           cancel();
           const controller = new AbortController();
           pending = controller;
+          const abortOwned = () => {
+            if (pending === controller)
+              pending = undefined;
+            controller.abort();
+          };
+          signal?.addEventListener('abort', abortOwned, { once: true });
           let abort: () => void = () => { };
           const cancelled = new Promise<undefined>((resolve) => { abort = () => resolve(undefined); controller.signal.addEventListener('abort', abort, { once: true }); });
           try {
@@ -262,6 +273,7 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
             throw error;
           }
           finally {
+            signal?.removeEventListener('abort', abortOwned);
             controller.signal.removeEventListener('abort', abort);
             if (pending === controller)
               pending = undefined;

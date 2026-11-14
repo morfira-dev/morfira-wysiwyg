@@ -18,8 +18,45 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await page.evaluate(() => window.morfiraConsumer.editor!.setSelection(7));
           await page.keyboard.type(' text');
           await expect(content).toHaveText('Initial text');
+          const links = page.getByRole('form', { name: 'Consumer links', exact: true });
+          const images = page.getByRole('form', { name: 'Consumer images', exact: true });
+          const search = page.getByRole('form', { name: 'Consumer search', exact: true });
+          await expect(page.locator('.mw-form')).toHaveCount(3);
+          await page.evaluate(() => {
+            const { editor, forms } = window.morfiraConsumer;
+            editor!.focus();
+            editor!.setSelection(0, 7);
+            forms!.links.setValues({ href: 'https://example.com/consumer', text: '', title: 'Packed link', newTab: false });
+          });
+          await links.getByRole('button', { name: 'Create link', exact: true }).click();
+          await expect(content.locator('a')).toHaveAttribute('href', 'https://example.com/consumer');
+          await expect(content.locator('a')).toHaveText('Initial');
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          await expect(content.locator('a')).toHaveCount(0);
+          await expect(content).toHaveText('Initial text');
+          await page.evaluate(() => {
+            const { editor, forms } = window.morfiraConsumer;
+            editor!.focus();
+            editor!.setSelection(12);
+            forms!.images.setValues({ src: '/consumer-image.svg', alt: 'Packed image', width: '32', height: '24', caption: '' });
+          });
+          await images.getByRole('button', { name: 'Insert image', exact: true }).click();
+          await expect(content.locator('img')).toHaveAttribute('src', '/consumer-image.svg');
+          await expect(content.locator('img')).toHaveAttribute('alt', 'Packed image');
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          await expect(content.locator('img')).toHaveCount(0);
+          await expect(content).toHaveText('Initial text');
+          await page.evaluate(() => window.morfiraConsumer.forms!.search.setValues({ query: 'text', replacement: 'review' }));
+          await search.getByRole('button', { name: 'Find', exact: true }).click();
+          await expect(search.getByRole('status')).toHaveText('Match 1 of 1');
+          await search.getByRole('button', { name: 'Replace all', exact: true }).click();
+          await expect(content).toHaveText('Initial review');
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          await expect(content).toHaveText('Initial text');
+          await search.getByRole('button', { name: 'Clear search', exact: true }).click();
           await page.evaluate(() => {
             const editor = window.morfiraConsumer.editor!;
+            editor.focus();
             editor.setSelection(0, editor.surface.textContent!.length);
           });
           await page.keyboard.type('/h');
@@ -45,20 +82,29 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await content.focus();
           await page.keyboard.type('blocked');
           await expect(content).toHaveText('External 1');
+          await expect(links.getByRole('button', { name: 'Create link', exact: true })).toBeDisabled();
+          await expect(images.getByRole('button', { name: 'Insert image', exact: true })).toBeDisabled();
+          await search.getByLabel('Find text', { exact: true }).fill('External');
+          await search.getByRole('button', { name: 'Find', exact: true }).click();
+          await expect(search.getByRole('status')).toHaveText('Match 1 of 1');
+          await expect(search.getByRole('button', { name: 'Replace match', exact: true })).toBeDisabled();
+          await expect(search.getByRole('button', { name: 'Replace all', exact: true })).toBeDisabled();
           await page.locator('[data-action="external"]').click();
           await expect(content).toHaveText('External 2');
           assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), userChanges, `${adapter}: read-only external replacement must remain silent`);
           await page.locator('[data-action="unmount"]').click();
           await expect(page.locator('.mw-editor')).toHaveCount(0);
           await expect(page.locator('.mw-suggestions')).toHaveCount(0);
+          await expect(page.locator('.mw-form')).toHaveCount(0);
+          await expect(page.locator('[data-consumer-ui]')).toHaveCount(0);
           assert.equal(await page.evaluate(() => {
             try { window.morfiraConsumer.editor!.getHTML(); }
             catch { return true; }
             return false;
           }), true, `${adapter}: unmount must dispose the editor API`);
           assert.deepEqual(errors, [], `${adapter}/${name}: unexpected browser errors`);
-          scenarios.push({ adapter, browser: name, browserVersion: browser.version(), userChanges });
-          console.log(`Packed consumer ${adapter}/${name}: controlled input, slash/history, external values, read-only and teardown passed.`);
+          scenarios.push({ adapter, browser: name, browserVersion: browser.version(), userChanges, uiForms: true });
+          console.log(`Packed consumer ${adapter}/${name}: controlled input, UI forms/history, slash/history, external values, read-only and teardown passed.`);
         }
         catch (error) {
           const trace = await page.evaluate(() => {

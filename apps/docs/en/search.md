@@ -1,5 +1,7 @@
 # Find and replace
 
+The ready `createSearchForm` interface is imported separately from `@morfira-dev/wysiwyg/ui/search` and uses an installed `search()`. Query fields, navigation, case/whole-word and current/all replacement controls are included; the search plugin also works without UI. [Form example and lifecycle](/en/ui#find-and-replace).
+
 This optional module performs literal text search without changing persisted HTML for highlighting or adding runtime dependencies. Native Selection/Range selects the active result.
 
 ```ts

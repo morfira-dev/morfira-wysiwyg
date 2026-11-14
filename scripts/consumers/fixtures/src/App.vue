@@ -12,5 +12,5 @@ const replace = () => { value.value = `<p>External ${++external}</p>`; };
   <button data-action="external" @click="replace">External value</button>
   <button data-action="readonly" @click="readOnly = !readOnly">Read only</button>
   <button data-action="unmount" @click="mounted = false">Unmount</button>
-  <MorfiraEditor v-if="mounted" v-model="value" :read-only="readOnly" :plugins="plugins" label="Consumer editor" @ready="ready" @change="changed" />
+  <MorfiraEditor v-if="mounted" v-model="value" :read-only="readOnly" :plugins="plugins" locale="en" label="Consumer editor" @ready="ready" @change="changed" />
 </template>

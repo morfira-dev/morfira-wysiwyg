@@ -11,5 +11,5 @@ const replace = () => { value = `<p>External ${++external}</p>`; };
 <button data-action="readonly" onclick={() => readOnly = !readOnly}>Read only</button>
 <button data-action="unmount" onclick={() => mounted = false}>Unmount</button>
 {#if mounted}
-  <MorfiraEditor bind:value {readOnly} {plugins} label="Consumer editor" onready={ready} onchange={changed} />
+  <MorfiraEditor bind:value {readOnly} {plugins} locale="en" label="Consumer editor" onready={ready} onchange={changed} />
 {/if}

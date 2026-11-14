@@ -1,0 +1,17 @@
+# Reusable optional editing forms
+
+Status: implementation contract. Persisted schema and existing command behavior stay unchanged.
+
+Public facade entries are `/ui/links`, `/ui/images`, `/ui/search` with `createLinkForm`, `createImageForm`, `createSearchForm`. They live in feature-owned folders under the optional plugins package, never the core graph. CSS is explicit via `/ui/forms.css`; JS entries import no CSS/framework and retain only their required feature. Core/plugins retain zero third-party runtime dependencies.
+
+Each factory takes `(host, editor, options?)` and returns a typed controller with `element`, `refresh`, copied `getValues`/partial `setValues`, and idempotent `destroy`. Form values are drafts, not persisted editor data. Options include initial values, an explicit accessible label and an optional diagnostic error callback. Built-in labels/status/error text use RU/EN feature dictionaries and editor locale/overrides; custom application labels remain explicit. Render text through DOM APIs, never executable HTML. Missing required plugin fails before mounting a view.
+
+Forms are embedded nonmodal UI. Preserve real DOM Range selection including empty blocks and backwards ranges before focus enters controls; restore only a still-valid target when executing a command. External document replacement invalidates remembered targets and does not apply old drafts to a new document until a fresh editor selection. Native/editor changes refresh inspected metadata without replacing in-progress field drafts while the form is focused. Language/read-only updates do not mutate content, history or drafts. Search/navigation remain usable read-only; edit actions are disabled and guarded.
+
+Link UI creates/updates/unlinks using existing core link commands, including safe URL, title, new-tab and optional new-label insertion. Image UI inserts/selects/updates/removes via the image plugin, supports alt/dimensions/caption and application-owned upload/cancel; dispose must cancel only the form's own upload and ignore late results. A scoped AbortSignal extension to image upload may be added with its own specification/tests, preserving existing callers. Search UI provides query, case/whole-word, previous/next, replace current/all and clear, using the search plugin's result/error state and single-step replacement history. Destroying a search form does not clear application-owned search state.
+
+All subscriptions, DOM listeners, pending operations and selection state have cleanup, including editor destruction; detached controls become inert. Multiple forms/editors have independent drafts and state. Factories are import-safe without DOM; mounting needs a browser. Styling is scoped to `mw-form` and `--mw-*` variables and must not depend on documentation CSS.
+
+The RU/EN homepage and playground use the same public form factories. Remove their duplicate form logic from EditorDemo.vue; keep only application-owned upload transport and sample controls. Standalone examples document imports, CSS, lifecycle and plugin requirements.
+
+Acceptance Chromium/Firefox/WebKit: selected text/empty blocks/caret editing, focus and backwards selections, one-step undo/redo, external replacement invalidation, read-only, language switching and overrides, invalid input/error recovery with draft preservation, two instances, unmount/destroy and detached controls, scoped upload cancellation/late callbacks, search navigation/replacement. Build declarations, verify actual tarballs/selective imports/CSS budgets and exercise both language demos.

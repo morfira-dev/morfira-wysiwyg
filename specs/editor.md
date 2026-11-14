@@ -9,6 +9,7 @@ Status: implemented preview contract. Acceptance scenarios are exercised in `tes
 - Persist `EditorDocument { version: 1, children: DocumentNode[] }`. Text and allowed semantic element nodes carry only validated attributes. HTML and JSON imports enforce schema, URLs, attribute/style allowlists, and resource limits. Unsupported executable or foreign content is omitted. Invalid JSON is rejected before live DOM mutation.
 - Instance API: HTML/text/JSON get/set; text-offset selection; formatting; insertHTML; read-only; focus; own undo/redo; atomic plugin transactions; subscriptions and disposal. No external engine escape hatch or browser execCommand.
 - Native typing and IME composition use the browser editing surface; our bounded history records semantic revisions with selection bookmarks. New edits clear redo; external document replacement clears history. IME is one history operation.
+- History bookmarks at an empty text node preserve its parent boundary, because HTML snapshots omit empty text nodes. Redo after inserting a link in an empty block must leave subsequent typing after the link.
 
 - Formatting must preserve unaffected text, support partial removal and cross-paragraph selections, and restore selection. Document operations must be atomic on failure.
 - Paste replaces selection using validated HTML or plain text; unsupported drops are blocked. Read-only prevents user/programmatic user-edit commands while allowing external replacement.

@@ -19,7 +19,7 @@ const App = () => {
     <button data-action="external" onClick={replace}>External value</button>
     <button data-action="readonly" onClick={() => setReadOnly(!readOnly)}>Read only</button>
     <button data-action="unmount" onClick={() => setMounted(false)}>Unmount</button>
-    {mounted && <MorfiraEditor value={value} readOnly={readOnly} plugins={plugins} label="Consumer editor" onReady={ready} onChange={change} />}
+    {mounted && <MorfiraEditor value={value} readOnly={readOnly} plugins={plugins} locale="en" label="Consumer editor" onReady={ready} onChange={change} />}
   </>;
 };
 createRoot(document.getElementById('app')!).render(<StrictMode><App /></StrictMode>);

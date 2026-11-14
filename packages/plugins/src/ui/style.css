@@ -1,0 +1,14 @@
+.mw-form { color: var(--mw-text, #263043); font-family: var(--mw-font, system-ui, sans-serif); font-size: var(--mw-form-font-size, 14px); display: grid; gap: var(--mw-form-gap, 10px); padding: var(--mw-form-padding, 14px); background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-radius, var(--mw-radius, 12px)); }
+.mw-form *, .mw-form *::before, .mw-form *::after { box-sizing: border-box; }
+.mw-form fieldset { display: grid; gap: var(--mw-form-gap, 10px); border: 0; padding: 0; margin: 0; min-width: 0; }
+.mw-form label { display: grid; gap: 4px; min-width: 0; }
+.mw-form input, .mw-form textarea, .mw-form select, .mw-form button { font: inherit; color: inherit; border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-control-radius, 6px); padding: 7px 9px; background: var(--mw-surface, #fff); min-width: 0; max-width: 100%; }
+.mw-form input:focus-visible, .mw-form textarea:focus-visible, .mw-form select:focus-visible, .mw-form button:focus-visible { outline: 2px solid var(--mw-accent, #6658e8); outline-offset: 2px; }
+.mw-form button { cursor: pointer; }
+.mw-form button:hover:enabled { background: var(--mw-hover, #f0f2f7); }
+.mw-form :disabled { opacity: .55; cursor: default; }
+.mw-form input[type=checkbox] { width: auto; }
+.mw-form label:has(input[type=checkbox]) { display: flex; align-items: center; gap: 7px; }
+.mw-form-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.mw-form-status { margin: 0; color: var(--mw-muted, #8490a1); overflow-wrap: anywhere; }
+.mw-form-status[data-error=true], .mw-form-status.mw-form-error { color: var(--mw-form-error, #b42318); }

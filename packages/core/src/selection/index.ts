@@ -18,12 +18,20 @@ const nodePath = (root: Node, target: Node): number[] => {
   }
   return result;
 };
+// Empty text nodes disappear in HTML snapshots. Persist their parent boundary.
+const stableBoundary = (node: Node, offset: number): [Node, number] => {
+  if (node.nodeType === 3 && node.textContent === '' && node.parentNode)
+    return [node.parentNode, [...node.parentNode.childNodes].indexOf(node as ChildNode)];
+  return [node, offset];
+};
 export const bookmark = (root: HTMLElement): SelectionBookmark | undefined => {
   const range = activeRange(root);
   if (!range)
     return;
   const selection = root.ownerDocument.getSelection()!;
-  return { start: nodePath(root, range.startContainer), startOffset: range.startOffset, end: nodePath(root, range.endContainer), endOffset: range.endOffset, backward: !range.collapsed && selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset };
+  const [start, startOffset] = stableBoundary(range.startContainer, range.startOffset);
+  const [end, endOffset] = stableBoundary(range.endContainer, range.endOffset);
+  return { start: nodePath(root, start), startOffset, end: nodePath(root, end), endOffset, backward: !range.collapsed && selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset };
 };
 export const restoreBookmark = (root: HTMLElement, saved: SelectionBookmark | undefined): void => {
   if (!saved)

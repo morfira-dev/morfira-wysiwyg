@@ -1,5 +1,7 @@
 # Colors and links
 
+The optional `createLinkForm` UI is available through `@morfira-dev/wysiwyg/ui/links`. It uses these same commands, preserves selection while fields receive focus and supports localization. [Connect the form without a framework](/en/ui#links-without-a-framework).
+
 `format('color', value)` sets the text color; `format('background', value)` sets the highlight color. Pass a CSS color name, hex, rgb/hsl, or `false` to remove that inline property. Arbitrary CSS and `var()` are rejected. Inherited block styles remain intact.
 
 ```ts

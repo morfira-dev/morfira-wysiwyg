@@ -8,9 +8,13 @@ import { markdownShortcuts } from '@morfira-dev/wysiwyg/plugins/markdown';
 import { mentions } from '@morfira-dev/wysiwyg/plugins/mentions';
 import { slash, slashCommands, createSlashActions } from '@morfira-dev/wysiwyg/plugins/slash';
 import { createSuggestionMenu } from '@morfira-dev/wysiwyg/plugins/suggestions';
+import { createLinkForm } from '@morfira-dev/wysiwyg/ui/links';
+import { createImageForm } from '@morfira-dev/wysiwyg/ui/images';
+import { createSearchForm } from '@morfira-dev/wysiwyg/ui/search';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
+import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const probe: ConsumerProbe = { changes: 0 };
 window.morfiraConsumer = probe;
@@ -26,5 +30,25 @@ export const plugins: EditorPlugin[] = [
 export const ready = (editor: Editor) => {
   probe.editor = editor;
   createSuggestionMenu(editor, slashCommands(editor));
+  const host = document.createElement('div');
+  host.dataset.consumerUi = '';
+  const linkHost = document.createElement('div');
+  const imageHost = document.createElement('div');
+  const searchHost = document.createElement('div');
+  host.append(linkHost, imageHost, searchHost);
+  document.body.append(host);
+  const forms = {
+    links: createLinkForm(linkHost, editor, { label: 'Consumer links' }),
+    images: createImageForm(imageHost, editor, { label: 'Consumer images' }),
+    search: createSearchForm(searchHost, editor, { label: 'Consumer search' }),
+  };
+  probe.forms = forms;
+  editor.events.on('destroy', () => {
+    forms.links.destroy();
+    forms.images.destroy();
+    forms.search.destroy();
+    host.remove();
+    if (probe.forms === forms) delete probe.forms;
+  });
 };
 export const changed = (_change: EditorChange) => { probe.changes++; };
