@@ -7,7 +7,7 @@ import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifyConsumers } from './browser.js';
 import { serveConsumer } from './server.js';
-import { collectToolchainGraph, installedManifest, readManifest } from './toolchain.js';
+import { collectToolchainGraph, installedManifest, installedToolchainRoots, readManifest } from './toolchain.js';
 import type { ConsumerAdapter, ConsumerProfile, ConsumerReport, PackageManifest } from './types.js';
 
 const repository = resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -55,7 +55,9 @@ const run = (args: string[], cwd: string) => {
 let failure: unknown;
 try {
   report.rootLockfileSHA256 = createHash('sha256').update(await readFile(join(repository, 'pnpm-lock.yaml'))).digest('hex');
-  const toolchainGraph = await collectToolchainGraph(toolchainOwner, tools, sourceInstalledRoot, sourceLookupDirectories);
+  const installationOverrides = new Map<string, string>();
+  const toolchainGraph = await collectToolchainGraph(toolchainOwner, tools, sourceInstalledRoot, sourceLookupDirectories, installationOverrides);
+  const toolchainDependencies = await installedToolchainRoots(toolchainOwner, tools, sourceInstalledRoot, sourceLookupDirectories);
   report.toolchainGraph = toolchainGraph;
   console.log(`Pinning ${toolchainGraph.packages.length} installed toolchain packages through ${Object.keys(toolchainGraph.overrides).length} version-qualified dependency edges.`);
   const archives = join(temporary, 'archives');
@@ -126,10 +128,10 @@ try {
   const manifest = {
     name: 'morfira-isolated-consumer', private: true, type: 'module',
     packageManager: rootManifest.packageManager,
-    dependencies, devDependencies: toolchain,
+    dependencies, devDependencies: toolchainDependencies,
   };
   await writeFile(join(consumer, 'package.json'), JSON.stringify(manifest, null, 2) + '\n');
-  const overrides = Object.entries({ ...toolchainGraph.overrides, ...dependencies }).map(([name, target]) => `  ${JSON.stringify(name)}: ${JSON.stringify(target)}`).join('\n');
+  const overrides = Object.entries({ ...Object.fromEntries(installationOverrides), ...dependencies }).map(([name, target]) => `  ${JSON.stringify(name)}: ${JSON.stringify(target)}`).join('\n');
   await writeFile(join(consumer, 'pnpm-workspace.yaml'), `packages: []\nlinkWorkspacePackages: false\npreferWorkspacePackages: false\nsaveExact: true\nallowBuilds:\n  esbuild: true\noverrides:\n${overrides}\n`);
   run(['install', '--offline', '--no-frozen-lockfile'], consumer);
   const installedRoot = await realpath(join(consumer, 'node_modules'));

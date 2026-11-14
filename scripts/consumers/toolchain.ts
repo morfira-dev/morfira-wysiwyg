@@ -29,17 +29,26 @@ export const installedManifest = async (name: string, owner: string, installedRo
   return undefined;
 };
 export const readManifest = async (path: string): Promise<DependencyManifest> => JSON.parse(await readFile(path, 'utf8')) as DependencyManifest;
-export const collectToolchainGraph = async (owner: string, roots: string[], installedRoot: string, lookupDirectories: readonly string[] = []): Promise<ToolchainGraph> => {
+export const installedToolchainRoots = async (owner: string, roots: string[], installedRoot: string, lookupDirectories: readonly string[] = []): Promise<Record<string, string>> => {
+  return Object.fromEntries(await Promise.all(roots.map(async (name) => {
+    const path = await installedManifest(name, owner, installedRoot, undefined, lookupDirectories);
+    assert.ok(path, `Missing installed toolchain root: ${name}`);
+    return [name, `file:${dirname(path)}`];
+  })));
+};
+
+export const collectToolchainGraph = async (owner: string, roots: string[], installedRoot: string, lookupDirectories: readonly string[] = [], installationOverrides?: Map<string, string>): Promise<ToolchainGraph> => {
   const pending: string[] = [];
   const visited = new Set<string>();
   const packages = new Set<string>();
   const overrides = new Map<string, string>();
   const absentOptionalDependencies = new Set<string>();
   const absentOptionalPeers = new Set<string>();
-  const pin = (selector: string, target: string) => {
+  const pin = (selector: string, target: string, installationTarget = target) => {
     const previous = overrides.get(selector);
     assert.ok(previous === undefined || previous === target, `Ambiguous installed toolchain edge ${selector}: ${previous} versus ${target}. Refusing to force incompatible resolutions.`);
     overrides.set(selector, target);
+    installationOverrides?.set(selector, installationTarget);
   };
   for (const name of roots) {
     const path = await installedManifest(name, owner, installedRoot, undefined, lookupDirectories);
@@ -76,7 +85,7 @@ export const collectToolchainGraph = async (owner: string, roots: string[], inst
         throw new Error(`Missing installed required toolchain edge: ${selector}`);
       }
       const child = await readManifest(childPath);
-      pin(selector, child.name === name ? child.version : `npm:${child.name}@${child.version}`);
+      pin(selector, child.name === name ? child.version : `npm:${child.name}@${child.version}`, `file:${dirname(childPath)}`);
       pending.push(childPath);
     }
   }
