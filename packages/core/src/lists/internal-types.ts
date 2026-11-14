@@ -29,6 +29,17 @@ export interface QuoteCrossingContext {
   endQuoteBody?: HTMLElement;
   range: Range;
   covered: HTMLElement[];
+  siblings?: QuoteSiblingContext;
+}
+
+export interface QuoteSiblingContext {
+  container: HTMLLIElement;
+  removedItems: HTMLLIElement[];
+  following: HTMLElement[];
+  branches: HTMLElement[];
+  gaps: ChildNode[];
+  directStart: boolean;
+  directEnd: boolean;
 }
 
 export interface QuotePasteContext {

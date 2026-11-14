@@ -117,19 +117,21 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
     const from = first.bodies.indexOf(startBody);
     const to = first.bodies.indexOf(endBody);
     if (first.bodies.slice(from, to + 1).some((body) => body.localName === 'blockquote')) {
-      const crossing = quoteCrossingContext(first, range, startBody, endBody, start, end);
+      const crossing = quoteCrossingContext([first], range, startBody, endBody, start, end);
       if (!crossing) return blocked('A block insertion can cross only ordinary editable quotes within the same item.');
       return { status: 'eligible', range: crossing.range, leaves: [first.item], gaps: [], first, last,
         startBody, endBody, crossing };
     }
   }
-  if (preserveQuotes && (startBody.localName === 'blockquote' || endBody.localName === 'blockquote'))
+  if (preserveQuotes && first.item === last.item && (startBody.localName === 'blockquote' || endBody.localName === 'blockquote'))
     return blocked('A block insertion endpoint cannot enter an existing quote.');
   if (!includeSameBody && firstItem === lastItem && startBody === endBody) return { status: 'unowned' };
   const workingRange = range.cloneRange();
   workingRange.setStart(start.startContainer, start.startOffset);
   workingRange.setEnd(end.startContainer, end.startOffset);
   const leaves: HTMLLIElement[] = [];
+  const boundaries: ListItemBoundary[] = [];
+  let hasQuote = false;
   const gaps: ChildNode[] = [];
   let node: ChildNode | null = first.item;
   while (node) {
@@ -141,11 +143,18 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
       if (preserveQuotes) {
         const from = item.item === first.item ? item.bodies.indexOf(startBody) : 0;
         const to = item.item === last.item ? item.bodies.indexOf(endBody) : item.bodies.length - 1;
-        if (item.bodies.slice(from, to + 1).some((body) => body.localName === 'blockquote'))
-          return blocked('A block insertion cannot cover or cross an existing quote.');
+        if (item.bodies.slice(from, to + 1).some((body) => body.localName === 'blockquote')) hasQuote = true;
       }
       leaves.push(item.item);
-      if (item.item === last.item) return { status: 'eligible', range: workingRange, leaves, gaps, first, last, startBody, endBody };
+      boundaries.push(item);
+      if (item.item === last.item) {
+        if (hasQuote) {
+          const crossing = quoteCrossingContext(boundaries, range, startBody, endBody, start, end, gaps);
+          if (!crossing) return blocked('Block insertion across sibling items requires ordinary editable quotes and supported endpoints.');
+          return { status: 'eligible', range: crossing.range, leaves, gaps, first, last, startBody, endBody, crossing };
+        }
+        return { status: 'eligible', range: workingRange, leaves, gaps, first, last, startBody, endBody };
+      }
     }
     node = node.nextSibling;
   }
