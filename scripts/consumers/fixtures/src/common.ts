@@ -1,13 +1,9 @@
 import { createEditorCommand } from '@morfira-dev/wysiwyg';
 import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg';
 import type { ConsumerProbe } from './types.js';
-import { tables } from '@morfira-dev/wysiwyg/plugins/tables';
-import { images } from '@morfira-dev/wysiwyg/plugins/images';
-import { search } from '@morfira-dev/wysiwyg/plugins/search';
-import { statistics } from '@morfira-dev/wysiwyg/plugins/statistics';
-import { markdownShortcuts } from '@morfira-dev/wysiwyg/plugins/markdown';
-import { mentions } from '@morfira-dev/wysiwyg/plugins/mentions';
-import { slash, slashCommands, createSlashActions } from '@morfira-dev/wysiwyg/plugins/slash';
+import { createExtendedPreset } from '@morfira-dev/wysiwyg/presets/extended';
+import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
+import { slashCommands, createSlashActions } from '@morfira-dev/wysiwyg/plugins/slash';
 import { createSuggestionMenu } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import { createLinkForm } from '@morfira-dev/wysiwyg/ui/links';
 import { createImageForm } from '@morfira-dev/wysiwyg/ui/images';
@@ -16,6 +12,7 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
+import '@morfira-dev/wysiwyg/ui/editor.css';
 
 const probe: ConsumerProbe = { changes: 0 };
 window.morfiraConsumer = probe;
@@ -43,17 +40,22 @@ const sdkPlugin: EditorPlugin = {
     },
   }),
 };
-export const plugins: EditorPlugin[] = [
-  sdkPlugin, tables(), images(), search(), statistics(), markdownShortcuts(),
-  mentions({ provide: () => [{ id: 'anna', label: 'Anna' }], debounceMs: 0 }),
-  slash({
+export const plugins: EditorPlugin[] = createExtendedPreset({
+  plugins: [sdkPlugin],
+  mentions: { provide: () => [{ id: 'anna', label: 'Anna' }], debounceMs: 0 },
+  slash: {
     provide: () => [{ id: 'heading', label: 'Heading 2', action: 'heading2' }],
     actions: createSlashActions(),
     debounceMs: 0,
-  }),
-];
+  },
+}).plugins!;
 export const ready = (editor: Editor) => {
   probe.editor = editor;
+  const uiHost = document.createElement('div');
+  uiHost.dataset.consumerReadyUi = '';
+  document.body.append(uiHost);
+  const ui = createStandardEditorUI(uiHost, editor, { label: 'Consumer ready tools', density: 'compact' });
+  probe.ui = ui;
   const insertNote = (text: string) => editor.commands.execute(insertNoteCommand, { text });
   probe.insertNote = insertNote;
   createSuggestionMenu(editor, slashCommands(editor));
@@ -75,6 +77,9 @@ export const ready = (editor: Editor) => {
     forms.images.destroy();
     forms.search.destroy();
     host.remove();
+    ui.destroy();
+    uiHost.remove();
+    if (probe.ui === ui) delete probe.ui;
     if (probe.forms === forms) delete probe.forms;
     if (probe.insertNote === insertNote) delete probe.insertNote;
   });

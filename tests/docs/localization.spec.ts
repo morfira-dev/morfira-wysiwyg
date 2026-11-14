@@ -32,8 +32,8 @@ for (const english of [false, true]) test(`homepage table menus start localized 
   await expect(menu.getByRole('menuitem').first()).toHaveText(t('Insert row above', 'Строка выше'));
   expect(await content.innerHTML()).toBe(before);
   await expect(content).toHaveAttribute('aria-label', t('Попробуйте Morfira', 'Try Morfira'));
-  // The full laboratory supplies its own toolbar labels in the page language.
-  await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
+  // Ready toolbar controls follow the changed editor locale.
+  await page.getByRole('button', { name: t('Undo', 'Отменить'), exact: true }).click();
   await expect(content.locator('td').first()).toHaveText(originalCell!);
 });
 
@@ -45,7 +45,7 @@ for (const english of [false, true]) test(`localization guide documents dictiona
   await expect(page.getByRole('cell', { name: 'suggestions.results', exact: true })).toHaveCount(1);
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
-  await expect(page.getByRole('toolbar')).toHaveAttribute('aria-label', t('Форматирование', 'Formatting'));
+  await expect(page.getByRole('toolbar')).toHaveAttribute('aria-label', t('Инструменты редактора', 'Editor tools'));
   const original = await content.innerHTML();
   await content.locator('p').first().evaluate((element) => {
     const range = document.createRange();
@@ -58,7 +58,7 @@ for (const english of [false, true]) test(`localization guide documents dictiona
   await page.keyboard.type('X');
   const edited = await content.innerHTML();
   await page.getByLabel(t('Язык интерфейса редактора', 'Editor interface language'), { exact: true }).selectOption(english ? 'ru' : 'en');
-  await expect(page.getByRole('toolbar')).toHaveAttribute('aria-label', t('Formatting', 'Форматирование'));
+  await expect(page.getByRole('toolbar')).toHaveAttribute('aria-label', t('Editor tools', 'Инструменты редактора'));
   await expect(page.getByRole('button', { name: t('Bold', 'Полужирный'), exact: true })).toBeVisible();
   expect(await content.innerHTML()).toBe(edited);
   await page.getByRole('button', { name: t('Undo', 'Отменить'), exact: true }).click();

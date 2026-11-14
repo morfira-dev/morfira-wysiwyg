@@ -6,6 +6,7 @@ import type { EditorChange } from '@morfira-dev/wysiwyg';
 
 const App = () => {
   const [value, setValue] = useState('<p>Initial</p>');
+  const [locale, setLocale] = useState<'en' | 'ru'>('en');
   const [readOnly, setReadOnly] = useState(false);
   const [mounted, setMounted] = useState(true);
   const [external, setExternal] = useState(0);
@@ -18,8 +19,10 @@ const App = () => {
   return <>
     <button data-action="external" onClick={replace}>External value</button>
     <button data-action="readonly" onClick={() => setReadOnly(!readOnly)}>Read only</button>
+    <button data-action="locale-ru" onClick={() => setLocale('ru')}>Russian</button>
+    <button data-action="locale-en" onClick={() => setLocale('en')}>English</button>
     <button data-action="unmount" onClick={() => setMounted(false)}>Unmount</button>
-    {mounted && <MorfiraEditor value={value} readOnly={readOnly} plugins={plugins} locale="en" label="Consumer editor" onReady={ready} onChange={change} />}
+    {mounted && <MorfiraEditor value={value} readOnly={readOnly} plugins={plugins} locale={locale} label="Consumer editor" onReady={ready} onChange={change} />}
   </>;
 };
 createRoot(document.getElementById('app')!).render(<StrictMode><App /></StrictMode>);

@@ -1,6 +1,6 @@
 # Optional ready editor UI
 
-Status: planned implementation contract for the next product-UI milestone. No new runtime UI or export is implemented by this document. Existing toolbar/forms remain available under their current public contracts. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
+Status: U1 baseline shell and U2 standard controls/forms are implemented locally with explicit public entries. U3 priority/More overflow and contextual controls remain future work. Existing toolbar/forms remain available under their current public contracts. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
 
 ## Outcome and boundaries
 
@@ -21,19 +21,19 @@ The controller contract is small: owned `element`, explicit `refresh()` and idem
 
 ## Staged UI behavior
 
-### U1 — Baseline shell
+### U1 — Baseline shell — implemented locally
 
 Start with a small toolbar composition over existing formatting/history behavior. Use grouped buttons and block/list/alignment selectors with an explicit ordered configuration. Support pressed, mixed and disabled states from existing core formatting and typed SDK command snapshots. Custom application commands use their identity tokens and validated payloads; action IDs/labels do not become a second string/RPC command bus.
 
 Existing `createToolbar` behavior remains compatible. Extract a concrete reusable helper only when both old/new UI need the same responsibility; do not introduce a generic UI framework. Keep named control/action/controller types with their owning feature.
 
-### U2 — Standard controls and forms
+### U2 — Standard controls and forms — implemented locally
 
 Add ready link/image/search launchers, localized block/list/alignment selectors and color/highlight palettes. Embed existing `createLinkForm`, `createImageForm` and `createSearchForm` controllers inside owned panel hosts. Reuse draft validation, upload ownership/cancellation, search state and lifecycle instead of reimplementing them in the shell.
 
 The standard UI checks required plugins before leaving mounted DOM or listeners. Missing image/search/table configuration must not produce a button that fails only after interaction. Minimal shell users may explicitly configure the controls supported by their editor without importing standard feature renderers.
 
-### U3 — Responsive overflow and contextual controls
+### U3 — Responsive overflow and contextual controls — future work
 
 Add measured overflow and small contextual link/image/table affordances after the baseline shell/forms pass acceptance. Context is read through public selection/plugin APIs. The UI does not simulate a new atomic selection model or persist controls in the document. Use contextual controls only for capabilities with stable existing selection contracts; later node-view/decorations SDK work is not assumed implemented.
 
@@ -42,10 +42,12 @@ One interaction remains one transaction/history step. Opening, closing, resizing
 ## Selection, focus and keyboard contract
 
 - Preserve the actual editor range and direction before focus enters a toolbar control or panel, including empty blocks and rich/table-cell selections. Restore only a valid current target before an editing action. External document replacement invalidates remembered ranges; do not apply stale drafts to a new document.
+- Escape from the toolbar returns focus to the editor even after an external replacement invalidates the remembered range. Use the editor's current safe caret in that case; focus recovery must not mutate the document or create history.
 - Use public command state for enabled/active/mixed and re-read at activation. Read-only/composition guards are enforced by the editor/command even for synthetic events, not only disabled button styles. Search navigation and other non-mutating actions remain available read-only where their feature contract permits.
 - A toolbar uses `role=toolbar`, an accessible localized label and one roving tab stop among enabled controls. Arrow keys and Home/End follow the chosen orientation; Tab leaves the toolbar. Do not hijack document typing shortcuts while an input/select is focused.
 - Native buttons/selects/inputs retain native semantics where sufficient. Toggle controls expose `aria-pressed`; mixed toggles expose the supported mixed state. Disabled controls have programmatic state and are skipped by toolbar navigation. Tooltips supplement visible/icon labels and never supply the only accessible name.
 - Popup launchers expose expanded/controls state. Nonmodal property forms use a labelled region/form pattern with no nested native form. Use dialog semantics and focus trapping only for a genuinely modal interaction; restore focus to the invoker or a valid editor target on close.
+- Popup and heading IDs are unique per document across mounted and detached UI instances, without requiring secure-context crypto APIs. Creating several UI instances remains supported when `crypto.randomUUID` is unavailable.
 - Opening a popup by keyboard places focus on its first meaningful enabled control. Escape closes the current popup without changing document/history and returns focus predictably. Closing must not silently commit an invalid draft. Outside interaction dismisses only the owned popup according to its form contract and does not steal focus from the user's target.
 - Color palettes use an accessible grid/radio-like single-selection pattern with arrow/Home/End navigation and a meaningful current/mixed/default label. Menu roles are used for action menus, not indiscriminately for every property form.
 - Pointer activation must preserve ranges without preventing ordinary text editing in the panel. Match focus behavior across Chromium/Firefox/WebKit, including Safari's button-focus differences. Composition/IME in fields does not accidentally submit the panel.
@@ -78,7 +80,7 @@ On close/destroy release every owned form/menu controller, listener, subscriptio
 
 ## Delivery and acceptance
 
-Implement U1 with preset P1 first; then U2/P2, then responsive/contextual U3 and extended P3. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
+U1/P1, U2/P2 and extended P3 are implemented locally; responsive/contextual U3 remains the next UI slice. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
 
 Required evidence for the implemented slice:
 
@@ -87,3 +89,9 @@ Required evidence for the implemented slice:
 3. Real installed-tarball imports/declarations/CSS through the existing five-wrapper consumer profiles, including React StrictMode and Angular 21/22. SSR imports do not touch DOM, register globals or load framework/UI dependencies into core.
 4. Individual shell/standard/extended and deduplicated preset closure measurements as minified raw JS, gzip and Brotli, plus CSS separately. Standard 200000 raw / 65000 gzip JS bytes, extended 350000 / 110000 and standard 20000-byte CSS are targets until measured profiles are explicitly guarded. Existing core/table/adapter guards remain unchanged.
 5. RU/EN API and live examples use these public UI factories. The homepage presents ready scenarios while the playground remains the detailed laboratory; neither retains duplicate form/toolbar behavior. Document unsupported contextual/selection/device behavior precisely.
+
+## First implementation decision
+
+Deliver the grouped icon toolbar shell and standard panel composition now. Standard includes native block/list/alignment controls, inline formatting/history, color/highlight controls, table insertion and the existing link/image/search forms. Native form controls are allowed when they provide the appropriate interaction; a custom color grid and priority overflow need not block this release. At narrow widths controls wrap within their host. Priority/More overflow and contextual bubbles remain U3 follow-up and must not be described as shipped.
+
+Custom action callbacks may invoke existing typed SDK tokens through closures; action IDs remain UI identities only. All mutation paths recheck read-only/composition and restore a valid range. Non-mutating panel/search actions may remain usable read-only. Closing a panel releases its owned controllers/listeners and cancels only its own upload; reopened drafts may be retained as copied per-instance UI values without changing plugin/document state. Standard creation validates required plugins before mounting, uses no editor/schema replacement, and forwards safe localized errors plus optional original diagnostics.

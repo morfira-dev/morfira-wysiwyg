@@ -1,6 +1,6 @@
 # Ready editor presets
 
-Status: planned implementation contract for the next product-UI milestone. No preset factory, preset export or new budget guard is implemented by this document. The current SDK slice is specified separately in `plugin-sdk.md`.
+Status: P1–P3 behavior factories and their explicit public exports are implemented locally together with U1/U2 ready UI. P4 measured profile guards are active as recorded below. The SDK slice is specified separately in `plugin-sdk.md`.
 
 ## Product outcome
 
@@ -14,7 +14,7 @@ A preset name describes an explicit capability set. A documentation laboratory w
 - `/presets/standard` exports `createStandardPreset(options?)`.
 - `/presets/extended` exports `createExtendedPreset(options?)`.
 - Each factory returns fresh `EditorOptions` for `createEditor(host, options)` or the supported wrapper options. It creates no editor, DOM node, event subscription, upload, timer or global registration.
-- Preset options expose documented editor settings and feature-owned configuration; preset-specific configuration must not leak as unknown `EditorOptions` fields. Names/types are finalized with the implementation slice and explicit exports/declarations.
+- Preset options expose documented editor settings and feature-owned configuration; preset-specific configuration must not leak as unknown `EditorOptions` fields. Implemented names/types are exposed through explicit exports/declarations and documented in the RU/EN preset guides.
 - Behavior-only preset entries do not import UI implementations, CSS, icon/font assets, framework runtimes or the umbrella full preset. Core's existing entry imports no preset or plugin. Presets live in the optional feature package with explicit facade forwarding entries, using feature-owned folders/types.
 - Optional UI is a separate import. `editor-ui.md` proposes `/ui/editor` for a small configurable shell and `/ui/standard` for the convenience composition of ready standard controls/forms. Importing `/presets/standard` must not retain these UI entries.
 
@@ -40,7 +40,7 @@ const dispose = () => {
 };
 ```
 
-These imports are planned rather than usable examples until the corresponding entrypoints ship. Images without an upload callback still support URL insertion; no upload transport, endpoint, blob persistence or development placeholder is silently supplied.
+These entrypoints are implemented locally; package publication remains a separate release action. Images without an upload callback still support URL insertion; no upload transport, endpoint, blob persistence or development placeholder is silently supplied.
 
 ## Initial capability matrix
 
@@ -78,26 +78,26 @@ Autolink and other concurrently developed modules are not assumed implemented by
 
 ## Implementable delivery slices
 
-### P1 — Minimal behavior preset and a usable small shell
+### P1 — Minimal behavior preset and a usable small shell — implemented locally
 
 Implement only the minimal pure factory and the baseline toolbar shell contract from `editor-ui.md`: grouped actions, history state, safe selection/focus handling and explicit CSS. Publish an actual minimal facade import and one framework-free example. Do not hold this slice for custom node views, decorations, full overflow or all future features.
 
-### P2 — Standard behavior and ready standard UI
+### P2 — Standard behavior and ready standard UI — implemented locally
 
 Compose tables/images/search/statistics/Markdown using their existing factories. Implement the standard UI convenience entry with link/image/search forms, block/list controls and measured responsive toolbar behavior. Reuse existing form controllers rather than copying their command/draft/upload logic. Add homepage and standalone wrapper examples using the same published configuration. Make the standard feature list and required CSS explicit.
 
-### P3 — Extended current capabilities
+### P3 — Extended current capabilities — implemented locally
 
 Add the pure extended factory for current mentions/slash providers and an optional menu/UI composition. Keep providers configurable, completion states localized and editable-text limitations clear. Future atoms, node views or rich structural selection require their own SDK phase; extended must remain usable without them.
 
-### P4 — Guard measured profiles
+### P4 — Guard measured profiles — active
 
-Once P1–P3 publish real entries, measure consumer bundles from installed tarballs, document JS/CSS/loading graphs and introduce explicit profile guards in the existing size/tree-shaking tooling. Profile guards are not enabled merely by writing this plan. Update preset versions/features when a composition materially changes.
+Real P1–P3 entries and profile guards now exist; the activation and accounting contract is recorded below. Keep installed-tarball consumer validation, JS/CSS/loading graphs and public-facade size checks in the release gates. Update preset versions/features when a composition materially changes.
 
 ## Size accounting and targets
 
 - Existing enforced limits remain core 200000 raw minified JS bytes, table entry 150000 and each adapter 10000. The working core target is 80000 bytes.
-- Standard target: 200000 raw / 65000 gzip JS bytes, plus at most 20000 raw CSS bytes. Extended target: 350000 raw / 110000 gzip JS bytes. These are planning targets, not already passed/enforced preset budgets.
+- Standard target: 200000 raw / 65000 gzip JS bytes, plus at most 20000 raw CSS bytes. Extended target: 350000 raw / 110000 gzip JS bytes. These are active profile guards as detailed in the P4 activation note below.
 - Measure minified raw JS, gzip, Brotli and CSS separately for each entry and a deduplicated selected closure. Headless and ready-UI profiles must be separate. Do not add independent per-entry totals that count shared chunks twice.
 - Include core, selected plugin implementations, UI/forms/icons and any required helper chunks in the chosen profile. Report optional locale alternatives, fonts/media and separately lazy-loaded modules outside the initial closure, with their own sizes and load triggers. Framework runtimes, source maps and declarations are excluded.
 - A feature being hidden or disabled at runtime does not establish tree-shaking. Verify actual built public imports exclude unrelated implementations and mandatory CSS.
@@ -109,3 +109,19 @@ Once P1–P3 publish real entries, measure consumer bundles from installed tarba
 - Selection/history and external controlled values preserve existing contracts. Test default profiles through Vue, React StrictMode, Svelte, Angular 21/22 and Web Component real installed-tarball fixtures; adapters must not acquire a new runtime dependency on UI.
 - Public declarations, explicit exports/CSS entries, package dependency boundaries, selective imports and measured profiles are checked against built/installable artifacts, not source aliases.
 - RU/EN guides, live homepage/playground examples and limitations match the same real factories. Report actual browser/device/accessibility evidence; automated desktop tests do not certify all mobile keyboards or screen readers.
+
+## First implementation decision
+
+P1–P3 behavior factories and U1/U2 UI are implemented locally. Standard additionally includes the now-implemented Space-only `autolink()`; `false` may disable a built-in instance, but runtime flags do not erase statically imported code. Minimal imports no optional behavior. Extended requires explicit mention/slash provider configuration; it installs no example provider or network transport. Additional application plugins/schema are appended/copied without mutating input. The precise option types and default built-in list are documented with the public factories.
+
+The first release uses responsive wrapping rather than a priority/More overflow menu. Full measured overflow and contextual selection bubbles remain U3 follow-up, not implied by the first modern toolbar. Every implemented profile must have measured raw/gzip/Brotli/CSS before enabling its proposed budget guard.
+
+
+## P4 — Measured profile guards activated
+
+The first implemented presets and ready UI have been measured through bundled public facade imports. This establishes the previously proposed limits as active guards in `scripts/size.ts` for both headless and ready standard/extended profiles:
+
+- Standard: at most 200000 raw minified JS bytes, 65000 gzip JS bytes and 20000 raw CSS bytes.
+- Extended: at most 350000 raw minified JS bytes, 110000 gzip JS bytes and 20000 raw CSS bytes.
+
+The product reason is to preserve the lightweight envelope now demonstrated by real usable compositions as subsequent capabilities are added. Each JS profile bundles core, its preset and its applicable ready-UI factory once; required CSS is an explicit deduplicated list. Minified/gzip/Brotli results remain separate, framework runtimes/fonts/source maps/declarations remain excluded, and no runtime feature flag is counted as tree-shaking. Minimal remains reported without a new profile guard. Existing core/table/adapter guards are unchanged. This note activates P4 for these implemented profiles; it does not claim U3 overflow, contextual bubbles or later SDK phases are complete.

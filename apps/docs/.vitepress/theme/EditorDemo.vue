@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useData } from 'vitepress';
-import type { Editor, ToolbarAction } from '@morfira-dev/wysiwyg';
+import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
 import type { MentionOption, SlashOption, SuggestionController, SuggestionState, SuggestionOption, SuggestionQuery } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import type { MarkdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
 import type { StatisticsCommands, StatisticsState } from '@morfira-dev/wysiwyg/plugins/statistics';
@@ -12,6 +12,7 @@ import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
 import type { TableCommands, TableClipboardData } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
+import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 
@@ -35,7 +36,7 @@ const providerMode = ref<'normal' | 'empty' | 'error'>('normal'); const provider
 const mentionState = ref<SuggestionState<MentionOption>>({ status: 'closed', query: '', items: [], activeIndex: -1 });
 const slashState = ref<SuggestionState<SlashOption>>({ status: 'closed', query: '', items: [], activeIndex: -1 });
 let mentionAPI: SuggestionController<MentionOption> | undefined; let slashAPI: SuggestionController<SlashOption> | undefined;
-let unmention: (() => void) | undefined; let unslash: (() => void) | undefined; let disposeMentionMenu: (() => void) | undefined; let disposeSlashMenu: (() => void) | undefined;
+let unmention: (() => void) | undefined; let unslash: (() => void) | undefined;
 const suggestionStatus = computed(() => { const state = mentionState.value.status !== 'closed' ? mentionState.value : slashState.value; return state.status === 'closed' ? t('Подсказки закрыты', 'Suggestions closed') : state.status === 'loading' ? t('Загрузка вариантов…', 'Loading choices…') : state.status === 'error' ? t('Ошибка: попробуйте открыть подсказки снова.', 'Error: try opening suggestions again.') : t(`Найдено вариантов: ${state.items.length}`, `Choices found: ${state.items.length}`); });
 const sample = ref('showcase'); const markdownEnabled = ref(true); let markdownAPI: MarkdownCommands | undefined;
 const statisticsState = ref<StatisticsState>({ document: { characters: 0, charactersWithoutWhitespace: 0, words: 0 }, selection: { characters: 0, charactersWithoutWhitespace: 0, words: 0 } });
@@ -47,7 +48,7 @@ const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛ
 const accent = ref('#6658e8'); const fontSize = ref(16); const padding = ref(28); const radius = ref(12);
 const themeStyle = computed(() => ({ '--mw-accent': accent.value, '--mw-font-size': `${fontSize.value}px`, '--mw-padding': `${padding.value}px`, '--mw-radius': `${radius.value}px` }));
 const textColor = ref('#6658e8'); const highlight = ref('#fff59d'); const activeStyles = ref('');
-let editor: Editor | undefined; let commands: TableCommands | undefined; let disposeToolbar: (() => void) | undefined;
+let editor: Editor | undefined; let commands: TableCommands | undefined; let disposeEditorUI: (() => void) | undefined;
 let unsubscribe: (() => void) | undefined; let unselect: (() => void) | undefined; let cancelled = false;
 
 const article = () => t(
@@ -158,48 +159,57 @@ const snippets = (request: SuggestionQuery) => localSuggestions<SlashOption>([
 ], request);
 onMounted(async () => {
   const [
-    { createEditor, createToolbar },
-    { tables, tableCommands },
-    { images },
-    { search },
-    { statistics, statisticsCommands },
-    { markdownShortcuts, markdownCommands },
-    { mentions, mentionCommands },
-    { slash, slashCommands, createSlashActions },
-    { createSuggestionMenu },
+    { createEditor },
+    { tableCommands },
+    { statisticsCommands },
+    { markdownCommands },
+    { mentionCommands },
+    { slashCommands, createSlashActions },
     { createLinkForm },
     { createImageForm },
     { createSearchForm },
+    { createMinimalPreset },
+    { createExtendedPreset },
+    { createEditorUI },
+    { createExtendedEditorUI },
   ] = await Promise.all([
     import('@morfira-dev/wysiwyg'),
     import('@morfira-dev/wysiwyg/plugins/tables'),
-    import('@morfira-dev/wysiwyg/plugins/images'),
-    import('@morfira-dev/wysiwyg/plugins/search'),
     import('@morfira-dev/wysiwyg/plugins/statistics'),
     import('@morfira-dev/wysiwyg/plugins/markdown'),
     import('@morfira-dev/wysiwyg/plugins/mentions'),
     import('@morfira-dev/wysiwyg/plugins/slash'),
-    import('@morfira-dev/wysiwyg/plugins/suggestions'),
     import('@morfira-dev/wysiwyg/ui/links'),
     import('@morfira-dev/wysiwyg/ui/images'),
     import('@morfira-dev/wysiwyg/ui/search'),
+    import('@morfira-dev/wysiwyg/presets/minimal'),
+    import('@morfira-dev/wysiwyg/presets/extended'),
+    import('@morfira-dev/wysiwyg/ui/editor'),
+    import('@morfira-dev/wysiwyg/ui/extended'),
   ]);
   if (cancelled) return;
-  editor = createEditor(host.value!, {
+  const common = {
     locale: editorLocale.value,
-    label: t('Попробуйте Morfira', 'Try Morfira'), plugins: [mentions({ provide: people, debounceMs: 0 }), slash({ provide: snippets, debounceMs: 0, actions: { ...createSlashActions(), table: (instance) => tableCommands(instance).insert(3, 3) } }), markdownShortcuts(), statistics({ locale: ru.value ? 'ru' : 'en' }), search(), images({ upload: demoUpload }), tables({ onClipboardError: (error) => notify(error.message, true) })],
+    label: t('Попробуйте Morfira', 'Try Morfira'),
     value: props.full ? showcase() : article(),
-    onChange: (change) => { source.value = change.source; refresh(); },
-  });
-  mentionAPI = mentionCommands(editor); slashAPI = slashCommands(editor);
-  mentionState.value = mentionAPI.getState(); slashState.value = slashAPI.getState();
-  unmention = mentionAPI.subscribe((state) => { mentionState.value = state; }); unslash = slashAPI.subscribe((state) => { slashState.value = state; });
-  disposeMentionMenu = createSuggestionMenu(editor, mentionAPI, { labels: { label: t('Люди', 'People'), loading: t('Ищем людей…', 'Finding people…'), empty: t('Люди не найдены', 'No people found'), error: t('Ошибка поиска людей', 'People lookup failed'), results: t('Людей: {count}', 'People: {count}') } });
-  disposeSlashMenu = createSuggestionMenu(editor, slashAPI, { labels: { label: t('Шаблоны', 'Snippets'), loading: t('Ищем шаблоны…', 'Finding snippets…'), empty: t('Шаблоны не найдены', 'No snippets found'), error: t('Ошибка поиска шаблонов', 'Snippet lookup failed'), results: t('Шаблонов: {count}', 'Snippets: {count}') } });
-  commands = tableCommands(editor);
-  markdownAPI = markdownCommands(editor); markdownEnabled.value = markdownAPI.getState().enabled;
-  statisticsAPI = statisticsCommands(editor); updateStatistics(statisticsAPI.getState()); unstatistics = statisticsAPI.subscribe(updateStatistics);
+    onChange: (change: EditorChange) => { source.value = change.source; refresh(); },
+  };
+  const preset = props.full ? createExtendedPreset({
+    ...common,
+    mentions: { provide: people, debounceMs: 0 },
+    slash: { provide: snippets, debounceMs: 0, actions: { ...createSlashActions(), table: (instance: Editor) => tableCommands(instance).insert(3, 3) } },
+    images: { upload: demoUpload },
+    statistics: { locale: ru.value ? 'ru' : 'en' },
+    tables: { onClipboardError: (error: Error) => notify(error.message, true) },
+  }) : createMinimalPreset(common);
+  editor = createEditor(host.value!, preset);
   if (props.full) {
+    mentionAPI = mentionCommands(editor); slashAPI = slashCommands(editor);
+    mentionState.value = mentionAPI.getState(); slashState.value = slashAPI.getState();
+    unmention = mentionAPI.subscribe((state) => { mentionState.value = state; }); unslash = slashAPI.subscribe((state) => { slashState.value = state; });
+    commands = tableCommands(editor);
+    markdownAPI = markdownCommands(editor); markdownEnabled.value = markdownAPI.getState().enabled;
+    statisticsAPI = statisticsCommands(editor); updateStatistics(statisticsAPI.getState()); unstatistics = statisticsAPI.subscribe(updateStatistics);
     linkForm = createLinkForm(linkFormHost.value!, editor, {
       initialValues: { href: 'https://example.com', title: '', text: '', newTab: false },
     });
@@ -210,25 +220,15 @@ onMounted(async () => {
       initialValues: { query: 'Morfira', replacement: 'Morfira Studio', caseSensitive: false, wholeWord: false },
     });
   }
-  const marks: ToolbarAction[] = [
-    { label: t('Отменить', 'Undo'), text: '↶', run: (instance) => instance.undo(), enabled: (instance) => instance.canUndo() },
-    { label: t('Повторить', 'Redo'), text: '↷', run: (instance) => instance.redo(), enabled: (instance) => instance.canRedo() },
-    { label: t('Полужирный', 'Bold'), text: 'B', format: 'bold' },
-    { label: t('Курсив', 'Italic'), text: 'I', format: 'italic' },
-    { label: t('Подчёркнутый', 'Underline'), text: 'U', format: 'underline' },
-    { label: t('Зачёркнутый', 'Strike'), text: 'S̶', format: 'strike' },
-    { label: t('Строчный код', 'Inline code'), text: '‹›', format: 'code' },
-    { label: t('Нижний индекс', 'Subscript'), text: 'x₂', format: 'subscript' },
-    { label: t('Верхний индекс', 'Superscript'), text: 'x²', format: 'superscript' },
-    { label: t('Маркированный список', 'Bullet list'), text: '☷', format: 'list', value: 'bullet' },
-    { label: t('Нумерованный список', 'Ordered list'), text: '1.', format: 'list', value: 'ordered' },
-    { label: t('Увеличить отступ', 'Indent list'), text: '⇥', format: 'indent', value: 1, enabled: (instance) => Boolean(instance.getFormats().canIndent) },
-    { label: t('Уменьшить отступ', 'Outdent list'), text: '⇤', format: 'indent', value: -1, enabled: (instance) => Boolean(instance.getFormats().canOutdent) },
-    { label: t('Очистить форматирование', 'Clear formatting'), text: 'Tx', format: 'clear', enabled: (instance) => Boolean(instance.getSelection()?.length) },
-    { label: t('Цитата', 'Blockquote'), text: '❝', format: 'blockquote' },
-    { label: t('Блок кода', 'Code block'), text: '{ }', format: 'code-block' },
-  ];
-  disposeToolbar = props.full ? createToolbar(toolbar.value!, editor, marks, { label: t('Форматирование', 'Formatting') }) : createToolbar(toolbar.value!, editor);
+  const ui = props.full ? createExtendedEditorUI(toolbar.value!, editor, {
+    label: t('Форматирование', 'Formatting'),
+    links: { initialValues: { href: 'https://example.com' } },
+    images: { initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64' } },
+    search: { initialValues: { query: 'Morfira', replacement: 'Morfira Studio' } },
+    mentions: { labels: { label: t('Люди', 'People'), loading: t('Ищем людей…', 'Finding people…'), empty: t('Люди не найдены', 'No people found'), error: t('Ошибка поиска людей', 'People lookup failed'), results: t('Людей: {count}', 'People: {count}') } },
+    slash: { labels: { label: t('Шаблоны', 'Snippets'), loading: t('Ищем шаблоны…', 'Finding snippets…'), empty: t('Шаблоны не найдены', 'No snippets found'), error: t('Ошибка поиска шаблонов', 'Snippet lookup failed'), results: t('Шаблонов: {count}', 'Snippets: {count}') } },
+  }) : createEditorUI(toolbar.value!, editor);
+  disposeEditorUI = ui.destroy;
   unsubscribe = editor.subscribe(refresh); unselect = editor.onSelectionChange(refresh); ready.value = true; refresh();
 });
 onBeforeUnmount(() => {
@@ -238,12 +238,10 @@ onBeforeUnmount(() => {
   searchForm?.destroy();
   unmention?.();
   unslash?.();
-  disposeMentionMenu?.();
-  disposeSlashMenu?.();
   unstatistics?.();
   unsubscribe?.();
   unselect?.();
-  disposeToolbar?.();
+  disposeEditorUI?.();
   editor?.destroy();
 });
 </script>
@@ -259,13 +257,12 @@ onBeforeUnmount(() => {
         <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
-      <button v-else :disabled="!ready || readOnly" @click="insertTable">{{ t('+ Таблица 3 × 3', '+ Table 3 × 3') }}</button>
       <label>{{ t('Язык редактора', 'Editor language') }}<select v-model="editorLocale" :disabled="!ready" :aria-label="t('Язык интерфейса редактора', 'Editor interface language')" @change="updateEditorLocale"><option value="ru">Русский</option><option value="en">English</option></select></label>
       <button @click="dark = !dark">{{ t('Сменить тему', 'Toggle theme') }}</button>
       <button :disabled="!ready" @click="toggleReadOnly">{{ readOnly ? t('Редактировать', 'Edit') : t('Только чтение', 'Read only') }}</button>
       <button :disabled="!ready" @click="snapshot('html')">HTML</button><button v-if="full" :disabled="!ready" @click="snapshot('json')">JSON</button>
     </div>
-    <p class="lab-hint">{{ t('Язык меняет встроенный интерфейс и переиспользуемые формы без замены документа. Собственные подписи панели и подсказок в этом стенде остаются на языке страницы.', 'Language changes built-in editor UI and reusable forms without replacing the document. Custom toolbar and suggestion labels in this laboratory remain in the page language.') }}</p>
+    <p class="lab-hint">{{ t('Язык меняет готовую панель и формы без замены документа. Подписи примеров и провайдеров подсказок остаются на языке страницы.', 'Language changes the ready toolbar and forms without replacing the document. Sample and suggestion-provider labels remain in the page language.') }}</p>
     <div v-if="message" class="lab-message" :class="{ 'is-error': failed }" :role="failed ? 'alert' : 'status'">{{ message }}</div>
     <div class="demo-workspace">
       <div class="demo-editing">
@@ -280,7 +277,7 @@ onBeforeUnmount(() => {
           <span>{{ t('Текст / фон', 'Text / background') }}: {{ activeStyles }}</span>
         </fieldset>
         <div ref="toolbar"></div><div ref="host"></div>
-        <div class="demo-status"><span>{{ count }} {{ t('символов', 'characters') }}<template v-if="full"> · {{ words }} {{ t('слов', 'words') }}</template></span><span v-if="full">undo {{ undoAvailable ? '●' : '○' }} · redo {{ redoAvailable ? '●' : '○' }} · {{ source }}</span><span v-else>{{ t('Таблицы: контекстное меню по правой кнопке', 'Tables: right-click for actions') }}</span></div>
+        <div class="demo-status"><span>{{ count }} {{ t('символов', 'characters') }}<template v-if="full"> · {{ words }} {{ t('слов', 'words') }}</template></span><span v-if="full">undo {{ undoAvailable ? '●' : '○' }} · redo {{ redoAvailable ? '●' : '○' }} · {{ source }}</span><span v-else>{{ t('Минимальный пресет · готовая панель', 'Minimal preset · ready toolbar') }}</span></div>
         <p v-if="full" class="lab-hint">{{ t('Выделяй текст перед форматированием. Кликни в ячейку перед табличной командой. Ctrl/Cmd+Z — отмена; Ctrl/Cmd+B/I/U — формат; Enter — новый пункт, пустой — выход; Tab/Shift+Tab — вложенность. В таблице Tab — следующая ячейка.', 'Select text before formatting. Click a cell before a table command. Ctrl/Cmd+Z undoes; Ctrl/Cmd+B/I/U formats; Enter splits an item; an empty item exits. Tab/Shift+Tab nests lists; in tables Tab moves to the next cell.') }}</p>
       </div>
       <aside v-if="full" class="demo-inspector">

@@ -31,6 +31,8 @@ export interface ConsumerScenario {
   userChanges: number;
   uiForms: true;
   sdk: true;
+  preset: 'extended';
+  readyUI: true;
 }
 export interface ConsumerReport {
   profile: ConsumerProfile;

@@ -85,6 +85,31 @@
     "./plugins/autolink": {
       "types": "./dist/plugins/autolink.d.ts",
       "import": "./dist/plugins/autolink.js"
+    },
+    "./presets/minimal": {
+      "types": "./dist/presets/minimal.d.ts",
+      "import": "./dist/presets/minimal.js"
+    },
+    "./presets/standard": {
+      "types": "./dist/presets/standard.d.ts",
+      "import": "./dist/presets/standard.js"
+    },
+    "./presets/extended": {
+      "types": "./dist/presets/extended.d.ts",
+      "import": "./dist/presets/extended.js"
+    },
+    "./ui/editor": {
+      "types": "./dist/ui/editor.d.ts",
+      "import": "./dist/ui/editor.js"
+    },
+    "./ui/standard": {
+      "types": "./dist/ui/standard.d.ts",
+      "import": "./dist/ui/standard.js"
+    },
+    "./ui/editor.css": "./dist/ui/editor.css",
+    "./ui/extended": {
+      "types": "./dist/ui/extended.d.ts",
+      "import": "./dist/ui/extended.js"
     }
   },
   "dependencies": {

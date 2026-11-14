@@ -1,0 +1,28 @@
+export const standardEditorUIMessages = Object.freeze({
+  en: Object.freeze({
+    'ui.standard.label': 'Editor tools',
+    'ui.standard.link': 'Link',
+    'ui.standard.image': 'Image',
+    'ui.standard.search': 'Find and replace',
+    'ui.standard.table': 'Insert table',
+    'ui.standard.close': 'Close panel',
+    'ui.standard.rows': 'Table rows',
+    'ui.standard.columns': 'Table columns',
+    'ui.standard.insertTable': 'Insert table',
+    'ui.standard.error': 'Unable to apply this action. Check the values and editor selection.',
+    'ui.standard.selection': 'Select text or place the caret in the editor first.',
+  }),
+  ru: Object.freeze({
+    'ui.standard.label': 'Инструменты редактора',
+    'ui.standard.link': 'Ссылка',
+    'ui.standard.image': 'Изображение',
+    'ui.standard.search': 'Поиск и замена',
+    'ui.standard.table': 'Вставить таблицу',
+    'ui.standard.close': 'Закрыть панель',
+    'ui.standard.rows': 'Строки таблицы',
+    'ui.standard.columns': 'Столбцы таблицы',
+    'ui.standard.insertTable': 'Вставить таблицу',
+    'ui.standard.error': 'Не удалось выполнить действие. Проверьте значения и выделение редактора.',
+    'ui.standard.selection': 'Сначала выделите текст или установите курсор в редакторе.',
+  }),
+});

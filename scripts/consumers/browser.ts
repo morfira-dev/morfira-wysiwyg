@@ -18,6 +18,22 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await page.evaluate(() => window.morfiraConsumer.editor!.setSelection(7));
           await page.keyboard.type(' text');
           await expect(content).toHaveText('Initial text');
+          const readyUI = page.locator('[data-consumer-ready-ui]');
+          await expect(readyUI.getByRole('toolbar', { name: 'Consumer ready tools', exact: true })).toBeVisible();
+          await page.evaluate(() => window.morfiraConsumer.editor!.setSelection(0, 7));
+          await readyUI.locator('[data-mw-ui-action="bold"]').click();
+          await expect(content.locator('strong')).toHaveText('Initial');
+          await expect(readyUI.locator('[data-mw-ui-action="bold"]')).toHaveAttribute('aria-pressed', 'true');
+          await readyUI.locator('[data-mw-ui-action="undo"]').click();
+          await expect(content.locator('strong')).toHaveCount(0);
+          await expect(content).toHaveText('Initial text');
+          const beforeLocale = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), undo: window.morfiraConsumer.editor!.canUndo(), changes: window.morfiraConsumer.changes }));
+          await page.locator('[data-action="locale-ru"]').click();
+          await expect(readyUI.getByRole('button', { name: 'Полужирный', exact: true })).toBeVisible();
+          await expect(readyUI.getByRole('toolbar', { name: 'Consumer ready tools', exact: true })).toBeVisible();
+          assert.deepEqual(await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), undo: window.morfiraConsumer.editor!.canUndo(), changes: window.morfiraConsumer.changes })), beforeLocale, `${adapter}: UI localization must preserve document, history and feedback`);
+          await page.locator('[data-action="locale-en"]').click();
+          await expect(readyUI.getByRole('button', { name: 'Bold', exact: true })).toBeVisible();
           const links = page.getByRole('form', { name: 'Consumer links', exact: true });
           const images = page.getByRole('form', { name: 'Consumer images', exact: true });
           const search = page.getByRole('form', { name: 'Consumer search', exact: true });
@@ -60,7 +76,7 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
             editor.setSelection(0, editor.surface.textContent!.length);
           });
           await page.keyboard.type('/h');
-          await expect(page.getByRole('option', { name: 'Heading 2', exact: true })).toBeVisible();
+          await expect(page.getByRole('listbox', { name: 'Suggestions', exact: true }).getByRole('option', { name: 'Heading 2', exact: true })).toBeVisible();
           const beforeChoice = await page.evaluate(() => window.morfiraConsumer.changes);
           await page.keyboard.press('Enter');
           await expect(content.locator('h2')).toHaveCount(1);
@@ -110,6 +126,8 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), userChanges, `${adapter}: external replacement must not emit a user change`);
           await page.locator('[data-action="readonly"]').click();
           await expect(content).toHaveAttribute('contenteditable', 'false');
+          await expect(readyUI.locator('[data-mw-ui-action="bold"]')).toBeDisabled();
+          await expect(readyUI.locator('[data-mw-ui-action="search"]')).toBeEnabled();
           assert.equal(await page.evaluate(() => window.morfiraConsumer.insertNote!('blocked SDK note')), false, `${adapter}: read-only must block installed SDK commands`);
           await expect(note).toHaveCount(0);
           await content.focus();
@@ -130,6 +148,8 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await expect(page.locator('.mw-suggestions')).toHaveCount(0);
           await expect(page.locator('.mw-form')).toHaveCount(0);
           await expect(page.locator('[data-consumer-ui]')).toHaveCount(0);
+          await expect(readyUI).toHaveCount(0);
+          assert.equal(await page.evaluate(() => typeof window.morfiraConsumer.ui), 'undefined', `${adapter}: ready UI must release its editor on destroy`);
           assert.equal(await page.evaluate(() => typeof window.morfiraConsumer.insertNote), 'undefined', `${adapter}: SDK probe must release its editor on destroy`);
           assert.equal(await page.evaluate(() => {
             try { window.morfiraConsumer.editor!.getHTML(); }
@@ -137,8 +157,8 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
             return false;
           }), true, `${adapter}: unmount must dispose the editor API`);
           assert.deepEqual(errors, [], `${adapter}/${name}: unexpected browser errors`);
-          scenarios.push({ adapter, browser: name, browserVersion: browser.version(), userChanges, uiForms: true, sdk: true });
-          console.log(`Packed consumer ${adapter}/${name}: controlled input, UI forms/history, plugin SDK/schema/history, slash/history, external values, read-only and teardown passed.`);
+          scenarios.push({ adapter, browser: name, browserVersion: browser.version(), userChanges, uiForms: true, sdk: true, preset: 'extended', readyUI: true });
+          console.log(`Packed consumer ${adapter}/${name}: extended preset, ready UI/locale/history, controlled input, UI forms/history, plugin SDK/schema/history, slash/history, external values, read-only and teardown passed.`);
         }
         catch (error) {
           const trace = await page.evaluate(() => {

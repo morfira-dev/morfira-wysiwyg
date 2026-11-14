@@ -1,0 +1,11 @@
+.mw-standard-editor-ui { position: relative; min-width: 0; color: var(--mw-text, #263043); font-family: var(--mw-font, system-ui, sans-serif); }
+.mw-standard-editor-ui .mw-ui-panel { margin-block-start: var(--mw-ui-gap, 8px); padding: var(--mw-ui-panel-padding, 12px); background: var(--mw-popup-surface, var(--mw-surface, #fff)); color: var(--mw-text, #263043); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-ui-radius, 10px); box-shadow: var(--mw-popup-shadow, 0 8px 24px #16213b14); max-width: 100%; min-width: 0; }
+.mw-standard-editor-ui .mw-ui-panel[hidden] { display: none; }
+.mw-standard-editor-ui .mw-ui-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-block-end: 10px; }
+.mw-standard-editor-ui .mw-ui-panel-title { margin: 0; font: inherit; font-weight: 600; }
+.mw-standard-editor-ui .mw-ui-panel-close { border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-control-radius, 6px); padding: 6px 10px; background: var(--mw-surface, #fff); color: inherit; font: inherit; cursor: pointer; }
+.mw-standard-editor-ui .mw-ui-panel-close:hover { background: var(--mw-hover, #f0f2f7); }
+.mw-standard-editor-ui .mw-ui-panel-close:focus-visible { outline: 2px solid var(--mw-accent, #6658e8); outline-offset: 2px; }
+.mw-standard-editor-ui .mw-ui-panel-body { min-width: 0; }
+.mw-standard-editor-ui .mw-ui-panel .mw-form { --mw-form-padding: 0; border: 0; border-radius: 0; background: transparent; }
+.mw-standard-editor-ui .mw-ui-status:empty { display: none; }

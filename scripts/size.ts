@@ -1,7 +1,8 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { gzipSync, brotliCompressSync } from 'node:zlib';
 import { compile } from 'svelte/compiler';
-import { transform } from 'esbuild';
+import { build, transform } from 'esbuild';
+import { fileURLToPath } from 'node:url';
 
 const report: Record<string, { raw: number; gzip: number; brotli: number; }> = {};
 let failed = false;
@@ -22,14 +23,15 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
   }
   if (name === 'plugins') {
     const entries = JSON.parse(await readFile(`${path}/entries.json`, 'utf8')) as Record<string, string[]>;
-    for (const [group, selectedEntries] of [['suggestions-set', ['mentions', 'slash', 'suggestions']], ['all-plugins', Object.keys(entries).filter((entry) => !entry.startsWith('ui/'))], ['ui-forms', ['ui/links', 'ui/images', 'ui/search']]] as const) {
+    for (const [group, selectedEntries] of [['suggestions-set', ['mentions', 'slash', 'suggestions']], ['all-plugins', Object.keys(entries).filter((entry) => !entry.startsWith('ui/') && !entry.startsWith('presets/'))], ['ui-forms', ['ui/links', 'ui/images', 'ui/search']]] as const) {
       const selected = [...new Set(selectedEntries.flatMap((entry) => entries[entry]))];
       const buffers = await Promise.all(selected.map((file) => readFile(`${path}/${file}`)));
       report[`${group}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
     }
     const css = await readFile(`${path}/suggestions.css`); report['suggestions.css'] = { raw: css.length, gzip: gzipSync(css).length, brotli: brotliCompressSync(css).length };
     const formCSS = await readFile(`${path}/ui/forms.css`); report['ui-forms.css'] = { raw: formCSS.length, gzip: gzipSync(formCSS).length, brotli: brotliCompressSync(formCSS).length };
-    for (const entry of ['images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
+    const editorCSS = await readFile(`${path}/ui/editor.css`); report['ui-editor.css'] = { raw: editorCSS.length, gzip: gzipSync(editorCSS).length, brotli: brotliCompressSync(editorCSS).length };
+    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].raw > 150_000) { console.error(`${entry}: exceeds 150000 byte JS budget`); failed = true; }
@@ -37,6 +39,46 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
   }
   const budget = name === 'core' ? 200_000 : name === 'plugins' ? 150_000 : 10_000;
   if (report[`${name}.js`].raw > budget) { console.error(`${name}: exceeds ${budget} byte JS budget`); failed = true; }
+}
+// Consumer profiles retain the actual public factories and bundle their shared JS once.
+// Runtime feature flags are deliberately not used as a tree-shaking claim.
+for (const profile of ['minimal', 'standard', 'extended']) {
+  const preset = ({ minimal: 'createMinimalPreset', standard: 'createStandardPreset', extended: 'createExtendedPreset' } as Record<string, string>)[profile];
+  const ui = ({ minimal: 'createEditorUI', standard: 'createStandardEditorUI', extended: 'createExtendedEditorUI' } as Record<string, string>)[profile];
+  for (const ready of [false, true]) {
+    const name = `profile-${profile}-${ready ? 'ready' : 'headless'}`;
+    const contents = `import { createEditor } from '@morfira-dev/wysiwyg'; import { ${preset} } from '@morfira-dev/wysiwyg/presets/${profile}'; ${ready ? `import { ${ui} } from '@morfira-dev/wysiwyg/ui/${profile === 'minimal' ? 'editor' : profile}';` : ''} globalThis.__morfiraProfile = { createEditor, ${preset}${ready ? `, ${ui}` : ''} };`;
+    const bundled = await build({
+      stdin: { contents, resolveDir: process.cwd(), sourcefile: 'profile-consumer.ts', loader: 'ts' },
+      bundle: true, treeShaking: true, minify: true, write: false, metafile: true,
+      tsconfigRaw: { compilerOptions: {} }, format: 'esm', platform: 'browser', target: 'es2022', logLevel: 'silent',
+    });
+    const inputs = Object.keys(bundled.metafile!.inputs);
+    if (inputs.some((input) => /^packages\/[^/]+\/src\//.test(input))) throw new Error(`${name}: expected built public artifacts, not source aliases.`);
+    if (inputs.some((input) => input.endsWith('.css'))) throw new Error(`${name}: JS factories must not import CSS.`);
+    const javascript = bundled.outputFiles[0].contents;
+    report[`${name}.js`] = { raw: javascript.length, gzip: gzipSync(javascript).length, brotli: brotliCompressSync(javascript).length };
+    const styles = [
+      '@morfira-dev/wysiwyg/style.css',
+      ...(profile !== 'minimal' ? ['@morfira-dev/wysiwyg/plugins/tables.css'] : []),
+      ...(ready ? ['@morfira-dev/wysiwyg/ui/editor.css'] : []),
+      ...(ready && profile !== 'minimal' ? ['@morfira-dev/wysiwyg/ui/forms.css'] : []),
+      ...(ready && profile === 'extended' ? ['@morfira-dev/wysiwyg/plugins/suggestions.css'] : []),
+    ];
+    const css = await Promise.all([...new Set(styles)].map((entry) => readFile(fileURLToPath(import.meta.resolve(entry)))));
+    report[`${name}.css`] = css.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
+    if (profile !== 'minimal') {
+      // The first real presets now establish these measured product-profile guards.
+      const budget = profile === 'standard' ? { raw: 200000, gzip: 65000 } : { raw: 350000, gzip: 110000 };
+      const javascriptSize = report[`${name}.js`];
+      const stylesheetSize = report[`${name}.css`];
+      if (javascriptSize.raw > budget.raw || javascriptSize.gzip > budget.gzip || stylesheetSize.raw > 20000) {
+        console.error(`${name}: exceeds profile guard (${budget.raw} raw JS / ${budget.gzip} gzip JS / 20000 raw CSS bytes).`);
+        failed = true;
+      }
+      else console.log(`${name}: measured profile guard passed (${budget.raw} raw JS / ${budget.gzip} gzip JS / 20000 raw CSS bytes).`);
+    }
+  }
 }
 console.table(Object.fromEntries(Object.entries(report).map(([key, sizes]) => [key, Object.fromEntries(Object.entries(sizes).map(([type, bytes]) => [type, `${(bytes / 1000).toFixed(2)} kB`]))])));
 await writeFile('size-report.json', JSON.stringify(report, null, 2) + '\n');

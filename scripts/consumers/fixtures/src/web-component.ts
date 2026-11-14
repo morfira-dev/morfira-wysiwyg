@@ -16,6 +16,8 @@ let external = 0;
 for (const [action, callback] of [
   ['external', () => { element.value = `<p>External ${++external}</p>`; }],
   ['readonly', () => { element.readOnly = !element.readOnly; }],
+  ['locale-ru', () => { element.locale = 'ru'; }],
+  ['locale-en', () => { element.locale = 'en'; }],
   ['unmount', () => element.remove()],
 ] as const) {
   const button = document.createElement('button');

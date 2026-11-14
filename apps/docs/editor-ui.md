@@ -1,0 +1,143 @@
+# Готовая панель редактора
+
+Необязательный UI собирает готовый интерфейс поверх публичных команд редактора. Панель не устанавливает плагины, не меняет схему и не требует Vue/React/Svelte/Angular. Поведение выбирается через [пресеты](/presets), интерфейс — отдельным импортом. Главная и [playground](/playground) используют те же публичные фабрики.
+
+## Выбор комплектации
+
+| Импорт | Фабрика | Что подключается |
+| --- | --- | --- |
+| `@morfira-dev/wysiwyg/ui/editor` | `createEditorUI` | Небольшая панель форматирования и пользовательские действия |
+| `@morfira-dev/wysiwyg/ui/standard` | `createStandardEditorUI` | Панель, формы ссылок/изображений/поиска и вставка таблицы |
+| `@morfira-dev/wysiwyg/ui/extended` | `createExtendedEditorUI` | Standard UI и существующие меню mentions/slash |
+
+`createEditorUI` не требует table/image/search/suggestion-плагинов. Standard проверяет `tables`, `images` и `search` **до монтажа DOM и listeners**. Extended дополнительно требует `mentions` и `slash`; провайдеры данных задаёт приложение. Если стандартный пресет отключает обязательный модуль, используйте настраиваемый shell вместо Standard UI.
+
+Все импорты безопасны при SSR. Создание UI требует браузерного DOM и пустого host вне `editor.surface`. Непустой host отклоняется без замены содержимого приложения. UI не регистрирует глобальные custom elements и не выполняет сетевые запросы.
+
+## Стандартный редактор
+
+```ts
+import { createEditor } from '@morfira-dev/wysiwyg';
+import { createStandardPreset } from '@morfira-dev/wysiwyg/presets/standard';
+import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
+import '@morfira-dev/wysiwyg/style.css';
+import '@morfira-dev/wysiwyg/plugins/tables.css';
+import '@morfira-dev/wysiwyg/ui/editor.css';
+import '@morfira-dev/wysiwyg/ui/forms.css';
+
+const editor = createEditor(editorHost, createStandardPreset({
+  locale: 'ru',
+  value: '<p>Начните писать.</p>',
+}));
+const ui = createStandardEditorUI(toolbarHost, editor, {
+  density: 'comfortable',
+  images: { initialValues: { src: '/example.png', alt: 'Описание' } },
+  table: { rows: 3, columns: 3 },
+  onError: (error) => console.error(error),
+});
+
+const dispose = () => {
+  ui.destroy();
+  editor.destroy();
+};
+```
+
+URL изображения — пример значения приложения, а не встроенный ассет. Без callback загрузки поддерживается вставка по URL. Для загрузки передайте свой `images.upload` в behavior preset; транспорт, endpoint и авторизация принадлежат приложению. Закрытие панели отменяет только запрос, начатый её формой, и не отменяет более новую загрузку приложения. [Контракт изображений](/images).
+
+CSS импортируется явно. `editor.css` содержит shell и стандартные панели; `forms.css` — переиспользуемые формы. Стили документа/таблиц подключаются отдельно. JavaScript не вставляет styles или шрифты автоматически.
+
+## Небольшой shell
+
+```ts
+import { createEditor } from '@morfira-dev/wysiwyg';
+import { createMinimalPreset } from '@morfira-dev/wysiwyg/presets/minimal';
+import { createEditorUI } from '@morfira-dev/wysiwyg/ui/editor';
+import '@morfira-dev/wysiwyg/style.css';
+import '@morfira-dev/wysiwyg/ui/editor.css';
+
+const editor = createEditor(editorHost, createMinimalPreset({ locale: 'ru' }));
+const ui = createEditorUI(toolbarHost, editor, {
+  density: 'compact',
+  groups: [
+    ['undo', 'redo'],
+    ['bold', 'italic', 'underline'],
+    ['block', 'list', 'align'],
+    ['color', 'background', 'clear'],
+  ],
+});
+```
+
+Доступные builtin IDs: `undo`, `redo`, `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`, `blockquote`, `clear`, `indent`, `outdent`, `block`, `list`, `align`, `color`, `background`. `createDefaultEditorUIGroups()` возвращает свежие группы по умолчанию. Повторные/неизвестные идентификаторы отклоняются при создании.
+
+Первые элементы групп отражают порядок панели, а не приоритет команд. `block` включает абзац, заголовки и блок кода; `list` — обычный текст, bullet и ordered list; `align` — четыре текущих варианта выравнивания. Цвет и выделение используют нативный color input и отдельный сброс. Полная custom palette и priority overflow пока не реализованы.
+
+## Действие через SDK
+
+ID пользовательского действия нужен только UI. Типизированная команда сохраняет собственную идентичность и проверку payload; новый строковый command bus не создаётся.
+
+```ts
+import { createEditorCommand } from '@morfira-dev/wysiwyg';
+import { createEditorUI } from '@morfira-dev/wysiwyg/ui/editor';
+
+const emphasize = createEditorCommand<void>('app:emphasize');
+const unregister = editor.commands.register(emphasize, {
+  validate: (payload) => {
+    if (payload !== undefined) throw new TypeError('Expected no payload.');
+  },
+  execute: (instance) => instance.format('bold', true),
+  isEnabled: (instance) => (instance.getSelection()?.length ?? 0) > 0,
+  isActive: (instance) => Boolean(instance.getFormats().bold),
+});
+const ui = createEditorUI(toolbarHost, editor, {
+  groups: [['undo', 'redo'], [{
+    id: 'app:emphasize',
+    label: 'Выделить полужирным',
+    text: 'B+',
+    run: (instance) => { instance.commands.execute(emphasize, undefined); },
+    enabled: (instance) => instance.commands.getState(emphasize).enabled,
+    pressed: (instance) => instance.commands.getState(emphasize).active,
+  }]],
+});
+```
+
+В cleanup вызовите `ui.destroy()` и `unregister()`. Custom action принимает `icon` из небольшого встроенного набора либо безопасный `text`, `enabled`, `pressed` и `mutates` (по умолчанию true). Для немутирующего действия можно задать `mutates: false`. Исходные ошибки передаются в `onError`; пользователь видит безопасное локализованное сообщение. Несколько изменений внутри одного действия оформляйте [SDK-командой/транзакцией](/plugin-sdk).
+
+## Extended и меню подсказок
+
+```ts
+import { createEditor } from '@morfira-dev/wysiwyg';
+import { createExtendedPreset } from '@morfira-dev/wysiwyg/presets/extended';
+import { createExtendedEditorUI } from '@morfira-dev/wysiwyg/ui/extended';
+import '@morfira-dev/wysiwyg/style.css';
+import '@morfira-dev/wysiwyg/plugins/tables.css';
+import '@morfira-dev/wysiwyg/plugins/suggestions.css';
+import '@morfira-dev/wysiwyg/ui/editor.css';
+import '@morfira-dev/wysiwyg/ui/forms.css';
+
+const editor = createEditor(editorHost, createExtendedPreset({
+  locale: 'ru',
+  mentions: { provide: applicationPeopleProvider },
+  slash: { provide: applicationCommandProvider },
+}));
+const ui = createExtendedEditorUI(toolbarHost, editor, { density: 'compact' });
+```
+
+Провайдеры в примере определяет приложение. При отсутствии `slash.actions` preset подключает текущие структурные действия `createSlashActions()`. Extended UI владеет двумя меню подсказок и стандартной панелью, но не добавляет новые плагины или провайдеры. Не создавайте второе меню для того же suggestion controller. Текущие mentions остаются редактируемым текстом без постоянных ID/атомарного выделения. [Подсказки и ограничения](/suggestions).
+
+## Выделение, клавиатура и состояние
+
+Панель сохраняет настоящий DOM Range и направление выделения до перехода в controls, включая пустые блоки. Перед изменением восстанавливается только допустимая цель. Внешняя замена документа сбрасывает старую цель и закрывает Standard panel; повторно выделите текст в редакторе. Открытие/закрытие панели, смена языка и темы не создают undo-ревизии.
+
+В toolbar один roving tab stop. Стрелки в ряду кнопок и Home/End перемещают фокус; Tab выходит из панели. Нативные select/color input сохраняют собственные клавиши; **Alt+ArrowLeft/ArrowRight** переводит фокус между controls, когда текущий control нативный. Escape возвращает фокус редактору; в открытой Standard panel сначала закрывает панель и возвращает фокус launcher-кнопке. Outside click закрывает только принадлежащую UI панель и не перехватывает фокус внешнего target.
+
+`aria-pressed` отражает активный или mixed формат, disabled controls пропускаются клавиатурной навигацией. Read-only блокирует изменение документа; поиск/навигация остаются доступны. Во время composition mutating controls защищены редактором, а Standard launchers не открывают отвлекающую панель. Переиспользуемые формы не создают вложенных native `<form>` и не отправляют форму приложения по Enter.
+
+## Язык, оформление и lifecycle
+
+Builtin UI использует RU/EN-каталоги `ui.editor.*` и `ui.standard.*`, формы — свои `ui.links.*`, `ui.images.*`, `ui.search.*`. `editor.setLocale(...)` обновляет подписи и сообщения без замены документа и черновиков. Явный `label` и custom action labels принадлежат приложению; callback `label: (editor) => ...` позволяет им реагировать на locale.
+
+Плотность — `comfortable` или `compact`. Scoped CSS использует `--mw-*`: существующие surface/text/accent/border/hover плюс `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Стили документа не переписываются при смене темы. Поддерживаются responsive wrapping и reduced motion; More/priority overflow и contextual bubbles остаются следующими этапами.
+
+Контроллеры предоставляют `element`, `refresh()` и идемпотентный `destroy()`. Destroy UI оставляет редактор и application-owned search state рабочими; editor destroy автоматически освобождает связанный UI. Отсоединённые controls инертны. Все подписки, формы и меню имеют cleanup. Desktop browser tests не являются сертификацией mobile/IME или скринридеров.
+
+Размеры измеряются отдельно как minified JS, gzip, Brotli и CSS, с устранением общих чанков. Framework runtime, карты исходников и декларации не входят в runtime-size. Состав и ограничения профилей — на странице [пресетов](/presets).

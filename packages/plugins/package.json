@@ -63,6 +63,31 @@
     "./autolink": {
       "types": "./dist/autolink/index.d.ts",
       "import": "./dist/autolink.js"
+    },
+    "./presets/minimal": {
+      "types": "./dist/presets/minimal/index.d.ts",
+      "import": "./dist/presets/minimal.js"
+    },
+    "./presets/standard": {
+      "types": "./dist/presets/standard/index.d.ts",
+      "import": "./dist/presets/standard.js"
+    },
+    "./presets/extended": {
+      "types": "./dist/presets/extended/index.d.ts",
+      "import": "./dist/presets/extended.js"
+    },
+    "./ui/editor": {
+      "types": "./dist/ui/editor/index.d.ts",
+      "import": "./dist/ui/editor.js"
+    },
+    "./ui/standard": {
+      "types": "./dist/ui/standard/index.d.ts",
+      "import": "./dist/ui/standard.js"
+    },
+    "./ui/editor.css": "./dist/ui/editor.css",
+    "./ui/extended": {
+      "types": "./dist/ui/extended/index.d.ts",
+      "import": "./dist/ui/extended.js"
     }
   },
   "peerDependencies": {

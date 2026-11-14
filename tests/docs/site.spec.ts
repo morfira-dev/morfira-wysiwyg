@@ -54,7 +54,7 @@ test('homepage exposes the complete laboratory, tables, theme and HTML/JSON', as
   await expect(page.getByText('Буфер диапазона · HTML / TSV', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Верхний индекс', exact: true })).toBeVisible();
   await sample(page, 'empty');
-  await page.getByRole('button', { name: 'Вставить таблицу', exact: true }).click();
+  await page.locator('.demo-inspector').getByRole('button', { name: 'Вставить таблицу', exact: true }).click();
   await expect(page.locator('.mw-content td')).toHaveCount(9);
   await page.getByRole('button', { name: 'Сменить тему', exact: true }).click();
   await expect(page.locator('.demo-shell')).toHaveClass(/dark-demo/);
@@ -78,7 +78,7 @@ test('full demo formats text, changes blocks and inserts a checked link and loca
   });
   await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe('Hello');
   await page.getByRole('button', { name: 'Полужирный', exact: true }).click(); await expect(page.locator('.mw-content strong')).toHaveText('Hello');
-  await page.getByLabel('Формат блока', { exact: true }).selectOption('3'); await expect(page.locator('.mw-content h3')).toHaveText('Hello world');
+  await page.locator('.lab-block-controls').getByLabel('Формат блока', { exact: true }).selectOption('3'); await expect(page.locator('.mw-content h3')).toHaveText('Hello world');
   await content.focus();
   await content.evaluate((element) => {
     const range = document.createRange(); const text = element.querySelector('h3 strong')!.firstChild!;
@@ -95,7 +95,7 @@ test('full demo formats text, changes blocks and inserts a checked link and loca
 
 test('table controls preserve a range while using forms, merge/split and paste TSV', async ({ page }) => {
   await page.goto('/playground'); await sample(page, 'empty');
-  await page.getByRole('button', { name: 'Вставить таблицу', exact: true }).click();
+  await page.locator('.demo-inspector').getByRole('button', { name: 'Вставить таблицу', exact: true }).click();
   await page.locator('.mw-content td').first().click();
   await page.getByRole('button', { name: 'Выделить диапазон', exact: true }).click();
   await expect(page.locator('.mw-content [data-mw-selected]')).toHaveCount(2);
@@ -125,7 +125,7 @@ test('English homepage and lab localize controls and support readonly', async ({
   await page.goto('/en/guide'); await expect(page.getByRole('heading', { name: /^Getting started/ })).toBeVisible();
   await page.goto('/en/playground'); await page.getByRole('button', { name: 'Read only', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Try Morfira', exact: true })).toHaveAttribute('contenteditable', 'false');
-  await expect(page.getByRole('button', { name: 'Insert table', exact: true })).toBeDisabled();
+  await expect(page.getByRole('toolbar', { name: 'Formatting', exact: true }).getByRole('button', { name: 'Insert table', exact: true })).toBeDisabled();
 });
 
 for (const route of ['/', '/playground', '/en/']) {
@@ -143,14 +143,14 @@ for (const english of [false, true]) {
     const toolbar = page.getByRole('toolbar', { name: english ? 'Formatting' : 'Форматирование', exact: true });
     await expect(toolbar).toBeVisible(); await expect(page.locator('.mw-content ul > li > ol')).toHaveCount(1);
     await page.locator('.mw-content > ul > li').nth(1).evaluate((item) => { const range = document.createRange(); range.selectNodeContents(item); range.collapse(true); const s = window.getSelection()!; s.removeAllRanges(); s.addRange(range); });
-    await expect(toolbar.getByRole('button', { name: english ? 'Indent list' : 'Увеличить отступ', exact: true })).toBeEnabled();
-    await toolbar.getByRole('button', { name: english ? 'Indent list' : 'Увеличить отступ', exact: true }).click();
+    await expect(toolbar.getByRole('button', { name: english ? 'Indent list' : 'Увеличить отступ списка', exact: true })).toBeEnabled();
+    await toolbar.getByRole('button', { name: english ? 'Indent list' : 'Увеличить отступ списка', exact: true }).click();
     await expect(page.locator('.mw-content > ul > li')).toHaveCount(2);
     await page.keyboard.press('Enter'); await page.keyboard.type(english ? 'New item' : 'Новый пункт');
     await expect(page.locator('.mw-content')).toContainText(english ? 'New item' : 'Новый пункт');
-    await page.getByLabel(english ? 'Text alignment' : 'Выравнивание текста', { exact: true }).selectOption('right');
+    await page.locator('.lab-block-controls').getByLabel(english ? 'Text alignment' : 'Выравнивание текста', { exact: true }).selectOption('right');
     await expect(page.locator('.mw-content [style*="text-align: right"]')).toHaveCount(1);
-    await expect(page.getByLabel(english ? 'Text alignment' : 'Выравнивание текста', { exact: true })).toHaveValue('right');
+    await expect(page.locator('.lab-block-controls').getByLabel(english ? 'Text alignment' : 'Выравнивание текста', { exact: true })).toHaveValue('right');
     await sample(page, 'lists', english);
     await page.locator('.mw-content > ul > li').nth(1).click();
     await page.screenshot({ path: `artifacts/lists-home-${english ? 'en' : 'ru'}.png`, fullPage: true });
@@ -166,7 +166,9 @@ test('homepage dropdowns retain a multi-paragraph range and show mixed list stat
   await expect(page.locator('.mw-content > ol > li')).toHaveCount(2); await expect(page.locator('.mw-content > p')).toHaveText('C');
   await page.locator('.mw-content').evaluate((root) => { const range = document.createRange(); range.selectNodeContents(root); const s = window.getSelection()!; s.removeAllRanges(); s.addRange(range); });
   await expect(page.getByLabel('Тип списка', { exact: true })).toHaveValue('mixed');
-  await expect(page.getByRole('button', { name: 'Нумерованный список', exact: true })).toHaveAttribute('aria-pressed', 'mixed');
+  const readyList = page.getByRole('toolbar', { name: 'Форматирование', exact: true }).getByLabel('Формат списка', { exact: true });
+  await expect(readyList).toHaveValue('mixed');
+  await expect(readyList.locator('option:checked')).toHaveText('Разное');
 });
 
 for (const english of [false, true]) test(`colors and link forms preserve caret and drafts on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
@@ -175,7 +177,7 @@ for (const english of [false, true]) test(`colors and link forms preserve caret 
   await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'styling', english);
   const colored = page.locator('.mw-content span').first();
   await colored.evaluate((element) => { const range = document.createRange(); range.selectNodeContents(element); const native = window.getSelection()!; native.removeAllRanges(); native.addRange(range); (element.closest('.mw-content') as HTMLElement).focus(); });
-  await page.getByLabel(t('Цвет текста', 'Text color'), { exact: true }).fill('#00ff00');
+  await page.locator('.lab-color-controls').getByLabel(t('Цвет текста', 'Text color'), { exact: true }).fill('#00ff00');
   await page.getByRole('button', { name: t('Применить цвет', 'Apply color'), exact: true }).click();
   await expect(page.locator('.mw-content span').first()).toHaveCSS('color', 'rgb(0, 255, 0)');
   await page.getByRole('button', { name: t('Сбросить цвет', 'Reset color'), exact: true }).click();
@@ -395,9 +397,10 @@ for (const english of [false, true]) test(`structural slash headings and tables 
   await expect(page.locator('.mw-content')).toBeVisible();
   await page.locator('.lab-suggestions summary').click();
   const panel = page.locator('.lab-suggestions');
+  const suggestions = page.getByRole('listbox', { name: t('Шаблоны', 'Snippets'), exact: true });
   await panel.getByLabel(t('Задержка, мс', 'Delay, ms'), { exact: true }).fill('0');
   await panel.getByRole('button', { name: t('Новый пример /h2', 'New /h2 example'), exact: true }).click();
-  await expect(page.getByRole('option', { name: /Заголовок 2|Heading 2/ })).toBeVisible();
+  await expect(suggestions.getByRole('option', { name: /Заголовок 2|Heading 2/ })).toBeVisible();
   await page.keyboard.press('Enter');
   await expect(page.locator('.mw-content h2')).toHaveCount(1);
   await page.keyboard.type('Heading');
@@ -406,7 +409,7 @@ for (const english of [false, true]) test(`structural slash headings and tables 
   await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
   await expect(page.locator('.mw-content p')).toHaveText('/h2');
   await panel.getByRole('button', { name: t('Новый пример /table', 'New /table example'), exact: true }).click();
-  await page.getByRole('option', { name: /Таблица 3 × 3|Table 3 × 3/ }).click();
+  await suggestions.getByRole('option', { name: /Таблица 3 × 3|Table 3 × 3/ }).click();
   await expect(page.locator('.mw-content td')).toHaveCount(9);
   await page.keyboard.type('Cell');
   await expect(page.locator('.mw-content td').first()).toHaveText('Cell');
@@ -415,7 +418,7 @@ for (const english of [false, true]) test(`structural slash headings and tables 
   await expect(page.locator('.mw-content p')).toHaveText('/table');
   await expect(page.locator('.mw-content table')).toHaveCount(0);
   await panel.getByRole('button', { name: t('Открыть подсказки', 'Open suggestions'), exact: true }).click();
-  await expect(page.getByRole('option', { name: /Таблица 3 × 3|Table 3 × 3/ })).toBeVisible();
+  await expect(suggestions.getByRole('option', { name: /Таблица 3 × 3|Table 3 × 3/ })).toBeVisible();
   await page.locator('.demo-inspector details').first().locator('summary').click();
   await panel.getByRole('button', { name: t('Открыть подсказки', 'Open suggestions'), exact: true }).click();
   await page.locator('.demo-workspace').screenshot({ path: `artifacts/structural-slash-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
