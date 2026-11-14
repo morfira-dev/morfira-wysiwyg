@@ -93,7 +93,7 @@ Load the source list sample, choose a caret position or select text/items, then 
 
 Click **Load repeated insertion sample → Caret after existing quote**, then **Insert quote → Insert heading → Replace with multiple blocks** consecutively. The original quote, following bodies and nested branch remain without reloading; every step has its own Undo. **Caret before existing quote** places insertion on the other side. Loading replaces the document.
 
-Only the new block API/clipboard path treats ordinary source quotes as whole preserved nodes. For insertion outside a quote, selection endpoints must be in ordinary text bodies; ranges crossing the quote, including complete coverage, remain blocked. An item-level position resolving to the whole quote is also a barrier. Unsupported or semantic quotes reject the operation even outside the selection. Native boundary operations, inline insertion and single-paragraph insertion are not extended. This slice does not claim complete quote editing or verified browser compatibility; see the [API](/en/api#list-item-selections-and-boundaries) for the bounded contract.
+Only the new block API/clipboard path treats ordinary source quotes as whole preserved nodes. For insertion outside a quote, selection endpoints must be in ordinary text bodies; a separate profile now supports crossing or fully covering exactly one ordinary quote inside the same item. An item-level position resolving to the whole quote is also a barrier. Unsupported or semantic quotes reject the operation even outside the selection. Native boundary operations, inline insertion and single-paragraph insertion are not extended. This slice does not claim complete quote editing or verified browser compatibility; see the [API](/en/api#list-item-selections-and-boundaries) for the bounded contract.
 
 ### Block insertion inside one quote
 
@@ -101,7 +101,13 @@ Click **Load insertion-inside-quote sample**, then **Caret inside quote** or **S
 
 For several incoming blocks, the prefix joins the first body and the suffix joins the last; a single heading remains separate between the prefix and suffix. Direct inline quote content receives a `p` wrapper around its text body. The caret precedes the suffix, empty bodies remain editable and Undo restores the exact original caret or selection direction.
 
-A caret or range across ordinary bodies of **one** quote is supported. Leaving the quote, crossing between quotes, inserting a new nested quote, semantic block roots, original images and unsupported structures are atomic refusals. Inline/single-paragraph insertion and native boundary operations retain their previous rules. This is a bounded insertion path; tests, builds, types and fresh sizes have not been checked yet.
+A caret or range across ordinary bodies of **one** quote is supported. Crossing between different quotes, inserting a new nested quote, semantic block roots, original images and unsupported structures are atomic refusals. Inline/single-paragraph insertion and native boundary operations retain their previous rules. This is a bounded insertion path; tests, builds, types and fresh sizes have not been checked yet.
+
+### Block replacement across one quote
+
+Click **Load quote-crossing sample**, choose **Select outside into quote**, **Select quote into outside** or **Select across whole quote**, then **Replace with multiple blocks**, **Insert heading** or **Insert quote**. Reload the sample to compare directions; loading replaces the document.
+
+This bounded profile crosses exactly one ordinary quote in one item. Every incoming wrapper keeps its tag and allowed attributes at item level, including the first paragraph of a multi-block payload. The unselected source quote edge retains its actual quote wrapper and stays quoted; a fully selected quote is removed. Entering a quote creates an editable empty paragraph before its quoted remainder and places the caret there. Leaving a quote keeps the outside suffix in its own body, with the caret at its start. Other bodies and the nested branch remain in order. Different-quote endpoints, multiple covered quotes and cross-item ranges remain blocked. Native/inline paths are unchanged. Exact selection restoration, history and browser compatibility remain **unverified**; tests are written but have not run.
 
 ## Current boundaries
 

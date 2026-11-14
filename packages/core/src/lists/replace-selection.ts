@@ -2,6 +2,7 @@ import { cutSelectionReplacement, ensureReplacementPlaceholder, finishSelectionR
 import { activeRange } from '../selection/index.js';
 import { listPasteSelection, listSelectionReplacement } from './selection-boundaries.js';
 import { formattingWhitespace, inlinePayloadNode, isOrdinaryQuote, ordinaryPayloadBody, quoteBodyBlocks } from './paste-payload.js';
+import { replaceQuoteCrossing } from './quote-crossing.js';
 import type { ListSelectionPlan, ListSelectionResult } from './internal-types.js';
 
 const ordinaryParagraph = (fragment: DocumentFragment): HTMLElement | undefined => {
@@ -153,6 +154,13 @@ export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: Do
   const selected = requireSupported(listPasteSelection(root, undefined, candidate));
   if (!selected) return false;
   prepareListSelectionPaste(root, fragment, selected.range);
+  if (selected.crossing) {
+    // Crossing is a standalone structural profile: preserve every payload wrapper.
+    const roots = blocks ?? (standalone ? [standalone] : undefined);
+    if (!roots) throw new TypeError('Crossing a list quote requires an ordinary block payload.');
+    replaceQuoteCrossing(selected.crossing, roots);
+    return true;
+  }
   const paragraph = ordinaryParagraph(fragment);
   // Keep the original end wrapper before a direct start is promoted by the cut.
   const suffix = standalone ? (selected.endBody === (selected.quote?.container ?? selected.last.item)

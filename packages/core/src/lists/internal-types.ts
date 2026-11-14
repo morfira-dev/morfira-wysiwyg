@@ -19,6 +19,17 @@ export interface ListSelectionPlan {
   startBody: HTMLElement;
   endBody: HTMLElement;
   quote?: QuotePasteContext;
+  crossing?: QuoteCrossingContext;
+}
+
+export interface QuoteCrossingContext {
+  kind: 'enter' | 'exit' | 'cover';
+  quote: HTMLElement;
+  startRoot: HTMLElement;
+  endRoot: HTMLElement;
+  quoteEndpointBody?: HTMLElement;
+  range: Range;
+  covered: HTMLElement[];
 }
 
 export interface QuotePasteContext {

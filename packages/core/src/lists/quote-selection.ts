@@ -9,6 +9,15 @@ const sourceBody = (node: Node): node is HTMLElement => node instanceof HTMLElem
   && node.namespaceURI === 'http://www.w3.org/1999/xhtml' && /^(p|h[1-6])$/.test(node.localName)
   && !node.hasAttribute('data-mw-node') && [...node.childNodes].every(sourceInlineNode);
 
+/** A source quote being edited has stricter content than an opaque neighbor. */
+export const quoteSourceBodies = (quote: HTMLElement): HTMLElement[] | undefined => {
+  if (!isOrdinaryQuote(quote)) return;
+  const children = [...quote.childNodes];
+  if (children.every(sourceInlineNode)) return [quote];
+  const blocks = children.filter((node) => !formattingWhitespace(node));
+  return blocks.length && blocks.every(sourceBody) ? blocks : undefined;
+};
+
 /** Only a quote owned directly by this item can form the bounded inner scope. */
 export const directQuoteAt = (item: HTMLElement, node: Node): HTMLElement | undefined => {
   const element = node instanceof Element ? node : node.parentElement;
@@ -36,14 +45,20 @@ const quoteBodyPoint = (quote: HTMLElement, bodies: HTMLElement[], range: Range,
   return { body, range: point };
 };
 
+/** Resolve one actual quote endpoint using the same child/gap affinity as inner paste. */
+export const quoteEndpointPoint = (quote: HTMLElement, range: Range, end: boolean): QuoteBodyPoint | undefined => {
+  const node = end ? range.endContainer : range.startContainer;
+  if (!quote.contains(node)) return;
+  const bodies = quoteSourceBodies(quote);
+  return bodies && quoteBodyPoint(quote, bodies, range, end);
+};
+
 /** Inspect without normalizing the actual quote or changing the active selection. */
 export const quotePasteContext = (quote: HTMLElement, range: Range): QuotePasteContext | undefined => {
-  if (!isOrdinaryQuote(quote) || !quote.contains(range.startContainer) || !quote.contains(range.endContainer)) return;
+  if (!quote.contains(range.startContainer) || !quote.contains(range.endContainer)) return;
   const children = [...quote.childNodes];
-  const inline = children.every(sourceInlineNode);
-  const blocks = children.filter((node) => !formattingWhitespace(node));
-  if (!inline && (!blocks.length || !blocks.every(sourceBody))) return;
-  const bodies = inline ? [quote] : blocks as HTMLElement[];
+  const bodies = quoteSourceBodies(quote);
+  if (!bodies) return;
   const start = quoteBodyPoint(quote, bodies, range, false);
   const end = range.collapsed ? start : quoteBodyPoint(quote, bodies, range, true);
   if (!start || !end) return;

@@ -1,6 +1,7 @@
 import { activeRange } from '../selection/index.js';
 import { isOrdinaryQuote } from './paste-payload.js';
 import { directQuoteAt, quotePasteContext } from './quote-selection.js';
+import { quoteCrossingContext } from './quote-crossing.js';
 import type { ListItemBoundary, ListSelectionOptions, ListSelectionResult } from './internal-types.js';
 
 const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br']);
@@ -94,13 +95,13 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
   if (preserveQuotes && first && last && first.item === last.item) {
     const quote = directQuoteAt(first.item, range.startContainer);
     const endQuote = directQuoteAt(last.item, range.endContainer);
-    if (quote || endQuote) {
-      if (!quote || quote !== endQuote) return blocked('A block insertion cannot cross a quote boundary.');
+    if (quote && quote === endQuote) {
       const context = quotePasteContext(quote, range);
       if (!context) return blocked('Block insertion inside a quote requires ordinary inline or paragraph/heading source content.');
       return { status: 'eligible', range: context.range, leaves: [first.item], gaps: [], first, last,
         startBody: context.startBody, endBody: context.endBody, quote: context };
     }
+    if (quote && endQuote) return blocked('A block insertion cannot select between different quotes.');
   }
   const start = first && normalizeListBodyRange(range, first, false);
   const startBody = first && listBodyAt(range, first, false);
@@ -112,6 +113,16 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
     // Preserve legacy same-item paths except an explicitly block-shaped source.
     if (!includeSameBody && firstItem === lastItem && ![...firstItem.children].some((node) => /^(p|h[1-6])$/.test(node.localName))) return { status: 'unowned' };
     return blocked('List replacement requires inline content or ordinary paragraph/heading bodies.');
+  }
+  if (preserveQuotes && first.item === last.item) {
+    const from = first.bodies.indexOf(startBody);
+    const to = first.bodies.indexOf(endBody);
+    if (first.bodies.slice(from, to + 1).some((body) => body.localName === 'blockquote')) {
+      const crossing = quoteCrossingContext(first, range, startBody, endBody, start, end);
+      if (!crossing) return blocked('A block insertion can cross only one ordinary editable quote within the same item.');
+      return { status: 'eligible', range: crossing.range, leaves: [first.item], gaps: [], first, last,
+        startBody, endBody, crossing };
+    }
   }
   if (preserveQuotes && (startBody.localName === 'blockquote' || endBody.localName === 'blockquote'))
     return blocked('A block insertion endpoint cannot enter an existing quote.');
