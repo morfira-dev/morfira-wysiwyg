@@ -5,6 +5,7 @@ import { activeRange, bookmark, placeCaret, readTextSelection, restoreBookmark, 
 import type { SelectionBookmark } from '../selection/index.js';
 import { editListInput, handlesListInput, indentList, listState, selectedBlocks } from '../lists/index.js';
 import { editBlockInput, handlesBlockInput } from '../input/index.js';
+import { handlesSelectionReplacement, replaceSelection } from '../input/replace-selection.js';
 import { applyFormat, inlineFormats, readFormats } from '../formatting/index.js';
 import { inlineStyles, normalizeInlineStyle } from '../formatting/inline-attributes.js';
 import { createEventHub } from '../events/index.js';
@@ -536,6 +537,15 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         editor.undo();
       else
         editor.redo();
+      return;
+    }
+    if (event.cancelable && handlesSelectionReplacement(surface, event.inputType, event.data)) {
+      event.preventDefault();
+      clearTyping();
+      pendingInput = undefined;
+      const text = event.inputType === 'insertText' ? event.data! : '';
+      // A replacement is isolated from native typing/deletion bursts on both sides.
+      runTransaction(() => replaceSelection(surface, text));
       return;
     }
     if (!composing && !event.isComposing && handlesListInput(surface, event.inputType)) {

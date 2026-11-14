@@ -150,6 +150,6 @@ Presets do not own editor lifetime. Destroying UI leaves its editor usable; dest
 
 Measure headless presets, UI and the final deduplicated closure containing core, plugins, forms and required CSS separately. Keep framework runtimes, source maps, declarations, extra locale alternatives and fonts separate from editor JS.
 
-Working targets: Standard — 200000 minified / 65000 gzip JS bytes and 20000 minified CSS bytes; Extended — 350000 / 110000 JS bytes. They become enforced guards only after a concrete profile is defined and measured; this guide does not change build limits. Report actual size/check results from completed builds.
+The build enforces measured headless and ready profiles: Standard — at most 200000 minified / 65000 gzip JS bytes; Extended — 350000 / 110000 JS bytes. Each profile is limited to 20000 minified CSS bytes. Minimal is measured separately without an additional preset guard. Actual raw/gzip/Brotli/CSS sizes are saved in `size-report.json`; framework runtimes are excluded from these profiles.
 
 Responsive wrapping does not imply a priority/More overflow menu or contextual bubbles. Real mobile/IME and screen-reader behavior still needs dedicated verification. Full DOCX/PDF conversion, collaboration and office-style layout are outside these presets.

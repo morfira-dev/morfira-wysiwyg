@@ -16,7 +16,7 @@ Status: implemented preview contract. Acceptance scenarios are exercised in `tes
 - Every instance owns listeners and plugin APIs. Destroy is idempotent and performs all cleanup even when a disposer fails. Imports are safe to evaluate during SSR; createEditor requires browser DOM.
 - Vue v-model, React controlled value including StrictMode, and Svelte bind:value share document/change semantics. External replacement emits no adapter feedback event. Same-value feedback preserves caret.
 
-Composition event ordering, interim edits, command guards and cancellation follow `specs/composition.md`. Ordinary paragraph/heading Enter and boundary deletion follow `specs/block-boundaries.md`; unsupported structures and cross-block selections retain their existing input paths.
+Composition event ordering, interim edits, command guards and cancellation follow `specs/composition.md`. Ordinary paragraph/heading Enter and boundary deletion follow `specs/block-boundaries.md`. Noncollapsed typing/deletion across ordinary sibling leaves follows `specs/input-replacement.md`; unsupported structural and cross-container selections retain their existing input paths.
 
 ## Acceptance scenarios
 

@@ -29,8 +29,9 @@ const atEdge = (block: HTMLElement, range: Range, end: boolean): boolean => {
   return !hasContent(fragment);
 };
 const siblingBlock = (root: HTMLElement, block: HTMLElement, forward: boolean): HTMLElement | undefined => {
+  if (block.hasAttribute('data-mw-node')) return;
   const sibling = forward ? block.nextSibling : block.previousSibling;
-  return sibling instanceof HTMLElement && blockTags.has(sibling.localName) && editableBlock(root, sibling) === sibling ? sibling : undefined;
+  return sibling instanceof HTMLElement && !sibling.hasAttribute('data-mw-node') && blockTags.has(sibling.localName) && editableBlock(root, sibling) === sibling ? sibling : undefined;
 };
 
 export const handlesBlockInput = (root: HTMLElement, inputType: string): boolean => {
@@ -58,7 +59,7 @@ export const editBlockInput = (root: HTMLElement, inputType: string): void => {
     const tail = tailRange.extractContents();
     const emptyHeading = block.localName !== 'p' && !block.textContent && !tail.textContent && block.querySelectorAll('br').length + tail.querySelectorAll('br').length <= 1;
     const headingEnd = block.localName !== 'p' && (!hasContent(tail) || emptyHeading);
-    if (emptyHeading) {
+    if (emptyHeading && !block.hasAttribute('data-mw-node')) {
       const paragraph = document.createElement('p');
       for (const attribute of block.attributes) paragraph.setAttribute(attribute.name, attribute.value);
       paragraph.append(document.createElement('br'));
@@ -68,7 +69,10 @@ export const editBlockInput = (root: HTMLElement, inputType: string): void => {
     }
     const next = headingEnd ? document.createElement('p') : block.cloneNode(false) as HTMLElement;
     if (headingEnd) {
-      for (const attribute of block.attributes) next.setAttribute(attribute.name, attribute.value);
+      // A semantic identity is valid only on its declared wrapper, never on an exit paragraph.
+      for (const attribute of block.attributes) {
+        if (!attribute.name.startsWith('data-')) next.setAttribute(attribute.name, attribute.value);
+      }
     }
     next.append(tail);
     if (!next.textContent && !next.querySelector('br')) next.replaceChildren(document.createElement('br'));
