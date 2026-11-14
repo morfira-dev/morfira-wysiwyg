@@ -95,18 +95,18 @@ test('item-level edges across body blocks replace only that body interval and re
   })).toEqual({ anchor: true, anchorOffset: 3, focus: true, focusOffset: 1 });
 });
 
-test('multiple incoming blocks remain rejected atomically for a multi-block list source', async ({ page }) => {
+test('incoming structural blocks remain rejected atomically for a multi-block list source', async ({ page }) => {
   const before = await initialize(page, sameItem);
   await select(page, true);
   expect(await page.evaluate(() => {
-    try { window.editor.insertHTML('<p>One</p><p>Two</p>'); return false; }
+    try { window.editor.insertHTML('<p>One</p><blockquote><p>Two</p></blockquote>'); return false; }
     catch { return true; }
   })).toBe(true);
   expect(await html(page)).toBe(before);
   expect(await page.evaluate(() => ({ changes: window.changes.length, undo: window.editor.canUndo(), anchor: document.getSelection()!.anchorNode?.textContent }))).toEqual({ changes: 0, undo: false, anchor: 'Beta' });
 });
 
-test('clipboard rejects multi-block payloads but accepts inline content within one multi-block item', async ({ page }) => {
+test('clipboard rejects structural payloads but accepts inline content within one multi-block item', async ({ page }) => {
   const before = await initialize(page, sameItem);
   await select(page, true);
   const paste = (value: string) => page.evaluate((value) => {
@@ -118,7 +118,7 @@ test('clipboard rejects multi-block payloads but accepts inline content within o
     window.editor.surface.dispatchEvent(event);
     return event.defaultPrevented;
   }, value);
-  expect(await paste('<p>One</p><p>Two</p>')).toBe(true);
+  expect(await paste('<p>One</p><blockquote><p>Two</p></blockquote>')).toBe(true);
   expect(await html(page)).toBe(before);
   expect(await page.evaluate(() => window.changes.length)).toBe(0);
   expect(await paste('<u>X</u>')).toBe(true);

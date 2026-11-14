@@ -73,7 +73,7 @@ export const normalizeListBodyRange = (range: Range, boundary: ListItemBoundary,
 };
 
 /** A list-owned unsupported partial shape is blocked rather than natively cut. */
-export const listSelectionReplacement = (root: HTMLElement, range: Range | undefined = activeRange(root)): ListSelectionResult => {
+export const listSelectionReplacement = (root: HTMLElement, range: Range | undefined = activeRange(root), includeSameBody = false): ListSelectionResult => {
   if (!range || range.collapsed || !root.contains(range.startContainer) || !root.contains(range.endContainer)) return { status: 'unowned' };
   const firstItem = itemAt(root, range.startContainer);
   const lastItem = itemAt(root, range.endContainer);
@@ -88,10 +88,10 @@ export const listSelectionReplacement = (root: HTMLElement, range: Range | undef
   const endBody = last && listBodyAt(range, last, true);
   if (!first || !last || !start || !end || !startBody || !endBody) {
     // Preserve legacy same-item paths except an explicitly block-shaped source.
-    if (firstItem === lastItem && ![...firstItem.children].some((node) => /^(p|h[1-6])$/.test(node.localName))) return { status: 'unowned' };
+    if (!includeSameBody && firstItem === lastItem && ![...firstItem.children].some((node) => /^(p|h[1-6])$/.test(node.localName))) return { status: 'unowned' };
     return blocked('List replacement requires inline content or ordinary paragraph/heading bodies.');
   }
-  if (firstItem === lastItem && startBody === endBody) return { status: 'unowned' };
+  if (!includeSameBody && firstItem === lastItem && startBody === endBody) return { status: 'unowned' };
   const workingRange = range.cloneRange();
   workingRange.setStart(start.startContainer, start.startOffset);
   workingRange.setEnd(end.startContainer, end.startOffset);

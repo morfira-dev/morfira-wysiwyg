@@ -110,7 +110,7 @@ test('wrapped bodies: unsupported multi-item payloads reject before DOM mutation
     const branch = root.querySelector('li > ul');
     const observer = new MutationObserver(() => {});
     observer.observe(root, { childList: true, subtree: true, attributes: true });
-    const rejected = ['<p>A</p><p>B</p>', '<h2>Heading</h2>', '<ul><li>New branch</li></ul>', '<p data-mw-node="test:body" data-id="owned">Semantic</p>'].map((html) => {
+    const rejected = ['<p>A</p><blockquote><p>B</p></blockquote>', '<h2>Heading</h2>', '<ul><li>New branch</li></ul>', '<p data-mw-node="test:body" data-id="owned">Semantic</p>'].map((html) => {
       try { window.editor.insertHTML(html); return false; }
       catch (error) { return error instanceof Error; }
     });
@@ -129,7 +129,7 @@ test('wrapped bodies: a caught invalid nested list import poisons the complete o
     try {
       window.editor.transact((root) => {
         root.lastElementChild!.append(document.createTextNode('!'));
-        try { window.editor.insertHTML('<p>A</p><p>B</p>'); }
+        try { window.editor.insertHTML('<p>A</p><blockquote><p>B</p></blockquote>'); }
         catch { /* Catching an inner validation failure must not commit the outer edit. */ }
       });
     }

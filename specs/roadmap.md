@@ -21,6 +21,8 @@ The new bounded list-item replacement and boundary-deletion paths support direct
 
 ## Milestones
 
+The local list-paste extension accepts at least two ordinary paragraph/heading payload blocks over supported noncollapsed list selections, including within one body. It retains prefix/suffix formatting, unselected blocks and branches within one item and one history operation. Structural and semantic payloads remain outside this slice. Tests, builds, type checks and fresh sizes are deferred under `verification-backlog.md`.
+
 The local first-body Backspace extension joins a previous item's final body or removes one list level for a first item, preserving multi-block bodies, trailing branches and subsequent items. Nested lift also supports a nonfinal owner branch: later validated branches move after the lifted item's own branches and source siblings, preserving depth-first order; earlier branches remain with the owner. Its specification is `lists-toolbar.md`; tests, RU/EN examples and deferred verification are tracked with the rest of the unverified list work.
 
 1. **Plugin SDK and extensible schema — phase 1 implemented.** Provides per-instance typed command tokens, validated execution/state and declarative schema contributions compiled before initial import. Phase 1 preserves schema v1: safe existing block/inline wrappers carry validated semantic markers and bounded metadata. Acceptance covers isolation, HTML/JSON/native-input round-trip, paste, rollback/history, invalid definitions and read-only/composition guards. See `plugin-sdk.md`. Mapped structural selection, custom node views, atoms, decorations and richer document operations are later SDK slices, not phase-1 claims. A full immutable-engine rewrite is not implicit.

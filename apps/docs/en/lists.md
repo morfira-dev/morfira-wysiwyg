@@ -63,6 +63,16 @@ Tab enters the toolbar through a single enabled button; Left/Right and Home/End 
 
 `editor.format('clear', true)` removes inline marks, links and span styling only from selected text. List structure, blocks, images and alignment remain. An empty selection is a no-op.
 
+## Pasting multiple bodies into an item
+
+In the new local path, `editor.insertHTML` and HTML clipboard insertion replace a selection with two or more ordinary paragraphs/headings. They become bodies of the retained item rather than new list items. The first body joins the untouched prefix while retaining the original left tag and attributes; the final body receives the inline suffix. Middle and final incoming bodies retain their own tags and attributes. Unselected bodies and trailing nested lists remain after the result.
+
+Try **Item body: Multiple blocks → Load block-body sample → Select items → Replace with multiple blocks**. Use **Select item blocks** for a selection within one item, or **Select text in one body** for a selection within one paragraph. **Multi-block HTML** edits the incoming fragment. Undo is intended to restore the original selection; these scenarios have not been executed yet.
+
+This extends only noncollapsed selections with supported source bodies. Collapsed insertion is not extended. A single heading, incoming semantic blocks, mixed inline/block fragments, lists and tables remain outside this path. Full rules and pre-mutation refusal are described in the [API](/en/api#list-item-selections-and-boundaries).
+
+A single structural root, such as a heading or table, within one original body retains its earlier generic handler; the new path does not redefine that behavior.
+
 ## Current boundaries
 
 **The new local slice has not been executed or verified yet.** One item may contain multiple ordinary `p`/`h1`–`h6` bodies followed by nested lists. Replacement between bodies in one item or sibling items preserves unselected bodies; Enter moves subsequent bodies into the next item, while Delete/Backspace join adjacent bodies. Detailed limits, including semantic bodies and structural payloads, are in the [API](/en/api#list-item-selections-and-boundaries). In the demo open **List item selection → Item body: Multiple blocks → Load block-body sample**. Try **Select item blocks** or **Select items** and replacement; **Caret before Delete** prepares an internal boundary. For the first body choose **Backspace scenario → Load Backspace sample → Caret before Backspace** and press Backspace: try joining, exiting a root item and lifting a nested item. Loading replaces the document. The previous item must have supported bodies. Nested branch before others demonstrates lifting from a nonfinal branch: earlier branches stay with the owner; the lifted item retains its own branches, then following source items, then later owner branches. List kinds, attributes and content order remain without coalescing. Moved later branches pass ordinary-list and supported-direct-item preflight before editing. Semantic and complex shapes remain atomic barriers. Tests, builds and fresh size measurements are deferred. We do not promise identical normalization for arbitrary office-editor HTML. Real IME/mobile verification and a complete accessibility audit remain on the roadmap. Text color and link editing are described in the [separate guide](/en/styling).

@@ -24,6 +24,8 @@ The subsequent bounded list-item replacement contract is `specs/list-selection.m
 
 ## Acceptance scenarios
 
+List HTML replacement additionally accepts a sequence of at least two ordinary paragraph/heading payload blocks under `list-selection.md`. Preserve the start body's tag/attributes and inline prefix, insert the first payload's children there, retain subsequent payload wrappers and join the original suffix into the final payload body. Surviving following bodies/branches remain outside payload wrappers. Direct-inline starts receive an ordinary paragraph when block siblings require it. This paste-only extension also owns noncollapsed same-body list selections; native typing/deletion ownership and collapsed insertion are unchanged. Structural/mixed and semantic block payloads remain outside this contract. Validation is deferred.
+
 Collapsed Backspace at a supported multi-block item's first body follows the first-body contract in `lists-toolbar.md`: join the preceding sibling item's final body, unwrap the first root item into its actual body blocks, or lift the first nested item one level with its following siblings retained as a trailing branch. When the source is not the owner's final branch, move later validated owner branches under the lifted item after its own branches and retained source siblings; earlier owner branches remain untouched. Preserve depth-first content order without merging lists. Validate every affected container before changing DOM; preserve body/branch content, exact history and cell boundaries. This local extension remains unverified under the same deferred-check policy.
 
 1. Select part of a sentence, toggle bold on/off, undo/redo and recover exact text and selection. Existing neighboring formats remain intact.
