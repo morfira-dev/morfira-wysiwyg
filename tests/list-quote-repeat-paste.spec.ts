@@ -147,10 +147,10 @@ test('quote then heading then several blocks can be inserted without resetting t
   }
 });
 
-for (const position of ['inside', 'multiple-quotes-with-image', 'item-edge', 'cross-items-with-branch', 'middle-item-with-branch']) test(`${position === 'inside' ? 'a nested quote payload inside a quote' : `a ${position} quote selection`} is an atomic block-paste barrier`, async ({ page }) => {
-  const value = position === 'middle-item-with-branch'
-    ? '<ul><li><p title="Before">AB</p></li><li><blockquote>Quote</blockquote><ol><li>Blocked branch</li></ol></li><li><p title="Other">EF</p></li></ul>'
-    : `<ul><li title="Owner"><p title="Before">AB</p><blockquote title="Quote"><p>Quote</p></blockquote>${position === 'multiple-quotes-with-image' ? '<blockquote>Second quote<img src="/logo.svg" alt="Original"></blockquote>' : ''}<h2 title="After">CD</h2>${position === 'cross-items-with-branch' ? '<ol><li>Blocked branch</li></ol>' : ''}</li><li><p title="Other">EF</p></li></ul>`;
+for (const position of ['inside', 'multiple-quotes-with-image', 'item-edge', 'cross-items-interleaved', 'middle-item-interleaved']) test(`${position === 'inside' ? 'a nested quote payload inside a quote' : `a ${position} quote selection`} is an atomic block-paste barrier`, async ({ page }) => {
+  const value = position === 'middle-item-interleaved'
+    ? '<ul><li><p title="Before">AB</p></li><li><blockquote>Quote</blockquote><ol><li>Blocked branch</li></ol><p>After branch</p></li><li><p title="Other">EF</p></li></ul>'
+    : `<ul><li title="Owner"><p title="Before">AB</p><blockquote title="Quote"><p>Quote</p></blockquote>${position === 'multiple-quotes-with-image' ? '<blockquote>Second quote<img src="/logo.svg" alt="Original"></blockquote>' : ''}<h2 title="After">CD</h2>${position === 'cross-items-interleaved' ? '<ol><li>Blocked branch</li></ol><p>After branch</p>' : ''}</li><li><p title="Other">EF</p></li></ul>`;
   const before = await initialize(page, value);
   await page.evaluate((position) => {
     const root = window.editor.surface;

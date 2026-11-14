@@ -159,10 +159,10 @@ for (const invalid of ['<blockquote title="Middle">Image<img src="/logo.svg" alt
   expect(await html(page)).toBe(before);
 });
 
-for (const boundary of ['first-branch', 'middle-branch', 'different-list', 'nested-end', 'quote-li-edge']) test(`${boundary} remains an atomic barrier for sibling quote insertion`, async ({ page }) => {
+for (const boundary of ['first-interleaved', 'middle-interleaved', 'different-list', 'nested-end', 'quote-li-edge']) test(`${boundary} remains an atomic barrier for sibling quote insertion`, async ({ page }) => {
   const value = boundary === 'different-list'
     ? '<ul><li><blockquote title="Left">AB</blockquote></li></ul><ul><li><blockquote title="Right">CD</blockquote></li></ul>'
-    : `<ul><li title="Owner"><blockquote title="Left">AB</blockquote>${boundary === 'first-branch' ? '<ol><li>Branch</li></ol>' : ''}</li><li><blockquote>Middle</blockquote>${boundary === 'middle-branch' ? '<ol><li>Branch</li></ol>' : ''}</li><li title="Last"><blockquote title="Right">CD</blockquote><ol><li><p title="Nested">Nested</p></li></ol></li></ul>`;
+    : `<ul><li title="Owner"><blockquote title="Left">AB</blockquote>${boundary === 'first-interleaved' ? '<ol><li>Branch</li></ol><p>After branch</p>' : ''}</li><li><blockquote>Middle</blockquote>${boundary === 'middle-interleaved' ? '<ol><li>Branch</li></ol><p>After branch</p>' : ''}</li><li title="Last"><blockquote title="Right">CD</blockquote><ol><li><p title="Nested">Nested</p></li></ol></li></ul>`;
   const before = await initialize(page, value);
   await page.evaluate((boundary) => {
     const root = window.editor.surface;

@@ -33,7 +33,7 @@ export const quoteCrossingContext = (boundaries: ListItemBoundary[], range: Rang
     container: first.item,
     removedItems: boundaries.slice(1).map((boundary) => boundary.item),
     following: last.bodies.slice(to + 1),
-    branches: last.nestedLists,
+    branches: boundaries.flatMap((boundary) => boundary.nestedLists),
     gaps,
     directStart: startRoot === first.item,
     directEnd: endRoot === last.item,
@@ -62,7 +62,7 @@ export const replaceQuoteCrossing = (context: QuoteCrossingContext, roots: HTMLE
   const { range, covered, startQuoteBody, endQuoteBody, siblings } = context;
   let { startRoot, endRoot } = context;
   const document = startRoot.ownerDocument;
-  // Direct-inline right bodies include their branch siblings; preserve them before trimming.
+  // Preserve every branch before trimming direct-inline bodies or removing covered items.
   for (const branch of siblings?.branches ?? []) branch.remove();
   // Separate local ranges preserve both actual endpoint wrappers and all untouched
   // quote children/gaps; a cross-container delete would unwrap selected ancestry.

@@ -203,9 +203,9 @@ for (const cover of [false, true]) for (const invalid of ['<blockquote title="Qu
   expect(await page.evaluate(() => ({ changes: window.changes.length, undo: window.editor.canUndo() }))).toEqual({ changes: 0, undo: false });
 });
 
-for (const boundary of ['multiple-with-image', 'different-quotes-with-image', 'first-branch-before-other-item', 'branch']) test(`cross-quote ${boundary} remains an atomic structural barrier`, async ({ page }) => {
-  const before = await initialize(page, `<ul><li><p title="Start">AB</p><blockquote><p title="Head">CD</p></blockquote><blockquote><p title="Other quote">EF${boundary.includes('with-image') ? '<img src="/logo.svg" alt="Original">' : ''}</p></blockquote><p title="End">GH</p><ol><li><p title="Branch end">IJ</p></li></ol></li><li><p title="Other item">KL</p></li></ul>`);
-  await select(page, boundary === 'different-quotes-with-image' ? '[title="Head"]' : '[title="Start"]', boundary === 'multiple-with-image' ? '[title="End"]' : boundary === 'different-quotes-with-image' ? '[title="Other quote"]' : boundary === 'first-branch-before-other-item' ? '[title="Other item"]' : '[title="Branch end"]', true);
+for (const boundary of ['multiple-with-image', 'different-quotes-with-image', 'first-interleaved-before-other-item', 'branch']) test(`cross-quote ${boundary} remains an atomic structural barrier`, async ({ page }) => {
+  const before = await initialize(page, `<ul><li><p title="Start">AB</p><blockquote><p title="Head">CD</p></blockquote><blockquote><p title="Other quote">EF${boundary.includes('with-image') ? '<img src="/logo.svg" alt="Original">' : ''}</p></blockquote><p title="End">GH</p><ol><li><p title="Branch end">IJ</p></li></ol>${boundary === 'first-interleaved-before-other-item' ? '<p>After branch</p>' : ''}</li><li><p title="Other item">KL</p></li></ul>`);
+  await select(page, boundary === 'different-quotes-with-image' ? '[title="Head"]' : '[title="Start"]', boundary === 'multiple-with-image' ? '[title="End"]' : boundary === 'different-quotes-with-image' ? '[title="Other quote"]' : boundary === 'first-interleaved-before-other-item' ? '[title="Other item"]' : '[title="Branch end"]', true);
   expect(await page.evaluate(() => {
     try { window.editor.insertHTML('<blockquote>Q</blockquote>'); return false; } catch { return true; }
   })).toBe(true);

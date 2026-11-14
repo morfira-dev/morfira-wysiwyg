@@ -139,7 +139,7 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
     else {
       if (!(node instanceof HTMLElement)) return blocked('Unsupported content between list items.');
       const item = inspectItem(root, node, preserveQuotes);
-      if (!item || (item.item !== last.item && item.nestedLists.length)) return blocked('A selected item contains an unsupported body or nested branch.');
+      if (!item) return blocked('A selected item contains an unsupported body.');
       if (preserveQuotes) {
         const from = item.item === first.item ? item.bodies.indexOf(startBody) : 0;
         const to = item.item === last.item ? item.bodies.indexOf(endBody) : item.bodies.length - 1;
@@ -149,10 +149,15 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
       boundaries.push(item);
       if (item.item === last.item) {
         if (hasQuote) {
+          const unsupportedBranch = boundaries.slice(0, -1).some((boundary) => boundary.nestedLists.some((branch) =>
+            branch.namespaceURI !== boundary.item.namespaceURI || branch.hasAttribute('data-mw-node')));
+          if (unsupportedBranch) return blocked('Retained first and intermediate branches require ordinary trailing lists.');
           const crossing = quoteCrossingContext(boundaries, range, startBody, endBody, start, end, gaps);
           if (!crossing) return blocked('Block insertion across sibling items requires ordinary editable quotes and supported endpoints.');
           return { status: 'eligible', range: crossing.range, leaves, gaps, first, last, startBody, endBody, crossing };
         }
+        if (boundaries.slice(0, -1).some((boundary) => boundary.nestedLists.length))
+          return blocked('A selected item contains a nested branch outside the quote-crossing profile.');
         return { status: 'eligible', range: workingRange, leaves, gaps, first, last, startBody, endBody };
       }
     }
