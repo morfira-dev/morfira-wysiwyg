@@ -71,9 +71,15 @@ Try **Item body: Multiple blocks → Load block-body sample → Select items →
 
 The same multi-block fragment can be inserted at a collapsed caret inside a supported item. In the demo choose **Block insertion position → Body start, Inside a word or Body end → Caret for block insertion → Replace with multiple blocks**. The middle position is inside the first body's bold word. The source prefix joins the first incoming content and its suffix joins the last; neighboring bodies and nested branches remain. A direct inline body receives a `p` when the incoming sequence requires block siblings. No new `li` is created. Undo restores the original caret position; these scenarios have not been executed yet.
 
-A single heading, incoming semantic blocks, mixed inline/block fragments, lists and tables remain outside the new multi-block path. Native input, inline insertion and a single structural root retain their previous handlers. Full rules and pre-mutation refusal are described in the [API](/en/api#list-item-selections-and-boundaries).
+A single ordinary heading has the separate path described below. Incoming semantic blocks, mixed inline/block fragments, lists and tables remain outside the new multi-block path. Native input, inline insertion and other single structural roots retain their previous handlers. Full rules and pre-mutation refusal are described in the [API](/en/api#list-item-selections-and-boundaries).
 
-A single structural root, such as a heading or table, within one original body retains its earlier generic handler; the new path does not redefine that behavior.
+Another single structural root, such as a table, within one original body retains its earlier generic handler; the new path does not redefine that behavior.
+
+## A single heading inside an item
+
+An ordinary `h1`–`h6` is inserted as a separate item body with its own tag and allowed attributes. The source prefix stays in a separate body before it; the original end body's suffix stays in a separate body after it with its original tag/attributes. Direct inline content becomes `p`. The caret starts before the right suffix; empty edges retain placeholder `br`. No new `li` is created, and neighboring bodies and branches remain. Unlike multi-block insertion, the incoming heading wrapper is not removed.
+
+Load a list sample, choose a position and click **Caret for block insertion**, or use the selection buttons, then **Single heading HTML → Insert heading**. For example, `Al|pha` becomes `<p>Al</p><h2>Title</h2><p>pha</p>`. A single semantic heading is refused before editing. This local scenario, history and exact caret have not been verified by execution yet.
 
 ## Current boundaries
 

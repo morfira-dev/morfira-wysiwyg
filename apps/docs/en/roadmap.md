@@ -6,6 +6,8 @@ The new same-list multi-item selection, boundary deletion and multiple paragraph
 
 ## Implemented baseline
 
+A single ordinary heading can be inserted at a caret or over a supported list selection as a separate body with its own attributes: the source prefix and suffix remain on either side, with the caret before the right suffix. Neighboring bodies, branches and history remain. The implementation and examples are local and **have not been verified by execution**.
+
 The local list-paste extension accepts two or more ordinary paragraphs/headings over a noncollapsed selection, including text within one body, and at a collapsed caret. The source body splits into a prefix and suffix joined to the first and final incoming bodies respectively. Incoming bodies remain inside the retained item, preserving surrounding bodies, branches and history. This slice is also **not verified by execution**; arbitrary structural or semantic insertion is not claimed.
 
 The current local slice includes [minimal/standard/extended presets](/en/presets) and the [modern shell, standard panels and extended suggestion UI](/en/editor-ui).

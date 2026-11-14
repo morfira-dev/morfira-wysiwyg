@@ -207,7 +207,7 @@ test('source images remain a barrier for a same-body multi-block replacement eve
   expect(await page.evaluate(() => ({ changes: window.changes.length, undo: window.editor.canUndo(), anchor: document.getSelection()!.anchorOffset, focus: document.getSelection()!.focusOffset }))).toEqual({ changes: 0, undo: false, anchor: 4, focus: 1 });
 });
 
-for (const invalid of ['<p>A</p><ul><li>B</li></ul>', '<h2>Single heading</h2>', '<p>A</p><p data-mw-node="test:body" data-id="owned">Semantic</p>', '<p>A</p>loose<h2>B</h2>']) test(`unsupported list payload rejects before mutation: ${invalid}`, async ({ page }) => {
+for (const invalid of ['<p>A</p><ul><li>B</li></ul>', '<pre>Unsupported</pre>', '<p>A</p><p data-mw-node="test:body" data-id="owned">Semantic</p>', '<p>A</p>loose<h2>B</h2>']) test(`unsupported list payload rejects before mutation: ${invalid}`, async ({ page }) => {
   const before = await initialize(page, source, [semantic]);
   await select(page, true);
   const result = await page.evaluate((invalid) => {

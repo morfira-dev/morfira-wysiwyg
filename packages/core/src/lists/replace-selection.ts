@@ -14,6 +14,17 @@ const multiBlockCandidate = (fragment: DocumentFragment): boolean => {
   const nodes = [...fragment.childNodes].filter((node) => !formattingWhitespace(node));
   return nodes.length > 1 && nodes.some((node) => !inlinePayloadNode(node));
 };
+const headingRoot = (fragment: DocumentFragment): Element | undefined => {
+  const nodes = [...fragment.childNodes].filter((node) => !formattingWhitespace(node));
+  const node = nodes[0];
+  return nodes.length === 1 && node instanceof Element && /^h[1-6]$/.test(node.localName) ? node : undefined;
+};
+const ordinaryHeading = (fragment: DocumentFragment): HTMLElement | undefined => {
+  const node = headingRoot(fragment);
+  return node instanceof HTMLElement && node.namespaceURI === 'http://www.w3.org/1999/xhtml'
+    && !node.hasAttribute('data-mw-node') && [...node.childNodes].every(inlinePayloadNode) ? node : undefined;
+};
+const blockPasteCandidate = (fragment: DocumentFragment): boolean => multiBlockCandidate(fragment) || Boolean(headingRoot(fragment));
 const ordinaryBlocks = (fragment: DocumentFragment): HTMLElement[] | undefined => {
   const nodes = [...fragment.childNodes].filter((node) => !formattingWhitespace(node));
   if (nodes.length < 2 || !nodes.every((node) => node instanceof HTMLElement
@@ -40,19 +51,20 @@ const requireSupported = (selected: ListSelectionResult): ListSelectionPlan | un
 
 /** The transaction owner clears old caret formats only for this validated path. */
 export const handlesCollapsedListBlockPaste = (root: HTMLElement, fragment: DocumentFragment, range: Range | undefined = activeRange(root)): boolean => Boolean(range?.collapsed
-  && ordinaryBlocks(fragment)
+  && (ordinaryBlocks(fragment) || ordinaryHeading(fragment))
   && listSelectionReplacement(root, range, true, true).status === 'eligible');
 
 /** Detached import preflight: an empty sanitized fragment stays a no-op for any source. */
 export const prepareListSelectionPaste = (root: HTMLElement, fragment: DocumentFragment, range?: Range): void => {
   if (!fragment.childNodes.length) return;
   const blocks = ordinaryBlocks(fragment);
-  const candidate = multiBlockCandidate(fragment);
+  const heading = ordinaryHeading(fragment);
+  const candidate = blockPasteCandidate(fragment);
   const selected = requireSupported(listSelectionReplacement(root, range, candidate, candidate));
   if (!selected) return;
-  if (![...fragment.childNodes].every(inlinePayloadNode) && !ordinaryParagraph(fragment) && !blocks)
-    throw new TypeError('List selection insertion supports inline HTML, one ordinary paragraph or multiple ordinary paragraphs/headings.');
-  if (blocks) {
+  if (![...fragment.childNodes].every(inlinePayloadNode) && !ordinaryParagraph(fragment) && !blocks && !heading)
+    throw new TypeError('List selection insertion supports inline HTML, an ordinary paragraph or heading, or multiple ordinary paragraphs/headings.');
+  if (blocks || heading) {
     for (const node of [...fragment.childNodes]) if (formattingWhitespace(node)) node.remove();
   }
 };
@@ -109,12 +121,29 @@ export const replaceListSelection = (root: HTMLElement, text: string): boolean =
 export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: DocumentFragment): boolean => {
   if (!fragment.childNodes.length) return false;
   const blocks = ordinaryBlocks(fragment);
-  const candidate = multiBlockCandidate(fragment);
+  const heading = ordinaryHeading(fragment);
+  const candidate = blockPasteCandidate(fragment);
   const selected = requireSupported(listSelectionReplacement(root, undefined, candidate, candidate));
   if (!selected) return false;
   prepareListSelectionPaste(root, fragment, selected.range);
   const paragraph = ordinaryParagraph(fragment);
-  const { left, tail, caret, following, branches } = cutListSelection(selected, Boolean(blocks));
+  // Keep the original end wrapper before a direct start is promoted by the cut.
+  const suffix = heading ? (selected.endBody === selected.last.item
+    ? root.ownerDocument.createElement('p') : selected.endBody.cloneNode(false) as HTMLElement) : undefined;
+  const { left, tail, caret, following, branches } = cutListSelection(selected, Boolean(blocks || heading));
+  if (heading && suffix) {
+    left.after(heading, suffix);
+    ensureReplacementPlaceholder(left, caret);
+    left.normalize();
+    ensureBodyPlaceholder(heading);
+    suffix.append(tail);
+    const end = root.ownerDocument.createRange();
+    end.selectNodeContents(suffix);
+    end.collapse(true);
+    finishSelectionReplacement(suffix, end);
+    selected.first.item.append(...following, ...branches);
+    return true;
+  }
   if (blocks) {
     const first = blocks[0];
     const last = blocks[blocks.length - 1];

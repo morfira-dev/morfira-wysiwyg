@@ -110,7 +110,7 @@ test('unsupported multi-item payloads reject before DOM mutation and preserve br
     const branch = root.querySelector('li > ul');
     const observer = new MutationObserver(() => {});
     observer.observe(root, { childList: true, subtree: true, attributes: true });
-    const rejected = ['<p>A</p><blockquote><p>B</p></blockquote>', '<h2>Heading</h2>', '<ul><li>New branch</li></ul>', '<p data-mw-node="test:body" data-id="owned">Semantic</p>'].map((html) => {
+    const rejected = ['<p>A</p><blockquote><p>B</p></blockquote>', '<pre>Unsupported</pre>', '<ul><li>New branch</li></ul>', '<p data-mw-node="test:body" data-id="owned">Semantic</p>'].map((html) => {
       try { window.editor.insertHTML(html); return false; }
       catch (error) { return error instanceof Error; }
     });
