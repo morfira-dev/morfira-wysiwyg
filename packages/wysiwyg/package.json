@@ -1,6 +1,6 @@
 {
   "name": "@morfira-dev/wysiwyg",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "type": "module",
   "files": [
     "dist"
@@ -114,7 +114,7 @@
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.6.0",
-    "@morfira-dev/wysiwyg-plugins": "^1.8.0",
+    "@morfira-dev/wysiwyg-plugins": "^1.9.0",
     "@morfira-dev/wysiwyg-vue": "^1.6.0",
     "@morfira-dev/wysiwyg-react": "^1.6.0",
     "@morfira-dev/wysiwyg-svelte": "^1.6.0",
