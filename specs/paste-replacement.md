@@ -21,6 +21,8 @@ All three paths reuse the same source boundary cut as native selection replaceme
 
 ## History and evidence
 
+Caret-only formatting overrides belong to a collapsed selection. When a valid API/clipboard insertion replaces a noncollapsed range, clear those overrides inside the transactional mutation after capturing the original snapshot. A new caret at the same numeric text offset must not resurrect an override from an earlier collapsed selection. Invalid or fully stripped imports do not clear that state; neither do no-op boundary barriers. This rule does not introduce a forced formatting state for following native input.
+
 One insertion creates one isolated validated history operation and one change notification. Undo restores exact original HTML and forward/backward DOM selection; redo restores the inserted document and caret. Following native input occurs at that caret as a separate operation, with existing native link-end affinity. Controlled feedback must preserve that selection and history. Read-only, composition, rollback and disposal retain existing contracts.
 
 The inserted payload and its immediate DOM caret have the defined composition above; later native characters retain browser boundary affinity rather than a new forced-mark state. In particular, after a trailing pasted br immediately before a marked suffix, a subsequent character may inherit the suffix's mark or remain outside it, depending on the browser. Its logical insertion position before the retained suffix, the suffix's existing formatting, and separate undo history remain required. This does not promise identical subsequent mark inheritance across engines.

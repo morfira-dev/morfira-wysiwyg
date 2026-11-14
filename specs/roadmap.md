@@ -17,6 +17,8 @@ Every milestone follows specification → implementation → browser acceptance 
 - Feature-owned source organization, selective public imports/tree-shaking, isolated tarball consumer tooling for all five wrappers and observational large-document/history benchmarks. Contracts: `code-organization.md`, `modularity.md`, `package-consumers.md`, `performance.md`.
 - Bounded composition and ordinary paragraph/heading keyboard contracts. Real-device OS IME, mobile/touch and screen-reader coverage remain unverified. Cross-block selection replacement requires further normalization. Contracts: `composition.md`, `block-boundaries.md`.
 
+The new bounded list-item replacement and forward-Delete paths are implemented locally but remain **unverified**. Their new tests/examples are written; test execution, builds, type checks and fresh bundle measurements are deferred at the user's request. See `list-selection.md`, `lists-toolbar.md` and `verification-backlog.md`. Do not present the preceding measured paste profile or browser results as evidence for the newer list code.
+
 ## Milestones
 
 1. **Plugin SDK and extensible schema — phase 1 implemented.** Provides per-instance typed command tokens, validated execution/state and declarative schema contributions compiled before initial import. Phase 1 preserves schema v1: safe existing block/inline wrappers carry validated semantic markers and bounded metadata. Acceptance covers isolation, HTML/JSON/native-input round-trip, paste, rollback/history, invalid definitions and read-only/composition guards. See `plugin-sdk.md`. Mapped structural selection, custom node views, atoms, decorations and richer document operations are later SDK slices, not phase-1 claims. A full immutable-engine rewrite is not implicit.

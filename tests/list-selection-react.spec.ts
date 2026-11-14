@@ -1,0 +1,57 @@
+import { expect, test } from '@playwright/test';
+
+test('React StrictMode list replacement retains backward history branches and the next typing caret', async ({ page }) => {
+  await page.goto('/?adapter=react');
+  const content = page.getByRole('textbox');
+  await expect(content).toHaveText('Initial content');
+  const original = '<ul><li>Alpha <strong>one</strong></li><li><em>Beta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
+  await page.evaluate((html) => window.editor.setHTML(html), original);
+  await expect(content).toHaveText('Alpha oneBeta tailNested keepKeep itemOutside');
+  await page.evaluate(() => {
+    window.changes.length = 0;
+    const root = window.editor.surface;
+    root.focus();
+    const items = root.querySelectorAll(':scope > ul > li');
+    document.getSelection()!.setBaseAndExtent(items[1].querySelector('em')!.firstChild!, 2, items[0].firstChild!, 6);
+  });
+  const branch = await content.locator(':scope > ul > li > ul').elementHandle();
+  const outside = await content.locator(':scope > p').elementHandle();
+  await page.keyboard.insertText('X');
+  const replaced = '<ul><li>Alpha X<em>ta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
+  expect(await page.evaluate(() => ({ selection: window.editor.getSelection(), changes: window.changes.map((change) => change.html) }))).toEqual({ selection: { index: 7, length: 0 }, changes: [replaced] });
+  expect(await branch!.evaluate((element) => element.isConnected && element === window.editor.surface.querySelector('li > ul'))).toBe(true);
+  expect(await outside!.evaluate((element) => element.isConnected && element === window.editor.surface.lastElementChild)).toBe(true);
+  await page.evaluate(() => window.editor.undo());
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(original);
+  expect(await page.evaluate(() => {
+    const root = window.editor.surface;
+    const selection = document.getSelection()!;
+    const items = root.querySelectorAll(':scope > ul > li');
+    return { anchorIsRight: selection.anchorNode === items[1].querySelector('em')!.firstChild, anchorOffset: selection.anchorOffset, focusIsLeft: selection.focusNode === items[0].firstChild, focusOffset: selection.focusOffset, selected: selection.getRangeAt(0).toString(), undo: window.editor.canUndo() };
+  })).toEqual({ anchorIsRight: true, anchorOffset: 2, focusIsLeft: true, focusOffset: 6, selected: 'oneBe', undo: false });
+  await page.evaluate(() => window.editor.redo());
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
+  await page.keyboard.insertText('!');
+  const typed = '<ul><li>Alpha X!<em>ta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>';
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(typed);
+  expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: 8, length: 0 });
+  await page.evaluate(() => window.editor.undo());
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(replaced);
+  await page.evaluate(() => window.editor.undo());
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe(original);
+  const baseline = await page.evaluate(() => window.changes.length);
+  await page.evaluate(() => window.editor.insertHTML('<u>API</u>'));
+  await expect.poll(() => page.evaluate(() => window.editor.getHTML())).toBe('<ul><li>Alpha <u>API</u><em>ta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul><p>Outside</p>');
+  expect(await page.evaluate(() => ({ changes: window.changes.length, selection: window.editor.getSelection() }))).toEqual({ changes: baseline + 1, selection: { index: 9, length: 0 } });
+  const count = await page.evaluate(() => window.changes.length);
+  await page.getByRole('button', { name: 'Toggle readonly', exact: true }).click();
+  await expect(content).toHaveAttribute('contenteditable', 'false');
+  await page.evaluate(() => window.editor.insertHTML('<u>Blocked</u>'));
+  expect(await page.evaluate(() => window.changes.length)).toBe(count);
+  await page.getByRole('button', { name: 'Update value', exact: true }).click();
+  await expect(content).toHaveText('External update');
+  expect(await page.evaluate(() => ({ changes: window.changes.length, undo: window.editor.canUndo() }))).toEqual({ changes: count, undo: false });
+  await page.evaluate(() => window.dispose());
+  await expect(content).toHaveCount(0);
+});

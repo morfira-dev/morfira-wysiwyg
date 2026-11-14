@@ -2,7 +2,11 @@ import { createDocumentSchema } from '../schema/index.js';
 import { createCommandRegistry } from '../commands/index.js';
 import { activeRange, bookmark, placeCaret, rangeFromBookmark, readTextSelection, restoreBookmark, selectText } from '../selection/index.js';
 import type { SelectionBookmark } from '../selection/index.js';
-import { editListInput, handlesListInput, indentList, listState, selectedBlocks } from '../lists/index.js';
+import {
+  editListInput, handlesListInput, indentList, listState, selectedBlocks,
+  listSelectionReplacement, prepareListSelectionPaste, replaceListSelection,
+  replaceListSelectionWithFragment, handlesListForwardDelete, editListForwardDelete,
+} from '../lists/index.js';
 import { editBlockInput, handlesBlockInput, handlesSelectionReplacement, replaceSelection, prepareSelectionPaste, replaceSelectionWithFragment } from '../input/index.js';
 import { applyFormat, inlineFormats, readFormats } from '../formatting/index.js';
 import { inlineStyles, normalizeInlineStyle } from '../formatting/inline-attributes.js';
@@ -45,6 +49,7 @@ const insertFragment = (root: HTMLElement, fragment: DocumentFragment): void => 
   if (!fragment.childNodes.length)
     return;
   if (replaceSelectionWithFragment(root, fragment)) return;
+  if (replaceListSelectionWithFragment(root, fragment)) return;
   range.deleteContents();
   const startElement = range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement;
   const block = startElement?.closest('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre');
@@ -338,7 +343,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   const prepareHTML = (html: string): DocumentFragment => {
     try {
       const fragment = schema.renderDocument(schema.parseHTML(html));
-      prepareSelectionPaste(surface, fragment, activeRange(surface) ?? rangeFromBookmark(surface, lastSelection));
+      const range = activeRange(surface) ?? rangeFromBookmark(surface, lastSelection);
+      prepareSelectionPaste(surface, fragment, range);
+      prepareListSelectionPaste(surface, fragment, range);
       return fragment;
     }
     catch (error) {
@@ -353,7 +360,13 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   const insertPrepared = (fragment: DocumentFragment): void => {
     if (!fragment.childNodes.length) return;
     if (!activeRange(surface) && lastSelection) restoreBookmark(surface, lastSelection);
-    runTransaction(() => insertFragment(surface, fragment));
+    runTransaction(() => {
+      // A former collapsed-caret override must not reactivate at the same offset
+      // after replacing a selection. Capture the original snapshot first.
+      const range = activeRange(surface);
+      if (range && !range.collapsed) clearTyping();
+      insertFragment(surface, fragment);
+    });
   };
   const editor: Editor = {
     element: container, surface, events, schema, commands: registry.commands,
@@ -568,6 +581,28 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       const text = event.inputType === 'insertText' ? event.data! : '';
       // A replacement is isolated from native typing/deletion bursts on both sides.
       runTransaction(() => replaceSelection(surface, text));
+      return;
+    }
+    const listReplacementInput = (event.inputType === 'insertText' && typeof event.data === 'string')
+      || event.inputType === 'deleteContentBackward' || event.inputType === 'deleteContentForward';
+    if (event.cancelable && listReplacementInput) {
+      const selection = listSelectionReplacement(surface);
+      if (selection.status !== 'unowned') {
+        event.preventDefault();
+        pendingInput = undefined;
+        if (selection.status === 'blocked') return;
+        clearTyping();
+        runTransaction(() => replaceListSelection(surface, event.inputType === 'insertText' ? event.data! : ''));
+        return;
+      }
+    }
+    if (event.cancelable && handlesListForwardDelete(surface, event.inputType)) {
+      event.preventDefault();
+      pendingInput = undefined;
+      runTransaction(() => {
+        // A boundary barrier is a real no-op, including pending caret formats.
+        if (editListForwardDelete(surface)) clearTyping();
+      });
       return;
     }
     if (!composing && !event.isComposing && handlesListInput(surface, event.inputType)) {

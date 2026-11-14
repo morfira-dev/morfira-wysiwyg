@@ -108,6 +108,38 @@ Invalid data for a known semantic node and structure unsupported by this path ar
 
 Try **Paste between blocks** on the homepage or in the [playground](/en/playground): **Select sample**, then **Insert text** or **Insert HTML**. The example uses the public API; native clipboard is tested separately. Source selections across containers/cells or independent lists, tables and figures remain outside the new normalization. This insertion does not promise exact Word/Excel/Google Docs compatibility; synthetic ClipboardEvent cases do not establish OS clipboard permissions or real mobile IME support.
 
+## List item selections and boundaries
+
+**New local slice — verification deferred.** The following rules describe the written implementation and its intended contract, not certified browser behavior. At the user's request, this slice's tests, builds, type checks and bundle measurements have not been run. The future verification list is in `specs/verification-backlog.md`.
+
+Text input, Backspace and Delete handle a noncollapsed selection across two or more direct sibling `li` elements under one `ul`/`ol`. An original item's own body must contain text, supported inline marks, links, `span`, `code` and `br` only. Paragraph/heading wrappers, original inline images, tables and other block bodies are outside this first path. Operating within a nested list or a list in one cell leaves its outer parent intact.
+
+The first `li`, its attributes and untouched prefix remain. The last item's inline suffix joins the first item with its formatting. Covered middle items are removed; other items and neighboring blocks are not rebuilt. Formatting-only whitespace between covered items may be removed with that selected gap. Non-whitespace gaps and unrelated nodes between items are not silently normalized.
+
+Trailing nested `ul`/`ol` branches of the last item, lying entirely **after the selection end**, move as whole branches into the retained first item. The range must not enter them. Nested lists in the first or middle covered item reject this bounded path rather than becoming incidental subtree deletion. Ranges between different lists, an item and a paragraph, or different list levels are blocked before mutation when an endpoint belongs to an item. A range whose endpoints belong to the same nearest `li` retains its previous input path. General structural selection of an entire list remains separate work.
+
+For this document:
+
+```html
+<ul><li>Alpha <strong>one</strong></li><li><em>Beta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul>
+```
+
+a selection from after `Alpha ` to after `Be`, followed by `editor.insertHTML('<u>X</u>')`, has this intended result:
+
+```html
+<ul><li>Alpha <u>X</u><em>ta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul>
+```
+
+The incoming fragment passes the schema before live editing. Inline markup, including an allowed incoming image, or one ordinary `p` after normalization is accepted: its wrapper is removed and the first `li` keeps its attributes. This does not permit images in the original source selection. Multi-block and structural payloads, including a semantic `p`, are atomically rejected for this replacement: the API throws and clipboard insertion leaves the document unchanged. Empty sanitized HTML is a no-op, without deleting the range or falling back to plain text. This slice adds neither new list properties nor new SDK semantic tags.
+
+Collapsed Delete at the end of an item's own inline body, before its trailing branches, joins the next suitable item **in the same list**. Both sets of nested branches stay whole and in their original order; they are not coalesced or stripped of attributes. The final item, an unsupported neighbor and container boundaries stop this join without history. Existing first-item Backspace lifting/exiting and Enter keep their contracts. New Delete handling uses cancelable `beforeinput`, preserving cancellation rather than bypassing it on `keydown`.
+
+The operation has an isolated undo restoring the original document and forward/backward DOM range. The caret follows inserted text/HTML and precedes the retained inline suffix and nested branches. Subsequent input stays there with existing native formatting affinity. Already canceled events, read-only and composition retain their guards; noncancelable `beforeinput` receives no new manual edit. A nested import failure still poisons its whole outer transaction even when the plugin catches it.
+
+A detached-preflight refusal before opening the transaction or a blocked native edit preserves unrelated DOM identity. If a trusted focus listener changes the context after preflight, a late rejection uses ordinary transaction rollback: its initial HTML, selection and history are preserved, but DOM nodes may be rebuilt. DOM identity is not guaranteed for that late rollback path.
+
+Local demo: **Document → List item selection**, then **Select items**, **Replace with text** or **Replace with HTML**. **Caret before Delete** prepares a position for actual Delete. This new demo and these scenarios have not been executed yet. Word deletion, `insertReplacementText` and native replacement target ranges are not extended by this handler. Arbitrary multi-block HTML across items, list↔paragraph transformations, partially selected nested trees, actual mobile IME and new bundle sizes remain unverified or subsequent work.
+
 ## Formatting
 
 Inline: `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`. Blocks: `header` (1–6 or false), `blockquote`, `code-block`, `list` (`bullet`, `ordered`, false), `align` (`left`, `center`, `right`, `justify`). `color` and `background` accept a CSS color or false. `link` accepts a URL, `LinkFormat` or false: a selection changes only that fragment; a caret inside a link edits the whole anchor. Unsafe API options throw before document mutation. Collapsed inline formatting establishes a typing position; complex cursor-boundary cases remain part of browser compatibility work.

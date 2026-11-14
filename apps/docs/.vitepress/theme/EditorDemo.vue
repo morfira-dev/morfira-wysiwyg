@@ -46,6 +46,8 @@ const heading = ref('0'); const list = ref(''); const alignment = ref('left');
 const pasteTarget = ref<'root' | 'quote' | 'cell'>('root');
 const pastePlain = ref('First <literal>\nSecond');
 const pasteHTML = ref('<p><strong>First</strong></p><h3><u>Second</u></h3>');
+const listReplacement = ref('X');
+const listInlineHTML = ref('<u>Inserted</u>');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
 const cellColor = ref('#eeeaff'); const borderColor = ref('#6658e8'); const widthColumn = ref(1); const widthValue = ref(180);
 const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛицензия\tMIT'); const bufferFormat = ref<'text' | 'html'>('text');
@@ -66,6 +68,7 @@ const listSample = () => t(
 );
 const stylingSample = () => `<h2>${t('Цвета и ссылки', 'Colors and links')}</h2><p><span style="color: #6658e8">${t('Цветной текст', 'Colored text')}</span> · <span style="background-color: #fff59d">${t('Важная мысль', 'An important thought')}</span> · <a href="https://example.com" target="_blank" title="Example">${t('Редактируемая ссылка', 'Editable link')}</a></p><p>${t('Выдели часть текста или поставь курсор внутри ссылки. Поля справа сохраняют позицию.', 'Select some text or place the caret in a link. The fields on the right preserve your position.')}</p>`;
 const inputSample = () => '<p>Alpha <strong>one</strong></p><h2><em>Beta</em> tail</h2><p>Keep</p><blockquote><p>Quote <strong>one</strong></p><p><em>two</em> end</p></blockquote><table><tbody><tr><td rowspan="2"><p>Cell <strong>one</strong></p><h3><em>two</em> end</h3></td><td><p>Neighbor A</p></td></tr><tr><td><p>Neighbor B</p></td></tr></tbody></table><p><br></p>';
+const listSelectionSample = () => '<ul><li>Alpha <strong>one</strong></li><li><em>Beta</em> tail<ul><li>Nested branch</li></ul></li><li>Keep item</li></ul><p>Keep paragraph</p>';
 const imageSample = () => `<h2>${t('Изображения с подписью', 'Images with captions')}</h2><p>${t('Нажми на изображение и измени размеры, alt или подпись справа.', 'Click the image and edit dimensions, alt text or caption on the right.')}</p><figure><img src="/logo.svg" alt="Morfira" width="160" height="160"><figcaption>${t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption')}</figcaption></figure><p>${t('Здесь можно продолжить текст.', 'Continue writing here.')}</p>`;
 const statisticsSample = () => `<h2>${t('Unicode и статистика', 'Unicode and statistics')}</h2><p>e<strong>́</strong> · 👨‍👩‍👧‍👦 · 🇷🇺 · ${t('Привет, мир!', 'Hello, world!')}</p><p>${t('Выдели букву с комбинируемым знаком или эмодзи и открой панель статистики: считаются видимые графемы, а не UTF-16 единицы.', 'Select a combining sequence or emoji and open Statistics: the counter measures visible graphemes rather than UTF-16 units.')}</p>`;
 const suggestionSample = () => `<h2>${t('Упоминания и slash-шаблоны', 'Mentions and slash snippets')}</h2><p>${t('Вводи @an для людей или /sig в начале абзаца для текстового шаблона. ArrowUp/Down выбирают, Enter вставляет, Escape закрывает.', 'Type @an for people or /sig at the beginning of a paragraph for a text snippet. ArrowUp/Down navigate, Enter inserts, Escape dismisses.')}</p><p>@an</p><p>/sig</p><p>/h2 · /bullet · /ordered · /quote · /code · /table</p><p>${t('Загруженные примеры буквальны. Кликни в конец токена и открой подсказки кнопкой справа, либо начни новый пример.', 'Loaded examples stay literal. Place the caret at a token end and use Open suggestions on the right, or start a new example.')}</p><p><br></p>`;
@@ -114,7 +117,7 @@ const openSuggestions = () => run(() => { closeSuggestions(); if (!mentionAPI?.o
 const startStructuralSlash = (command: string) => run((instance) => { const text = `/${command}`; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); slashAPI?.open(); });
 const startSuggestions = (kind: 'mentions' | 'slash') => run((instance) => { const text = kind === 'mentions' ? '@an' : '/sig'; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); (kind === 'mentions' ? mentionAPI : slashAPI)?.open(); });
 const sampleFactories: Record<string, () => string> = {
-  empty: () => '<p><br></p>', input: inputSample, paste: inputSample, suggestions: suggestionSample,
+  empty: () => '<p><br></p>', input: inputSample, paste: inputSample, 'list-selection': listSelectionSample, suggestions: suggestionSample,
   markdown: markdownSample, statistics: statisticsSample, search: searchSample,
   images: imageSample, styling: stylingSample, lists: listSample,
   tables: tableSample, article, showcase,
@@ -137,6 +140,30 @@ const insertPasteExample = (plain: boolean) => run((instance) => {
   if (!plain) { instance.insertHTML(pasteHTML.value); return; }
   const holder = document.createElement('div');
   holder.textContent = pastePlain.value.replace(/\r\n?/g, '\n');
+  instance.insertHTML(holder.innerHTML.replace(/\n/g, '<br>'));
+});
+const selectListItems = (boundary = false) => run((instance) => {
+  const list = instance.surface.querySelector(':scope > ul');
+  const first = list?.firstElementChild;
+  const second = first?.nextElementSibling;
+  const start = first?.firstChild;
+  const end = second?.querySelector(':scope > em')?.firstChild;
+  if (first?.localName !== 'li' || second?.localName !== 'li' || start?.nodeType !== 3 || end?.nodeType !== 3)
+    throw new Error(t('Загрузи пример «Выделение пунктов списка» заново.', 'Load the “List item selection” sample again.'));
+  const selection = document.getSelection()!;
+  if (boundary) {
+    const range = document.createRange();
+    range.selectNodeContents(first);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+  else selection.setBaseAndExtent(end, 2, start, start.textContent!.length);
+}, false);
+const insertListExample = (plain: boolean) => run((instance) => {
+  if (!plain) { instance.insertHTML(listInlineHTML.value); return; }
+  const holder = document.createElement('div');
+  holder.textContent = listReplacement.value.replace(/\r\n?/g, '\n');
   instance.insertHTML(holder.innerHTML.replace(/\n/g, '<br>'));
 });
 const insertTable = () => tableRun((api) => api.insert(Number(rows.value), Number(columns.value)));
@@ -292,7 +319,7 @@ onBeforeUnmount(() => {
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="paste">{{ t('Вставка между блоками', 'Paste between blocks') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="paste">{{ t('Вставка между блоками', 'Paste between blocks') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="list-selection">{{ t('Выделение пунктов списка', 'List item selection') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <label>{{ t('Язык редактора', 'Editor language') }}<select v-model="editorLocale" :disabled="!ready" :aria-label="t('Язык интерфейса редактора', 'Editor interface language')" @change="updateEditorLocale"><option value="ru">Русский</option><option value="en">English</option></select></label>
@@ -340,6 +367,16 @@ onBeforeUnmount(() => {
           <label>{{ t('HTML для вставки', 'HTML to insert') }}<textarea v-model="pasteHTML" :aria-label="t('HTML для вставки', 'HTML to insert')" rows="4" spellcheck="false"></textarea></label>
           <button @click="insertPasteExample(false)">{{ t('Вставить HTML', 'Insert HTML') }}</button>
           <p class="lab-hint">{{ t('Текст вставляется буквально, переносы сохраняются. HTML проходит проверку схемы. Эти кнопки используют API редактора; доступ к системному буферу не запрашивается.', 'Text is inserted literally with line breaks preserved. HTML passes schema validation. These buttons use the editor API and do not request system clipboard access.') }}</p>
+        </fieldset></details>
+        <details class="lab-list-selection"><summary>{{ t('Выделение пунктов списка', 'List item selection') }}</summary><fieldset :disabled="!ready || readOnly">
+          <p class="lab-hint">{{ t('Новый сценарий: код добавлен, проверки отложены. Загрузи одноимённый пример в меню «Документ», выдели пункты и попробуй ввод, Backspace/Delete или вставку ниже. Вложенная ветка последнего пункта должна сохраниться.', 'New scenario: implemented with validation deferred. Load this sample from the Document menu, select its items, then try typing, Backspace/Delete or the insertion controls below. The last item’s nested branch must remain.') }}</p>
+          <button @click="selectListItems(false)">{{ t('Выделить пункты', 'Select items') }}</button>
+          <label>{{ t('Текст замены', 'Replacement text') }}<input v-model="listReplacement" :aria-label="t('Текст замены', 'Replacement text')"></label>
+          <button @click="insertListExample(true)">{{ t('Заменить текстом', 'Replace with text') }}</button>
+          <label>{{ t('Строчный HTML', 'Inline HTML') }}<textarea v-model="listInlineHTML" :aria-label="t('Строчный HTML', 'Inline HTML')" rows="3" spellcheck="false"></textarea></label>
+          <button @click="insertListExample(false)">{{ t('Заменить HTML', 'Replace with HTML') }}</button>
+          <button @click="selectListItems(true)">{{ t('Курсор перед Delete', 'Caret before Delete') }}</button>
+          <p class="lab-hint">{{ t('Последняя кнопка ставит курсор в конец первого пункта: нажми Delete в редакторе. Смешанные выделения, сложные тела пунктов и многоабзацная вставка — отдельные этапы.', 'The last button places the caret at the first item’s end: press Delete in the editor. Mixed selections, complex item bodies and multi-block insertion are separate milestones.') }}</p>
         </fieldset></details>
         <details class="lab-suggestions"><summary>{{ t('Упоминания и slash-шаблоны', 'Mentions and slash snippets') }}</summary><fieldset :disabled="!ready">
           <div class="lab-button-grid"><button :disabled="readOnly" @click="startSuggestions('mentions')">{{ t('Новый пример @an', 'New @an example') }}</button><button :disabled="readOnly" @click="startSuggestions('slash')">{{ t('Новый пример /sig', 'New /sig example') }}</button></div>

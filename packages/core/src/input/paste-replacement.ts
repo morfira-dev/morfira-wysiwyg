@@ -1,4 +1,5 @@
 import { selectionReplacement, cutSelectionReplacement, ensureReplacementPlaceholder, finishSelectionReplacement } from './replace-selection.js';
+import { insertInlineFragment } from './inline-fragment.js';
 
 const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br', 'img']);
 const leafTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
@@ -33,22 +34,6 @@ export const prepareSelectionPaste = (root: HTMLElement, fragment: DocumentFragm
   }
 };
 
-const insertInline = (left: HTMLElement, caret: Range, fragment: DocumentFragment): void => {
-  const parent = caret.startContainer.nodeType === 1 ? caret.startContainer as Element : caret.startContainer.parentElement;
-  const anchor = parent?.closest('a');
-  if (fragment.querySelector('a') && anchor && left.contains(anchor)) {
-    // The selected tail has already gone; retain prefix metadata without nesting links.
-    caret.setStartAfter(anchor);
-    caret.collapse(true);
-  }
-  const last = fragment.lastChild;
-  if (!last) return;
-  caret.insertNode(fragment);
-  if (last.nodeType === 3) caret.setStart(last, last.textContent!.length);
-  else caret.setStartAfter(last);
-  caret.collapse(true);
-};
-
 const placeholderAtStart = (leaf: HTMLElement): Range => {
   const caret = leaf.ownerDocument.createRange();
   caret.selectNodeContents(leaf);
@@ -72,7 +57,7 @@ export const replaceSelectionWithFragment = (root: HTMLElement, fragment: Docume
   const { left, right, tail, caret } = cutSelectionReplacement(selected);
   if (inline) {
     if (singleParagraph) fragment.replaceChildren(...nodes[0].childNodes);
-    insertInline(left, caret, fragment);
+    insertInlineFragment(left, caret, fragment);
     left.append(tail);
     finishSelectionReplacement(left, caret);
     return true;
@@ -84,7 +69,7 @@ export const replaceSelectionWithFragment = (root: HTMLElement, fragment: Docume
     const prefix = root.ownerDocument.createDocumentFragment();
     prefix.append(...first.childNodes);
     first.remove();
-    insertInline(left, caret, prefix);
+    insertInlineFragment(left, caret, prefix);
     left.after(fragment);
     ensureReplacementPlaceholder(left, caret);
     left.normalize();
