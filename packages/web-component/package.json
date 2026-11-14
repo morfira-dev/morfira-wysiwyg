@@ -1,14 +1,33 @@
 {
   "name": "@morfira-dev/wysiwyg-web-component",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
-  "files": ["dist"],
-  "sideEffects": ["**/*.css"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "peerDependencies": { "@morfira-dev/wysiwyg-core": "^1.5.1" },
-  "repository": { "type": "git", "url": "git+https://github.com/morfira-dev/morfira-wysiwyg.git", "directory": "packages/web-component" },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@morfira-dev/wysiwyg-core": "^1.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morfira-dev/morfira-wysiwyg.git",
+    "directory": "packages/web-component"
+  },
   "homepage": "https://github.com/morfira-dev/morfira-wysiwyg#readme",
-  "bugs": { "url": "https://github.com/morfira-dev/morfira-wysiwyg/issues" }
+  "bugs": {
+    "url": "https://github.com/morfira-dev/morfira-wysiwyg/issues"
+  }
 }

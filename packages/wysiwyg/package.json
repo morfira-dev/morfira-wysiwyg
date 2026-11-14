@@ -1,6 +1,6 @@
 {
   "name": "@morfira-dev/wysiwyg",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "type": "module",
   "files": [
     "dist"
@@ -88,13 +88,13 @@
     }
   },
   "dependencies": {
-    "@morfira-dev/wysiwyg-core": "^1.5.2",
-    "@morfira-dev/wysiwyg-plugins": "^1.7.2",
-    "@morfira-dev/wysiwyg-vue": "^1.5.2",
-    "@morfira-dev/wysiwyg-react": "^1.5.2",
-    "@morfira-dev/wysiwyg-svelte": "^1.5.2",
-    "@morfira-dev/wysiwyg-angular": "^0.1.0",
-    "@morfira-dev/wysiwyg-web-component": "^0.1.0"
+    "@morfira-dev/wysiwyg-core": "^1.6.0",
+    "@morfira-dev/wysiwyg-plugins": "^1.8.0",
+    "@morfira-dev/wysiwyg-vue": "^1.6.0",
+    "@morfira-dev/wysiwyg-react": "^1.6.0",
+    "@morfira-dev/wysiwyg-svelte": "^1.6.0",
+    "@morfira-dev/wysiwyg-angular": "^1.0.0",
+    "@morfira-dev/wysiwyg-web-component": "^1.0.0"
   },
   "peerDependencies": {
     "vue": "^3.5.0",
