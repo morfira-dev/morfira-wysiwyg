@@ -13,18 +13,22 @@ const itemAt = (root: HTMLElement, node: Node): HTMLElement | undefined => {
   return item && root.contains(item) ? item : undefined;
 };
 
-/** Own inline body ends before direct trailing branches; inspecting never edits DOM. */
+/** Inspect direct bodies and optional paste-only interleaved branches without changing DOM. */
 const inspectItem = (root: HTMLElement, item: HTMLElement, preserveQuotes: boolean): ListItemBoundary | undefined => {
   const list = item.parentElement;
   if (item.localName !== 'li' || item.namespaceURI !== 'http://www.w3.org/1999/xhtml' || !root.contains(item) || !list || !isList(list) || item.hasAttribute('data-mw-node') || list.hasAttribute('data-mw-node')) return;
   const ownNodes: ChildNode[] = [];
   const bodies: HTMLElement[] = [];
   const nestedLists: HTMLElement[] = [];
+  let interleaved = false;
   for (const node of item.childNodes) {
     if (isList(node)) nestedLists.push(node);
     else {
-      // Moving text that follows a branch would silently reorder a partial shape.
-      if (nestedLists.length) return;
+      if (nestedLists.length) {
+        // Only wrapped paste bodies can form an ordered sequence after a branch.
+        if (!preserveQuotes || !bodies.length) return;
+        interleaved = true;
+      }
       const paragraph = node instanceof HTMLElement && /^(p|h[1-6])$/.test(node.localName)
         && node.namespaceURI === item.namespaceURI && !node.hasAttribute('data-mw-node') && [...node.childNodes].every(inlineNode);
       const quote = preserveQuotes && isOrdinaryQuote(node);
@@ -47,7 +51,7 @@ const inspectItem = (root: HTMLElement, item: HTMLElement, preserveQuotes: boole
   if (body === item && nestedLists.length) ownEnd.setEndBefore(nestedLists[0]);
   ownEnd.collapse(false);
   const breaks = ownNodes.reduce((count, node) => count + (node instanceof Element ? node.querySelectorAll('br').length + Number(node.localName === 'br') : 0), 0);
-  return { item: item as HTMLLIElement, body, bodies, ownNodes, nestedLists, ownStart, ownEnd, ownEmpty: ownNodes.every((node) => !node.textContent) && breaks <= 1 };
+  return { item: item as HTMLLIElement, body, bodies, ownNodes, nestedLists, interleaved, ownStart, ownEnd, ownEmpty: ownNodes.every((node) => !node.textContent) && breaks <= 1 };
 };
 
 /** Native/boundary callers deliberately keep the ordinary inline/p/h profile. */
@@ -60,6 +64,12 @@ export const listBodyAt = (range: Range, boundary: ListItemBoundary, end: boolea
   const offset = end ? range.endOffset : range.startOffset;
   if (boundary.body === boundary.item) return boundary.item;
   if (node === boundary.item) {
+    if (boundary.interleaved) {
+      const children = [...boundary.item.childNodes];
+      if (offset > children.length) return;
+      const child = children[end ? Math.max(0, offset - 1) : Math.min(offset, children.length - 1)];
+      return boundary.bodies.find((body) => body === child);
+    }
     if (offset > boundary.bodies.length) return;
     const index = end ? Math.max(0, offset - 1) : Math.min(offset, boundary.bodies.length - 1);
     return boundary.bodies[index];
@@ -73,7 +83,8 @@ export const normalizeListBodyRange = (range: Range, boundary: ListItemBoundary,
   const point = range.cloneRange();
   point.collapse(!end);
   if (boundary.body !== boundary.item && point.startContainer === boundary.item) {
-    const atStart = point.startOffset === 0 || (!end && point.startOffset < boundary.bodies.length);
+    const count = boundary.interleaved ? boundary.item.childNodes.length : boundary.bodies.length;
+    const atStart = point.startOffset === 0 || (!end && point.startOffset < count);
     point.selectNodeContents(body);
     point.collapse(atStart);
   }
@@ -96,6 +107,7 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
     const quote = directQuoteAt(first.item, range.startContainer);
     const endQuote = directQuoteAt(last.item, range.endContainer);
     if (quote && quote === endQuote) {
+      if (first.interleaved) return blocked('An interleaved item requires crossing distinct body roots through a quote.');
       const context = quotePasteContext(quote, range);
       if (!context) return blocked('Block insertion inside a quote requires ordinary inline or paragraph/heading source content.');
       return { status: 'eligible', range: context.range, leaves: [first.item], gaps: [], first, last,
@@ -125,6 +137,7 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
   }
   if (preserveQuotes && first.item === last.item && (startBody.localName === 'blockquote' || endBody.localName === 'blockquote'))
     return blocked('A block insertion endpoint cannot enter an existing quote.');
+  if (first.item === last.item && first.interleaved) return blocked('An interleaved item requires an affected quote crossing.');
   if (!includeSameBody && firstItem === lastItem && startBody === endBody) return { status: 'unowned' };
   const workingRange = range.cloneRange();
   workingRange.setStart(start.startContainer, start.startOffset);
@@ -156,6 +169,8 @@ const selectionPlan = (root: HTMLElement, range: Range | undefined, options: Lis
           if (!crossing) return blocked('Block insertion across sibling items requires ordinary editable quotes and supported endpoints.');
           return { status: 'eligible', range: crossing.range, leaves, gaps, first, last, startBody, endBody, crossing };
         }
+        if (boundaries.some((boundary) => boundary.interleaved))
+          return blocked('Interleaved items require an affected quote crossing.');
         if (boundaries.slice(0, -1).some((boundary) => boundary.nestedLists.length))
           return blocked('A selected item contains a nested branch outside the quote-crossing profile.');
         return { status: 'eligible', range: workingRange, leaves, gaps, first, last, startBody, endBody };

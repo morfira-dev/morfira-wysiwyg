@@ -4,6 +4,7 @@ export interface ListItemBoundary {
   bodies: HTMLElement[];
   ownNodes: ChildNode[];
   nestedLists: HTMLElement[];
+  interleaved: boolean;
   ownStart: Range;
   ownEnd: Range;
   ownEmpty: boolean;
@@ -30,6 +31,7 @@ export interface QuoteCrossingContext {
   range: Range;
   covered: HTMLElement[];
   siblings?: QuoteSiblingContext;
+  ordered?: boolean;
 }
 
 export interface QuoteSiblingContext {

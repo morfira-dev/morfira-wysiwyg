@@ -29,17 +29,30 @@ export const quoteCrossingContext = (boundaries: ListItemBoundary[], range: Rang
   if (left.compareBoundaryPoints(Range.START_TO_START, right) > 0) return;
   normalized.setStart(left.startContainer, left.startOffset);
   normalized.setEnd(right.startContainer, right.startOffset);
-  const siblings = boundaries.length > 1 ? {
+  const ordered = boundaries.some((boundary) => boundary.interleaved);
+  if (ordered && boundaries.some((boundary) => boundary.nestedLists.some((branch) =>
+    branch.namespaceURI !== boundary.item.namespaceURI || branch.hasAttribute('data-mw-node')))) return;
+  // Body indices describe editing ownership; actual children retain the source
+  // body/list order for the separate ordered profile.
+  const intervalBranches = ordered ? boundaries.flatMap((boundary, index) => {
+    const children = [...boundary.item.children];
+    const begin = index === 0 && startRoot !== boundary.item ? children.indexOf(startRoot) + 1 : 0;
+    const finish = index === boundaries.length - 1 ? (endRoot === boundary.item ? 0 : children.indexOf(endRoot)) : children.length;
+    return children.slice(begin, finish).filter((node): node is HTMLElement => boundary.nestedLists.includes(node as HTMLElement));
+  }) : undefined;
+  const following = ordered ? (endRoot === last.item ? last.nestedLists
+    : [...last.item.children].slice([...last.item.children].indexOf(endRoot) + 1) as HTMLElement[]) : last.bodies.slice(to + 1);
+  const siblings = boundaries.length > 1 || ordered ? {
     container: first.item,
     removedItems: boundaries.slice(1).map((boundary) => boundary.item),
-    following: last.bodies.slice(to + 1),
-    branches: boundaries.flatMap((boundary) => boundary.nestedLists),
+    following,
+    branches: intervalBranches ?? boundaries.flatMap((boundary) => boundary.nestedLists),
     gaps,
     directStart: startRoot === first.item,
     directEnd: endRoot === last.item,
   } : undefined;
   return { startRoot, endRoot, startQuoteBody: startPoint?.body, endQuoteBody: endPoint?.body,
-    range: normalized, covered: affected.slice(1, -1), siblings };
+    range: normalized, covered: affected.slice(1, -1), siblings, ordered };
 };
 
 const ensureBody = (body: HTMLElement): void => {
@@ -62,8 +75,11 @@ export const replaceQuoteCrossing = (context: QuoteCrossingContext, roots: HTMLE
   const { range, covered, startQuoteBody, endQuoteBody, siblings } = context;
   let { startRoot, endRoot } = context;
   const document = startRoot.ownerDocument;
-  // Preserve every branch before trimming direct-inline bodies or removing covered items.
+  // Detach protected branches before trimming direct-inline bodies or removing covered items.
   for (const branch of siblings?.branches ?? []) branch.remove();
+  if (context.ordered && siblings?.directEnd) {
+    for (const node of siblings.following) node.remove();
+  }
   // Separate local ranges preserve both actual endpoint wrappers and all untouched
   // quote children/gaps; a cross-container delete would unwrap selected ancestry.
   const suffixCut = document.createRange();
@@ -85,14 +101,20 @@ export const replaceQuoteCrossing = (context: QuoteCrossingContext, roots: HTMLE
     else ensureBody(root);
   }
   const caretBody = endQuoteBody ? document.createElement('p') : endRoot;
-  if (endQuoteBody) {
-    ensureBody(caretBody);
-    startRoot.after(...roots, caretBody);
-  } else startRoot.after(...roots);
+  if (endQuoteBody) ensureBody(caretBody);
+  if (context.ordered && siblings) {
+    const suffix = endQuoteBody ? [caretBody, endRoot] : [endRoot];
+    startRoot.after(...roots, ...siblings.branches, ...suffix, ...siblings.following);
+  } else {
+    if (endQuoteBody) startRoot.after(...roots, caretBody);
+    else startRoot.after(...roots);
+    if (siblings) {
+      const destination = endQuoteBody ? caretBody : roots[roots.length - 1];
+      destination.after(endRoot);
+      siblings.container.append(...siblings.following, ...siblings.branches);
+    }
+  }
   if (siblings) {
-    const destination = endQuoteBody ? caretBody : roots[roots.length - 1];
-    destination.after(endRoot);
-    siblings.container.append(...siblings.following, ...siblings.branches);
     for (const item of siblings.removedItems) item.remove();
     for (const gap of siblings.gaps) gap.remove();
   }
