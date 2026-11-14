@@ -59,3 +59,9 @@ The [homepage](/en/#editor) and [playground](/en/playground) let you try Unicode
 On the homepage/playground choose “Unicode and statistics”, then open Statistics. The sample includes a combining sequence, family emoji and flag. Selection has its own counters; the status bar uses document totals.
 
 Some tested Intl.Segmenter implementations return an incorrect isWordLike: false for a decomposed word in context. A false segment containing letters/numbers is rechecked independently through Intl.Segmenter, without normalizing text or graphemes. Classification remains platform WordLike: numeric keycap sequences may count as numeric tokens, unlike pictographic family and flag emoji. This is a targeted compatibility check rather than a custom linguistic tokenizer.
+
+## Reusing unchanged document runs
+
+Every read still collects the current ordered semantic text runs, including block/cell/image/foreign-node boundaries. For an exact unchanged run at the same position, the plugin reuses its private Unicode counts. Ordinary caret/selection movement and formatting-only edits therefore avoid segmenting the entire unchanged document again. Selection counts remain independently fresh.
+
+The cache retains only the last document's runs/counts per editor, has no DOM references or historical growing map, and is cleared on disposal. Returned values are independent copies. This does not replace validation or make traversal constant-time: reading/comparing runs still grows with document size. Equal concatenated text with different boundaries is re-evaluated correctly. See [measurement methodology](/en/performance).

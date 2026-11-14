@@ -1,8 +1,8 @@
 {
   "core.js": {
-    "raw": 37113,
-    "gzip": 12360,
-    "brotli": 11125
+    "raw": 38806,
+    "gzip": 12880,
+    "brotli": 11594
   },
   "core.css": {
     "raw": 3138,
@@ -25,9 +25,9 @@
     "brotli": 6815
   },
   "all-plugins.js": {
-    "raw": 62451,
-    "gzip": 24331,
-    "brotli": 21780
+    "raw": 62689,
+    "gzip": 24422,
+    "brotli": 21868
   },
   "suggestions.css": {
     "raw": 1196,
@@ -45,9 +45,9 @@
     "brotli": 2814
   },
   "statistics.js": {
-    "raw": 2750,
-    "gzip": 1293,
-    "brotli": 1134
+    "raw": 2988,
+    "gzip": 1384,
+    "brotli": 1222
   },
   "markdown.js": {
     "raw": 6923,
@@ -75,9 +75,9 @@
     "brotli": 460
   },
   "react.js": {
-    "raw": 800,
-    "gzip": 466,
-    "brotli": 413
+    "raw": 845,
+    "gzip": 491,
+    "brotli": 431
   },
   "svelte.js": {
     "raw": 929,

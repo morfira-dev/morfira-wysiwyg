@@ -1,0 +1,5 @@
+{
+  "name": "morfira-isolated-consumer",
+  "private": true,
+  "type": "module"
+}

@@ -46,3 +46,5 @@ Essential features/plugins ship ready to use. Applications choose imports and ma
 [Typed per-instance events and composable transactions](/en/events) support extension cooperation without a global singleton or command RPC bus. Heavy office conversion/collaboration processing is not a default feature or a parity target.
 
 `suggestions-set.js` and `all-plugins.js` in size-report.json measure selected unions of JS files, counting each shared chunk once. These are measurements, not mandatory presets; CSS, framework runtimes and documentation UI are separate.
+
+Local boolean inline formatting in a plain paragraph/heading uses the same typed transformation and validator on that leaf block, keeping unrelated DOM nodes connected. Cross-block/complex content, colors, links and clear formatting retain the general path. History still validates the entire persisted document; this is not an incremental document engine.

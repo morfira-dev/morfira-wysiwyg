@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress';
 
-const pages = ['guide', 'api', 'lists', 'styling', 'images', 'search', 'statistics', 'markdown', 'suggestions', 'events', 'plugins', 'adapters', 'theming', 'architecture', 'testing', 'roadmap'];
-const en = ['Getting started', 'Core API', 'Lists & formatting', 'Colors & links', 'Images & uploads', 'Find & replace', 'Text statistics', 'Markdown shortcuts', 'Mentions & slash', 'Events & extensions', 'Plugins & tables', 'Framework adapters', 'Theming', 'Architecture & size', 'Testing & releases', 'Roadmap & limitations'];
-const ru = ['Быстрый старт', 'API ядра', 'Списки и форматирование', 'Цвета и ссылки', 'Изображения и загрузка', 'Поиск и замена', 'Статистика текста', 'Markdown shortcuts', 'Упоминания и slash', 'События и расширения', 'Плагины и таблицы', 'Адаптеры фреймворков', 'Темизация', 'Архитектура и вес', 'Тесты и релизы', 'Планы и ограничения'];
+const pages = ['guide', 'api', 'lists', 'styling', 'images', 'search', 'statistics', 'markdown', 'suggestions', 'events', 'plugins', 'adapters', 'theming', 'architecture', 'testing', 'performance', 'roadmap'];
+const en = ['Getting started', 'Core API', 'Lists & formatting', 'Colors & links', 'Images & uploads', 'Find & replace', 'Text statistics', 'Markdown shortcuts', 'Mentions & slash', 'Events & extensions', 'Plugins & tables', 'Framework adapters', 'Theming', 'Architecture & size', 'Testing & releases', 'Performance & history', 'Roadmap & limitations'];
+const ru = ['Быстрый старт', 'API ядра', 'Списки и форматирование', 'Цвета и ссылки', 'Изображения и загрузка', 'Поиск и замена', 'Статистика текста', 'Markdown shortcuts', 'Упоминания и slash', 'События и расширения', 'Плагины и таблицы', 'Адаптеры фреймворков', 'Темизация', 'Архитектура и вес', 'Тесты и релизы', 'Производительность и история', 'Планы и ограничения'];
 export default defineConfig({
   title: 'Morfira WYSIWYG',
   description: 'A modular TypeScript editor. A small core, room for more.',

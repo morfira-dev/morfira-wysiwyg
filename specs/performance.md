@@ -1,0 +1,31 @@
+# Reproducible local performance baseline
+
+Status: accepted measurement contract. This slice adds development tooling, not a production processing subsystem. Runtime changes require a measured, narrowly scoped follow-up contract rather than speculative optimization. The first such exception is the private exact-input HTML-string cache in `specs/html-snapshots.md`, motivated by local Chromium input profiling; it adds no runtime dependency or processing subsystem. Measurements describe the actual machine/browser/build and do not establish a universal capacity or mobile readiness claim.
+
+## Deterministic documents
+
+Use three generated datasets with 100, 1000 and 5000 authored paragraphs. Each paragraph contains ordinary text and inline marks; every 50 authored paragraphs adds a heading, a small nested list and a 2-row/3-column logical table whose first cell spans both rows. There are five physical table cells. The optional literal search term `Stable sample text` occurs exactly once per authored paragraph (at most 5000 matches, below the search cap). The first paragraph starts with `Benchmark target `; the selected formatting target is the literal `Benchmark target` at text offset zero.
+
+Each fixture contains valid schema-v1 JSON and matching semantic HTML, expected concatenated text-node content/UTF-16 length, rendered paragraph/table/physical-cell counts, total schema-node count and maximum zero-based depth. Authored paragraph count excludes paragraphs inside table cells and the final empty editable paragraph. Every fixture explicitly ends with `<p><br></p>` so core normalization after the final table does not change structural metadata. Actual paragraph count is `N + 5 × (N / 50) + 1`; node count is `8N + 31 × (N / 50) + 2`, with maximum zero-based depth 5. The fixture generator rejects sizes outside its fixed dataset set, enforces fewer than 100000 schema nodes, depth below 100 and HTML below 5000000 UTF-16 units, and avoids remote assets, locale-dependent values and random data. This is deliberately below the editor's import limits.
+
+Before timing, validate the actual imported document against fixture text/structure metadata. Do not use DOM `innerText` to compare concatenated JSON text: block boundaries introduce browser-layout-dependent separators. Validate merged spans independently of raw cell count. Mutations must target the known first text and undo must restore it.
+
+## Operations and sampling
+
+Report datasets and enabled plugin sets explicitly. Measure core creation/import, deterministic selection/formatting, one normal native input, undo/redo and disposal; optional search/statistics runs must be separate from core-only results. Use one untimed warmup followed by at least five measured samples for each operation/dataset/browser; include sample count, median, p95 and maximum, not only the best run. Do not combine cold startup/package download with editing samples. Use deterministic fresh instances or external replacement outside measured mutation spans so history grouping and earlier samples cannot change the workload.
+
+Distinguish page-side synchronous command duration (`performance.now`) from automation wall time. Native keyboard wall time includes automation/IPC and is not intrinsic key latency. If measuring input-to-frame completion, start from the page's input event and end after a documented animation-frame boundary; a requestAnimationFrame callback is a scheduling/frame proxy, not evidence that pixels have been painted. Report the exact proxy and keep it separate from synchronous JS time. Do not call one `page.keyboard.type` duration a pure editor latency.
+
+Browser timing can change with CPU load, power mode, visibility, caches and garbage collection. Record UTC timestamp, platform/architecture, Node/browser versions, current source revision and dirty state, build mode, dataset metadata, enabled modules, warmups/repetitions and timing definitions. Timing thresholds are observational in this initial baseline; correctness assertions may fail, timing values must not make a noisy CI gate. Benchmark execution is explicit and is not part of every normal browser test run.
+
+## History and memory
+
+Exercise a bounded number of distinct synchronous transactions so history grouping does not merge revisions. Record edit count, configured history limit and successful undo/redo restoration; external document replacement must clear history before the next measured cycle. Public API has no history-byte accessor: do not invent retained-history byte counts from serialized documents or reach into private stacks. Input/output HTML/JSON sizes are document representations, not heap sizes.
+
+Heap measurements are optional Chromium/CDP observations. If available, distinguish baseline, edited, history-cleared and destroyed/GC checkpoints and report `JSHeapUsedSize` deltas with operation counts and document sizes. Keep browser/context, DevTools protocol and explicit-GC conditions in the report; garbage collection and renderer state can vary. A lower post-destroy heap value does not prove absence of leaks, and a higher value does not by itself prove a leak. Firefox/WebKit reports must mark heap data unsupported instead of filling zero. Cross-browser timings and correctness remain useful without heap access.
+
+## Acceptance and limits
+
+A generated fixture must match its metadata after importing through public editor APIs; no executable markup or unsupported schema shape enters the sample. The runner must fail on wrong content/selection/history/cleanup and save machine-readable local results under ignored `artifacts/`. It must close owned browsers/servers/contexts and remove owned editor instances on error as well as success. Do not promise support for arbitrary 5000-paragraph office documents, real IME/mobile/touch, screen readers, memory leak freedom or enterprise-editor parity based on this synthetic baseline.
+
+Core is the default profile; search/statistics are explicitly requested. Build from public artifacts with workspace source aliases disabled and record artifact hashes. Persist completed cases incrementally. Each warmup/sample has a bounded operational timeout (default 120000ms); terminate only the owned benchmark browser on timeout, record an incomplete/failed report and clean up. This is not a millisecond performance gate.

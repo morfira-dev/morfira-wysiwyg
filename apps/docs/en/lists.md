@@ -53,3 +53,5 @@ Tab enters the toolbar through a single enabled button; Left/Right and Home/End 
 ## Current boundaries
 
 Arbitrary cross-item text replacement and ordinary deletion inside an item still rely on browser behavior. We do not promise identical normalization for arbitrary office-editor HTML. Real IME/mobile verification and a complete accessibility audit remain on the roadmap. Text color and further link-editing flows are a separate step.
+
+Boolean inline styles (bold/italic/underline/strike/code/subscript/superscript) use a local validated transformation when selection stays in one plain paragraph or heading. Unrelated blocks and their DOM listeners remain connected. Unsupported/complex and cross-block selections keep the general path. Adding an already inherited mark is a no-op; undo/redo and public HTML/JSON validation retain their contracts. No application configuration is required.

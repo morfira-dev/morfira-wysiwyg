@@ -3,3 +3,8 @@ export interface Piece {
   node: DocumentNode;
   selected: boolean;
 }
+
+export interface InlineGroup {
+  selected: boolean;
+  children: DocumentNode[];
+}

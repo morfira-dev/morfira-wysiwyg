@@ -17,7 +17,9 @@
     "release:plan": "tsx scripts/release.ts --dry-run",
     "test:release": "tsx scripts/tests/index.ts",
     "package:check": "tsx scripts/check-packages.ts",
-    "check:tree-shaking": "tsx scripts/check-tree-shaking.ts"
+    "check:tree-shaking": "tsx scripts/check-tree-shaking.ts",
+    "benchmark": "tsx scripts/benchmarks/run.ts",
+    "consumers:check": "tsx scripts/consumers/index.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

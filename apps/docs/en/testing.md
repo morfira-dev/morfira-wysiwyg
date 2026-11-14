@@ -67,3 +67,5 @@ This really publishes `0.2.0`; it is not a check and should run only when ready 
 The OIDC publish job explicitly installs npm CLI `11.21.2`: npm 10 bundled with Node.js 22 cannot publish this way. Before creating tags, the script checks npm >=11.5.1 and GitHub OIDC availability. pnpm remains the workspace manager. A failure after tag creation may leave that version absent from npm: verify the registry, do not treat a tag as proof of publication, and do not remove published versions.
 
 `pnpm run check` also runs `check:tree-shaking`: real public consumer imports must not retain unrelated plugins, framework runtimes or mandatory CSS. Source checks enforce feature-owned named types and core dependency direction.
+
+Explicit package integration: `pnpm run consumers:check` after build. Observational [performance/history benchmarks](/en/performance): `pnpm run benchmark`; not part of the normal timing-free correctness gate.

@@ -1,4 +1,4 @@
-import { documentHTML, parseHTML, renderDocument, sanitizeHTML, validateDocument } from '../document/index.js';
+import { documentHTML, parseHTML, renderDocument, validateDocument } from '../document/index.js';
 import { activeRange, bookmark, placeCaret, readTextSelection, restoreBookmark, selectText } from '../selection/index.js';
 import type { SelectionBookmark } from '../selection/index.js';
 import { editListInput, handlesListInput, indentList, listState, selectedBlocks } from '../lists/index.js';
@@ -7,6 +7,7 @@ import { inlineStyles, normalizeInlineStyle } from '../formatting/inline-attribu
 import { createEventHub } from '../events/index.js';
 import type { EditorEvents } from '../events/types.js';
 import type { Editor, EditorChange, EditorOptions, Snapshot } from './types.js';
+import { createHTMLSnapshots } from './html-snapshots.js';
 const ensureDocument = (root: HTMLElement): boolean => {
   let normalized = false;
   if (!root.childNodes.length) {
@@ -134,7 +135,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       eventHub.events.emit(event, payload);
     },
   };
-  const capture = (): Snapshot => ({ html: sanitizeHTML(surface.innerHTML), selection: bookmark(surface), ...(typingOffset !== undefined && Object.keys(typingOverrides).length && typingAtCaret() ? { typing: { offset: typingOffset, formats: { ...typingOverrides } } } : {}) });
+  const htmlSnapshots = createHTMLSnapshots(surface);
+  const capture = (): Snapshot => ({ html: htmlSnapshots.read(), selection: bookmark(surface), ...(typingOffset !== undefined && Object.keys(typingOverrides).length && typingAtCaret() ? { typing: { offset: typingOffset, formats: { ...typingOverrides } } } : {}) });
   const restoreTyping = (snapshot: Snapshot) => {
     clearTyping();
     const selection = readTextSelection(surface);
@@ -296,7 +298,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   };
   const editor: Editor = {
     element: container, surface, events,
-    getHTML: () => { assertActive(); return sanitizeHTML(surface.innerHTML); },
+    getHTML: () => { assertActive(); return htmlSnapshots.read(); },
     getText: () => { assertActive(); return surface.innerText; },
     getJSON: () => { assertActive(); return parseHTML(surface.innerHTML); },
     setHTML: (html) => {
@@ -437,6 +439,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       pluginAPIs.clear();
       undoStack.length = 0;
       redoStack.length = 0;
+      htmlSnapshots.clear();
       container.remove();
       if (failures.length)
         throw new AggregateError(failures, 'Editor cleanup failed.');

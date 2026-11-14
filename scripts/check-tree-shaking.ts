@@ -11,9 +11,11 @@ for (const { entry, symbol, feature } of cases) {
   const result = await build({
     stdin: { contents: `import { ${symbol} } from '${entry}'; globalThis.__morfiraProbe = ${symbol};`, resolveDir: process.cwd(), sourcefile: 'consumer.ts', loader: 'ts' },
     bundle: true, treeShaking: true, minify: true, write: false, metafile: true,
+    tsconfigRaw: { compilerOptions: {} },
     format: 'esm', platform: 'browser', target: 'es2022', logLevel: 'silent',
   });
   const inputs = Object.keys(result.metafile!.inputs);
+  assert.ok(!inputs.some((path) => /^packages\/[^/]+\/src\//.test(path)), `${feature}: consumer must use built public artifacts, not source aliases`);
   assert.ok(!inputs.some((path) => /node_modules\/(?:\.pnpm\/)?(?:react|vue|svelte)(?:@|\/)/.test(path)), `${feature}: framework runtime leaked`);
   assert.ok(!inputs.some((path) => path.endsWith('.css')), `${feature}: CSS must remain opt-in`);
   for (const other of features.filter((other) => other !== feature)) {

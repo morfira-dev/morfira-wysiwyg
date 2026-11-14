@@ -14,7 +14,7 @@ import '@morfira-dev/wysiwyg/plugins/suggestions.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 import { createApp, h, ref } from 'vue';
 import { MorfiraEditor as VueEditor } from '@morfira-dev/wysiwyg/vue';
-import { StrictMode, useState } from 'react';
+import { StrictMode, useLayoutEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MorfiraEditor as ReactEditor } from '@morfira-dev/wysiwyg/react';
 import { mount, unmount } from 'svelte';
@@ -59,6 +59,13 @@ if (adapter === 'vue') {
   const App = () => {
     const [value, setValue] = useState('<p>Initial content</p>');
     const [readOnly, setReadOnly] = useState(false);
+    const followed = useRef(false);
+    useLayoutEffect(() => {
+      if (new URLSearchParams(location.search).get('feedback') === 'layout' && value === '<p>Initial contentA</p>' && !followed.current) {
+        followed.current = true;
+        window.editor.insertHTML('B');
+      }
+    }, [value]);
     return <><button onClick={() => setValue('<p>External update</p>')}>Update value</button><button onClick={() => setReadOnly(!readOnly)}>Toggle readonly</button><ReactEditor value={value} readOnly={readOnly} plugins={suggestionPlugins} onReady={ready} onChange={(event) => { setValue(event.html); change(event); }} /></>;
   };
   const root = createRoot(host); root.render(<StrictMode><App /></StrictMode>); window.dispose = () => root.unmount();

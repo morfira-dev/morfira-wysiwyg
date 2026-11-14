@@ -1,6 +1,6 @@
 # Optional Unicode text statistics
 
-Status: implemented locally; 36 statistics browser checks pass within the 405-test editor/module suite, plus 23 bilingual site tests. Original strict TypeScript, MIT, zero runtime dependencies. Public `/plugins/statistics` entry exports `statistics(options?: StatisticsOptions)` and `statisticsCommands(editor)`. Core never imports the module; schema v1 is unchanged.
+Status: implemented locally; current verification counts are reported with each project run rather than treated as a fixed feature contract. Original strict TypeScript, MIT, zero runtime dependencies. Public `/plugins/statistics` entry exports `statistics(options?: StatisticsOptions)` and `statisticsCommands(editor)`. Core never imports the module; schema v1 is unchanged.
 
 ## API and counting
 
@@ -21,3 +21,13 @@ getState calculates current metrics and returns independent snapshots. subscribe
 Browser cases in Chromium/Firefox/WebKit: split inline words/graphemes, family emoji/flags/combining marks; real whitespace versus synthetic block/br/img boundaries; list/caption/merged-cell text without alt/attributes; partial selection across marks/blocks, collapsed/outside/image selection; input/undo/redo/external replacement/read-only; independent copied states/subscriptions/instances, disposal/reuse; invalid locale and SSR-safe import/factory. Parent integrates public entries, independent bundle measurement, live bilingual demo and docs. Full project/docs checks run by parent; no Git operations in this milestone without user request.
 
 Independent statistics entry size includes shared chunks and uses the existing optional-module 150000-byte minified JS envelope. Parent demo status/inspector use its document and selection counts in both languages.
+
+## Bounded reuse of semantic-run counts
+
+Performance profiling identified full document segmentation on selection-only notifications and repeated getState calls. The follow-up optimization preserves the API, schema and counting rules. Every calculation still traverses the **current** DOM into its ordered semantic text runs, including all block/barrier/omitted-namespace boundaries. It must never use concatenated textContent, an editor revision, a MutationObserver delivery or DOM identity as its freshness key.
+
+Each installed instance may retain only the previous ordered run strings and their private TextStatistics values. A run at the same position may reuse its count only when its exact string is unchanged; changed/new positions are segmented by the same locale-specific grapheme/word segmenters. Aggregate document counts are computed afresh. Boundary insertion/removal and reordering invalidate affected positions naturally; a string moved to a different position is not looked up in a growing historical map. The cache is bounded to the last document's runs/counts, contains no DOM references, and is cleared on dispose. Update retained arrays only after successful calculation.
+
+Selection contents are independently read and segmented on every calculation. Public getState values, subscriber payloads and aggregate objects are fresh copies; no caller receives a cached per-run count. Formatting or attribute-only edits can reuse document segmentation when semantic runs are identical, while direct synchronous DOM/text/boundary changes must be visible immediately, even before observer callbacks or core notifications.
+
+Behavior acceptance includes equal concatenated text with changed br/block/namespace barriers, inline combining-grapheme boundaries, mark-only changes without metric notifications, native input/undo/redo/read-only replacement, independent instances and retained state snapshots, and reentrant subscribers. Do not assert private counters or segmenter call counts; report observational before/after plugin-profile benchmarks separately from core-only results. Traversal and string comparison remain O(document size); no incremental-model or constant-time claim follows from this reuse.

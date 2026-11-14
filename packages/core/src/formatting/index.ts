@@ -1,50 +1,13 @@
-import type { Piece } from './types.js';
-import type { DocumentNode, DocumentTag, EditorDocument, ElementNode } from '../document/index.js';
+import type { DocumentTag } from '../document/index.js';
 import { documentHTML, parseHTML } from '../document/index.js';
 import { activeRange, readTextSelection, selectText, preserveRange } from '../selection/index.js';
 import { inlineStyles, normalizeInlineStyle, transformInlineAttributes } from './inline-attributes.js';
 import { applyLink } from './links.js';
+import { inlineDocument } from './inline-document.js';
+import { applyLocalInline } from './local-inline.js';
 import { applyList, indentList, listState, selectedBlocks } from '../lists/index.js';
 export const inlineFormats: Record<string, DocumentTag> = { bold: 'strong', italic: 'em', underline: 'u', strike: 's', code: 'code', subscript: 'sub', superscript: 'sup' };
-const blockTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup', 'figure', 'figcaption']);
-const inlineDocument = (value: EditorDocument, from: number, to: number, tag: DocumentTag, enabled: boolean): EditorDocument => {
-  let position = 0;
-  const visit = (node: DocumentNode, inherited: boolean): Piece[] => {
-    if (node.type === 'text') {
-      const start = position;
-      position += node.text.length;
-      const left = Math.max(0, Math.min(node.text.length, from - start));
-      const right = Math.max(left, Math.min(node.text.length, to - start));
-      return [[0, left, false], [left, right, true], [right, node.text.length, false]].flatMap(([begin, end, selected]) => {
-        const text = node.text.slice(begin as number, end as number);
-        if (!text)
-          return [];
-        const leaf: DocumentNode = { type: 'text', text };
-        return [{ node: selected && enabled && !inherited ? { type: 'element', tag, attributes: {}, children: [leaf] } as ElementNode : leaf, selected: Boolean(selected) }];
-      });
-    }
-    const children = node.children.flatMap((child) => visit(child, inherited || (enabled && node.tag === tag)));
-    if (blockTags.has(node.tag))
-      return [{ node: { ...node, children: children.map((piece) => piece.node) }, selected: false }];
-    if (!children.length)
-      return [{ node, selected: false }];
-    const groups: {
-      selected: boolean;
-      children: DocumentNode[];
-    }[] = [];
-    for (const piece of children) {
-      const last = groups.at(-1);
-      if (last?.selected === piece.selected)
-        last.children.push(piece.node);
-      else
-        groups.push({ selected: piece.selected, children: [piece.node] });
-    }
-    return groups.flatMap<Piece>((group) => node.tag === tag && !enabled && group.selected
-      ? group.children.map((child) => ({ node: child, selected: true }))
-      : [{ node: { ...node, children: group.children }, selected: group.selected }]);
-  };
-  return { version: 1, children: value.children.flatMap((node) => visit(node, false)).map((piece) => piece.node) };
-};
+
 const closestElement = (node: Node): Element | null => { return node.nodeType === 1 ? node as Element : node.parentElement; };
 const formatsAt = (root: HTMLElement, node: Node): Record<string, unknown> => {
   let element = closestElement(node);
@@ -108,6 +71,9 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown): vo
   const range = activeRange(root);
   if (!range)
     return;
+  const tag = inlineFormats[name];
+  if (tag && !range.collapsed && applyLocalInline(root, range, tag, Boolean(value)))
+    return;
   const selection = readTextSelection(root)!;
   if (name === 'list') {
     applyList(root, value);
@@ -127,7 +93,6 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown): vo
     selectText(root, selection.index, selection.length);
     return;
   }
-  const tag = inlineFormats[name];
   if (tag) {
     if (range.collapsed)
       return;

@@ -21,6 +21,6 @@ Update both language versions of affected docs and examples. If an old example o
 
 Use pnpm 11.0.7 for workspace commands and keep pnpm-lock.yaml frozen in CI.
 
-Run checks proportionate to the change. Engine or plugin changes require `pnpm run check`; docs changes require `pnpm run docs:build` and `pnpm run test:docs`. Avoid building packages while browser tests consume their outputs. Editor and docs test results use distinct directories. Inspect bundle size changes and package runtime-dependency boundaries.
+Run checks proportionate to the change. Engine or plugin changes require `pnpm run check`; docs changes require `pnpm run docs:build` and `pnpm run test:docs`. Avoid building packages while browser tests consume their outputs. Editor and docs test results use distinct directories. Inspect bundle size changes and package runtime-dependency boundaries. Packaging/integration work follows `specs/package-consumers.md` and checks real tarball consumers without source aliases. Performance work follows `specs/performance.md`: measure built artifacts, separate plugin profiles and avoid concurrent builds/tests during timings; preserve incomplete results and report observational limits.
 
 Finish by reporting the behavior implemented, actual test results, measured bundle sizes when relevant, and remaining limitations. Distinguish passing acceptance scenarios from untested product goals.

@@ -30,6 +30,7 @@ Use pnpm 11.0.7 for installation and all workspace scripts. Keep only pnpm-lock.
 
 - Add behavior tests for changed editing contracts; exercise Chromium, Firefox, and WebKit. Do not replace a regression test with implementation-matching assertions.
 - `pnpm run check`: package builds, declarations, selective-import/tree-shaking checks, bundle budgets, type checks, and editor/adapter tests. `pnpm run docs:build` and `pnpm run test:docs`: bilingual site and live examples. Report which checks actually ran and material unverified behavior.
+- For package-integration work, run `pnpm run consumers:check` after build: actual tarball consumers must not resolve workspace source aliases. Performance work follows `specs/performance.md`; run explicit observational benchmarks without concurrent builds/tests and never turn local timings into universal capacity claims.
 - Keep Russian and English API/example pages consistent. Mark unsupported and experimental behavior honestly; do not claim full compatibility or complete accessibility without evidence.
 - Measure raw minified JS, gzip, Brotli and CSS separately. Current JS guardrails: core 200000 bytes, table entry 150000 bytes, each adapter 10000 bytes. Framework runtimes, source maps, and declarations are not runtime-size measurements. Tighten or revise budgets only with an explained product reason.
 - Do not commit, push, create branches/tags, publish packages, or deploy without an explicit request. The documentation site is local-only unless the user requests publication.

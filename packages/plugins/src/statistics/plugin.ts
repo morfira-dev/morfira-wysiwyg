@@ -16,7 +16,8 @@ const textRuns = (root: Node): string[] => {
   let current: string[] = [];
   const flush = () => {
     if (current.length)
-      runs.push(current.join('')); current = [];
+      runs.push(current.join(''));
+    current = [];
   };
   const visit = (node: Node) => {
     if (node.nodeType === 3) {
@@ -59,9 +60,9 @@ export const statistics = (options: StatisticsOptions = {}): EditorPlugin => {
     throw new Error('Statistics requires Intl.Segmenter support.');
   const graphemes = new Intl.Segmenter(locale, { granularity: 'grapheme' });
   const words = new Intl.Segmenter(locale, { granularity: 'word' });
-  const count = (root: Node): TextStatistics => {
+  const count = (runs: readonly string[]): TextStatistics => {
     const result = zero();
-    for (const run of textRuns(root)) {
+    for (const run of runs) {
       for (const part of graphemes.segment(run)) {
         result.characters++;
         if (!/^\s+$/u.test(part.segment))
@@ -80,9 +81,28 @@ export const statistics = (options: StatisticsOptions = {}): EditorPlugin => {
     name: 'statistics', setup: (editor) => {
       let disposed = false;
       const listeners = new Set<(state: StatisticsState) => void>();
+      let previousRuns: string[] = [];
+      let previousCounts: TextStatistics[] = [];
       const active = () => {
         if (disposed)
           throw new Error('Statistics plugin has been disposed.');
+      };
+      const documentStatistics = (): TextStatistics => {
+        const runs = textRuns(editor.surface);
+        const counts = runs.map((run, index) => {
+          const previous = previousCounts[index];
+          return previous && previousRuns[index] === run ? previous : count([run]);
+        });
+        const total = zero();
+        for (const current of counts) {
+          total.characters += current.characters;
+          total.charactersWithoutWhitespace += current.charactersWithoutWhitespace;
+          total.words += current.words;
+        }
+        // Retain one completed document only; failed segmentation cannot publish a partial cache.
+        previousRuns = runs;
+        previousCounts = counts;
+        return total;
       };
       const calculate = (): StatisticsState => {
         const native = editor.surface.ownerDocument.getSelection();
@@ -90,9 +110,9 @@ export const statistics = (options: StatisticsOptions = {}): EditorPlugin => {
         if (native?.rangeCount) {
           const range = native.getRangeAt(0);
           if (!range.collapsed && editor.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer))
-            selection = count(range.cloneContents());
+            selection = count(textRuns(range.cloneContents()));
         }
-        return { document: count(editor.surface), selection };
+        return { document: documentStatistics(), selection };
       };
       let state = calculate();
       const notify = () => {
@@ -109,16 +129,30 @@ export const statistics = (options: StatisticsOptions = {}): EditorPlugin => {
         }
       };
       const api: StatisticsCommands = {
-        getState: () => { active(); return copy(calculate()); },
+        getState: () => {
+          active();
+          return copy(calculate());
+        },
         subscribe: (listener) => {
-          active(); if (typeof listener !== 'function')
-            throw new TypeError('Expected a statistics listener.'); listeners.add(listener); return () => { listeners.delete(listener); };
+          active();
+          if (typeof listener !== 'function')
+            throw new TypeError('Expected a statistics listener.');
+          listeners.add(listener);
+          return () => { listeners.delete(listener); };
         },
       };
       const unprovide = editor.providePlugin('statistics', api);
       const unsubscribe = editor.subscribe(notify);
       const unselect = editor.onSelectionChange(notify);
-      return () => { disposed = true; unsubscribe(); unselect(); listeners.clear(); unprovide(); };
+      return () => {
+        disposed = true;
+        unsubscribe();
+        unselect();
+        listeners.clear();
+        previousRuns = [];
+        previousCounts = [];
+        unprovide();
+      };
     }
   };
 };
