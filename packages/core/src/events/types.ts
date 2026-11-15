@@ -1,13 +1,21 @@
 import type { EditorChange } from '../editor/types.js';
-import type { TextSelection } from '../selection/index.js';
+import type { SelectionBookmark, TextSelection } from '../selection/index.js';
 import type { EditorLocale } from '../localization/types.js';
 declare const eventType: unique symbol;
 export interface PluginEvent<T> {
   readonly name: string;
   readonly [eventType]: (payload: T) => T;
 }
+export interface EditorInputCommit {
+  readonly inputType: 'insertParagraph' | 'insertFromPaste';
+  readonly sourceEvent: Event;
+  readonly selection: SelectionBookmark | undefined;
+  readonly isCurrent: () => boolean;
+}
+
 export interface EditorEventMap {
   change: EditorChange;
+  inputcommit: EditorInputCommit;
   selectionchange: TextSelection | undefined;
   readonlychange: boolean;
   localechange: EditorLocale;

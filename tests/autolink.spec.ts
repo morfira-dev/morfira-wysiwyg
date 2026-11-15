@@ -120,7 +120,7 @@ test('native completion in a semantic callout preserves its registered metadata 
   await expect(content(page).locator('blockquote a')).toHaveText('https://example.com');
 });
 
-test('pasting, API replacement, multicharacter input and Enter do not trigger phase-one autolink', async ({ page }) => {
+test('whitespace paste, API replacement and multicharacter input do not trigger autolink', async ({ page }) => {
   await initialize(page, '<p>https://example.com </p>');
   await expect(content(page).locator('a')).toHaveCount(0);
   await page.evaluate(() => {
@@ -137,10 +137,6 @@ test('pasting, API replacement, multicharacter input and Enter do not trigger ph
     window.editor.surface.dispatchEvent(event);
   });
   await expect(content(page).locator('a')).toHaveCount(0);
-  await replace(page, '<p>https://example.com</p>');
-  await page.keyboard.press('Enter');
-  await expect(content(page).locator('a')).toHaveCount(0);
-  await expect(content(page).locator('p')).toHaveCount(2);
 });
 
 test('read-only, composition and noncollapsed input cannot create links', async ({ page }) => {

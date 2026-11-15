@@ -28,6 +28,38 @@ const stopDestroy = editor.events.on('destroy', () => {
 
 Existing `subscribe` and `onSelectionChange` remain compatible facades. Subscriptions are not immediate. Every returned disposer is idempotent, including after destroy. Subscriptions belong to the instance and are automatically cleared on teardown.
 
+## Controlled input commit receipts
+
+`EditorInputCommit` is a core-owned, readonly notification of a completed input operation. Subscribe with `editor.events.on('inputcommit', listener)`; plugins cannot emit it. It is not a command bus, an RPC result or a cancellable/precommit transform.
+
+| Field | Contract |
+| --- | --- |
+| `inputType` | `'insertParagraph'` or `'insertFromPaste'` |
+| `sourceEvent` | The exact causal DOM `Event`, for identity correlation only |
+| `selection` | Post-input `SelectionBookmark` or `undefined`; each listener gets independent bookmark objects and path arrays |
+| `isCurrent()` | Whether the committed content, actual structural selection and pending caret formats still match, with the editor active, writable and outside composition |
+
+```ts
+import type { EditorInputCommit } from '@morfira-dev/wysiwyg';
+
+const stopInput = editor.events.on('inputcommit', (receipt: EditorInputCommit) => {
+  if (!receipt.isCurrent()) return;
+  console.log(receipt.inputType, receipt.sourceEvent.type, receipt.selection);
+  // Revalidate your own bounded candidate/context before any follow-up command.
+});
+
+// When this observer's owner is disposed:
+stopInput();
+```
+
+This slice covers only changed, validated **core-controlled** paragraph insertion and actual clipboard paste from a cancelable cause. The cause can be a beforeinput event, a direct plain-list keydown or clipboard paste; when list keyboard normalization dispatches beforeinput, that normalized event is the cause. `sourceEvent` carries no authority: modifying/canceling it cannot undo the committed input. It exposes no clipboard payload in the receipt. Plugin-local preparation may correlate the exact event identity with a WeakMap; generic `change` is not input identity.
+
+Native-only input, Shift+Enter, blocked/canceled/rejected/no-op operations, composition, API insertHTML/setHTML/setJSON, ordinary plugin commands and history do not produce this receipt. It is not universal input middleware.
+
+The operation's `change` and `selectionchange` notifications precede `inputcommit`. Delivery remains synchronous FIFO, with independent bookmarks per listener. Reentrant edits or selection/format changes may make a receipt stale before your listener runs; disposal, read-only or composition activation also invalidate it. `isCurrent()` does not focus or select anything and is not authorization or detection of arbitrary untracked DOM mutation. Moving selection away and back can leave the same current state.
+
+Notification failures occur after commit, outside rollback. All applicable listeners/receipt delivery are attempted even after an earlier change/selection listener throws; aggregated errors are reported afterward. Destroy follows the existing delivery-stop rules. A follow-up validated command creates a separate transaction/history operation: a receipt cannot retroactively join the original input. [Autolink](/en/autolink) deliberately keeps Enter/paste and conversion as two Undo operations.
+
 ## Plugin cooperation
 
 A shared contract module defines a typed token:

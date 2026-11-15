@@ -146,6 +146,12 @@ const toggleMarkdown = () => { markdownAPI?.setEnabled(markdownEnabled.value); }
 const updateEditorLocale = () => {
   editor?.setLocale(editorLocale.value);
 };
+const startAutolink = (enter: boolean) => run((instance) => {
+  const text = enter ? 'https://example.com' : '';
+  instance.setHTML(enter ? `<p>${text}</p>` : '<p><br></p>');
+  instance.setSelection(text.length);
+  output.value = '';
+});
 const startMarkdown = () => run((instance) => { instance.setHTML('<p><br></p>'); instance.setSelection(0); });
 const closeSuggestions = () => { mentionAPI?.close(); slashAPI?.close(); };
 const openSuggestions = () => run(() => { closeSuggestions(); if (!mentionAPI?.open()) slashAPI?.open(); }, false);
@@ -668,6 +674,11 @@ onBeforeUnmount(() => {
           <div class="lab-button-grid"><button :disabled="readOnly" @click="openSuggestions">{{ t('Открыть подсказки', 'Open suggestions') }}</button><button @click="closeSuggestions">{{ t('Закрыть подсказки', 'Close suggestions') }}</button></div>
           <p class="lab-suggestions-status" role="status" aria-live="polite">{{ suggestionStatus }}</p>
           <p class="lab-hint">{{ t('ArrowUp/Down — выбор, Enter — вставка, Escape — закрыть. Tab передаётся редактору. Упоминание — обычный редактируемый @текст без сохранённого ID; slash вставляет текст или выполняет структурную команду одним Undo. Введи / для всех вариантов: заголовки, списки, цитата, код и таблица. Данные локальные, сеть не используется. Постоянные упоминания — следующий этап.', 'ArrowUp/Down navigate, Enter inserts, Escape dismisses. Tab falls through to the editor. A mention is editable @text without a stored ID; slash inserts text or runs a structural command with one Undo. Type / for all choices: headings, lists, quote, code and table. Data stays local, with no network. Persistent mentions remain a later phase.') }}</p>
+        </fieldset></details>
+        <details class="lab-autolink"><summary>{{ t('Автоматические ссылки', 'Automatic links') }}</summary><fieldset :disabled="!ready || readOnly">
+          <button @click="startAutolink(true)">{{ t('Подготовить URL для Enter', 'Prepare URL for Enter') }}</button>
+          <button @click="startAutolink(false)">{{ t('Подготовить plain-text вставку', 'Prepare plain-text paste') }}</button>
+          <p class="lab-hint">{{ t('Нажми Enter после подготовленного URL или вставь один URL как обычный текст без HTML, пробелов и переносов. Space тоже работает. Первый Undo убирает ссылку, второй — исходный Enter или вставку. Дальнейший текст идёт вне ссылки. Shift+Enter, HTML и замена выделения не преобразуются. Превью и сетевых запросов нет.', 'Press Enter after the prepared URL or paste one URL as plain text without HTML, whitespace or line breaks. Space also works. First Undo removes the link; second removes Enter or paste. Further typing stays outside the link. Shift+Enter, HTML and selected replacement are not converted. No previews or network requests.') }}</p>
         </fieldset></details>
         <details class="lab-markdown"><summary>Markdown shortcuts</summary><fieldset :disabled="!ready">
           <label class="lab-checkbox"><input v-model="markdownEnabled" type="checkbox" @change="toggleMarkdown">{{ t('Markdown при вводе', 'Markdown while typing') }}</label>

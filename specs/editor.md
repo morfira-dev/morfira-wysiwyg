@@ -72,3 +72,9 @@ History snapshots retain bounded pending caret formatting (boolean marks and inl
 Phase-1 suggestions follow `specs/mentions-slash.md`: @label and slash snippets are ordinary editable text inserted in one transaction. Schema v1 has no mention IDs/atoms; structural slash commands now follow the separate phase-2 action registry contract and use composable transactions. Optional menu DOM stays outside persisted surface and cleans up with controller/editor disposal.
 
 Typed instance events and synchronous command composition follow `specs/events.md` and `specs/transactions.md`. Core stays independent from plugins; source ownership and selective-import guarantees follow `specs/code-organization.md` and `specs/modularity.md`.
+
+
+Controlled Enter and real clipboard paste also expose the bounded, post-validation `inputcommit` receipt specified in [events.md](events.md). The receipt does not modify input/history semantics or turn notifications into a command bus; follow-up plugin changes remain separate validated transactions.
+
+
+The direct inline-fragment insertion fallback stabilizes its local paragraph/heading/list body after placing the live post-insert range and before capturing history or delivering an input receipt. Native local normalization may merge adjacent Text nodes and remove empty Text nodes; the live caret follows those changes, so Undo/Redo restore its exact logical position between inserted text and the original suffix. Element identity, attributes, rich formatting, content and order remain unchanged. This is limited to non-structural payloads within a connected local block: do not normalize the editor root, unrelated structural siblings, or bypass the existing dedicated replacement/list-paste handlers. Transient Text-node identity is not a persisted document contract.

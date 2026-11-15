@@ -159,3 +159,5 @@ A semantic wrapper is not yet a separate renderer or atom: its children remain n
 The core import loads no optional plugins/UI or framework runtime. CSS imports stay explicit. Measure selected core/plugin closures as minified/gzip/Brotli, with CSS separate and shared chunks counted once. See [architecture and size](/en/architecture), [events](/en/events) and [roadmap/limits](/en/roadmap).
 
 Phase 1 validates node identity and attributes; arbitrary per-node child/content rules cannot yet be registered.
+
+For post-input extension observers, see [controlled input commit receipts](/en/events#controlled-input-commit-receipts): `EditorInputCommit` covers only validated controlled Enter/clipboard paths, not arbitrary input or a cancellable transform. Follow-up commands remain separate history operations.

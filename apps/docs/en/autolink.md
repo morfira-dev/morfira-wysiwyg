@@ -1,6 +1,6 @@
 # Automatic links
 
-`/plugins/autolink` is an optional plugin that converts a completed URL after ordinary typing of **one space with Space**. Core does not load it automatically. It needs no CSS, UI, third-party runtime dependencies or network requests.
+`/plugins/autolink` is an optional plugin that converts a completed URL after **one native Space**, supported **controlled Enter**, or an actual **single-URL plain-text clipboard paste**. Core does not load it automatically. It needs no CSS, UI, third-party runtime dependencies or network requests.
 
 ## Installation
 
@@ -48,14 +48,22 @@ Prefixes are case-insensitive. Link labels keep the typed text; `www.` receives 
 
 The plugin inspects only a bounded suffix of the current text flow: up to 2050 UTF-16 units before the caret, with a URL limit of 2048. A collapsed caret is required. Ordinary paragraphs, headings, list items, blockquotes and table cells are supported. Surrounding inline formatting and semantic block-callout metadata survive conversion.
 
-## Space, history and limits
+## Enter and plain-text clipboard paste
+
+At a collapsed caret after a completed URL, ordinary Enter links the URL only after the editor successfully splits the block. The caret stays at the actual new-block position; following typing stays outside the link. Canceled/blocked Enter and Enter consumed by Markdown or slash commands do not cause speculative linking. Shift+Enter and uncontrolled browser paragraph edits are excluded.
+
+Paste must be an actual clipboard event whose HTML representation is empty and whose `text/plain` contains exactly one supported URL token, at most 2048 UTF-16 units, with no whitespace or line breaks. The source selection must be collapsed in a supported flow. Clipboard text stays verbatim; terminal punctuation remains outside the anchor, and neighboring text is not included. HTML/rich clipboard payloads, multiline text, whitespace-delimited URLs and selected replacement remain literal. Programmatic insertion is not clipboard completion.
+
+## History and limits
 
 Conversion is a separate atomic operation **after** native space input is recorded. One Undo removes automatic linking and restores the literal URL **including the space already typed**. Redo restores the anchor and post-space caret; following text stays outside the anchor. One conversion produces one additional user `change` event.
 
+Enter and supported paste also create **two distinct history operations**: first Undo removes the automatic link but retains the split/pasted literal text; second Undo removes the original input. Redo restores the input and then the link. Any later typing is a subsequent operation. The plugin never temporarily selects the URL to format it. If application observers change the document, selection, pending formats, read-only state or editor lifetime before conversion, it skips the stale completion.
+
 The plugin does not trigger:
 
-- On Enter: ordinary paragraph/block splitting remains unchanged. Phase 1 supports Space only.
-- On paste/drop, HTML/JSON import, external value replacement, history input or multi-character input. Imported URLs remain literal by that action; later ordinary Space input can complete the URL.
+- On Shift+Enter or uncontrolled native paragraph splitting; only successful controlled Enter is an Enter trigger.
+- On unsupported paste payloads, drop, HTML/JSON import, external value replacement, history input or multi-character native input. Imported URLs remain literal by that action; later ordinary Space input can complete the URL.
 - During IME/composition, in read-only or with a noncollapsed selection.
 - Inside existing links, `pre`/`code`, `figure`/`figcaption` or an inline semantic node marked with `data-mw-node`.
 - Across a block, line break, image, code, existing anchor or semantic inline-node boundary.
@@ -64,3 +72,7 @@ The plugin does not trigger:
 Quotes and angle delimiters are not recognized token content. This is a bounded URL-completion behavior rather than automatic document-wide link detection.
 
 For explicit link creation/editing, use [link commands](/en/styling) or the [ready UI form](/en/ui). The plugin is independent of the [semantic schema SDK](/en/plugin-sdk): inline references are not automatically linked, while registered block-callout metadata is preserved.
+
+## Try the live example
+
+Open “Automatic links” on the [homepage](/en/#editor) or [playground](/en/playground). “Prepare URL for Enter” loads literal text and places the caret at its end: press Enter yourself. “Prepare plain-text paste” creates an empty paragraph: paste `https://example.com` as plain text yourself. The buttons only prepare the document; they do not simulate input or fetch addresses. Use Undo twice to inspect the two operations.

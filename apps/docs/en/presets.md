@@ -8,7 +8,7 @@ A preset is a pure `EditorOptions` factory: it selects ready behavior, copies it
 | `@morfira-dev/wysiwyg/presets/standard` | `createStandardPreset` | Tables, images, search, statistics, Markdown shortcuts and autolink |
 | `@morfira-dev/wysiwyg/presets/extended` | `createExtendedPreset` | Standard plus mentions/slash with your provider functions |
 
-These compose current features: Markdown shortcuts are not Markdown import/export, mentions remain ordinary editable text, and autolink runs after a native Space. Atomic mentions, node views, decorations and future video/formula modules are not silently included.
+These compose current features: Markdown shortcuts are not Markdown import/export, mentions remain ordinary editable text, and autolink supports native Space, controlled Enter and bounded plain-URL clipboard completion — [exact conditions](/en/autolink). Atomic mentions, node views, decorations and future video/formula modules are not silently included.
 
 Optional [checklists](/en/checklists) are not part of these default sets yet. Pass `checklists()` explicitly through `plugins: [checklists()]` and import its CSS separately; controls in the full demo do not imply automatic preset loading.
 

@@ -13,10 +13,12 @@ import { editBlockInput, handlesBlockInput, handlesSelectionReplacement, replace
 import { applyFormat, inlineFormats, readFormats } from '../formatting/index.js';
 import { inlineStyles, normalizeInlineStyle } from '../formatting/inline-attributes.js';
 import { createEventHub } from '../events/index.js';
-import type { EditorEvents } from '../events/types.js';
+import type { EditorEvents, EditorInputCommit } from '../events/types.js';
 import type { Editor, EditorChange, EditorOptions, Snapshot } from './types.js';
+import type { InputCommitOrigin } from './internal-types.js';
 import { createHTMLSnapshots } from './html-snapshots.js';
 import { createLocale, editorMessages, localize } from '../localization/index.js';
+const paragraphOrigin = (event: Event, inputType: string): InputCommitOrigin | undefined => event.cancelable && inputType === 'insertParagraph' ? { inputType, sourceEvent: event } : undefined;
 const isCompositionInput = (event: InputEvent): boolean => event.isComposing || event.inputType === 'insertCompositionText' || event.inputType === 'insertFromComposition' || event.inputType === 'deleteCompositionText';
 const ensureDocument = (root: HTMLElement): boolean => {
   let normalized = false;
@@ -81,6 +83,8 @@ const insertFragment = (root: HTMLElement, fragment: DocumentFragment): void => 
   const selection = document.getSelection();
   selection?.removeAllRanges();
   selection?.addRange(next);
+  // Capture a stable text boundary before history serializes adjacent/empty Text nodes.
+  if (!hasBlocks && block && root.contains(block)) block.normalize();
 };
 export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Editor => {
   if (host.childNodes.length)
@@ -126,7 +130,11 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   let typingOverrides: Record<string, string | boolean> = {};
   let typingOffset: number | undefined;
   const clearTyping = () => { typingOverrides = {}; typingOffset = undefined; };
-  const typingAtCaret = () => { const selection = readTextSelection(surface); return selection?.length === 0 && selection.index === typingOffset; };
+  const typingAtCaret = () => {
+    if (typingOffset === undefined) return false;
+    const selection = readTextSelection(surface);
+    return selection?.length === 0 && selection.index === typingOffset;
+  };
   const undoStack: Snapshot[] = [];
   const redoStack: Snapshot[] = [];
   const eventHub = createEventHub();
@@ -267,7 +275,34 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     lastInputTime = 0;
     emit('user');
   };
-  const runTransaction = (mutate: (surface: HTMLElement) => void, inputType = '') => {
+  const notifyCommittedInput = (origin: InputCommitOrigin): void => {
+    const committed = current;
+    const selection = bookmark(surface);
+    const selectionKey = JSON.stringify(selection);
+    const typingKey = JSON.stringify(typingAtCaret() ? [typingOffset, typingOverrides] : []);
+    const receipt: EditorInputCommit = {
+      ...origin,
+      selection,
+      isCurrent: () => !destroyed && !readOnly && !composing && current === committed
+        && JSON.stringify(bookmark(surface)) === selectionKey
+        && JSON.stringify(typingAtCaret() ? [typingOffset, typingOverrides] : []) === typingKey,
+    };
+    const failures: unknown[] = [];
+    try {
+      emit('user');
+    }
+    catch (error) {
+      failures.push(error);
+    }
+    try {
+      eventHub.notify('inputcommit', receipt);
+    }
+    catch (error) {
+      failures.push(error);
+    }
+    if (failures.length) throw new AggregateError(failures, 'Input commit notification failed.');
+  };
+  const runTransaction = (mutate: (surface: HTMLElement) => void, inputType = '', origin?: InputCommitOrigin) => {
     assertActive();
     if (readOnly || composing)
       return;
@@ -340,8 +375,10 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     const selectionChanged = pendingSelectionNotification;
     pendingSelectionNotification = false;
     // Notifications are outside the rollback boundary: observers cannot undo a committed edit by throwing.
-    if (changed)
-      emit('user');
+    if (changed) {
+      if (origin) notifyCommittedInput(origin);
+      else emit('user');
+    }
     else if (selectionChanged)
       notifySelection();
   };
@@ -363,7 +400,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       throw error;
     }
   };
-  const insertPrepared = (fragment: DocumentFragment): void => {
+  const insertPrepared = (fragment: DocumentFragment, origin?: InputCommitOrigin): void => {
     if (!fragment.childNodes.length) return;
     if (!activeRange(surface) && lastSelection) restoreBookmark(surface, lastSelection);
     runTransaction(() => {
@@ -372,7 +409,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       const range = activeRange(surface);
       if (range && (!range.collapsed || handlesCollapsedListBlockPaste(surface, fragment, range))) clearTyping();
       insertFragment(surface, fragment);
-    });
+    }, '', origin);
   };
   const editor: Editor = {
     element: container, surface, events, schema, commands: registry.commands,
@@ -623,21 +660,21 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       if (wrappedInput === 'blocked') return;
       runTransaction(() => {
         if (editWrappedListInput(surface, event.inputType, prepareListSplit)) clearTyping();
-      });
+      }, '', paragraphOrigin(event, event.inputType));
       return;
     }
     if (!composing && !event.isComposing && handlesListInput(surface, event.inputType)) {
       event.preventDefault();
       clearTyping();
       pendingInput = undefined;
-      runTransaction(() => editListInput(surface, event.inputType, prepareListSplit));
+      runTransaction(() => editListInput(surface, event.inputType, prepareListSplit), '', paragraphOrigin(event, event.inputType));
       return;
     }
     if (handlesBlockInput(surface, event.inputType)) {
       event.preventDefault();
       clearTyping();
       pendingInput = undefined;
-      runTransaction(() => editBlockInput(surface, event.inputType));
+      runTransaction(() => editBlockInput(surface, event.inputType), '', paragraphOrigin(event, event.inputType));
       return;
     }
     if (event.inputType === 'insertText' && event.data && !composing && !event.isComposing && typingAtCaret() && Object.keys(typingOverrides).length) {
@@ -742,7 +779,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     try { fragment = prepareHTML(html); }
     catch { return; }
     // Commit/observer failures deliberately stay outside the import-only catch.
-    insertPrepared(fragment);
+    insertPrepared(fragment, event.cancelable ? { inputType: 'insertFromPaste', sourceEvent: event } : undefined);
   });
   listen('drop', (event) => { event.preventDefault(); });
   listen('keydown', (event) => {
@@ -766,7 +803,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         event.preventDefault();
         clearTyping();
         pendingInput = undefined;
-        runTransaction(() => editListInput(surface, type, prepareListSplit));
+        runTransaction(() => editListInput(surface, type, prepareListSplit), '', paragraphOrigin(event, type));
         return;
       }
       // Enter must reach beforeinput so optional typing rules can consume it first.

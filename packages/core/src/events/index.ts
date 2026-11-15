@@ -1,7 +1,7 @@
-import type { EditorEventMap, EditorEvents, EventHub, PluginEvent, QueuedEvent } from './types.js';
-export type { EditorEventMap, EditorEvents, PluginEvent } from './types.js';
+import type { EditorEventMap, EditorEvents, EventHub, PluginEvent, QueuedEvent, EditorInputCommit } from './types.js';
+export type { EditorEventMap, EditorEvents, PluginEvent, EditorInputCommit } from './types.js';
 const tokens = new WeakSet<object>();
-const coreNames = new Set(['change', 'selectionchange', 'readonlychange', 'localechange', 'destroy']);
+const coreNames = new Set(['change', 'selectionchange', 'readonlychange', 'localechange', 'inputcommit', 'destroy']);
 export const createPluginEvent = <T>(name: string): PluginEvent<T> => {
   if (typeof name !== 'string' || !name.trim() || name.length > 200) {
     throw new TypeError('Expected an event name with 1–200 characters.');
@@ -15,6 +15,19 @@ const assertToken = (event: unknown): object => {
     throw new TypeError('Expected a plugin event token. Core events cannot be emitted publicly.');
   }
   return event;
+};
+const corePayload = (key: string | object, payload: unknown): unknown => {
+  if (!payload || typeof payload !== 'object') return payload;
+  if (key === 'localechange') {
+    const locale = payload as EditorEventMap['localechange'];
+    return { ...locale, translations: { ...locale.translations } };
+  }
+  if (key === 'inputcommit') {
+    const receipt = payload as EditorInputCommit;
+    const saved = receipt.selection;
+    return { ...receipt, selection: saved ? { ...saved, start: [...saved.start], end: [...saved.end] } : undefined };
+  }
+  return { ...payload };
 };
 export const createEventHub = (): EventHub => {
   const listeners = new Map<string | object, Map<(payload: unknown) => void, number>>();
@@ -40,11 +53,7 @@ export const createEventHub = (): EventHub => {
           if ((closing && next.key !== 'destroy') || bucket?.get(listener) !== registered)
             continue;
           try {
-            const payload = next.core && next.payload && typeof next.payload === 'object'
-              ? next.key === 'localechange'
-                ? { ...next.payload, translations: { ...(next.payload as EditorEventMap['localechange']).translations } }
-                : { ...next.payload }
-              : next.payload;
+            const payload = next.core ? corePayload(next.key, next.payload) : next.payload;
             listener(payload);
           }
           catch (error) {

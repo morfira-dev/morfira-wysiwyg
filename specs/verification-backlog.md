@@ -1,17 +1,68 @@
-# Verification record — list editing, optional checklists and security
+# Verification record — editor, security and autolink input completion
 
-Status: the current optional checklist and security-hardening slice completed project, full browser, documentation and packed-consumer verification with successful exit status. Earlier baseline results and diagnostic runs are recorded separately; current success is established by the final runs below. No push, package publication or deployment is authorized by this record.
+Status: the bounded autolink Enter/plain-URL clipboard slice, typed core input receipts and inline-normalization/caret correction completed project, full editor, documentation and packed-consumer verification successfully. Earlier checklist/security baseline `ddc5aaf` and diagnostic runs remain historical evidence. No push, package publication or deployment is authorized by this record.
 
-## Current checklist and security verification — completed
+## Current autolink input-completion verification — completed
 
-The working tree follows test consolidation `c97ff95` and adds optional checklists, generic non-owning schema attributes/split policy, exports, live documentation and security hardening. Security changes bound normalized serialized output, prevent resource fetches during string serialization, cancel image uploads on composition and reject image/search form hosts inside editable content. Static/build gates and final full-suite results passed; earlier diagnostic findings remain separately identified below.
+The working tree adds controlled collapsed-caret Enter completion, one plain-text URL from an actual clipboard event, and core-owned readonly `inputcommit` receipts. Shift+Enter, native-only paragraph edits, HTML/whitespace/multiline clipboard payloads, selected replacement and API insertion remain excluded. Conversion is a separate history operation with no preview/network requests or core import of autolink. Exact caret/history restoration includes the Redo regression described below. Contracts: `autolink.md`, `events.md`.
 
 | Check | Actual current status |
 | --- | --- |
-| Project contracts, package/declaration builds, public-package boundaries, tree-shaking, size budgets and TypeScript/Vue/Svelte checks | Passed for the current security working tree |
+| Full project build, declarations, package boundaries, tree-shaking, budgets and types | Passed in the final `pnpm run check`, exit 0 |
+| Complete editor suite, Chromium / Firefox / WebKit | Passed: final `pnpm run check`, exit 0; **3507/3507 browser executions = 1169 cases × 3 engines**, 12.5 minutes; baseline 1154 cases plus 15 new receipt/autolink definitions. The first 3504-execution run was intentionally interrupted by the parent with exit 130 for the additional inline-normalization/caret correction; it was not a pass |
+| RU/EN documentation build and Chromium suite | Passed after the inline-normalization/caret correction: final docs build and **159/159** Chromium scenarios, exit 0, 1.9 minutes |
+| Packed consumers | Passed against final current tarballs: **18/18**, including 15 default-wrapper and 3 Angular 22 browser scenarios |
+| Focused receipt/autolink verification | After the inline-normalization/caret fix, **237/237** executions across seven focused specs passed, 58.1 seconds. Earlier source separately passed 72/72; these are targeted historical results separate from the final full run |
+| Bundle measurements | Fresh post-fix build-generated measurements are recorded below; preceding autolink and security-baseline measurements remain historical evidence |
+
+An initial focused run recorded **69/72**: three pending-format expectations were corrected to compare the actual preceding state rather than assume it was empty. Subsequent diagnosis exposed a real Redo caret defect: restoring a post-paste point could leave subsequent typing inside the generated anchor. Caret normalization was corrected; the final focused 72/72 run passed. These diagnostic and targeted results are historical; the final complete run above establishes the current success. No large-document scans, preview fetches or new runtime dependencies are introduced; core receipt/typing-guard size overhead is measured in the current table below.
+
+A subsequent isolated probe (`/tmp/morfira-autolink-undo-probe.ts`) demonstrated a generic core plain-text-paste Redo offset error even with autolink disabled, plus an enabled-autolink first-Undo offset error. This is an actual editing defect, not an incorrect pending-format expectation. The accepted fix normalizes local block inline text before fallback bookmark restoration; paste completion now restores the point in the actual text node following the anchor, including the terminal-punctuation offset. One additional terminal-punctuation regression brings the new total to 1169 cases. The corrected isolated probe now reports the expected offset **26** for disabled-autolink Redo, enabled-autolink first Undo and enabled-autolink Redo. The post-fix seven-spec run passed **237/237**, 58.1 seconds. Final full, documentation and packed-consumer reruns after these corrections passed as recorded above.
+
+## Current generated measurements — after inline-normalization/caret correction
+
+Read from fresh `size-report.json` after the correction. Minified JavaScript, gzip, Brotli and CSS are reported separately; shared profile chunks are counted once, excluding framework runtimes, maps and declarations. Autolink has no CSS. These are size measurements, separate from the full-suite results above and not performance evidence.
+
+| Entry / selected profile | JS bytes | gzip bytes | Brotli bytes | Raw CSS bytes |
+| --- | ---: | ---: | ---: | ---: |
+| Core entry | 87218 | 26810 | 23498 | 3138 |
+| Optional autolink entry | 6786 | 2992 | 2675 | 0 |
+| Minimal headless | 83697 | 25305 | 22146 | 3138 |
+| Minimal with ready UI | 101932 | 30696 | 26833 | 7187 |
+| Standard headless | 136721 | 41666 | 36136 | 4951 |
+| Standard with ready UI | 191942 | 55691 | 47651 | 10506 |
+| Extended headless | 149245 | 45607 | 39249 | 4951 |
+| Extended with ready UI | 213105 | 62202 | 52766 | 11702 |
+
+Current core is **87218 raw minified bytes**, **7218 bytes above** the working 80000-byte target, with the enforced 200000-byte guard unchanged. Against security baseline `ddc5aaf`, core increased by **810 raw bytes**. Optional autolink is **6786 / 2992 / 2675** raw/gzip/Brotli bytes. CSS remains unchanged. Earlier measurements below are retained for provenance.
+
+## Historical autolink measurements — before inline-normalization/caret correction
+
+Read from the preceding autolink build-generated `size-report.json`, before the additional inline-normalization/caret correction; current weights await a fresh build. Raw JavaScript is minified; gzip/Brotli are separate. Selected profile closures count shared chunks once and exclude framework runtimes, declarations and source maps. CSS remains unchanged; the standalone autolink entry needs no CSS. These are bundle measurements, not performance benchmarks or a full-suite pass.
+
+| Entry / selected profile | JS bytes | gzip bytes | Brotli bytes | Raw CSS bytes |
+| --- | ---: | ---: | ---: | ---: |
+| Core entry | 87182 | 26801 | 23494 | 3138 |
+| Optional autolink entry | 6711 | 2944 | 2641 | 0 |
+| Minimal headless | 83661 | 25294 | 22158 | 3138 |
+| Minimal with ready UI | 101896 | 30686 | 26824 | 7187 |
+| Standard headless | 136610 | 41628 | 36071 | 4951 |
+| Standard with ready UI | 191831 | 55650 | 47600 | 10506 |
+| Extended headless | 149134 | 45562 | 39223 | 4951 |
+| Extended with ready UI | 212994 | 62147 | 52759 | 11702 |
+
+This preceding core was **87182 raw minified bytes**, **7182 bytes above** the working 80000-byte target; the enforced 200000-byte guard remains unchanged. Relative to security baseline `ddc5aaf`, core increased by **774 raw bytes** (86408 → 87182). Optional autolink is **6711 / 2944 / 2641** raw/gzip/Brotli bytes; standard and extended ready profile totals must not be obtained by adding standalone entries. The historical baseline table below remains intact.
+
+## Completed checklist and security baseline — `ddc5aaf`
+
+Baseline `ddc5aaf` follows test consolidation `c97ff95` and adds optional checklists, generic non-owning schema attributes/split policy, exports, live documentation and security hardening. Security changes bound normalized serialized output, prevent resource fetches during string serialization, cancel image uploads on composition and reject image/search form hosts inside editable content. Static/build gates and final full-suite results passed; earlier diagnostic findings remain separately identified below.
+
+| Check | Recorded `ddc5aaf` status |
+| --- | --- |
+| Project contracts, package/declaration builds, public-package boundaries, tree-shaking, size budgets and TypeScript/Vue/Svelte checks | Passed for baseline `ddc5aaf` |
 | Complete editor suite, Chromium / Firefox / WebKit | Passed: final `pnpm run check`, exit 0; **3462/3462 browser executions = 1154 registered cases × 3 engines**, 12.2 minutes. The earlier checklist-only full run was interrupted by the parent with exit 130 to apply security corrections; it was not a pass |
 | RU/EN documentation build and complete Chromium suite | Passed: final `pnpm run docs:build` and **157/157** Chromium scenarios, 2.0 minutes, exit 0. The prior 155-case run recorded **154 passes and one fixture timing failure**; the slash-history fixture was corrected to use single real keys H/C |
-| Packed consumers against current security tarballs | **18/18 passed**: 15 default-wrapper browser scenarios plus 3 Angular 22 scenarios |
+| Packed consumers against `ddc5aaf` security tarballs | **18/18 passed**: 15 default-wrapper browser scenarios plus 3 Angular 22 scenarios |
 | Release automation | Earlier **10/10** passed for `0f2face`; release automation is unchanged, but this is not a new security-run claim |
 | Focused security/image/form diagnostic | **201 executions: 200 passed, one WebKit text-chunk expectation failed**. The full text was intact across 77 chunks; only the test expectation was corrected. A subsequent security-codec rerun passed **15/15**, 9.4 seconds |
 
@@ -49,9 +100,9 @@ A complete run then exposed two WebKit key-protocol differences: first-body Back
 
 Initial diagnostic runs were stopped after identifying these shared causes; they are not counted as successful complete runs. The completed `0f2face` baseline editor and documentation results were recorded from exit status 0.
 
-## Current generated bundle measurements — security working tree
+## Recorded bundle measurements — security baseline `ddc5aaf`
 
-Read from the current build-generated `size-report.json`. JavaScript is minified; raw, gzip and Brotli are separate. CSS is measured separately. Selected profiles count their shared closure once and exclude framework runtimes, declarations and source maps. This is bundle evidence, not an input-latency or memory benchmark. Do not add standalone entries to profile totals and assume shared code is counted correctly.
+Read from the security-baseline build-generated `size-report.json`; these measurements predate the current autolink extension. JavaScript is minified; raw, gzip and Brotli are separate. CSS is measured separately. Selected profiles count their shared closure once and exclude framework runtimes, declarations and source maps. This is bundle evidence, not an input-latency or memory benchmark. Do not add standalone entries to profile totals and assume shared code is counted correctly.
 
 | Entry / selected profile | JS bytes | gzip bytes | Brotli bytes | Raw CSS bytes |
 | --- | ---: | ---: | ---: | ---: |
@@ -71,7 +122,7 @@ Read from the current build-generated `size-report.json`. JavaScript is minified
 | Standard with ready UI | 10506 | 3565 | 2883 |
 | Extended with ready UI | 11702 | 4057 | 3259 |
 
-All enforced bundle budgets passed. The full core entry is **86408 raw minified bytes**, **6408 bytes above** the working 80000-byte target; the enforced 200000-byte guard remains unchanged. The earlier `0f2face` core was 83983 / 25779 / 22577 raw/gzip/Brotli bytes, so schema-attribute support and subsequent security bounds have a measurable core cost. Standalone checklist behavior is 2709 / 1159 / 995 JS bytes, with 436 / 240 / 187 CSS bytes.
+All enforced bundle budgets passed for this baseline. Its full core entry is **86408 raw minified bytes**, **6408 bytes above** the working 80000-byte target; the enforced 200000-byte guard remains unchanged. The earlier `0f2face` core was 83983 / 25779 / 22577 raw/gzip/Brotli bytes, so schema-attribute support and subsequent security bounds have a measurable core cost. Standalone checklist behavior is 2709 / 1159 / 995 JS bytes, with 436 / 240 / 187 CSS bytes.
 
 Standard/extended preset defaults do **not** include the new checklist plugin or its stylesheet. Their measured profiles above retain those defaults; the full documentation demo explicitly adds checklists. No dedicated combined ready-UI-plus-checklists profile is implied by adding standalone totals. The older `cbfb30d` table below remains a historical paste baseline, not a current measurement.
 

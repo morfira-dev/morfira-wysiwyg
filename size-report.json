@@ -1,8 +1,8 @@
 {
   "core.js": {
-    "raw": 86408,
-    "gzip": 26551,
-    "brotli": 23275
+    "raw": 87218,
+    "gzip": 26810,
+    "brotli": 23498
   },
   "core.css": {
     "raw": 3138,
@@ -25,9 +25,9 @@
     "brotli": 7362
   },
   "all-plugins.js": {
-    "raw": 73234,
-    "gzip": 29336,
-    "brotli": 26225
+    "raw": 76643,
+    "gzip": 30597,
+    "brotli": 27328
   },
   "ui-forms.js": {
     "raw": 45224,
@@ -60,14 +60,14 @@
     "brotli": 1011
   },
   "presets/standard.js": {
-    "raw": 54057,
-    "gzip": 20960,
-    "brotli": 18797
+    "raw": 57466,
+    "gzip": 22221,
+    "brotli": 19906
   },
   "presets/extended.js": {
-    "raw": 67126,
-    "gzip": 26427,
-    "brotli": 23685
+    "raw": 70535,
+    "gzip": 27688,
+    "brotli": 24795
   },
   "ui/editor.js": {
     "raw": 18587,
@@ -105,9 +105,9 @@
     "brotli": 2753
   },
   "autolink.js": {
-    "raw": 3377,
-    "gzip": 1731,
-    "brotli": 1572
+    "raw": 6786,
+    "gzip": 2992,
+    "brotli": 2675
   },
   "checklists.js": {
     "raw": 2709,
@@ -170,9 +170,9 @@
     "brotli": 1588
   },
   "profile-minimal-headless.js": {
-    "raw": 82885,
-    "gzip": 25029,
-    "brotli": 21922
+    "raw": 83697,
+    "gzip": 25305,
+    "brotli": 22146
   },
   "profile-minimal-headless.css": {
     "raw": 3138,
@@ -180,9 +180,9 @@
     "brotli": 923
   },
   "profile-minimal-ready.js": {
-    "raw": 101118,
-    "gzip": 30427,
-    "brotli": 26589
+    "raw": 101932,
+    "gzip": 30696,
+    "brotli": 26833
   },
   "profile-minimal-ready.css": {
     "raw": 7187,
@@ -190,9 +190,9 @@
     "brotli": 1852
   },
   "profile-standard-headless.js": {
-    "raw": 132476,
-    "gzip": 40391,
-    "brotli": 35066
+    "raw": 136721,
+    "gzip": 41666,
+    "brotli": 36136
   },
   "profile-standard-headless.css": {
     "raw": 4951,
@@ -200,9 +200,9 @@
     "brotli": 1466
   },
   "profile-standard-ready.js": {
-    "raw": 187681,
-    "gzip": 54399,
-    "brotli": 46611
+    "raw": 191942,
+    "gzip": 55691,
+    "brotli": 47651
   },
   "profile-standard-ready.css": {
     "raw": 10506,
@@ -210,9 +210,9 @@
     "brotli": 2883
   },
   "profile-extended-headless.js": {
-    "raw": 144996,
-    "gzip": 44303,
-    "brotli": 38215
+    "raw": 149245,
+    "gzip": 45607,
+    "brotli": 39249
   },
   "profile-extended-headless.css": {
     "raw": 4951,
@@ -220,9 +220,9 @@
     "brotli": 1466
   },
   "profile-extended-ready.js": {
-    "raw": 208838,
-    "gzip": 60856,
-    "brotli": 51734
+    "raw": 213105,
+    "gzip": 62202,
+    "brotli": 52766
   },
   "profile-extended-ready.css": {
     "raw": 11702,

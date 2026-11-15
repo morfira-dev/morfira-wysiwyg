@@ -8,7 +8,7 @@
 | `@morfira-dev/wysiwyg/presets/standard` | `createStandardPreset` | Таблицы, изображения, поиск, статистика, Markdown shortcuts, autolink |
 | `@morfira-dev/wysiwyg/presets/extended` | `createExtendedPreset` | Standard плюс mentions и slash с вашими provider-функциями |
 
-Это композиции текущих возможностей: Markdown shortcuts не являются Markdown import/export, mentions сохраняют обычный редактируемый текст, autolink срабатывает после нативного пробела. Атомарные mentions, node views, decorations и будущие видео/формулы автоматически не добавляются.
+Это композиции текущих возможностей: Markdown shortcuts не являются Markdown import/export, mentions сохраняют обычный редактируемый текст, autolink поддерживает нативный Space, контролируемый Enter и ограниченную plain-URL вставку из буфера — [точные условия](/autolink). Атомарные mentions, node views, decorations и будущие видео/формулы автоматически не добавляются.
 
 Необязательные [чек-листы](/checklists) пока не входят в эти наборы по умолчанию. Подключай `checklists()` через явный `plugins: [checklists()]` и импортируй его CSS отдельно; наличие кнопок в полной демке не означает автоматическую загрузку в пресете.
 

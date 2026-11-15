@@ -17,7 +17,14 @@ export interface AutolinkCandidate {
   href: string;
 }
 
+export interface AutolinkLeaf {
+  node: Text;
+  start: number;
+  end: number;
+}
+
 export interface AutolinkFlow {
   text: string;
   truncated: boolean;
+  leaves: AutolinkLeaf[];
 }
