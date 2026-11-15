@@ -9,9 +9,12 @@ The independent `/ui/contextual-link` module implements `contextual-links.md`: c
 | Affected contextual links/text toolbar/link form | **78/78 passed**, Chromium/Firefox/WebKit, 24.6s |
 | RU/EN site from built artifacts | `docs:build:site` passed; complete docs suite **173/173 passed** |
 | Actual installed tarball consumers | **15/15 default + 3/3 Angular 22 passed**, all three engines; Angular 22 used Node 24.16.0 |
-| Package/type/import/size validation | Final `check:static` chain passed before browser executions; subsequent builds passed after the focus fixes |
+| Package/type/import/size validation | Final full check static chain passed; integrated main also passed docs:build, package:check, check:tree-shaking and typecheck with current package versions |
+| Final integrated-main live examples | **2/2 passed**, RU narrow homepage / EN dark playground; site rebuilt in 6.07s after verification-text refresh |
 | SDK/Web Component fresh-server diagnostic | **57/57 passed** after stopping the task-owned server that had survived artifact rebuilds |
-| Complete final `pnpm run check` | Running on a fresh server; no complete final-suite result is claimed yet |
+| Complete final `pnpm run check` | **Passed, exit 0: 3663/3663 = 1221 per browser**, on the final runtime and a fresh server |
+
+The final local browser run took 24.1 minutes with four workers; this laptop observation includes concurrent independent main-checkout builds and documentation rebuilds and is not a GitHub CI benchmark. The separately measured GitHub run completed its gate in 5m08s and publication in 7m35s. All **103 JS/CSS outputs** across the eight packages are SHA-256-identical between the tested isolated checkout and integrated main; declarations/package boundaries were also checked on main.
 
 Initial focused runs exposed real new-UI bugs in transient focus restoration, native Open focus transfer, and changed-form blur/change reentrancy. These were corrected with retained regressions. A later focused timeout was an outside fixture field covered by the floating form; the field now occupies a genuinely clickable separate layer without forced clicks. The final affected run passed. An initial complete run was interrupted after unrelated SDK token-instance errors: a reused Vite server had retained HMR-versioned core module URLs alongside plain dynamic imports. A fresh server passed all 57 SDK/Web Component cases; no core behavior was changed. Never report the interrupted run as a passing global check.
 
