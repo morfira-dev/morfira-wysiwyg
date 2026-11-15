@@ -3,11 +3,13 @@ import type { LinkFormController } from '@morfira-dev/wysiwyg/ui/links';
 import type { ImageFormController } from '@morfira-dev/wysiwyg/ui/images';
 import type { StandardEditorUIController } from '@morfira-dev/wysiwyg/ui/standard';
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
+import type { FontCommands } from '@morfira-dev/wysiwyg/plugins/fonts';
 
 export interface ConsumerProbe {
   editor?: Editor;
   changes: number;
   ui?: StandardEditorUIController;
+  fonts?: FontCommands;
   showOverflow?: () => void;
   hideOverflow?: () => void;
   insertNote?: (text: string) => boolean;

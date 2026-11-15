@@ -97,6 +97,10 @@
     "./horizontal-rule": {
       "types": "./dist/horizontal-rule/index.d.ts",
       "import": "./dist/horizontal-rule.js"
+    },
+    "./fonts": {
+      "types": "./dist/fonts/index.d.ts",
+      "import": "./dist/fonts.js"
     }
   },
   "peerDependencies": {

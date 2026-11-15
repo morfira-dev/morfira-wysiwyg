@@ -1,8 +1,40 @@
-# Verification record — optional UI overflow, editor and security
+# Verification record — fonts, optional UI and editor
 
-Status: U3a opt-in whole-group overflow is implemented and verified on final source: full check 3549/3549 (exit 0), documentation 163/163 and packed consumers 18/18 passed. Default wrap and headless boundaries are preserved. The earlier interrupted run and diagnostic fixture corrections remain separate evidence. Historical baselines below are not substituted for current-source results.
+Status: the first optional fonts slice completed final verification: full check 3570/3570 (1190 cases × three engines, exit 0), documentation 165/165 and packed consumers 18/18 passed. Corrected focused tests passed 138/138 and both localized docs regressions passed. The bounded CSS/security/import contract remains explicit; completed U3a `e092011` and earlier results below remain historical baselines.
 
-## Current U3a verification — completed
+## Current optional-fonts verification — completed
+
+The explicit `/plugins/fonts` entry adds configured family/px-size commands, independent resets and actual/mixed CSS state. Preset defaults and ready-toolbar built-ins remain unchanged. Families use bounded safe syntax (eight names, 256 characters); configured sizes are integers 8–96 px. Existing safe import units remain supported, and the plugin loads no font files. Core codec/formatting reuse existing selection, typing/history and security boundaries.
+
+| Check | Current status |
+| --- | --- |
+| Initial focused browser run | **130/138**: three split-anchor and three nested-span fixture expectations needed correction; two Firefox/WebKit failures exposed a real CSSOM canonicalization issue, corrected in source |
+| Corrected focused browser suite | **138/138 passed**, 39.3 seconds, across Chromium/Firefox/WebKit |
+| TypeScript checking | Passed, zero errors |
+| Corrected build and docs build | Both passed, exit 0; current measured sizes below |
+| Final full check | **3570/3570 passed**, **1190 cases × Chromium/Firefox/WebKit**, 15.8 minutes, **exit 0**, including the entire static pipeline (`/tmp/morfira-fonts-full-check.log`) |
+| Documentation browser suite | Final **165/165 passed**, 5.3 minutes, **exit 0**. The corrected new localized cases also passed **2/2**, 5.0 seconds; initial **1/2** used a single-strong-wrapper expectation, corrected to joined text, actual typed-X computed styles and surrounding-text/link checks |
+| Packed consumers | Final **18/18 passed**, exit 0: 15 default-wrapper scenarios plus 3 Angular 22 scenarios, including composed font commands producing one change/one Undo |
+
+### Current fonts generated sizes
+
+From current build-generated `size-report.json`; minified JS/CSS, gzip and Brotli separately, shared chunks once per selected graph, framework runtimes/maps/declarations/application font assets excluded. Measurements are not input-latency or memory evidence.
+
+| Entry / selected profile | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 88382 | 27253 | 23942 | 3293 | 1164 | 962 |
+| Optional fonts | 3143 | 1380 | 1185 | 0 | 0 | 0 |
+| Minimal headless | 84855 | 25749 | 22565 | 3293 | 1164 | 962 |
+| Minimal ready | 106888 | 32520 | 28412 | 8185 | 2432 | 2007 |
+| Standard headless | 140101 | 42719 | 36953 | 5106 | 1880 | 1505 |
+| Standard ready | 199911 | 58334 | 49819 | 11504 | 3747 | 3038 |
+| Standard + fonts ready | 202780 | 59402 | 50578 | 11504 | 3747 | 3038 |
+| Extended headless | 152644 | 46366 | 40090 | 5106 | 1880 | 1505 |
+| Extended ready | 221082 | 64519 | 54883 | 12700 | 4239 | 3414 |
+
+Core is **88382 / 27253 / 23942** raw/gzip/Brotli JS bytes: **1132 raw bytes above** U3a `e092011` and **8382 above** the soft 80000-byte raw target. The optional fonts entry is **3143 / 1380 / 1185**, within its 8000-byte gzip feature guard. Explicit standard+fonts adds **2869 raw / 1068 gzip** bytes to standard ready and remains within the retained 65000-byte gzip standard profile guard (**59402**, 5598 bytes headroom). Preset defaults still omit fonts. CSS is unchanged; no budgets were raised or implicit font assets introduced.
+
+## Historical U3a baseline — `e092011`
 
 `overflow: 'more'` adds measured whole-group overflow to optional shell/standard/extended UI; `wrap` remains the default. The shell validates finite priorities; ready compositions own their priorities. Existing controls move without duplication, native More opens a nonmodal region, and editor selection/history stay under the existing UI contracts. Demo switching remounts only UI. Contextual controls remain future work. No runtime dependencies or core/headless overflow imports are added.
 
@@ -21,7 +53,7 @@ The earlier full check was intentionally interrupted with **exit 130**: **1853 p
 
 A real visual probe found that closing the in-flow overflow region on outside `pointerdown` could shift the external theme button before mouseup/click and swallow the intended action. The runtime correction changes only the overflow document listener from `pointerdown` to `click`. Both existing localized docs smoke cases now use a real external theme click and assert dark computed toolbar CSS, dismissal and unchanged content/history before continuing. The corrected-source two-case docs regression passed; real screenshots also confirmed mobile light and desktop 520px-host dark layouts, including `dark-demo` and computed toolbar background `rgb(34, 40, 57)`. These observations do not claim complete accessibility/device coverage.
 
-### Current corrected-source U3a generated sizes
+### Historical U3a generated sizes — `e092011`
 
 Read from current corrected-source build-generated `size-report.json`: minified JS/CSS, gzip and Brotli separately; shared profile chunks counted once, framework runtimes/maps/declarations excluded. These are bundle measurements, not input/performance results.
 

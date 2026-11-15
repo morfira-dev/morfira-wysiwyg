@@ -61,13 +61,15 @@ Lists, keyboard boundaries and toolbar extensions follow `specs/lists-toolbar.md
 
 Inline color and enhanced link commands follow `specs/colors-links.md`. Invalid link command arguments now throw before mutation, replacing the earlier silent rejection; safe HTML/JSON imports still sanitize through schema v1.
 
+Optional font configuration and commands follow `specs/fonts.md`. Core recognizes validated `fontFamily`/`fontSize` inline properties through common formatting/history; configuration, command handlers and UI choices belong to the independent plugin. Schema v1 adds bounded font-family preservation on existing style-bearing elements; older readers may discard it. Existing font-size import units/range remain unchanged. No font files or font-loading resources are supplied implicitly.
+
 Image commands follow `specs/images.md`. Schema v1 adds figure/figcaption semantics; older readers may flatten those wrappers. Image commands remain an optional module.
 
 Optional literal find/replace follows `specs/search.md`, with no schema change or core dependency on the search entry. Replacements retain document structure and participate in history; search/navigation do not.
 
 Optional Markdown typing rules follow `specs/markdown-shortcuts.md`. Conversions are transactions over schema v1; shortcuts do not run during import/paste or composition.
 
-History snapshots retain bounded pending caret formatting (boolean marks and inline colors) with their collapsed text offset. Undo/redo restores this transient affinity only when the restored caret still matches that offset, so subsequent text after a Markdown conversion remains outside the newly closed mark after redo. This metadata is history-only, never HTML/JSON schema data. External replacement and ordinary selection movement still clear pending formatting. Failed transactions restore pending formatting with their document/selection snapshot.
+History snapshots retain bounded pending caret formatting (boolean marks, inline colors and font properties) with their collapsed text offset. Undo/redo restores this transient affinity only when the restored caret still matches that offset, so subsequent text after a Markdown conversion remains outside the newly closed mark after redo. This metadata is history-only, never HTML/JSON schema data. External replacement and ordinary selection movement still clear pending formatting. Failed transactions restore pending formatting with their document/selection snapshot.
 
 Phase-1 suggestions follow `specs/mentions-slash.md`: @label and slash snippets are ordinary editable text inserted in one transaction. Schema v1 has no mention IDs/atoms; structural slash commands now follow the separate phase-2 action registry contract and use composable transactions. Optional menu DOM stays outside persisted surface and cleans up with controller/editor disposal.
 

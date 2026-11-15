@@ -74,3 +74,5 @@ Install the separate [checklist plugin](/en/checklists) and its CSS through expl
 
 
 The optional [horizontal-rule command](/en/horizontal-rule) is available through `/plugins/horizontal-rule`: one root paragraph/heading, an editable suffix and one Undo step. Standard/extended install it and its ready toolbar button by default; `horizontalRule: false` omits the instance.
+
+The optional [font plugin](/en/fonts), through `/plugins/fonts`, provides configured family/px-size commands, independent resets and actual/mixed CSS state. It is explicitly installed, excluded from preset defaults and loads no font files.

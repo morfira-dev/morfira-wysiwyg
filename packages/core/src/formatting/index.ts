@@ -1,6 +1,7 @@
 import type { DocumentSchema } from '../schema/types.js';
 import type { DocumentTag } from '../document/index.js';
 import { documentHTML, parseHTML } from '../document/index.js';
+import { normalizeFontFamily } from '../document/font-family.js';
 import { activeRange, readTextSelection, selectText, preserveRange } from '../selection/index.js';
 import { inlineStyles, normalizeInlineStyle, transformInlineAttributes } from './inline-attributes.js';
 import { applyLink } from './links.js';
@@ -31,9 +32,11 @@ const formatsAt = (root: HTMLElement, node: Node): Record<string, unknown> => {
       formats.linkTarget = element.getAttribute('target') ?? '_self';
     }
     if (element instanceof HTMLElement)
-      for (const [name, property] of Object.entries(inlineStyles))
-        if (formats[name] === undefined && element.style.getPropertyValue(property))
-          formats[name] = element.style.getPropertyValue(property);
+      for (const [name, property] of Object.entries(inlineStyles)) {
+        const value = element.style.getPropertyValue(property);
+        if (formats[name] === undefined && value)
+          formats[name] = name === 'fontFamily' ? normalizeFontFamily(value) ?? value : value;
+      }
     if (element instanceof HTMLElement && element.style.textAlign && formats.align === undefined)
       formats.align = element.style.textAlign;
     element = element.parentElement;
@@ -60,7 +63,7 @@ export const readFormats = (root: HTMLElement): Record<string, unknown> => {
     }
     if (samples.length)
       formats = samples[0];
-    const keys = [...Object.keys(inlineFormats), 'header', 'list', 'blockquote', 'code-block', 'link', 'linkTitle', 'linkTarget', 'color', 'background', 'align'];
+    const keys = [...Object.keys(inlineFormats), ...Object.keys(inlineStyles), 'header', 'list', 'blockquote', 'code-block', 'link', 'linkTitle', 'linkTarget', 'align'];
     const normalized = (sample: Record<string, unknown>, key: string) => sample[key] ?? (key === 'align' ? 'left' : key === 'header' ? 0 : false);
     for (const key of keys)
       if (samples.some((sample) => normalized(sample, key) !== normalized(samples[0], key)))
@@ -106,10 +109,10 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown, sch
     return;
   }
   if (Object.hasOwn(inlineStyles, name)) {
-    const color = normalizeInlineStyle(name, value);
+    const style = normalizeInlineStyle(name, value);
     if (!selection.length)
       return;
-    root.innerHTML = (schema?.documentHTML ?? documentHTML)(transformInlineAttributes((schema?.parseHTML ?? parseHTML)(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'style', property: inlineStyles[name], value: color }));
+    root.innerHTML = (schema?.documentHTML ?? documentHTML)(transformInlineAttributes((schema?.parseHTML ?? parseHTML)(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'style', property: inlineStyles[name], value: style }));
     selectText(root, selection.index, selection.length);
     return;
   }

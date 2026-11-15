@@ -20,6 +20,20 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await expect(content).toHaveText('Initial text');
           const readyUI = page.locator('[data-consumer-ready-ui]');
           await expect(readyUI.getByRole('toolbar', { name: 'Consumer ready tools', exact: true })).toBeVisible();
+          const beforeFonts = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
+          await page.evaluate(() => {
+            const { editor, fonts } = window.morfiraConsumer;
+            editor!.setSelection(0, 7);
+            editor!.transact(() => {
+              fonts!.setFamily('serif');
+              fonts!.setSize(24);
+            });
+          });
+          await expect(content.locator('[style*="font-family"]').first()).toHaveCSS('font-family', 'Georgia, serif');
+          await expect(content.locator('[style*="font-size"]').first()).toHaveCSS('font-size', '24px');
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeFonts.changes + 1, `${adapter}: composed font commands emit one controlled update`);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeFonts.html, `${adapter}: composed installed font commands undo once`);
           const beforeOverflow = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), undo: window.morfiraConsumer.editor!.canUndo(), changes: window.morfiraConsumer.changes }));
           await page.evaluate(() => window.morfiraConsumer.showOverflow!());
           const overflowHost = page.locator('[data-consumer-overflow]');

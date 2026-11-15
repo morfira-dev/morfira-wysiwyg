@@ -1,4 +1,5 @@
 import { safeURL } from './security.js';
+import { normalizeFontFamily } from './font-family.js';
 import { countText, countElement, maximumHTMLLength, maximumNodes, maximumDepth } from './budget.js';
 import type { DocumentAttributeResolver, DocumentBudget } from './internal-types.js';
 import type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
@@ -15,6 +16,11 @@ const safeStyle = (value: string): string => {
     if (separator < 0)
       continue;
     const property = declaration.slice(0, separator).trim().toLowerCase();
+    if (property === 'font-family') {
+      const family = normalizeFontFamily(declaration.slice(separator + 1).trim());
+      if (family) result.push(`font-family: ${family}`);
+      continue;
+    }
     const content = declaration.slice(separator + 1).trim().toLowerCase();
     const color = /^(#[a-f\d]{3,8}|[a-z]{1,24}|(?:rgb|rgba|hsl|hsla)\([\d\s.,%+-]+\))$/;
     const length = /^(?:\d{1,4}(?:\.\d{1,3})?)(?:px|%|em|rem)$/;

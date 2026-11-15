@@ -119,6 +119,10 @@
     "./plugins/horizontal-rule": {
       "types": "./dist/plugins/horizontal-rule.d.ts",
       "import": "./dist/plugins/horizontal-rule.js"
+    },
+    "./plugins/fonts": {
+      "types": "./dist/plugins/fonts.d.ts",
+      "import": "./dist/plugins/fonts.js"
     }
   },
   "dependencies": {

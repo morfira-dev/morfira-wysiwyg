@@ -158,3 +158,5 @@ The build enforces measured headless and ready profiles: Standard — at most 65
 UI wraps by default; explicit `overflow: 'more'` enables verified priority-based whole-group overflow. Contextual floating controls remain future work. Real mobile/IME and screen-reader behavior still needs dedicated verification. Full DOCX/PDF conversion, collaboration and office-style layout are outside these presets.
 
 The [horizontal-rule command](/en/horizontal-rule) is included in standard/extended by default, with a ready toolbar button. `horizontalRule: false` omits its instance; a runtime flag does not erase static imports. Use selective composition for a narrower bundle.
+
+Optional [font-family/size commands](/en/fonts) are also installed explicitly through `plugins: [fonts()]`, with no additional CSS. Configured commands provide a bounded px/family profile rather than a font loader; preset defaults and ready toolbar do not add them automatically.

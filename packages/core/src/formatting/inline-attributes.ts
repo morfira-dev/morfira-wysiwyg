@@ -1,23 +1,29 @@
 import type { LinkFormat, Attributes, Operation, Piece } from './inline-attributes.types.js';
 export type { LinkFormat } from './inline-attributes.types.js';
 import { validateDocument } from '../document/index.js';
+import { normalizeFontFamily } from '../document/font-family.js';
 import type { DocumentNode, EditorDocument, ElementNode } from '../document/index.js';
-export const inlineStyles: Record<string, string> = { color: 'color', background: 'background-color' };
+export const inlineStyles: Record<string, string> = { color: 'color', background: 'background-color', fontFamily: 'font-family', fontSize: 'font-size' };
 const blocks = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup', 'figure', 'figcaption']);
 const checkedAttributes = (tag: 'span' | 'a', attributes: Attributes): Attributes => (validateDocument({ version: 1, children: [{ type: 'element', tag, attributes, children: [] }] }).children[0] as ElementNode).attributes;
 export const normalizeInlineStyle = (name: string, value: unknown): string | false => {
   if (value === false)
     return false;
+  if (name === 'fontFamily') {
+    const family = typeof value === 'string' ? normalizeFontFamily(value) : undefined;
+    if (!family) throw new TypeError('Expected a supported font family or false.');
+    return family;
+  }
   if (typeof value !== 'string' || !value.trim() || value.length > 128 || /[;{}]/.test(value))
-    throw new TypeError('Expected a CSS color or false.');
+    throw new TypeError('Expected a supported CSS inline style or false.');
   const property = inlineStyles[name];
   const attrs = checkedAttributes('span', { style: `${property}: ${value}` });
   const probe = document.createElement('span');
   probe.setAttribute('style', attrs.style ?? '');
-  const color = probe.style.getPropertyValue(property);
-  if (!color)
-    throw new TypeError('Unsupported or invalid CSS color.');
-  return color;
+  const normalized = probe.style.getPropertyValue(property);
+  if (!normalized)
+    throw new TypeError('Unsupported or invalid CSS inline style.');
+  return normalized;
 };
 export const normalizeLink = (value: unknown): {
   attributes: Attributes;
