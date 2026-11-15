@@ -1,12 +1,18 @@
 name: Check
 on:
-  push:
-    branches-ignore: [main]
   pull_request:
   workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
-  check:
+  build:
+    name: Build and static checks
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -15,15 +21,154 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm run test:release
-      - run: pnpm run check
-      - run: pnpm run consumers:check
-      - run: pnpm run consumers:angular22
-      - run: pnpm run docs:build
-      - run: pnpm run test:docs
+      - run: pnpm run check:static
+      - name: Archive checked packages and Angular fixtures
+        run: |
+          tar -czf "$RUNNER_TEMP/morfira-build.tar.gz" \
+            packages/core/dist \
+            packages/plugins/dist \
+            packages/vue/dist \
+            packages/react/dist \
+            packages/svelte/dist \
+            packages/angular/dist \
+            packages/web-component/dist \
+            packages/wysiwyg/dist \
+            playground/angular/dist \
+            artifacts/angular/server.mjs \
+            size-report.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: checked-build-${{ github.sha }}
+          path: ${{ runner.temp }}/morfira-build.tar.gz
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 3
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-results
-          path: test-results/
+          name: static-results-${{ github.run_attempt }}
+          path: |
+            artifacts/
+            size-report.json
+          retention-days: 7
+
+  editor:
+    name: Editor ${{ matrix.browser }} ${{ matrix.shard }}/4
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          name: checked-build-${{ github.sha }}
+          path: ${{ runner.temp }}/checked-build
+      - name: Restore checked packages and Angular fixtures
+        run: tar -xzf "$RUNNER_TEMP/checked-build/morfira-build.tar.gz"
+      - run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+      - run: pnpm test --project=${{ matrix.browser }} --shard=${{ matrix.shard }}/4 --workers=2
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: editor-${{ matrix.browser }}-${{ matrix.shard }}-${{ github.run_attempt }}
+          path: test-results/editor/
+          retention-days: 7
+
+  docs:
+    name: Documentation
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          name: checked-build-${{ github.sha }}
+          path: ${{ runner.temp }}/checked-build
+      - name: Restore checked packages and Angular fixtures
+        run: tar -xzf "$RUNNER_TEMP/checked-build/morfira-build.tar.gz"
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run docs:build:site
+      - run: pnpm run test:docs --workers=2
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: docs-results-${{ github.run_attempt }}
+          path: |
+            test-results/docs/
+            artifacts/*.png
+          retention-days: 7
+
+  consumers:
+    name: Packed consumers ${{ matrix.profile }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: default
+            command: consumers:check
+          - profile: angular22
+            command: consumers:angular22
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          name: checked-build-${{ github.sha }}
+          path: ${{ runner.temp }}/checked-build
+      - name: Restore checked packages and Angular fixtures
+        run: tar -xzf "$RUNNER_TEMP/checked-build/morfira-build.tar.gz"
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm run ${{ matrix.command }}
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: consumer-${{ matrix.profile }}-${{ github.run_attempt }}
+          path: artifacts/consumer-*.json
+          retention-days: 7
+
+  check:
+    name: check
+    if: ${{ always() }}
+    needs: [build, editor, docs, consumers]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every validation job to succeed
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          EDITOR_RESULT: ${{ needs.editor.result }}
+          DOCS_RESULT: ${{ needs.docs.result }}
+          CONSUMERS_RESULT: ${{ needs.consumers.result }}
+        run: |
+          echo "Build: $BUILD_RESULT; editor: $EDITOR_RESULT; docs: $DOCS_RESULT; consumers: $CONSUMERS_RESULT"
+          test "$BUILD_RESULT" = success
+          test "$EDITOR_RESULT" = success
+          test "$DOCS_RESULT" = success
+          test "$CONSUMERS_RESULT" = success
