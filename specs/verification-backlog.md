@@ -10,7 +10,10 @@ The independent `/ui/contextual-image` entry follows contextual-images.md and re
 | Bilingual built site | Complete **175/175 passed**, including both new live examples and existing image/form-guide scenarios |
 | Actual installed tarball consumers | **15/15 default + 3/3 Angular 22 passed**, all three engines; Angular 22 used Node 24.16.0 |
 | Builds/types/packages/selective imports/size guards | Passed; final static chain also ran as part of the complete check |
-| Complete `pnpm run check --workers=6` | Running on the final frozen runtime and a fresh Vite server; no global passing result claimed yet |
+| Final site after verification-text refresh | Site-only build passed (6.33s), both RU/EN live scenarios **2/2 passed** (4.8s), existing user preview preserved on port 4173 |
+| Complete `pnpm run check --workers=6` | **Passed, exit 0: 3705/3705 = 1235 per Chromium/Firefox/WebKit**, final frozen runtime and fresh Vite server |
+
+The full local Playwright phase took 30.0 minutes with six workers, partly overlapping independent docs builds/tests. This laptop observation is not a new GitHub CI measurement; no push or remote run was made for this slice. Existing CI shard/profile requirements and budgets are unchanged.
 
 Review fixed protected semantic/foreign caption ownership in the standalone edit form and the contextual figure gate, and Escape now cancels opening before its first RAF. Tests retain those risks. Initial focused failures also exposed fixture mistakes: text offset zero landed inside a caption for upload, repeat programmatic same-node selection did not constitute explicit reopening, and focus-time destruction needed to await actual focus. These fixtures now exercise native paragraph Range / explicit Alt+F10 / confirmed focus. The initial docs run passed 172/175; its three failures were ambiguous example naming and a stronger-than-contract read-only visibility expectation, corrected before the complete 175/175 rerun. No core SDK workaround, retry/skip or budget increase was added.
 
