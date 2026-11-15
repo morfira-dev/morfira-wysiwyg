@@ -314,3 +314,7 @@ A caret inside a text link can use separate [contextual link actions](/en/contex
 
 
 Explicit [contextual image properties](/en/contextual-images) use `/ui/contextual-image` with the images plugin, an exact IMG node Range and existing update/remove history. The reused image form adds `mode?: ImageFormMode` (`all` by default, `edit` excludes Insert/upload and makes Enter update). Caption carets and whole-figure ranges are outside this first contextual slice.
+
+## Contextual table actions
+
+The explicit [contextual table toolbar](/en/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions and independent gzip budgets.

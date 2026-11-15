@@ -140,3 +140,6 @@ The separately measured `standard-contextual-link-ready` selection adds only `cr
 
 
 The independent `standard-contextual-image-ready` selection adds only createContextualImageUI and its explicit CSS to standard ready. Shared images/form code counts once, and edit-only mode remains a runtime option rather than a tree-shaking claim. Keep 65000 gzip JS / 20000 raw CSS; the standalone entry guard is 16000 gzip JS and its added stylesheet 3000 raw bytes. Other optional-UI combinations require their own measurements.
+
+
+The independent `standard-contextual-table-ready` selection adds only `createContextualTableUI` and its explicit stylesheet to standard ready. Shared grid/table/selection code counts once. `getTableSelection` is a separate selective export rather than a method retained by every table command instance. Presets do not mount contextual controls. Keep the existing 65000 gzip JS / 20000 raw CSS profile guards, and standalone 16000 gzip JS / 3000 raw CSS guards. The all-optional-context-UI combination is not represented by this profile.

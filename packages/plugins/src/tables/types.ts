@@ -39,7 +39,19 @@ export interface TablePastePlan {
 export interface TableOptions {
   onClipboardError?: (error: Error) => void;
 }
+export interface TableSelectionState {
+  readonly table: HTMLTableElement;
+  readonly cells: readonly HTMLTableCellElement[];
+  readonly rectangle: Readonly<CellRectangle>;
+  readonly rows: number;
+  readonly columns: number;
+  readonly explicit: boolean;
+  readonly revision: number;
+  readonly canMerge: boolean;
+  readonly canSplit: boolean;
+}
 export interface TableCommands {
+  registerSelectionHost(host: HTMLElement): () => void;
   copy(): TableClipboardData;
   cut(): TableClipboardData;
   paste(data: TableClipboardInput): void;

@@ -1,4 +1,37 @@
-# Verification record — contextual image properties and editor
+# Verification record — contextual tables and editor
+
+## Current contextual table structure — 2026-11-15–16
+
+The explicit `/ui/contextual-table` entry implements contextual-tables.md with eight localized row/column/merge/split controls over existing logical-grid commands. It preserves native Ranges, actual cell identity, one-command history, focus-time target revalidation and per-editor cleanup. `getTableSelection` is a separate selective query; the table factory retains only its private state reader, typed notification token and owned external-host registration. Presets/core do not install the UI. No runtime dependencies, persisted schema change, image clones or new editing engine were added.
+
+| Check | Actual result |
+| --- | --- |
+| Affected state/UI/editor/native/composition tables | **162/162 passed**, Chromium/Firefox/WebKit, 46.2s |
+| Complete bilingual built-site suite | **177/177 passed**, exit 0, 6.2 minutes under concurrent local load |
+| Actual installed tarball consumers | **15/15 default + 3/3 Angular 22 passed**, all three engines; Angular 22 used Node 24.16.0 |
+| Builds/declarations/packages/types/tree-shaking/size guards | Passed; also completed in the full-check static chain |
+| Complete `pnpm run check --workers=4` | **Exit 1: 3745 passed / 2 Firefox Angular timeouts**, 31.4 minutes; all 1249 cases × three engines executed |
+| Separate Angular regression confirmation | **18/18 passed**, all three engines, 22.4s, unchanged source and default timeouts |
+| Final site after verification-text update | Site-only build passed (6.90s), RU/EN live examples **2/2 passed** (4.7s); existing user preview on port 4173 returns HTTP 200 |
+
+The initial affected run had 153 passes/9 failures in three new fixture groups: detached Range reuse after core composition cancellation; treating another editor's own native invalidation as a leaked explicit selection intent; and focus-race setup retaining a conflicting private region or failing before a successful WebKit callback. Fixtures now capture live nodes and deliberate logical selection and assert the callback actually ran. Read-only/API/IME focus guards were retained. Independent review found a real multi-Range UI ambiguity; the UI now requires exactly one native Range and retains a Firefox regression inside its existing boundary case. The corrected affected run passed all 162. The first built-site run passed 176/177; its old clipboard button locator incorrectly scoped an existing control to `.lab-tables` instead of `.lab-data-grid`. Only that locator was corrected before the complete 177/177 rerun.
+
+The complete local run had two 30-second timeouts in the unchanged Firefox Angular form/model fixtures while independent browser-heavy docs/consumer jobs overlapped. The other 3745 executions passed. The complete Angular suite then passed 18/18 on a fresh server with two workers after that load ended, without runtime, assertion or timeout changes. Together these cover all 3747 executions, but this is **not** a single all-green complete check. Preserve that distinction; laptop timings are not GitHub CI timings. Future complete local editor/docs/consumer browser-heavy runs should be sequential on this machine. The site had already completed 177/177 before an attempted stop reached its exited process; it was not interrupted.
+
+Generated decimal bytes on the final frozen runtime, shared code once per selected graph; framework runtimes, maps, declarations and fonts excluded:
+
+| Selection | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 90311 | 27796 | 24380 | 3293 | 1164 | 962 |
+| Contextual table entry (table/selection closure) | 34165 | 12951 | 11612 | 1283 | 575 | 462 |
+| Standard ready | 204757 | 59929 | 51254 | 11504 | 3747 | 3038 |
+| Standard + contextual table ready | 215545 | 63372 | 54003 | 12787 | 4322 | 3500 |
+
+The standalone CSS column is only the additional stylesheet; the selected ready profile includes required core/table/forms/editor/new UI styles once. The contextual table profile adds **3443 gzip JS bytes** over standard ready and remains within 65000 gzip JS / 20000 raw CSS. Standalone entry limits are 16000 gzip JS / 3000 raw CSS. An earlier attached query design exceeded the unchanged most-selected standard guard by about 400 gzip bytes; the selective helper corrected it without changing limits. The current standard+fonts+list-properties+direction+text-context profile is **64999 gzip JS bytes**, only **1 byte** below 65000; optimize its closure before further growth, rather than treating this as useful reserve. Core is unchanged and still **10311 raw JS bytes above** its 80000-byte soft optimization target.
+
+The first UI profile deliberately excludes incomplete/nested/protected tables, cross-cell native text ranges and ambiguous multiple native ranges. Cell/table properties, header/caption UI, resize and clipboard controls remain separate capabilities; existing APIs are unchanged. These checks do not certify arbitrary Office imports, OS/mobile IME, all accessibility/device behavior, every optional-UI combination or security. GitHub CI results must be recorded from the actual pushed revision, not inferred from local timings. The documentation site remains local-only.
+
+## Previous contextual image properties stage
 
 ## Current image properties and edit-only form — 2026-11-15
 

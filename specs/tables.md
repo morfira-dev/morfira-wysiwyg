@@ -15,3 +15,7 @@ Status: implemented preview contract. Regression scenarios live in `tests/editor
 Acceptance: rectangular editing; merge/split; row and column insertion/deletion through spans; content-preserving HTML/JSON round trips; undo/redo; invalid selection rollback; readonly; keyboard navigation; per-instance isolation and cleanup. Test in Chromium/Firefox/WebKit.
 
 Resize regression: when the caret is in one table and a handle is dragged on another table in the same editor, only the dragged table changes; one undo restores its widths.
+
+## U3e — Observable selection and external controls
+
+The additive getTableSelection(editor, range?), TableSelectionState, CellRectangle, tableSelectionChange token and registerSelectionHost contracts follow contextual-tables.md. State projection is side-effect free; logical cell selection remains plugin-owned, never inferred from UI data attributes or cross-cell text. Registered external hosts preserve only this editor's logical selection and need explicit cleanup. Selection revision notifications are coalesced after transactions through the typed per-editor event API; no RPC, automatic command or history edit is introduced. Existing operations/select signatures and persisted schema stay compatible. U3e UI rejects malformed/protected/nested tables and reuses the existing bounded logical-grid operations/history.

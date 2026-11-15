@@ -146,7 +146,12 @@
       "types": "./dist/ui/contextual-image.d.ts",
       "import": "./dist/ui/contextual-image.js"
     },
-    "./ui/contextual-image.css": "./dist/ui/contextual-image.css"
+    "./ui/contextual-image.css": "./dist/ui/contextual-image.css",
+    "./ui/contextual-table": {
+      "types": "./dist/ui/contextual-table.d.ts",
+      "import": "./dist/ui/contextual-table.js"
+    },
+    "./ui/contextual-table.css": "./dist/ui/contextual-table.css"
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.9.0",

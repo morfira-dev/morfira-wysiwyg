@@ -1,9 +1,12 @@
-import type { Editor, EditorPlugin } from '@morfira-dev/wysiwyg-core';
-import { localize } from '@morfira-dev/wysiwyg-core';
+import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg-core';
+import { createPluginEvent, localize } from '@morfira-dev/wysiwyg-core';
 import type { CellAddress, TableClipboardData, TableClipboardInput, TableCommands, TableOptions, TablesMessageKey } from './types.js';
+import type { TableSelectionReader } from './internal-types.js';
 import { tablesMessages } from './messages.js';
 import { cellsInRectangle, deleteGridColumn, deleteGridRow, emptyCell, insertGridColumn, insertGridRow, readGrid, rebuildGrid, selectionRectangle } from './grid.js';
 import { copyTableRange, isTableClipboard, planTablePaste, readClipboardTable } from './clipboard.js';
+
+export const tableSelectionChange = createPluginEvent<number>('tables:selectionchange');
 
 const moveCaret = (cell: HTMLElement): void => {
   const range = document.createRange();
@@ -41,6 +44,22 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
     } | undefined;
     let disposed = false;
     let composing = false;
+    let revision = 0;
+    let pendingSelection = false;
+    const selectionHosts = new Map<HTMLElement, number>();
+    const assertActive = () => {
+      if (disposed) throw new Error('Table plugin has been disposed.');
+    };
+    const selectionChanged = (intent = true) => {
+      if (disposed) return;
+      if (intent) revision++;
+      if (pendingSelection) return;
+      pendingSelection = true;
+      queueMicrotask(() => {
+        pendingSelection = false;
+        if (!disposed) editor.events.emit(tableSelectionChange, revision);
+      });
+    };
     let clipboardFailed = false;
     const text = (key: TablesMessageKey): string => localize(editor.getLocale(), key, tablesMessages);
     const status = document.createElement('div');
@@ -71,8 +90,10 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       width: number;
     } | undefined;
     const clearSelection = () => {
+      if (selected.length) selectionChanged();
       for (const cell of selected)
-        cell.removeAttribute('data-mw-selected'); selected = [];
+        cell.removeAttribute('data-mw-selected');
+      selected = [];
     };
     const closeMenu = () => { menu.hidden = true; };
     const useCells = (cells: HTMLTableCellElement[]) => {
@@ -82,6 +103,7 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
         cell.setAttribute('data-mw-selected', 'true');
       if (selected[0])
         currentTable = selected[0].closest('table')!;
+      selectionChanged();
     };
     const activeCells = (): HTMLTableCellElement[] => {
       selected = selected.filter((cell) => root.contains(cell));
@@ -146,6 +168,20 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       });
     };
     const commands: TableCommands = {
+      registerSelectionHost: (host) => {
+        assertActive();
+        if (!(host instanceof root.ownerDocument.defaultView!.HTMLElement) || host.ownerDocument !== root.ownerDocument || !host.isConnected || root.contains(host) || host.contains(editor.element))
+          throw new TypeError('Expected a connected external selection host.');
+        selectionHosts.set(host, (selectionHosts.get(host) ?? 0) + 1);
+        let registered = true;
+        return () => {
+          if (!registered) return;
+          registered = false;
+          const count = selectionHosts.get(host) ?? 0;
+          if (count > 1) selectionHosts.set(host, count - 1);
+          else selectionHosts.delete(host);
+        };
+      },
       copy: () => { const { table, cells } = clipboardCells(); return copyTableRange(table, cells, editor.schema.sanitizeHTML); },
       cut: () => {
         const { table, cells } = clipboardCells();
@@ -307,6 +343,10 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
     const copyRangeEvent = (event: ClipboardEvent) => copyRange(event, false);
     const cutRangeEvent = (event: ClipboardEvent) => copyRange(event, true);
     const removeAPI = editor.providePlugin('tables', commands);
+    const removeSelectionAPI = editor.providePlugin<TableSelectionReader>('tables:selection', () => {
+      assertActive();
+      return [selected, revision, composing || editor.isReadOnly()];
+    });
     root.addEventListener('paste', pasteRange, true);
     root.addEventListener('copy', copyRangeEvent, true);
     root.addEventListener('cut', cutRangeEvent, true);
@@ -433,21 +473,26 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       }
     };
     const outside = (event: PointerEvent) => {
-      if (!editor.element.contains(event.target as Node)) {
+      if (!editor.element.contains(event.target as Node) && ![...selectionHosts.keys()].some((host) => host.isConnected && host.contains(event.target as Node))) {
         closeMenu();
         clearSelection();
         handle.hidden = true;
       }
     };
     let previouslyReadOnly = editor.isReadOnly();
-    const update = () => {
-      if (disposed)
-        return; selected = selected.filter((cell) => root.contains(cell)); if (currentTable && !root.contains(currentTable))
-        currentTable = undefined; handle.hidden = true; hover = undefined; if (editor.isReadOnly()) {
-          closeMenu();
-          if (!previouslyReadOnly)
-            clearSelection();
-        } previouslyReadOnly = editor.isReadOnly();
+    const update = (change?: EditorChange) => {
+      if (disposed) return;
+      if (change?.source === 'api') composing = false;
+      selected = selected.filter((cell) => root.contains(cell));
+      if (currentTable && !root.contains(currentTable)) currentTable = undefined;
+      handle.hidden = true;
+      hover = undefined;
+      if (editor.isReadOnly()) {
+        closeMenu();
+        if (!previouslyReadOnly) clearSelection();
+      }
+      previouslyReadOnly = editor.isReadOnly();
+      selectionChanged();
     };
     const resizeStart = (event: PointerEvent) => {
       if (!hover || editor.isReadOnly())
@@ -475,9 +520,11 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
     const resizeCancel = () => { resizing = undefined; releaseResize(); handle.hidden = true; };
     const compositionStart = () => {
       composing = true;
+      selectionChanged();
     };
     const compositionEnd = () => {
       composing = false;
+      selectionChanged();
     };
     root.addEventListener('pointerdown', pointerDown);
     root.addEventListener('pointermove', pointerMove);
@@ -489,12 +536,15 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
     document.addEventListener('pointerdown', outside);
     handle.addEventListener('pointerdown', resizeStart);
     const unsubscribe = editor.subscribe(update);
-    const unselect = editor.onSelectionChange(() => {
-      if (editor.isReadOnly())
-        update();
+    const unselect = editor.onSelectionChange(() => selectionChanged(false));
+    const unreadonly = editor.events.on('readonlychange', () => {
+      composing = false;
+      update();
     });
     return () => {
       disposed = true;
+      selectionHosts.clear();
+      unreadonly();
       root.removeEventListener('paste', pasteRange, true);
       root.removeEventListener('copy', copyRangeEvent, true);
       root.removeEventListener('cut', cutRangeEvent, true);
@@ -504,6 +554,7 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
       unselect();
       unlocale();
       removeAPI();
+      removeSelectionAPI();
       clearSelection();
       root.removeEventListener('pointerdown', pointerDown);
       root.removeEventListener('pointermove', pointerMove);

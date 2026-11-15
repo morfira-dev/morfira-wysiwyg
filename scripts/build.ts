@@ -7,7 +7,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'web-component']) {
   await mkdir(outdir, { recursive: true });
   const result = await build({
     metafile: true,
-    entryPoints: name === 'plugins' ? Object.fromEntries(['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended'].map((entry) => [entry, `packages/plugins/src/${entry}/index.ts`])) : name === 'core' ? {
+    entryPoints: name === 'plugins' ? Object.fromEntries(['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/contextual-table', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended'].map((entry) => [entry, `packages/plugins/src/${entry}/index.ts`])) : name === 'core' ? {
       index: 'packages/core/src/index.ts',
       'private-editor-messages': 'packages/core/src/localization/messages.ts',
       'private-toolbar-messages': 'packages/core/src/ui/toolbar/messages.ts',
@@ -31,6 +31,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'web-component']) {
     for (const file of name === 'core' ? ['style'] : ['tables', 'suggestions', 'checklists']) await build({ entryPoints: [name === 'core' ? `packages/core/src/${file}.css` : `packages/plugins/src/${file}/style.css`], outfile: `${outdir}/${file}.css`, bundle: true, minify: true });
   }
   if (name === 'plugins') {
+    await build({ entryPoints: ['packages/plugins/src/ui/contextual-table/style.css'], outfile: `${outdir}/ui/contextual-table.css`, bundle: true, minify: true });
     await build({ entryPoints: ['packages/plugins/src/ui/contextual-image/style.css'], outfile: `${outdir}/ui/contextual-image.css`, bundle: true, minify: true });
     await build({ entryPoints: ['packages/plugins/src/ui/contextual-link/style.css'], outfile: `${outdir}/ui/contextual-link.css`, bundle: true, minify: true });
     await build({ entryPoints: ['packages/plugins/src/ui/contextual/style.css'], outfile: `${outdir}/ui/contextual.css`, bundle: true, minify: true });
@@ -39,7 +40,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'web-component']) {
   }
 }
 await build({
-  entryPoints: ['index', 'vue', 'react', 'svelte', 'angular', 'web-component', 'plugins/tables', 'plugins/images', 'plugins/search', 'plugins/statistics', 'plugins/markdown', 'plugins/autolink', 'plugins/fonts', 'plugins/list-properties', 'plugins/text-direction', 'plugins/horizontal-rule', 'plugins/checklists', 'plugins/mentions', 'plugins/slash', 'plugins/suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
+  entryPoints: ['index', 'vue', 'react', 'svelte', 'angular', 'web-component', 'plugins/tables', 'plugins/images', 'plugins/search', 'plugins/statistics', 'plugins/markdown', 'plugins/autolink', 'plugins/fonts', 'plugins/list-properties', 'plugins/text-direction', 'plugins/horizontal-rule', 'plugins/checklists', 'plugins/mentions', 'plugins/slash', 'plugins/suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/contextual-table', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended'].map((entry) => `packages/wysiwyg/src/${entry}.ts`),
   outdir: 'packages/wysiwyg/dist', outbase: 'packages/wysiwyg/src', bundle: true, format: 'esm', external: ['@morfira-dev/*'],
 });
 await mkdir('packages/wysiwyg/dist/plugins', { recursive: true });
@@ -56,3 +57,4 @@ await cp('LICENSE', 'packages/wysiwyg/dist/LICENSE');
 
 await cp('packages/plugins/dist/ui/contextual-link.css', 'packages/wysiwyg/dist/ui/contextual-link.css');
 await cp('packages/plugins/dist/ui/contextual-image.css', 'packages/wysiwyg/dist/ui/contextual-image.css');
+await cp('packages/plugins/dist/ui/contextual-table.css', 'packages/wysiwyg/dist/ui/contextual-table.css');

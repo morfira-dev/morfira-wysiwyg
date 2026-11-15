@@ -89,7 +89,7 @@ The native More disclosure has `aria-expanded` and `aria-controls`. Its nonmodal
 
 Measurement and opening do not change content, selection or history. An actively focused group stays in place during resize until focus leaves; preservation of an open OS picker during resize is not promised. `refresh()` recomputes widths and localized labels; call it explicitly without ResizeObserver. Destroy disconnects observers and scheduled callbacks. There are no new runtime dependencies, and headless core does not load overflow UI.
 
-On the homepage and playground, **Toolbar layout** remounts only UI while preserving the editor, document, history and selection. The default is wrapping. Switching modes recreates open UI panels and their unsaved drafts; it does not replace the document. The separate [text contextual toolbar](/en/contextual-toolbar) is explicitly installed; table controls and changing the default overflow mode remain future decisions. Exact IMG selection has separate [contextual image properties](/en/contextual-images).
+On the homepage and playground, **Toolbar layout** remounts only UI while preserving the editor, document, history and selection. The default is wrapping. Switching modes recreates open UI panels and their unsaved drafts; it does not replace the document. The separate [text contextual toolbar](/en/contextual-toolbar) is explicitly installed; changing the default overflow mode remains a future decision. [Table context actions](/en/contextual-tables) are explicitly installed separately. Exact IMG selection has separate [contextual image properties](/en/contextual-images).
 
 ## An action using the SDK
 
@@ -156,7 +156,7 @@ There is one roving toolbar tab stop. Arrow keys on button rows and Home/End mov
 
 Built-in UI uses RU/EN catalogs `ui.editor.*` and `ui.standard.*`; forms use `ui.links.*`, `ui.images.*` and `ui.search.*`. `editor.setLocale(...)` updates labels/messages without replacing the document or drafts. Explicit `label` and custom action labels belong to the application; `label: (editor) => ...` can react to locale changes.
 
-Density is `comfortable` or `compact`. Scoped CSS uses `--mw-*`: existing surface/text/accent/border/hover tokens plus `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Theme changes do not rewrite content styles. Responsive wrapping, explicit More/priority overflow and reduced motion are supported; the separate [text contextual toolbar](/en/contextual-toolbar) is implemented with staged local validation recorded in the [roadmap](/en/roadmap#verification-and-limits); table context controls remain future work; [contextual image properties](/en/contextual-images) are a separate explicit module.
+Density is `comfortable` or `compact`. Scoped CSS uses `--mw-*`: existing surface/text/accent/border/hover tokens plus `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Theme changes do not rewrite content styles. Responsive wrapping, explicit More/priority overflow and reduced motion are supported; the separate [text contextual toolbar](/en/contextual-toolbar) is implemented with staged local validation recorded in the [roadmap](/en/roadmap#verification-and-limits); table context controls have a separate [explicit module](/en/contextual-tables); [contextual image properties](/en/contextual-images) are a separate explicit module.
 
 Controllers expose `element`, `refresh()` and idempotent `destroy()`. Destroying UI leaves the editor and application-owned search state usable; editor destruction automatically disposes related UI. Detached controls are inert. Every subscription, form and menu has cleanup. Desktop browser tests do not certify mobile/IME or screen-reader behavior.
 
@@ -166,3 +166,7 @@ You can separately install [link actions at the caret](/en/contextual-links): a 
 
 
 Explicit [contextual image properties](/en/contextual-images) add summary/Properties/Remove for exact native IMG selection, using edit-only forms and existing image commands. Presets remain unchanged; image drag resize/crop and broader node selection are not implied.
+
+## Contextual table actions
+
+The explicit [contextual table toolbar](/en/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions and independent gzip budgets.

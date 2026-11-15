@@ -37,3 +37,6 @@ The explicit `/ui/contextual-link` installed-tarball smoke resolves JS/types/CSS
 
 
 The installed contextual-image smoke resolves the explicit JS/types/CSS, selects an actual IMG, opens edit-only properties, updates with Enter without inserting/uploading, asserts one controlled update and one Undo, and disposes its host. It extends existing adapter scenarios instead of reproducing the image matrix.
+
+
+The contextual-table installed-tarball smoke resolves the explicit UI JS/types/CSS plus `getTableSelection`. Each existing adapter scenario inserts a spanning two-row table, observes a native/explicit region, splits through the real contextual control, asserts rich content, one controlled update and one Undo, then removes the fixture with a separate Undo and disposes the owned host. Source aliases and duplicated full table-operation matrices are not substitutes for this integration check.

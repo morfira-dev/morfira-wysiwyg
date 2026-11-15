@@ -185,6 +185,34 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           await expect(content.locator('img')).toHaveCount(0);
           await expect(content).toHaveText('Initial text');
+          const beforeTableContext = await page.evaluate(() => window.morfiraConsumer.editor!.getHTML());
+          await page.evaluate(() => {
+            const editor = window.morfiraConsumer.editor!;
+            editor.setSelection(12);
+            editor.insertHTML('<table><tbody><tr><td rowspan="2"><p><strong>Merged</strong></p></td><td><p>B</p></td></tr><tr><td><p>C</p></td></tr></tbody></table>');
+          });
+          await content.locator('table').scrollIntoViewIfNeeded();
+          await page.evaluate(() => window.morfiraConsumer.showContextualTable!());
+          const tableContext = page.locator('[data-consumer-contextual-table]');
+          await expect(tableContext.locator('.mw-contextual-table')).toBeVisible();
+          assert.deepEqual(await page.evaluate(() => {
+            const state = window.morfiraConsumer.getTableSelection!()!;
+            return { rows: state.rows, columns: state.columns, cells: state.cells.length, split: state.canSplit };
+          }), { rows: 2, columns: 2, cells: 1, split: true }, `${adapter}: installed selection state resolves a rowspan grid`);
+          const beforeSplit = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
+          await tableContext.locator('[data-mw-table-action="split"]').click();
+          await expect(content.locator('td')).toHaveCount(4);
+          await expect(content.locator('strong')).toHaveText('Merged');
+          await expect(content.locator('td[rowspan]')).toHaveCount(0);
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeSplit.changes + 1, `${adapter}: contextual split emits one controlled update`);
+          await page.evaluate(() => {
+            window.morfiraConsumer.hideContextualTable!();
+            window.morfiraConsumer.editor!.undo();
+          });
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeSplit.html, `${adapter}: contextual split undoes once`);
+          await expect(tableContext).toHaveCount(0);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeTableContext, `${adapter}: table insertion undoes independently`);
           await page.evaluate(() => window.morfiraConsumer.forms!.search.setValues({ query: 'text', replacement: 'review' }));
           await search.getByRole('button', { name: 'Find', exact: true }).click();
           await expect(search.getByRole('status')).toHaveText('Match 1 of 1');

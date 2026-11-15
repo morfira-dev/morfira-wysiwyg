@@ -10,6 +10,7 @@ import type { FontCommands, FontState } from '@morfira-dev/wysiwyg/plugins/fonts
 import type { ChecklistCommands, ChecklistState } from '@morfira-dev/wysiwyg/plugins/checklists';
 import type { StatisticsCommands, StatisticsState } from '@morfira-dev/wysiwyg/plugins/statistics';
 import type { ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
+import type { ContextualTableUIController } from '@morfira-dev/wysiwyg/ui/contextual-table';
 import type { ContextualImageUIController } from '@morfira-dev/wysiwyg/ui/contextual-image';
 import type { ContextualLinkUIController } from '@morfira-dev/wysiwyg/ui/contextual-link';
 import type { ContextualToolbarController } from '@morfira-dev/wysiwyg/ui/contextual';
@@ -23,6 +24,7 @@ import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/ui/contextual.css';
 import '@morfira-dev/wysiwyg/ui/contextual-link.css';
 import '@morfira-dev/wysiwyg/ui/contextual-image.css';
+import '@morfira-dev/wysiwyg/ui/contextual-table.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 import '@morfira-dev/wysiwyg/plugins/checklists.css';
@@ -33,6 +35,10 @@ const ru = computed(() => lang.value === 'ru');
 const t = (russian: string, english: string) => ru.value ? russian : english;
 const editorLocale = ref(ru.value ? 'ru' : 'en');
 const toolbarOverflow = ref<'wrap' | 'more'>('wrap');
+const contextualTableEnabled = ref(true);
+const contextualTableHost = ref<HTMLElement>();
+let contextualTableUI: ContextualTableUIController | undefined;
+let mountContextualTableUI: (() => void) | undefined;
 const contextualImageEnabled = ref(true);
 const contextualImageHost = ref<HTMLElement>();
 let contextualImageUI: ContextualImageUIController | undefined;
@@ -118,6 +124,7 @@ const article = () => t(
   '<h2>A place for your ideas.</h2><p>A good editor lets you focus on <strong>the content</strong>. Select text, try formatting, or add a table.</p><p>A small core. The plugins you need. Your design.</p>',
 );
 const tableSample = () => `<h2>${t('Таблицы без лишнего', 'Tables, without the weight')}</h2><p>${t('Выделяйте ячейки, меняйте структуру и вставляйте диапазоны.', 'Select cells, change the structure, and paste ranges.')}</p><table style="width:100%"><thead><tr><th scope="col">${t('Раздел', 'Area')}</th><th scope="col">${t('Возможность', 'Feature')}</th><th scope="col">${t('Статус', 'Status')}</th></tr></thead><tbody><tr><td rowspan="2"><p>${t('Таблицы', 'Tables')}</p></td><td><p>${t('Объединение ячеек', 'Merged cells')}</p></td><td><p>✓</p></td></tr><tr><td><p>HTML / TSV</p></td><td><p>✓</p></td></tr></tbody></table><p><br></p>`;
+const contextualTableSample = () => `<p>${t('До таблицы', 'Before the table')}</p><table title="Contextual table sample"><tbody><tr><td rowspan="2"><p><strong>Alpha</strong></p></td><td><p><em>Beta</em></p></td><td><p>Outside A</p></td></tr><tr><td><p><u>Gamma</u></p></td><td><p>Outside B</p></td></tr><tr><td><p>Delta</p></td><td><p>Epsilon</p></td><td><p>Outside C</p></td></tr></tbody></table><p>${t('После таблицы', 'After the table')}</p>`;
 const listSample = () => t(
   '<h2>Списки, которые слушаются</h2><p>Enter делит пункт, пустой пункт завершает список. Tab и Shift+Tab меняют вложенность вне таблиц; Backspace в начале объединяет пункты.</p><ul><li>Подготовить материал<ol><li>Собрать ссылки</li><li><strong>Проверить факты</strong></li></ol></li><li>Написать черновик</li><li>Опубликовать</li></ul><p>Выдели несколько пунктов и попробуй нумерацию или кнопки отступа.</p>',
   '<h2>Lists that follow your lead</h2><p>Enter splits an item; an empty item exits the list. Tab and Shift+Tab change nesting outside tables; Backspace at the start joins items.</p><ul><li>Prepare the material<ol><li>Collect links</li><li><strong>Check the facts</strong></li></ol></li><li>Write a draft</li><li>Publish</li></ul><p>Select several items and try numbering or the indentation buttons.</p>',
@@ -148,7 +155,7 @@ const statisticsSample = () => `<h2>${t('Unicode и статистика', 'Unic
 const suggestionSample = () => `<h2>${t('Упоминания и slash-шаблоны', 'Mentions and slash snippets')}</h2><p>${t('Вводи @an для людей или /sig в начале абзаца для текстового шаблона. ArrowUp/Down выбирают, Enter вставляет, Escape закрывает.', 'Type @an for people or /sig at the beginning of a paragraph for a text snippet. ArrowUp/Down navigate, Enter inserts, Escape dismisses.')}</p><p>@an</p><p>/sig</p><p>/h2 · /bullet · /ordered · /quote · /code · /table</p><p>${t('Загруженные примеры буквальны. Кликни в конец токена и открой подсказки кнопкой справа, либо начни новый пример.', 'Loaded examples stay literal. Place the caret at a token end and use Open suggestions on the right, or start a new example.')}</p><p><br></p>`;
 const markdownSample = () => `<h2>Markdown shortcuts</h2><p>${t('Эти примеры загружены как обычный текст. Для преобразования введи маркеры сам и нажми Space; для code fence или разделителя доступен также Enter.', 'These examples are loaded as literal text. Type markers yourself and press Space to transform; code fences and horizontal rules also accept Enter.')}</p><p># ${t('Заголовок', 'Heading')}</p><p>- ${t('Пункт', 'Item')}</p><p>&gt; ${t('Цитата', 'Quote')}</p><p>**${t('полужирный', 'bold')}** · _${t('курсив', 'italic')}_ · ~~${t('зачёркнутый', 'strike')}~~ · \`${t('код', 'code')}\`</p><p>${t('Последняя пустая строка — для твоего ввода. Undo возвращает текст до клавиши-триггера.', 'Use the final empty line for typing. Undo restores text before the trigger key.')}</p><p><br></p>`;
 const searchSample = () => `<h2>${t('Поиск и замена', 'Find and replace')}</h2><p><strong>Mor</strong>fira ${t('помогает писать', 'helps you write')}. <em>Morfira</em> ${t('сохраняет стили', 'preserves styles')}.</p><p><a href="https://example.com">MORFIRA</a> · morfira</p><ul><li>Morfira ${t('в списке', 'in a list')}</li></ul><table><tbody><tr><td rowspan="2"><p>Morfira</p></td><td>A</td></tr><tr><td>B</td></tr></tbody></table><figure><img src="/logo.svg" alt="Morfira" width="64"><figcaption>Morfira</figcaption></figure><p>MorfiraPlus — ${t('совпадение только без целого слова', 'a match only with whole word disabled')}.</p>`;
-const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + checklistSample() + contextualImageSample() + contextualLinkSample() + contextualSample() + textDirectionSample() + listPropertySample() + fontSample() + horizontalRuleSample() + markdownSample() + suggestionSample() + searchSample() + tableSample();
+const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + checklistSample() + contextualTableSample() + contextualImageSample() + contextualLinkSample() + contextualSample() + textDirectionSample() + listPropertySample() + fontSample() + horizontalRuleSample() + markdownSample() + suggestionSample() + searchSample() + tableSample();
 const updateStatistics = (state: StatisticsState) => { statisticsState.value = state; count.value = state.document.characters; words.value = state.document.words; };
 const refresh = () => {
   if (!editor) return;
@@ -191,6 +198,29 @@ const runChecklist = (action: 'insert' | 'check' | 'uncheck' | 'toggle' | 'remov
   else if (action === 'uncheck') checklistAPI.setChecked(false);
   else checklistAPI[action]();
 });
+const updateContextualTableUI = () => { mountContextualTableUI?.(); };
+const selectContextualTable = (rectangle = false) => run((instance) => {
+  const cell = instance.surface.querySelector<HTMLTableCellElement>('[title="Contextual table sample"] td');
+  if (!cell || !commands) return;
+  cell.scrollIntoView({ block: 'center' });
+  const range = cell.ownerDocument.createRange();
+  range.selectNodeContents(cell.querySelector('p') ?? cell);
+  range.collapse(true);
+  const selection = cell.ownerDocument.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+  if (rectangle) commands.select({ row: 0, column: 0 }, { row: 1, column: 1 });
+  else commands.select({ row: 0, column: 0 });
+  contextualTableUI?.refresh();
+}, false);
+const loadContextualTableSample = () => {
+  run((instance) => {
+    sample.value = 'contextual-table';
+    instance.setHTML(contextualTableSample());
+    output.value = '';
+  });
+  selectContextualTable();
+};
 const updateContextualImageUI = () => { mountContextualImageUI?.(); };
 const selectContextualImageSample = () => run(() => { selectContextualImage?.(); }, false);
 const loadContextualImageSample = () => run((instance) => {
@@ -287,7 +317,7 @@ const startStructuralSlash = (command: string) => run((instance) => { const text
 const startSuggestions = (kind: 'mentions' | 'slash') => run((instance) => { const text = kind === 'mentions' ? '@an' : '/sig'; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); (kind === 'mentions' ? mentionAPI : slashAPI)?.open(); });
 const sampleFactories: Record<string, () => string> = {
   empty: () => '<p><br></p>', input: inputSample, paste: inputSample, 'list-selection': listSelectionSample, suggestions: suggestionSample,
-  'contextual-image': contextualImageSample, 'contextual-link': contextualLinkSample, contextual: contextualSample, 'text-direction': textDirectionSample, 'list-properties': listPropertySample, fonts: fontSample, checklists: checklistSample, 'horizontal-rule': horizontalRuleSample, markdown: markdownSample, statistics: statisticsSample, search: searchSample,
+  'contextual-table': contextualTableSample, 'contextual-image': contextualImageSample, 'contextual-link': contextualLinkSample, contextual: contextualSample, 'text-direction': textDirectionSample, 'list-properties': listPropertySample, fonts: fontSample, checklists: checklistSample, 'horizontal-rule': horizontalRuleSample, markdown: markdownSample, statistics: statisticsSample, search: searchSample,
   images: imageSample, styling: stylingSample, lists: listSample,
   tables: tableSample, article, showcase,
 };
@@ -581,6 +611,7 @@ onMounted(async () => {
     { createContextualToolbar },
     { createContextualLinkUI },
     { createContextualImageUI },
+    { createContextualTableUI },
     { imageCommands },
   ] = await Promise.all([
     import('@morfira-dev/wysiwyg'),
@@ -603,6 +634,7 @@ onMounted(async () => {
     import('@morfira-dev/wysiwyg/ui/contextual'),
     import('@morfira-dev/wysiwyg/ui/contextual-link'),
     import('@morfira-dev/wysiwyg/ui/contextual-image'),
+    import('@morfira-dev/wysiwyg/ui/contextual-table'),
     import('@morfira-dev/wysiwyg/plugins/images'),
   ]);
   if (cancelled) return;
@@ -674,6 +706,13 @@ onMounted(async () => {
       contextualLinkUI = createContextualLinkUI(contextualLinkHost.value!, editor!);
   };
   mountContextualLinkUI();
+  mountContextualTableUI = () => {
+    contextualTableUI?.destroy();
+    contextualTableUI = undefined;
+    if (props.full && contextualTableEnabled.value)
+      contextualTableUI = createContextualTableUI(contextualTableHost.value!, editor!);
+  };
+  mountContextualTableUI();
   mountContextualImageUI = () => {
     contextualImageUI?.destroy();
     contextualImageUI = undefined;
@@ -700,6 +739,7 @@ onBeforeUnmount(() => {
   unstatistics?.();
   unsubscribe?.();
   unselect?.();
+  contextualTableUI?.destroy();
   contextualImageUI?.destroy();
   contextualLinkUI?.destroy();
   contextualUI?.destroy();
@@ -716,12 +756,13 @@ onBeforeUnmount(() => {
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="paste">{{ t('Вставка между блоками', 'Paste between blocks') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="list-selection">{{ t('Выделение пунктов списка', 'List item selection') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="horizontal-rule">{{ t('Разделитель', 'Horizontal rule') }}</option><option value="contextual-image">{{ t('Свойства изображения', 'Image properties') }}</option><option value="contextual-link">{{ t('Действия со ссылкой', 'Link actions') }}</option><option value="contextual">{{ t('Контекстная панель', 'Contextual toolbar') }}</option><option value="text-direction">{{ t('Направление текста', 'Text direction') }}</option><option value="list-properties">{{ t('Свойства списка', 'List properties') }}</option><option value="fonts">{{ t('Шрифты и размер текста', 'Font family and size') }}</option><option value="checklists">{{ t('Чек-листы', 'Checklists') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="paste">{{ t('Вставка между блоками', 'Paste between blocks') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="list-selection">{{ t('Выделение пунктов списка', 'List item selection') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="horizontal-rule">{{ t('Разделитель', 'Horizontal rule') }}</option><option value="contextual-table">{{ t('Контекстная таблица', 'Contextual table') }}</option><option value="contextual-image">{{ t('Свойства изображения', 'Image properties') }}</option><option value="contextual-link">{{ t('Действия со ссылкой', 'Link actions') }}</option><option value="contextual">{{ t('Контекстная панель', 'Contextual toolbar') }}</option><option value="text-direction">{{ t('Направление текста', 'Text direction') }}</option><option value="list-properties">{{ t('Свойства списка', 'List properties') }}</option><option value="fonts">{{ t('Шрифты и размер текста', 'Font family and size') }}</option><option value="checklists">{{ t('Чек-листы', 'Checklists') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <label>{{ t('Язык редактора', 'Editor language') }}<select v-model="editorLocale" :disabled="!ready" :aria-label="t('Язык интерфейса редактора', 'Editor interface language')" @change="updateEditorLocale"><option value="ru">Русский</option><option value="en">English</option></select></label>
       <label>{{ t('Режим панели', 'Toolbar layout') }}<select v-model="toolbarOverflow" :disabled="!ready" :aria-label="t('Режим панели', 'Toolbar layout')" @change="updateToolbarOverflow"><option value="wrap">{{ t('Перенос строк', 'Wrap controls') }}</option><option value="more">{{ t('Скрывать в «Ещё»', 'Move into More') }}</option></select></label>
       <label v-if="full"><input v-model="contextualEnabled" type="checkbox" :disabled="!ready" :aria-label="t('Контекстная панель', 'Contextual toolbar')" @change="updateContextualUI">{{ t('Контекстная панель', 'Contextual toolbar') }}</label>
+      <label v-if="full"><input v-model="contextualTableEnabled" type="checkbox" :disabled="!ready" :aria-label="t('Контекстная панель таблиц', 'Contextual table toolbar')" @change="updateContextualTableUI">{{ t('Контекстная панель таблиц', 'Contextual table toolbar') }}</label>
       <label v-if="full"><input v-model="contextualImageEnabled" type="checkbox" :disabled="!ready" :aria-label="t('Контекстные свойства изображения', 'Contextual image properties')" @change="updateContextualImageUI">{{ t('Контекстные свойства изображения', 'Contextual image properties') }}</label>
       <label v-if="full"><input v-model="contextualLinkEnabled" type="checkbox" :disabled="!ready" :aria-label="t('Действия со ссылкой у курсора', 'Link actions at caret')" @change="updateContextualLinkUI">{{ t('Действия со ссылкой у курсора', 'Link actions at caret') }}</label>
       <button @click="dark = !dark">{{ t('Сменить тему', 'Toggle theme') }}</button>
@@ -749,7 +790,7 @@ onBeforeUnmount(() => {
         <p v-if="full" class="lab-hint">{{ t('Выделяй текст перед форматированием. Кликни в ячейку перед табличной командой. Ctrl/Cmd+Z — отмена; Ctrl/Cmd+B/I/U — формат; Enter — новый пункт, пустой — выход; Tab/Shift+Tab — вложенность. В таблице Tab — следующая ячейка.', 'Select text before formatting. Click a cell before a table command. Ctrl/Cmd+Z undoes; Ctrl/Cmd+B/I/U formats; Enter splits an item; an empty item exits. Tab/Shift+Tab nests lists; in tables Tab moves to the next cell.') }}</p>
       </div>
       <aside v-if="full" class="demo-inspector">
-        <details open><summary>{{ t('Таблицы', 'Tables') }}</summary><fieldset :disabled="!ready || readOnly">
+        <details open class="lab-tables"><summary>{{ t('Таблицы', 'Tables') }}</summary><fieldset :disabled="!ready || readOnly">
           <div class="lab-fields"><label>{{ t('Строки', 'Rows') }}<input v-model.number="rows" type="number" min="1" max="100"></label><label>{{ t('Столбцы', 'Columns') }}<input v-model.number="columns" type="number" min="1" max="100"></label></div>
           <button @click="insertTable">{{ t('Вставить таблицу', 'Insert table') }}</button>
           <div class="lab-button-grid"><button @click="tableRun((api) => api.rowAbove())">{{ t('Строка выше', 'Row above') }}</button><button @click="tableRun((api) => api.rowBelow())">{{ t('Строка ниже', 'Row below') }}</button><button @click="tableRun((api) => api.columnLeft())">{{ t('Столбец слева', 'Column left') }}</button><button @click="tableRun((api) => api.columnRight())">{{ t('Столбец справа', 'Column right') }}</button><button @click="tableRun((api) => api.merge())">{{ t('Объединить', 'Merge') }}</button><button @click="tableRun((api) => api.split())">{{ t('Разделить', 'Split') }}</button><button @click="tableRun((api) => api.deleteRow())">{{ t('Удалить строку', 'Delete row') }}</button><button @click="tableRun((api) => api.deleteColumn())">{{ t('Удалить столбец', 'Delete column') }}</button></div>
@@ -841,6 +882,13 @@ onBeforeUnmount(() => {
           <button @click="selectListBackspace">{{ t('Курсор перед Backspace', 'Caret before Backspace') }}</button>
           <p class="lab-hint">{{ t('Загрузка заменяет документ. Затем поставь курсор кнопкой и нажми настоящий Backspace: первый блок соединится с последним блоком предыдущего пункта, первый корневой пункт выйдет из списка, а первый вложенный поднимется на уровень. Последующие тела и ветки сохраняются; Undo возвращает исходный документ. Результаты проверок — в дорожной карте.', 'Loading replaces the document. Then use the caret button and press actual Backspace: the first body joins the previous item’s final body, the first root item exits the list, or the first nested item lifts one level. Later bodies and branches remain; Undo restores the original document. See the roadmap for verification results.') }}</p>
           <p v-if="listBackspaceScenario === 'nested-followed'" class="lab-hint">{{ t('В этом примере ранняя ветка остаётся у родителя. Под поднятым пунктом идут его собственная ветка, оставшиеся пункты исходного списка, затем две поздние ветки родителя в прежнем порядке. Типы списков и выравнивание сохраняются; ветки не склеиваются.', 'In this sample the earlier branch stays with the owner. The lifted item retains its own branch, then the source list’s remaining items, then the owner’s two later branches in their original order. List kinds and alignment remain; branches are not coalesced.') }}</p>
+        </fieldset></details>
+        <details class="lab-contextual-table"><summary>{{ t('Контекстная панель таблиц', 'Contextual table toolbar') }}</summary><fieldset :disabled="!ready || readOnly">
+          <button @click="loadContextualTableSample">{{ t('Загрузить пример контекстной таблицы', 'Load contextual table sample') }}</button>
+          <button @click="selectContextualTable(true)">{{ t('Выделить область 2 × 2', 'Select 2 × 2 region') }}</button>
+          <button @click="selectContextualTable()">{{ t('Вернуть курсор в первую ячейку', 'Return caret to first cell') }}</button>
+          <p class="lab-hint">{{ t('Alpha занимает две строки. Область 2 × 2 включает три реальные ячейки; объединение сохраняет Alpha, Beta и Gamma и их оформление. Разделение оставляет содержимое в исходной ячейке. Одна команда — одна отмена. Строки и столбцы ограничены 100; недоступные объединение/разделение отключены. Alt+F10 переводит фокус в панель, Escape возвращает курсор. Выделение текста внутри ячейки открывает текстовую панель; табличная доступна через Alt+F10. Ссылки и изображения используют свои панели.', 'Alpha spans two rows. The 2 × 2 region contains three real cells; merging preserves Alpha, Beta, Gamma and their formatting. Splitting keeps content in the origin cell. One command is one Undo. Rows and columns are bounded at 100; unavailable merge/split are disabled. Alt+F10 enters the toolbar; Escape returns the caret. Text selected inside one cell uses text formatting; Alt+F10 explicitly opens table actions. Links and images use their own panels.') }}</p>
+          <p class="lab-hint">{{ t('Переключатель создаёт и уничтожает только необязательный UI, сохраняя документ и историю. Пресеты его не подключают. Вложенные/неполные таблицы и таблицы с семантическими узлами не поддерживаются этим контекстным модулем. Свойства ячеек, caption и resize не входят в этот этап.', 'The switch creates/destroys only optional UI, preserving document and history. Presets do not install it. Nested/incomplete tables and tables containing semantic nodes are unsupported in this contextual module. Cell properties, captions and resize are outside this slice.') }}</p>
         </fieldset></details>
         <details class="lab-contextual-image"><summary>{{ t('Контекстные свойства изображения', 'Contextual image properties') }}</summary><fieldset :disabled="!ready">
           <button :disabled="readOnly" @click="loadContextualImageSample">{{ t('Загрузить пример свойств изображения', 'Load image properties sample') }}</button>
@@ -956,6 +1004,7 @@ onBeforeUnmount(() => {
     <pre v-else-if="output" class="demo-output">{{ output }}</pre>
     <div v-if="full" ref="contextualHost" class="demo-contextual-host"></div>
     <div v-if="full" ref="contextualLinkHost" class="demo-contextual-link-host"></div>
+    <div v-if="full" ref="contextualTableHost" class="demo-contextual-table-host"></div>
     <div v-if="full" ref="contextualImageHost" class="demo-contextual-image-host"></div>
   </section>
 </template>
