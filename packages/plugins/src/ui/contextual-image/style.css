@@ -1,0 +1,11 @@
+.mw-contextual-image { position: fixed; z-index: var(--mw-ui-contextual-z-index, 1000); width: max-content; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: var(--mw-ui-padding, 7px); color: var(--mw-text, #263043); background: var(--mw-toolbar-bg, #fafbfc); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-ui-radius, 12px); box-shadow: var(--mw-ui-contextual-shadow, 0 6px 24px #172b4d26); font: var(--mw-ui-font-size, 14px) var(--mw-font, system-ui, sans-serif); }
+.mw-contextual-image, .mw-contextual-image * { box-sizing: border-box; }
+.mw-contextual-image[hidden], .mw-contextual-image [hidden] { display: none; }
+.mw-contextual-image-preview { display: flex; align-items: center; flex-wrap: wrap; gap: var(--mw-ui-group-gap, 5px); min-width: 0; }
+.mw-contextual-image-summary { min-width: 0; max-width: min(240px, 100%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mw-contextual-image-dimensions { opacity: .8; }
+.mw-contextual-image-actions { display: flex; flex-wrap: wrap; gap: var(--mw-ui-control-gap, 3px); }
+.mw-contextual-image-actions button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--mw-ui-control-size, 36px); max-width: 100%; padding: 6px 9px; border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-ui-control-radius, 6px); color: inherit; background: var(--mw-surface, #fff); font: inherit; cursor: pointer; }
+.mw-contextual-image-actions :focus-visible { outline: 2px solid var(--mw-accent, #6658e8); outline-offset: 2px; }
+.mw-contextual-image-actions :disabled { opacity: .45; cursor: default; }
+@media (forced-colors: active) { .mw-contextual-image { border-color: CanvasText; } .mw-contextual-image-actions button { border-color: ButtonText; } }

@@ -119,7 +119,12 @@
       "types": "./dist/ui/contextual-link/index.d.ts",
       "import": "./dist/ui/contextual-link.js"
     },
-    "./ui/contextual-link.css": "./dist/ui/contextual-link.css"
+    "./ui/contextual-link.css": "./dist/ui/contextual-link.css",
+    "./ui/contextual-image": {
+      "types": "./dist/ui/contextual-image/index.d.ts",
+      "import": "./dist/ui/contextual-image.js"
+    },
+    "./ui/contextual-image.css": "./dist/ui/contextual-image.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.9.0"

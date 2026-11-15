@@ -1,0 +1,33 @@
+# Contextual image properties — U3d
+
+Status: accepted implementation contract. Actual validation belongs to verification-backlog.md.
+
+## Independent entry and eligibility
+
+Expose `/ui/contextual-image` and `/ui/contextual-image.css` through the public facade and optional plugins package. `createContextualImageUI(host, editor, options?)` returns readonly element, refresh() and idempotent destroy(). Export ContextualImageUIOptions/Controller/MessageKey and contextualImageUIMessages RU/EN. Options are label, onError and finite gap 0–32 CSS px (default 8). Require the images plugin before mounting. No preset/core import, dependency, implicit stylesheet, new persisted schema or node-view/atom model.
+
+An empty connected external HTML host belongs to the editor document, on an application-owned viewport overlay layer. Same transformed/filter/perspective/paint/clipping host limitations as other contextual UI. Required explicit styles: core, ui/forms.css and ui/contextual-image.css; scoped --mw-* variables.
+
+First slice accepts exactly one native node Range selecting an actual IMG, including a legacy inline image or an image in a simple single-image figure. Both range endpoints share its direct parent and differ by exactly one child. Require ordinary HTML ownership through editor root, no data-mw-node/foreign ancestors, no hidden/nonvisible content. Reject complex/multi-image figures, whole-figure ranges, caption carets, mixed text/image or multi-image ranges and foreign nodes. Thus text/link contextual UI does not compete for the same eligible range. Existing imageCommands.select(img) and the images plugin's native click selection provide entry, without inventing new keyboard image-selection semantics.
+
+Preview displays alt (localized fallback when empty) and stored dimensions as text; Properties and Remove use existing commands. Never clone IMG or create a thumbnail, fetch preview assets or change native focus/selection/history on automatic show/layout. Geometry reads the actual image node Range and existing clipped viewport helpers. Ineligible/empty geometry hides the panel.
+
+## Form and commands
+
+Properties restores the exact saved native node Range (including zero-text positions), rechecks actual IMG identity and API revision, then lazily mounts createImageForm with mode:'edit' and focuses its first field. Do not translate image Range through text offsets. Reuse existing update/remove/history. Metadata updates retain actual IMG and surrounding nodes; unchanged rich caption content is preserved, while an explicitly changed caption uses the existing literal-text contract. Blank dimensions remove them; integers 1–1000, src/alt/caption validation follow images.md. Adding a caption to an inline image uses existing figure promotion; simple-figure removal also removes its caption. Failed updates are atomic and keep the draft for correction.
+
+The preview hides while the form is open; retained hidden preview buttons are inert without closing/resetting an active draft. A fresh selection of another/recreated image closes the old form rather than retargeting its draft. API replacement synchronously invalidates sessions and destroys forms. Read-only may retain summary but disables changes and closes forms. Composition hides/suppresses actions. Locale refresh changes captions without resetting a draft. Actions recheck read-only/composition/identity after focus callbacks; external replacement/destruction during focus cannot mutate a new document or call stale APIs.
+
+## Dismissal and lifecycle
+
+Alt+F10 from this editable surface with eligible IMG selection opens/focuses Properties; other ranges/editors retain shortcuts. Read-only does not consume this shortcut because there is no enabled image action; an eligible native selection can still show the summary without moving focus. Escape closes/dismisses and restores a valid native node Range once, without falling back into a disposed editor. Outside pointer/focus departure dismiss without stealing focus. Same-range queued selectionchange/RAF/refresh cannot immediately resurrect a dismissed session; genuine new editor selection or Alt+F10 can reopen. Undo can replace nodes: invalidate old identity and require a new eligible selection, never reuse an old draft on recreated content.
+
+Reuse clipped above/below viewport placement, narrow wrapping/scrolling, window/scroll/VisualViewport resize, per-session ResizeObserver and one coalesced owned RAF. Geometry-only hiding can preserve observation for scrollback; dismissal/ineligibility/destruction cancels frames, observers/listeners/subscriptions and forms. No polling, document-wide traversal or global overlay service. Transient owned focus restoration must not dismiss valid context; real API/read-only/composition invalidations stay synchronous. Changed-input blur must not trigger reentrant DOM removal. Setup failure releases all owned resources and empties an accepted host; destroy is idempotent and leaves editor usable, refresh after destroy throws.
+
+## Acceptance and weight
+
+Representative Chromium/Firefox/WebKit definitions: native IMG show without focus/history/extra resources; rich simple figure update/blank dimensions/Undo/Remove; inline caption promotion and one table/list placement; invalid src/dimension atomicity and literal caption; lost native Selection/keyboard/exact Range; API/focus/disposal and stale drafts/Enter; read-only/IME; narrow viewport/clipping/scrollback; two instances/cleanup/malformed setup/SSR. Do not repeat the complete image/plugin matrix. Standalone edit-form regressions cover its additive contract under ui-forms.md.
+
+Add facade declarations, selective-import and real installed-tarball smoke. RU/EN homepage/playground public controls demonstrate metadata/history/removal and keyboard/read-only/draft cleanup, with honest unsupported whole-figure/caption-caret/resize/crop limitations. The demo remains local.
+
+Measure standalone entry and deduplicated standard-contextual-image-ready JS/CSS, shared image/form code once; keep 16000 gzip JS and 3000 raw extra CSS guards and existing standard 65000 gzip JS/20000 raw CSS limits. No guard increase without a product reason. Core stays unchanged; fonts/framework runtimes/maps/declarations excluded. Run check, docs build/tests and both installed-consumer profiles on fresh task-owned servers after builds; report actual results.

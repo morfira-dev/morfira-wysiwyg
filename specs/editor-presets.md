@@ -137,3 +137,6 @@ Standard and extended presets include the small `horizontalRule()` behavior by d
 
 
 The separately measured `standard-contextual-link-ready` selection adds only `createContextualLinkUI` and its explicit stylesheet to standard ready. Its shared link form is counted once; it keeps the same 65000 gzip JS / 20000 raw CSS guard. It does not combine every optional feature or install the UI implicitly. The standalone contextual-link closure is guarded at 16000 gzip JS bytes and its extra CSS at 3000 raw bytes.
+
+
+The independent `standard-contextual-image-ready` selection adds only createContextualImageUI and its explicit CSS to standard ready. Shared images/form code counts once, and edit-only mode remains a runtime option rather than a tree-shaking claim. Keep 65000 gzip JS / 20000 raw CSS; the standalone entry guard is 16000 gzip JS and its added stylesheet 3000 raw bytes. Other optional-UI combinations require their own measurements.

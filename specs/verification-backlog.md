@@ -1,4 +1,30 @@
-# Verification record — contextual links and editor
+# Verification record — contextual image properties and editor
+
+## Current image properties and edit-only form — 2026-11-15
+
+The independent `/ui/contextual-image` entry follows contextual-images.md and reuses ImageFormMode='edit' under ui-forms.md. It accepts exact native IMG selection (inline or simple figure), renders text-only alt/dimensions, provides Properties/Remove and preserves native zero-text node Ranges, identity, caption ownership and normal command history. No preset/core installation, thumbnail request, new dependency or schema/node-view model. Whole-figure/caption-caret selection and resize/crop remain excluded.
+
+| Check | Actual result |
+| --- | --- |
+| Affected image context/edit-mode/legacy image form/contextual links | **102/102 passed** across Chromium/Firefox/WebKit, 34.5s |
+| Bilingual built site | Complete **175/175 passed**, including both new live examples and existing image/form-guide scenarios |
+| Actual installed tarball consumers | **15/15 default + 3/3 Angular 22 passed**, all three engines; Angular 22 used Node 24.16.0 |
+| Builds/types/packages/selective imports/size guards | Passed; final static chain also ran as part of the complete check |
+| Complete `pnpm run check --workers=6` | Running on the final frozen runtime and a fresh Vite server; no global passing result claimed yet |
+
+Review fixed protected semantic/foreign caption ownership in the standalone edit form and the contextual figure gate, and Escape now cancels opening before its first RAF. Tests retain those risks. Initial focused failures also exposed fixture mistakes: text offset zero landed inside a caption for upload, repeat programmatic same-node selection did not constitute explicit reopening, and focus-time destruction needed to await actual focus. These fixtures now exercise native paragraph Range / explicit Alt+F10 / confirmed focus. The initial docs run passed 172/175; its three failures were ambiguous example naming and a stronger-than-contract read-only visibility expectation, corrected before the complete 175/175 rerun. No core SDK workaround, retry/skip or budget increase was added.
+
+Generated decimal bytes, shared chunks once per selected graph; framework runtimes, fonts, maps and declarations excluded:
+
+| Selection | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Contextual image entry (image/form closure) | 33595 | 11985 | 10634 | 1662 | 676 | 545 |
+| Standard ready | 203648 | 59523 | 50932 | 11504 | 3747 | 3038 |
+| Standard + contextual image ready | 215194 | 62791 | 53535 | 13166 | 4423 | 3583 |
+
+The standalone CSS column is only the new stylesheet; ready profiles include required core/table/forms/editor/image-context styles once. The edit-mode implementation is retained by the existing all-mode factory too; it is not a runtime-flag tree-shaking claim. Core remains **90311 / 27796 / 24380** raw/gzip/Brotli JS bytes, unchanged and above the 80000 raw soft target. The existing most-selected standard utility/text-context profile is **64618 gzip JS bytes**, still within 65000. New entry guards are 16000 gzip JS / 3000 raw CSS, selected standard remains 65000 gzip JS / 20000 raw CSS. No unmeasured all-optional-UI combination or universal browser/device/security certification is claimed. This work is local only, with no push/publication.
+
+## Previous caret-link stage
 
 ## Current caret-link UI — 2026-11-15
 

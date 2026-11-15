@@ -34,3 +34,6 @@ The explicit contextual UI smoke resolves its public JS/types/CSS from installed
 
 
 The explicit `/ui/contextual-link` installed-tarball smoke resolves JS/types/CSS, mounts at a real caret in a link, performs whole-link removal with one controlled update and Undo, then disposes without replacing ready UI defaults. Detailed URL/focus/race contracts stay in the three-engine feature suite.
+
+
+The installed contextual-image smoke resolves the explicit JS/types/CSS, selects an actual IMG, opens edit-only properties, updates with Enter without inserting/uploading, asserts one controlled update and one Undo, and disposes its host. It extends existing adapter scenarios instead of reproducing the image matrix.

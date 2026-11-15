@@ -39,3 +39,8 @@ Oversized input or escaping-heavy normalization throws RangeError before visible
 ## Acceptance
 
 Chromium, Firefox and WebKit: sanitizer/schema string serialization cause zero local route-aborted image requests; explicit insertable fragments retain valid image sources. Cover attribute aggregate overflow using a bounded 900 × 6,000-code-unit sample, escaping expansion, exact/small valid budget cases, UTF-16 accounting, node/depth and sparse-array defenses, and atomic setJSON/setHTML rejection with unchanged content/selection/history/notifications. Existing XSS/namespace/style/URL/security regressions remain required. No large/OOM allocations, external network or unsafe executable probe is needed.
+
+
+## Image properties UI
+
+The independently imported contextual-image UI follows contextual-images.md. Read only the actual selected IMG and ordinary simple-figure ownership; reject foreign/semantic/complex selections before commands. Summary and dimensions are text, without IMG clones or preview fetches. Edit-only form mode excludes and guards Insert/upload, binds commands to actual image identity, validates metadata through existing image commands, and rechecks replacement/read-only/composition/disposal after focus restoration. No transport callback starts from this UI; application-owned uploads are not canceled by its disposal. Explicit src updates can load the newly chosen validated image, as with existing image edits. Backend URL/file/storage authorization and CSP remain application responsibilities.

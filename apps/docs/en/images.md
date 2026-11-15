@@ -105,3 +105,6 @@ Schema v1 adds figure/figcaption: older readers may discard wrapper semantics du
 Inserting with an image selected in a simple figure replaces the whole figure and old caption. Figures are never nested. Insertion inside a complex imported figure is rejected.
 
 HTML/JSON img dimensions are mirrored into validated inline pixel styles so host CSS such as height: auto cannot ignore the configured height. Dimension attributes take precedence; commands update/remove both representations together.
+
+
+The optional [contextual image properties](/en/contextual-images) show on exact IMG node selection, reuse the public image form in `mode: 'edit'`, and apply existing metadata/remove commands with Undo. No second IMG thumbnail is created. Caption-carets, whole-figure ranges and complex figures are not eligible for that first UI slice; the underlying command support above is unchanged.

@@ -91,6 +91,20 @@ The form supports URL, alt, caption, dimensions, insertion, selected-image updat
 
 Custom UI can pass a separate signal to `imageCommands(editor).upload(file, { signal })`; its option type is `ImageUploadOptions`. This cancels that specific request. `cancelUpload()` remains the editor-wide current-upload cancellation command. [Image details](/en/images).
 
+### Edit-only image form
+
+```ts
+import { createImageForm } from '@morfira-dev/wysiwyg/ui/images';
+import type { ImageFormMode } from '@morfira-dev/wysiwyg/ui/images';
+
+const mode: ImageFormMode = 'edit';
+const editForm = createImageForm(formHost, editor, { mode });
+```
+
+`mode` is a constructor option: `all` retains the existing Insert/upload/cancel controls and Enter-to-insert; `edit` shows only fields, Update and Remove, and Enter updates the selected image. Recreate the form to change mode. Insert/upload/cancel controls are absent and their handler paths refuse edit mode; it neither starts transport nor cancels another owner's upload. Missing selection cannot become an insertion point.
+
+Edits recheck the same actual IMG after restoring the saved native Range. API replacement invalidates the old draft until a fresh editor selection; locale/field focus preserve drafts. Blank dimensions remove them, explicit dimensions are integers 1–1000, invalid metadata fails atomically. An unchanged caption is omitted from the patch so unrelated metadata edits preserve its rich children; an explicitly changed caption remains literal text. See [contextual image properties](/en/contextual-images) for the optional floating wrapper and exact IMG eligibility.
+
 ## Find and replace
 
 Containers: `<div id="search-editor"></div>` and `<div id="search-controls"></div>`.

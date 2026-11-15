@@ -7,7 +7,9 @@ export interface ImageFormValues {
   height: string;
   caption: string;
 }
+export type ImageFormMode = 'all' | 'edit';
 export interface ImageFormOptions {
+  mode?: ImageFormMode;
   initialValues?: Partial<ImageFormValues>;
   label?: string;
   onError?: (error: unknown) => void;

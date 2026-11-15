@@ -33,6 +33,9 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     if (checklistCSS.length > 2000) { console.error('checklists: exceeds 2000 byte CSS budget'); failed = true; }
     const css = await readFile(`${path}/suggestions.css`); report['suggestions.css'] = { raw: css.length, gzip: gzipSync(css).length, brotli: brotliCompressSync(css).length };
     const formCSS = await readFile(`${path}/ui/forms.css`); report['ui-forms.css'] = { raw: formCSS.length, gzip: gzipSync(formCSS).length, brotli: brotliCompressSync(formCSS).length };
+    const imageCSS = await readFile(`${path}/ui/contextual-image.css`);
+    report['ui-contextual-image.css'] = { raw: imageCSS.length, gzip: gzipSync(imageCSS).length, brotli: brotliCompressSync(imageCSS).length };
+    if (imageCSS.length > 3000) { console.error('contextual-image: exceeds 3000 raw CSS byte budget'); failed = true; }
     const linkCSS = await readFile(`${path}/ui/contextual-link.css`);
     report['ui-contextual-link.css'] = { raw: linkCSS.length, gzip: gzipSync(linkCSS).length, brotli: brotliCompressSync(linkCSS).length };
     if (linkCSS.length > 3000) { console.error('contextual-link: exceeds 3000 raw CSS byte budget'); failed = true; }
@@ -40,13 +43,14 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     report['ui-contextual.css'] = { raw: contextualCSS.length, gzip: gzipSync(contextualCSS).length, brotli: brotliCompressSync(contextualCSS).length };
     if (contextualCSS.length > 2000) { console.error('contextual: exceeds 2000 raw CSS byte budget'); failed = true; }
     const editorCSS = await readFile(`${path}/ui/editor.css`); report['ui-editor.css'] = { raw: editorCSS.length, gzip: gzipSync(editorCSS).length, brotli: brotliCompressSync(editorCSS).length };
-    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'images', 'search', 'statistics', 'markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
+    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'images', 'search', 'statistics', 'markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].gzip > 150_000) { console.error(`${entry}: exceeds 150000 byte gzip JS budget`); failed = true; }
       if (entry === 'checklists' && report[`${entry}.js`].raw > 8000) { console.error('checklists: exceeds 8000 byte JS budget'); failed = true; }
       if (entry === 'horizontal-rule' && report[`${entry}.js`].raw > 5000) { console.error('horizontal-rule: exceeds 5000 byte JS budget'); failed = true; }
       if (entry === 'fonts' && report[`${entry}.js`].gzip > 8000) { console.error('fonts: exceeds 8000 byte gzip JS budget'); failed = true; }
+      if (entry === 'ui/contextual-image' && report[`${entry}.js`].gzip > 16000) { console.error('contextual-image: exceeds 16000 gzip JS byte budget'); failed = true; }
       if (entry === 'ui/contextual-link' && report[`${entry}.js`].gzip > 16000) { console.error('contextual-link: exceeds 16000 gzip JS byte budget'); failed = true; }
       if (entry === 'ui/contextual' && report[`${entry}.js`].gzip > 16000) { console.error('contextual: exceeds 16000 gzip JS byte budget'); failed = true; }
       if (entry === 'text-direction' && report[`${entry}.js`].gzip > 8000) { console.error('text-direction: exceeds 8000 byte gzip JS budget'); failed = true; }
@@ -62,15 +66,16 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
 for (const profile of ['minimal', 'standard', 'extended']) {
   const preset = ({ minimal: 'createMinimalPreset', standard: 'createStandardPreset', extended: 'createExtendedPreset' } as Record<string, string>)[profile];
   const ui = ({ minimal: 'createEditorUI', standard: 'createStandardEditorUI', extended: 'createExtendedEditorUI' } as Record<string, string>)[profile];
-  for (const variant of ['headless', 'ready', ...(profile === 'standard' ? ['fonts-ready', 'list-properties-ready', 'fonts-list-properties-ready', 'text-direction-ready', 'fonts-list-properties-text-direction-ready', 'contextual-ready', 'contextual-link-ready', 'fonts-list-properties-text-direction-contextual-ready'] : [])]) {
+  for (const variant of ['headless', 'ready', ...(profile === 'standard' ? ['fonts-ready', 'list-properties-ready', 'fonts-list-properties-ready', 'text-direction-ready', 'fonts-list-properties-text-direction-ready', 'contextual-ready', 'contextual-link-ready', 'contextual-image-ready', 'fonts-list-properties-text-direction-contextual-ready'] : [])]) {
     const ready = variant !== 'headless';
     const withFonts = variant.includes('fonts');
     const withListProperties = variant.includes('list-properties');
     const withTextDirection = variant.includes('text-direction');
+    const withContextualImage = variant.includes('contextual-image');
     const withContextualLink = variant.includes('contextual-link');
-    const withContextual = variant.includes('contextual') && !withContextualLink;
+    const withContextual = variant.includes('contextual') && !withContextualLink && !withContextualImage;
     const name = `profile-${profile}-${variant}`;
-    const contents = `import { createEditor } from '@morfira-dev/wysiwyg'; import { ${preset} } from '@morfira-dev/wysiwyg/presets/${profile}'; ${ready ? `import { ${ui} } from '@morfira-dev/wysiwyg/ui/${profile === 'minimal' ? 'editor' : profile}';` : ''} ${withFonts ? "import { fonts } from '@morfira-dev/wysiwyg/plugins/fonts';" : ''} ${withListProperties ? "import { listProperties } from '@morfira-dev/wysiwyg/plugins/list-properties';" : ''} ${withTextDirection ? "import { textDirection } from '@morfira-dev/wysiwyg/plugins/text-direction';" : ''} ${withContextual ? "import { createContextualToolbar } from '@morfira-dev/wysiwyg/ui/contextual';" : ''} ${withContextualLink ? "import { createContextualLinkUI } from '@morfira-dev/wysiwyg/ui/contextual-link';" : ''} globalThis.__morfiraProfile = { createEditor, ${preset}${ready ? `, ${ui}` : ''}${withFonts ? ', fonts' : ''}${withListProperties ? ', listProperties' : ''}${withTextDirection ? ', textDirection' : ''}${withContextual ? ', createContextualToolbar' : ''}${withContextualLink ? ', createContextualLinkUI' : ''} };`;
+    const contents = `import { createEditor } from '@morfira-dev/wysiwyg'; import { ${preset} } from '@morfira-dev/wysiwyg/presets/${profile}'; ${ready ? `import { ${ui} } from '@morfira-dev/wysiwyg/ui/${profile === 'minimal' ? 'editor' : profile}';` : ''} ${withFonts ? "import { fonts } from '@morfira-dev/wysiwyg/plugins/fonts';" : ''} ${withListProperties ? "import { listProperties } from '@morfira-dev/wysiwyg/plugins/list-properties';" : ''} ${withTextDirection ? "import { textDirection } from '@morfira-dev/wysiwyg/plugins/text-direction';" : ''} ${withContextual ? "import { createContextualToolbar } from '@morfira-dev/wysiwyg/ui/contextual';" : ''} ${withContextualLink ? "import { createContextualLinkUI } from '@morfira-dev/wysiwyg/ui/contextual-link';" : ''} ${withContextualImage ? "import { createContextualImageUI } from '@morfira-dev/wysiwyg/ui/contextual-image';" : ''} globalThis.__morfiraProfile = { createEditor, ${preset}${ready ? `, ${ui}` : ''}${withFonts ? ', fonts' : ''}${withListProperties ? ', listProperties' : ''}${withTextDirection ? ', textDirection' : ''}${withContextual ? ', createContextualToolbar' : ''}${withContextualLink ? ', createContextualLinkUI' : ''}${withContextualImage ? ', createContextualImageUI' : ''} };`;
     const bundled = await build({
       stdin: { contents, resolveDir: process.cwd(), sourcefile: 'profile-consumer.ts', loader: 'ts' },
       bundle: true, treeShaking: true, minify: true, write: false, metafile: true,
@@ -85,6 +90,7 @@ for (const profile of ['minimal', 'standard', 'extended']) {
       '@morfira-dev/wysiwyg/style.css',
       ...(profile !== 'minimal' ? ['@morfira-dev/wysiwyg/plugins/tables.css'] : []),
       ...(ready ? ['@morfira-dev/wysiwyg/ui/editor.css'] : []),
+      ...(withContextualImage ? ['@morfira-dev/wysiwyg/ui/contextual-image.css'] : []),
       ...(withContextualLink ? ['@morfira-dev/wysiwyg/ui/contextual-link.css'] : []),
       ...(withContextual ? ['@morfira-dev/wysiwyg/ui/contextual.css'] : []),
       ...(ready && profile !== 'minimal' ? ['@morfira-dev/wysiwyg/ui/forms.css'] : []),

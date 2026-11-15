@@ -1,7 +1,7 @@
 import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { imageCommands } from '../../images/index.js';
-import type { ImageValue } from '../../images/types.js';
+import type { ImagePatch, ImageValue } from '../../images/types.js';
 import { createFormSelection } from '../shared/selection.js';
 import { imageFormMessages } from './messages.js';
 import type { ImageFormController, ImageFormField, ImageFormMessageKey, ImageFormOptions, ImageFormValues } from './types.js';
@@ -26,6 +26,8 @@ const selectedImage = (editor: Editor, range: Range | undefined): HTMLImageEleme
 
 export const createImageForm = (host: HTMLElement, editor: Editor, options: ImageFormOptions = {}): ImageFormController => {
   if (editor.surface.contains(host)) throw new Error('Mount image forms outside persisted editor content.');
+  const mode = options.mode === undefined ? 'all' : options.mode;
+  if (mode !== 'all' && mode !== 'edit') throw new TypeError('Image form mode must be all or edit.');
   const api = imageCommands(editor);
   const initial = checkedValues(options.initialValues ?? {});
   if (options.label !== undefined && typeof options.label !== 'string') throw new TypeError('Image form label must be a string.');
@@ -61,7 +63,8 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   update.type = 'button';
   const remove = document.createElement('button');
   remove.type = 'button';
-  actions.append(insert, update, remove);
+  if (mode === 'all') actions.append(insert);
+  actions.append(update, remove);
   const uploadLabel = document.createElement('label');
   const uploadText = document.createElement('span');
   const file = document.createElement('input');
@@ -74,25 +77,47 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   status.className = 'mw-form-status';
   status.setAttribute('role', 'status');
   status.setAttribute('aria-live', 'polite');
-  form.append(fieldset, actions, uploadLabel, cancel, status);
+  form.append(fieldset, actions);
+  if (mode === 'all') form.append(uploadLabel, cancel);
+  form.append(status);
 
   let disposed = false;
+  let composing = false;
+  let restoring = false;
+  let apiRevision = 0;
+  let editTarget: HTMLImageElement | undefined;
+  let inspectedCaption = '';
   let selected = false;
   let signature = '';
   let statusKey: ImageFormMessageKey | undefined;
   let upload: AbortController | undefined;
   const cleanups: (() => void)[] = [];
   const text = (key: ImageFormMessageKey) => localize(editor.getLocale(), key, imageFormMessages);
+  const ordinaryImage = (image: HTMLImageElement): boolean => {
+    if (!editor.surface.contains(image)) return false;
+    const figure = image.closest('figure');
+    if (figure && editor.surface.contains(figure)) {
+      for (const owned of figure.querySelectorAll('*')) {
+        if (owned.namespaceURI !== 'http://www.w3.org/1999/xhtml' || owned.hasAttribute('data-mw-node')) return false;
+      }
+    }
+    for (let node: Element | null = image; node; node = node.parentElement) {
+      if (node.namespaceURI !== 'http://www.w3.org/1999/xhtml') return false;
+      if (node !== editor.surface && node.hasAttribute('data-mw-node')) return false;
+      if (node === editor.surface) return true;
+    }
+    return false;
+  };
   const getValues = (): ImageFormValues => ({ src: inputs.src.value, alt: inputs.alt.value, width: inputs.width.value, height: inputs.height.value, caption: inputs.caption.value });
   const updateControls = () => {
     if (disposed) return;
-    const blocked = editor.isReadOnly();
+    const blocked = editor.isReadOnly() || (mode === 'edit' && composing);
     form.setAttribute('aria-busy', String(Boolean(upload)));
     fieldset.disabled = blocked;
-    insert.disabled = blocked || Boolean(upload);
+    insert.disabled = mode === 'edit' || blocked || Boolean(upload);
     update.disabled = blocked || !selected || Boolean(upload);
     remove.disabled = blocked || !selected || Boolean(upload);
-    file.disabled = blocked || Boolean(upload);
+    file.disabled = mode === 'edit' || blocked || Boolean(upload);
     cancel.disabled = !upload;
   };
   const renderLocale = () => {
@@ -122,39 +147,71 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     for (const field of fields) if (checked[field] !== undefined) inputs[field].value = checked[field]!;
   };
   const refresh = () => {
-    if (disposed) return;
+    if (disposed || restoring) return;
     selection.capture();
-    const image = selectedImage(editor, selection.peek());
+    let image = selectedImage(editor, selection.peek());
+    if (mode === 'edit' && image && !ordinaryImage(image)) image = undefined;
+    const focused = form.contains(document.activeElement);
+    if (mode === 'edit') {
+      if (focused && image !== editTarget) image = undefined;
+      else if (!focused && image !== editTarget) {
+        editTarget = image;
+        signature = '';
+      }
+    }
     selected = Boolean(image);
     const figure = image?.parentElement?.localName === 'figure' && image.parentElement.querySelectorAll('img').length === 1 ? image.parentElement : undefined;
     const next = figure?.outerHTML ?? image?.outerHTML ?? '';
     if (image && next !== signature && !form.contains(document.activeElement)) {
       setValues({ src: image.getAttribute('src') ?? '', alt: image.getAttribute('alt') ?? '', width: image.getAttribute('width') ?? '', height: image.getAttribute('height') ?? '', caption: figure?.querySelector('figcaption')?.textContent ?? '' });
       signature = next;
+      inspectedCaption = inputs.caption.value;
       setStatus(undefined);
     }
     if (!image) signature = '';
     updateControls();
   };
-  const value = (): ImageValue => {
-    const draft = getValues();
+  const value = (draft: ImageFormValues = getValues()): ImageValue => {
     return { src: draft.src, alt: draft.alt, caption: draft.caption, ...(draft.width !== '' ? { width: Number(draft.width) } : {}), ...(draft.height !== '' ? { height: Number(draft.height) } : {}) };
   };
   const act = (operation: 'insert' | 'update' | 'remove') => {
-    if (disposed || editor.isReadOnly() || upload) return;
-    if (!selection.restore()) {
+    if (disposed || editor.isReadOnly() || upload || (mode === 'edit' && (composing || operation === 'insert'))) return;
+    const target = mode === 'edit' ? editTarget : undefined;
+    const revision = apiRevision;
+    const draft = getValues();
+    if (mode === 'edit' && (!target || !ordinaryImage(target))) {
+      setStatus('ui.images.selection', true);
+      return;
+    }
+    let restored = false;
+    restoring = mode === 'edit';
+    try { restored = selection.restore(); }
+    finally { restoring = false; }
+    if (disposed) return;
+    if (!restored || editor.isReadOnly() || (mode === 'edit' && (composing || apiRevision !== revision
+      || editTarget !== target || !target || !ordinaryImage(target) || selectedImage(editor, selection.peek()) !== target))) {
       setStatus('ui.images.selection', true);
       return;
     }
     try {
       if (operation === 'insert') api.insert(value());
-      else if (operation === 'update') api.update({ ...value(), width: inputs.width.value === '' ? null : Number(inputs.width.value), height: inputs.height.value === '' ? null : Number(inputs.height.value) });
+      else if (operation === 'update') {
+        const currentDraft = mode === 'edit' ? draft : getValues();
+        const patch: ImagePatch = {
+          ...value(currentDraft),
+          width: currentDraft.width === '' ? null : Number(currentDraft.width),
+          height: currentDraft.height === '' ? null : Number(currentDraft.height),
+        };
+        if (mode === 'edit' && draft.caption === inspectedCaption) delete patch.caption;
+        api.update(patch);
+      }
       else api.remove();
+      if (disposed) return;
       selection.capture();
       setStatus(operation === 'insert' ? 'ui.images.uploaded' : operation === 'update' ? 'ui.images.saved' : 'ui.images.removed');
       refresh();
     }
-    catch (error) { report(error); }
+    catch (error) { if (!disposed) report(error); }
   };
   const insertImage = () => act('insert');
   const keyboard = (event: KeyboardEvent) => {
@@ -162,14 +219,14 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     if (!(event.target instanceof HTMLInputElement) || event.target.type === 'file') return;
     event.preventDefault();
     event.stopPropagation();
-    act('insert');
+    act(mode === 'edit' ? 'update' : 'insert');
   };
   const updateImage = () => act('update');
   const removeImage = () => act('remove');
   const cancelUpload = () => upload?.abort();
   const uploadFile = () => {
     const chosen = file.files?.[0];
-    if (disposed || editor.isReadOnly() || upload || !chosen) return;
+    if (mode === 'edit' || disposed || editor.isReadOnly() || upload || !chosen) return;
     if (!selection.restore()) {
       setStatus('ui.images.selection', true);
       file.value = '';
@@ -216,6 +273,9 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   cleanups.push(() => editor.surface.removeEventListener('click', refresh));
   cleanups.push(editor.subscribe((change) => {
     if (change.source === 'api') {
+      apiRevision++;
+      composing = false;
+      editTarget = undefined;
       selected = false;
       signature = '';
       setStatus(undefined);
@@ -224,12 +284,24 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   }));
   cleanups.push(editor.events.on('localechange', renderLocale));
   cleanups.push(editor.events.on('readonlychange', (readOnly) => {
+    composing = false;
     if (readOnly) upload?.abort();
     updateControls();
   }));
+  const compositionStart = () => { composing = true; updateControls(); };
+  const compositionEnd = () => { composing = false; updateControls(); };
+  if (mode === 'edit') {
+    editor.surface.addEventListener('compositionstart', compositionStart);
+    editor.surface.addEventListener('compositionend', compositionEnd);
+    cleanups.push(
+      () => editor.surface.removeEventListener('compositionstart', compositionStart),
+      () => editor.surface.removeEventListener('compositionend', compositionEnd),
+    );
+  }
   const destroy = () => {
     if (disposed) return;
     disposed = true;
+    editTarget = undefined;
     upload?.abort();
     upload = undefined;
     for (const cleanup of cleanups) cleanup();

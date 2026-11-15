@@ -68,6 +68,8 @@ Light DOM, свойства `value/readOnly/locale/translations/plugins`, соб
 
 Контекстные действия со ссылкой подключаются отдельно через `/ui/contextual-link` и `/ui/contextual-link.css` вместе с `/ui/forms.css`. `createContextualLinkUI(host, editor)` показывает предпросмотр и Open/Edit/Remove при курсоре внутри текстовой ссылки; редактирование использует существующую форму, форматирование и историю. Пустой overlay-host размещается вне содержимого редактора. Пресеты модуль автоматически не подключают. Контракт, безопасность URL и примеры: [RU](apps/docs/contextual-links.md) / [EN](apps/docs/en/contextual-links.md).
 
+Контекстные свойства изображения доступны отдельно через `/ui/contextual-image` и `/ui/contextual-image.css`. `createContextualImageUI(host, editor)` использует настоящее выделение одного IMG и открывает существующую форму в режиме `mode: 'edit'`: Enter обновляет, вставка и загрузка исключены. Default-режим самостоятельной формы остаётся `all`. Примеры и границы: [RU](apps/docs/contextual-images.md) / [EN](apps/docs/en/contextual-images.md).
+
 ## Структура
 
 - `packages/core`: типизированное дерево документа, HTML/JSON-валидация, Selection/Range, история, транзакции, API плагинов и необязательная панель.

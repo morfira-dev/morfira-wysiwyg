@@ -311,3 +311,6 @@ Optional [LTR/RTL text direction](/en/text-direction), through `/plugins/text-di
 The optional [contextual selection toolbar](/en/contextual-toolbar) uses the independent `/ui/contextual` entry. `getFormats(range?)` projects a remembered current Range without moving Selection/focus; omission retains existing behavior. Shell custom readers receive a cloned range as their second argument, while commands still validate the actual target.
 
 A caret inside a text link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open, the existing edit form and Undoable unlinking. Expanded selections remain the text toolbar’s scope; presets do not install this UI.
+
+
+Explicit [contextual image properties](/en/contextual-images) use `/ui/contextual-image` with the images plugin, an exact IMG node Range and existing update/remove history. The reused image form adds `mode?: ImageFormMode` (`all` by default, `edit` excludes Insert/upload and makes Enter update). Caption carets and whole-figure ranges are outside this first contextual slice.

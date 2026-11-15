@@ -3,6 +3,9 @@ import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg';
 import type { ConsumerProbe } from './types.js';
 import { createExtendedPreset } from '@morfira-dev/wysiwyg/presets/extended';
 import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
+import { createContextualImageUI } from '@morfira-dev/wysiwyg/ui/contextual-image';
+import { imageCommands } from '@morfira-dev/wysiwyg/plugins/images';
+import '@morfira-dev/wysiwyg/ui/contextual-image.css';
 import { createContextualLinkUI } from '@morfira-dev/wysiwyg/ui/contextual-link';
 import '@morfira-dev/wysiwyg/ui/contextual-link.css';
 import { createContextualToolbar } from '@morfira-dev/wysiwyg/ui/contextual';
@@ -109,6 +112,26 @@ export const ready = (editor: Editor) => {
   };
   probe.showContextualLink = showContextualLink;
   probe.hideContextualLink = hideContextualLink;
+  let contextualImage: ReturnType<typeof createContextualImageUI> | undefined;
+  let contextualImageHost: HTMLElement | undefined;
+  const hideContextualImage = () => {
+    contextualImage?.destroy();
+    contextualImageHost?.remove();
+    contextualImage = undefined;
+    contextualImageHost = undefined;
+    delete probe.contextualImage;
+  };
+  const showContextualImage = () => {
+    hideContextualImage();
+    contextualImageHost = document.createElement('div');
+    contextualImageHost.dataset.consumerContextualImage = '';
+    document.body.append(contextualImageHost);
+    imageCommands(editor).select(editor.surface.querySelector('img')!);
+    contextualImage = createContextualImageUI(contextualImageHost, editor, { label: 'Consumer contextual image' });
+    probe.contextualImage = contextualImage;
+  };
+  probe.showContextualImage = showContextualImage;
+  probe.hideContextualImage = hideContextualImage;
   let overflowUI: ReturnType<typeof createStandardEditorUI> | undefined;
   let overflowHost: HTMLElement | undefined;
   const hideOverflow = () => {
@@ -147,6 +170,9 @@ export const ready = (editor: Editor) => {
     hideOverflow();
     hideContextual();
     hideContextualLink();
+    hideContextualImage();
+    if (probe.showContextualImage === showContextualImage) delete probe.showContextualImage;
+    if (probe.hideContextualImage === hideContextualImage) delete probe.hideContextualImage;
     if (probe.showContextualLink === showContextualLink) delete probe.showContextualLink;
     if (probe.hideContextualLink === hideContextualLink) delete probe.hideContextualLink;
     if (probe.showContextual === showContextual) delete probe.showContextual;

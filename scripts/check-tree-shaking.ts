@@ -36,6 +36,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/presets/minimal', symbol: 'createMinimalPreset', feature: 'presets/minimal', allowed: ['presets/minimal', 'presets/shared'] },
   { entry: '@morfira-dev/wysiwyg/presets/standard', symbol: 'createStandardPreset', feature: 'presets/standard', allowed: ['presets/standard', 'presets/shared', ...standardFeatures] },
   { entry: '@morfira-dev/wysiwyg/presets/extended', symbol: 'createExtendedPreset', feature: 'presets/extended', allowed: ['presets/extended', 'presets/standard', 'presets/shared', ...standardFeatures, 'mentions', 'slash', 'suggestions-core'] },
+  { entry: '@morfira-dev/wysiwyg/ui/contextual-image', symbol: 'createContextualImageUI', feature: 'ui/contextual-image', allowed: ['ui/contextual-image', 'ui/contextual', 'ui/images', 'ui/shared', 'images'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual-link', symbol: 'createContextualLinkUI', feature: 'ui/contextual-link', allowed: ['ui/contextual-link', 'ui/contextual', 'ui/links', 'ui/shared'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual', symbol: 'createContextualToolbar', feature: 'ui/contextual', allowed: ['ui/contextual', 'ui/editor', 'ui/shared'] },
   { entry: '@morfira-dev/wysiwyg/ui/editor', symbol: 'createEditorUI', feature: 'ui/editor', allowed: ['ui/editor', 'ui/shared'] },

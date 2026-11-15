@@ -161,6 +161,27 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await images.getByRole('button', { name: 'Insert image', exact: true }).click();
           await expect(content.locator('img')).toHaveAttribute('src', '/consumer-image.svg');
           await expect(content.locator('img')).toHaveAttribute('alt', 'Packed image');
+          await content.locator('img').scrollIntoViewIfNeeded();
+          const beforeImageContext = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
+          await page.evaluate(() => window.morfiraConsumer.showContextualImage!());
+          const imageContext = page.locator('[data-consumer-contextual-image]');
+          await expect(imageContext.locator('.mw-contextual-image')).toBeVisible();
+          await imageContext.locator('[data-mw-image-action="edit"]').click();
+          await expect(imageContext.getByRole('button', { name: 'Insert image', exact: true })).toHaveCount(0);
+          await expect(imageContext.locator('input[type="file"]')).toHaveCount(0);
+          await imageContext.getByLabel('Alt', { exact: true }).fill('Contextual image');
+          await imageContext.getByLabel('Image width', { exact: true }).fill('48');
+          await imageContext.getByLabel('Image width', { exact: true }).press('Enter');
+          await expect(content.locator('img')).toHaveCount(1);
+          await expect(content.locator('img')).toHaveAttribute('alt', 'Contextual image');
+          await expect(content.locator('img')).toHaveAttribute('width', '48');
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeImageContext.changes + 1, `${adapter}: contextual image Enter updates once without insertion`);
+          await page.evaluate(() => {
+            window.morfiraConsumer.hideContextualImage!();
+            window.morfiraConsumer.editor!.undo();
+          });
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeImageContext.html, `${adapter}: installed image update undoes once`);
+          await expect(imageContext).toHaveCount(0);
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           await expect(content.locator('img')).toHaveCount(0);
           await expect(content).toHaveText('Initial text');

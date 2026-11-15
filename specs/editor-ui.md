@@ -1,6 +1,6 @@
 # Optional ready editor UI
 
-Status: U1 baseline shell, U2 standard controls/forms and U3a opt-in group-priority overflow are implemented locally with explicit public entries. Wrapping remains the compatible default; U3b contextual text formatting is implemented through a separate opt-in entry. The independent U3c caret-link UI follows `contextual-links.md`; image/table and expanded-range link contexts remain later U3 work. Existing toolbar/forms remain available under their current public contracts. Actual current verification is recorded in `verification-backlog.md`. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
+Status: U1 baseline shell, U2 standard controls/forms and U3a opt-in group-priority overflow are implemented locally with explicit public entries. Wrapping remains the compatible default; U3b contextual text formatting is implemented through a separate opt-in entry. The independent U3c caret-link UI follows `contextual-links.md`; whole-figure/caption-caret, table and expanded-range link contexts remain later U3 work. Existing toolbar/forms remain available under their current public contracts. Actual current verification is recorded in `verification-backlog.md`. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
 
 ## Outcome and boundaries
 
@@ -96,7 +96,7 @@ On close/destroy release every owned form/menu controller, listener, subscriptio
 
 ## Delivery and acceptance
 
-U1/P1, U2/P2, extended P3 and U3a opt-in overflow are implemented locally; U3b contextual text formatting is implemented with staged validation; the U3c caret-link UI follows `contextual-links.md`; image/table and expanded-range link contexts remain future work. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
+U1/P1, U2/P2, extended P3 and U3a opt-in overflow are implemented locally; U3b contextual text formatting is implemented with staged validation; the U3c caret-link UI follows `contextual-links.md`; whole-figure/caption-caret, table and expanded-range link contexts remain future work. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
 
 Required evidence for the implemented slice:
 
@@ -128,3 +128,6 @@ The implemented independent contextual text-formatting slice follows [contextual
 
 
 The next independently imported caret-link UI slice is specified in [contextual-links.md](contextual-links.md). It reuses the existing link form for whole-anchor metadata edits/unlink and adds explicit safe Open, without introducing a node-selection model. Image/table contexts and expanded-range link menus remain separate future work. Implementation and actual validation results must be reported separately.
+
+
+U3d image properties are independently specified in [contextual-images.md](contextual-images.md), using exact native IMG selection and the additive edit-only image form in ui-forms.md. Presets remain unchanged; whole-figure/caption-caret contexts and image resizing remain outside this slice. Report actual verification separately.
