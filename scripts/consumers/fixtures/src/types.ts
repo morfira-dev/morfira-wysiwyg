@@ -4,12 +4,14 @@ import type { ImageFormController } from '@morfira-dev/wysiwyg/ui/images';
 import type { StandardEditorUIController } from '@morfira-dev/wysiwyg/ui/standard';
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
 import type { FontCommands } from '@morfira-dev/wysiwyg/plugins/fonts';
+import type { ListPropertyCommands } from '@morfira-dev/wysiwyg/plugins/list-properties';
 
 export interface ConsumerProbe {
   editor?: Editor;
   changes: number;
   ui?: StandardEditorUIController;
   fonts?: FontCommands;
+  listProperties?: ListPropertyCommands;
   showOverflow?: () => void;
   hideOverflow?: () => void;
   insertNote?: (text: string) => boolean;

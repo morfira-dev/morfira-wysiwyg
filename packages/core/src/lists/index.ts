@@ -1,5 +1,6 @@
 export { inspectWrappedListInput, editWrappedListInput } from './wrapped-input.js';
 import { activeRange, placeCaret, preserveRange } from '../selection/index.js';
+import { normalizeListMarker } from '../document/list-marker.js';
 export { handlesListForwardDelete, editListForwardDelete } from './forward-delete.js';
 export { inspectListItem, listSelectionReplacement } from './selection-boundaries.js';
 export { prepareListSelectionPaste, replaceListSelection, replaceListSelectionWithFragment, handlesCollapsedListBlockPaste } from './replace-selection.js';
@@ -69,7 +70,9 @@ const depth = (root: HTMLElement, item: HTMLElement): number => {
     parent = parent.parentElement;
   } return result;
 };
-const compatible = (a: Element | null, b: Element): a is HTMLElement => !!a && a.localName === b.localName && isList(a) && a.getAttribute('style') === b.getAttribute('style');
+const numberedBoundary = (list: Element): boolean => list.localName === 'ol' && (list.hasAttribute('start') || list.hasAttribute('reversed'));
+const compatible = (a: Element | null, b: Element): a is HTMLElement => !!a && a.localName === b.localName && isList(a)
+  && !numberedBoundary(a) && !numberedBoundary(b) && a.getAttribute('style') === b.getAttribute('style');
 const joinLists = (root: HTMLElement): void => {
   for (const list of [...root.querySelectorAll<HTMLElement>('ul,ol')]) {
     if (!root.contains(list))
@@ -188,6 +191,11 @@ export const applyList = (root: HTMLElement, value: unknown): void => {
         const list = document.createElement(tag);
         if (block.parentElement!.hasAttribute('style'))
           list.setAttribute('style', block.parentElement!.getAttribute('style')!);
+        const marker = list.style.getPropertyValue('list-style-type');
+        if (marker && !normalizeListMarker(tag, marker)) {
+          list.style.removeProperty('list-style-type');
+          if (!list.style.length) list.removeAttribute('style');
+        }
         splitAround(block as HTMLLIElement, [list]);
         list.append(block);
       }

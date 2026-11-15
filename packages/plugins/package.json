@@ -101,6 +101,10 @@
     "./fonts": {
       "types": "./dist/fonts/index.d.ts",
       "import": "./dist/fonts.js"
+    },
+    "./list-properties": {
+      "types": "./dist/list-properties/index.d.ts",
+      "import": "./dist/list-properties.js"
     }
   },
   "peerDependencies": {

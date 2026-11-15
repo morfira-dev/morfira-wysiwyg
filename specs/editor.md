@@ -18,6 +18,8 @@ Status: implemented preview contract. Current browser, build, type and generated
 
 Ordered-list `start` is an additive optional attribute on the existing schema-v1 `ol` tag. Its validation and older-reader numbering-loss limits follow [document-attributes.md](document-attributes.md); preserving document version 1 does not promise lossless attribute support in older readers.
 
+The optional [list-properties](list-properties.md) slice adds native `ol.reversed`, bounded per-kind UL/OL marker styles and commands scoped to one existing container. Shared codec support persists those properties without the plugin. Existing structural editing keeps list attributes but does not automatically coalesce explicit-numbered OL containers or recalculate numbering offsets across split fragments; the bounded contract does not introduce li.value or a counter engine.
+
 Composition event ordering, interim edits, command guards and cancellation follow `specs/composition.md`. Ordinary paragraph/heading Enter and boundary deletion follow `specs/block-boundaries.md`. Noncollapsed typing/deletion across ordinary sibling leaves follows `specs/input-replacement.md`; unsupported structural and cross-container selections retain their existing input paths.
 
 HTML/API insertion and clipboard replacement across those ordinary sibling leaves follow `specs/paste-replacement.md`. Incoming data is prepared before the outer live edit; inline, ordinary multi-block and structural payload composition have distinct documented boundaries. This does not establish general structural source selection, nested-table support or Office paste fidelity.

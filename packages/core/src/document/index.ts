@@ -1,5 +1,6 @@
 import { safeURL } from './security.js';
 import { normalizeFontFamily } from './font-family.js';
+import { normalizeListMarker } from './list-marker.js';
 import { countText, countElement, maximumHTMLLength, maximumNodes, maximumDepth } from './budget.js';
 import type { DocumentAttributeResolver, DocumentBudget } from './internal-types.js';
 import type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
@@ -9,13 +10,18 @@ export const documentTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquot
 const tags = new Set<string>(documentTags);
 const omitted = new Set(['script', 'style', 'iframe', 'object', 'embed', 'svg', 'math', 'template', 'form', 'input', 'button', 'textarea', 'select', 'noscript', 'link', 'meta', 'base']);
 const aliases: Record<string, string> = { b: 'strong', i: 'em', strike: 's', div: 'p' };
-const safeStyle = (value: string): string => {
+const safeStyle = (tag: DocumentTag, value: string): string => {
   const result: string[] = [];
   for (const declaration of value.split(';')) {
     const separator = declaration.indexOf(':');
     if (separator < 0)
       continue;
     const property = declaration.slice(0, separator).trim().toLowerCase();
+    if (property === 'list-style-type') {
+      const marker = normalizeListMarker(tag, declaration.slice(separator + 1));
+      if (marker) result.push(`list-style-type: ${marker}`);
+      continue;
+    }
     if (property === 'font-family') {
       const family = normalizeFontFamily(declaration.slice(separator + 1).trim());
       if (family) result.push(`font-family: ${family}`);
@@ -51,10 +57,15 @@ const attributesFor = (tag: DocumentTag, input: Record<string, unknown>, source:
       else if (source === 'json') throw new TypeError('Ordered-list start must be a signed 32-bit decimal integer string on ol.');
       continue;
     }
+    if (key === 'reversed') {
+      if (tag === 'ol' && (source === 'html' || value === '')) output.reversed = '';
+      else if (source === 'json') throw new TypeError('Reversed must be an empty string on ol.');
+      continue;
+    }
     if (typeof value !== 'string' || value.length > 20000)
       continue;
     if (key === 'style') {
-      const clean = safeStyle(value);
+      const clean = safeStyle(tag, value);
       if (clean)
         output.style = clean;
     }

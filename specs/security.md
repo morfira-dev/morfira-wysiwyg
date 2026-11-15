@@ -10,6 +10,10 @@ HTML parsing uses an inert template. String serialization (`sanitizeHTML`, schem
 
 A pre-hardening isolated localhost route-abort probe confirmed unwanted image fetches from sanitizeHTML/documentHTML in Chromium, Firefox and WebKit, with parseHTML alone producing none. Evidence: /tmp/morfira-codec-network-probe.ts and /tmp/morfira-codec-network-probe.log. This was a resource-fetch side effect, not a demonstrated XSS exploit; the permanent security-codec regression covers the repaired property.
 
+## List property boundaries
+
+List properties follow `list-properties.md`: marker styles accept only the fixed, per-kind UL/OL enum, without URLs/functions/custom counters or list-style-image. OL reversed is HTML presence but canonical JSON empty-string only; explicit wrong-tag or malformed JSON values reject before live mutation. Commands validate payloads before eligibility, verify one ordinary list/cell owner and mutate only container attributes through existing guarded history. No resource request or executable markup is introduced.
+
 ## Font style boundaries
 
 Font-family support follows the bounded pure codec in `fonts.md`: at most eight names/256 characters, a strict simple-name/quote subset, and no escapes, functions, controls or declaration injection. Plugin configuration reuses that codec; command choices are a configured whitelist. Invalid API arguments cannot partially apply other formatting. Family/size are document styles, not permission to inject font-face resources or CSS rules. The plugin performs no font loading; applying an application-declared family can still cause the browser to fetch assets specified by the application's own CSS. Imported font-size keeps its existing safe-length grammar; the narrower command profile is not a silent import-policy change.

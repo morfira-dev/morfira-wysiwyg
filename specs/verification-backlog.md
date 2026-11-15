@@ -1,8 +1,40 @@
-# Verification record — fonts, optional UI and editor
+# Verification record — list properties, optional features and editor
 
-Status: the first optional fonts slice completed final verification: full check 3570/3570 (1190 cases × three engines, exit 0), documentation 165/165 and packed consumers 18/18 passed. Corrected focused tests passed 138/138 and both localized docs regressions passed. The bounded CSS/security/import contract remains explicit; completed U3a `e092011` and earlier results below remain historical baselines.
+Status: current list-properties runtime completed verification: full check 3591/3591 (1197 cases × three engines, exit 0), documentation 167/167, packed consumers 18/18 and corrected focused 153/153 passed. Final test-only conversion assertions and the adjacent type move passed 21/21 focused executions and repeated type checking; runtime is unchanged. Fonts `a092286` and earlier results below remain historical baselines.
 
-## Current optional-fonts verification — completed
+## Current optional list-properties verification — runtime verified
+
+The explicit `/plugins/list-properties` entry changes stored start/reversed/bounded-marker properties on one whole current UL/OL, using native selection and validated transactions. Presets and ready-toolbar built-ins remain unchanged. The actual container/item/branch nodes and selected range are preserved by property operations; read-only/composition and same-cell/semantic/malformed-source guards apply. Native reversed uses presence semantics, missing explicit start stays false, and older readers may discard new properties. Structural clones retain attributes without recalculating split offsets or continued counters; li.value/custom counters are unsupported. No runtime dependencies or plugin CSS were added.
+
+| Check | Current status |
+| --- | --- |
+| Package build and docs build | Passed, exit 0 |
+| TypeScript checking | Passed, zero errors |
+| Initial focused browser suite | **150/153 passed**. Three failures were fixture expectations for typing across the first item's nested branch, outside the existing list-selection replacement contract. Runtime unchanged; corrected assertions cover native backward-range Redo, reset-all and caret typing inside Alpha |
+| Corrected focused suite | **153/153 passed**, 46.4 seconds, across Chromium/Firefox/WebKit (`/tmp/morfira-list-properties-focused-final.log`) |
+| New localized docs smoke cases | **2/2 passed**, 11.4 seconds |
+| Documentation browser suite | **167/167 passed**, 1.4 minutes, exit 0 (`/tmp/morfira-list-properties-docs-full.log`) |
+| Default packed consumers | **15/15 passed**, exit 0: Vue, React, Svelte, Angular 21 and Web Component × three engines; explicit composed property commands produce one change/Undo |
+| Angular 22 packed consumers | **3/3 passed**, exit 0, using Node 24.16.0; total current packed consumers **18/18** |
+| Final full check | **3591/3591 passed**, **1197 cases × Chromium/Firefox/WebKit**, 14.1 minutes, **exit 0**, including the complete static pipeline (`/tmp/morfira-list-properties-full-check.log`) |
+| Final test-only strengthening | Existing OL↔UL conversion assertions and adjacent type declarations: **21/21 passed**, 13.1 seconds, plus repeated type checking with zero errors; runtime unchanged (`/tmp/morfira-list-properties-final-assertions.log`, `/tmp/morfira-list-properties-final-types.log`) |
+
+### Current list-properties generated sizes
+
+From current build-generated `size-report.json`: raw minified JS, gzip, Brotli and CSS separately, with shared chunks counted once per selected graph. Framework runtimes, source maps, declarations and application assets are excluded. These are bundle measurements, not input/performance evidence.
+
+| Entry / selected profile | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 89093 | 27458 | 24084 | 3293 | 1164 | 962 |
+| Optional list properties | 3429 | 1435 | 1252 | 0 | 0 | 0 |
+| Standard ready | 200618 | 58479 | 50017 | 11504 | 3747 | 3038 |
+| Standard + list properties ready | 203826 | 59617 | 50765 | 11504 | 3747 | 3038 |
+| Standard + fonts + list properties ready | 206695 | 60578 | 51433 | 11504 | 3747 | 3038 |
+| Extended ready | 221789 | 64664 | 55103 | 12700 | 4239 | 3414 |
+
+Core is **89093 / 27458 / 24084** raw/gzip/Brotli JS bytes: **+711 raw / +205 gzip** against fonts `a092286` (**88382 / 27253**), and **9093 raw bytes above** the soft 80000-byte optimization target. The optional entry is **3429 / 1435 / 1252**, within its 8000-byte gzip feature ceiling. Standard+list-properties is **59617 gzip**, leaving **5383** bytes within the retained 65000-byte standard guard; standard+fonts+list-properties is **60578 gzip**, leaving **4422**. Existing gzip JS/raw CSS/adapter/feature guards remain unchanged; CSS is unchanged and the plugin has no stylesheet of its own.
+
+## Historical optional-fonts baseline — `a092286`
 
 The explicit `/plugins/fonts` entry adds configured family/px-size commands, independent resets and actual/mixed CSS state. Preset defaults and ready-toolbar built-ins remain unchanged. Families use bounded safe syntax (eight names, 256 characters); configured sizes are integers 8–96 px. Existing safe import units remain supported, and the plugin loads no font files. Core codec/formatting reuse existing selection, typing/history and security boundaries.
 
@@ -16,7 +48,7 @@ The explicit `/plugins/fonts` entry adds configured family/px-size commands, ind
 | Documentation browser suite | Final **165/165 passed**, 5.3 minutes, **exit 0**. The corrected new localized cases also passed **2/2**, 5.0 seconds; initial **1/2** used a single-strong-wrapper expectation, corrected to joined text, actual typed-X computed styles and surrounding-text/link checks |
 | Packed consumers | Final **18/18 passed**, exit 0: 15 default-wrapper scenarios plus 3 Angular 22 scenarios, including composed font commands producing one change/one Undo |
 
-### Current fonts generated sizes
+### Historical fonts generated sizes — `a092286`
 
 From current build-generated `size-report.json`; minified JS/CSS, gzip and Brotli separately, shared chunks once per selected graph, framework runtimes/maps/declarations/application font assets excluded. Measurements are not input-latency or memory evidence.
 

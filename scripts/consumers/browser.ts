@@ -34,6 +34,28 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeFonts.changes + 1, `${adapter}: composed font commands emit one controlled update`);
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeFonts.html, `${adapter}: composed installed font commands undo once`);
+          await page.evaluate(() => {
+            const editor = window.morfiraConsumer.editor!;
+            editor.setSelection(0, 7);
+            editor.format('list', 'ordered');
+          });
+          const beforeListProperties = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
+          await page.evaluate(() => {
+            const { editor, listProperties } = window.morfiraConsumer;
+            editor!.transact(() => {
+              listProperties!.setStart(7);
+              listProperties!.setReversed(true);
+              listProperties!.setMarker('upper-roman');
+            });
+          });
+          await expect(content.locator('ol')).toHaveAttribute('start', '7');
+          await expect(content.locator('ol')).toHaveAttribute('reversed', '');
+          await expect(content.locator('ol')).toHaveCSS('list-style-type', 'upper-roman');
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeListProperties.changes + 1, `${adapter}: composed list properties emit one controlled update`);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeListProperties.html, `${adapter}: list properties undo once`);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeFonts.html, `${adapter}: list creation undo retains the original document`);
           const beforeOverflow = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), undo: window.morfiraConsumer.editor!.canUndo(), changes: window.morfiraConsumer.changes }));
           await page.evaluate(() => window.morfiraConsumer.showOverflow!());
           const overflowHost = page.locator('[data-consumer-overflow]');

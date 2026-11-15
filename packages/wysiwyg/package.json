@@ -123,6 +123,10 @@
     "./plugins/fonts": {
       "types": "./dist/plugins/fonts.d.ts",
       "import": "./dist/plugins/fonts.js"
+    },
+    "./plugins/list-properties": {
+      "types": "./dist/plugins/list-properties.d.ts",
+      "import": "./dist/plugins/list-properties.js"
     }
   },
   "dependencies": {

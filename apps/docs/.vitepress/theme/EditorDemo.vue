@@ -4,6 +4,7 @@ import { useData } from 'vitepress';
 import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
 import type { MentionOption, SlashOption, SuggestionController, SuggestionState, SuggestionOption, SuggestionQuery } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import type { MarkdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
+import type { ListMarker, ListPropertyCommands, ListPropertyState } from '@morfira-dev/wysiwyg/plugins/list-properties';
 import type { FontCommands, FontState } from '@morfira-dev/wysiwyg/plugins/fonts';
 import type { ChecklistCommands, ChecklistState } from '@morfira-dev/wysiwyg/plugins/checklists';
 import type { StatisticsCommands, StatisticsState } from '@morfira-dev/wysiwyg/plugins/statistics';
@@ -48,6 +49,13 @@ let checklistAPI: ChecklistCommands | undefined;
 const checklistStatus = computed(() => checklistState.value.active
   ? (checklistState.value.checked ? t('Выбранная задача выполнена.', 'The selected task is complete.') : t('Выбранная задача не выполнена.', 'The selected task is incomplete.'))
   : t('Выбери текст одного пункта или обычного абзаца.', 'Select text in one item or an ordinary paragraph.'));
+const listPropertyState = ref<ListPropertyState>({ disabled: true, kind: false, start: false, reversed: false, marker: false });
+let listPropertyAPI: ListPropertyCommands | undefined;
+const listStartChoice = ref(7);
+const listReversedChoice = ref(true);
+const listMarkerChoice = ref<ListMarker>('upper-roman');
+const orderedMarkers = ['decimal', 'lower-alpha', 'upper-alpha', 'lower-roman', 'upper-roman'];
+const bulletMarkers = ['disc', 'circle', 'square'];
 const fontFamilies = [
   { id: 'system', family: 'system-ui, sans-serif', ru: 'Системный', en: 'System' },
   { id: 'serif', family: 'Georgia, serif', ru: 'С засечками', en: 'Serif' },
@@ -106,6 +114,7 @@ const listSelectionSample = () => {
   return `<ul><li>${body('Alpha <strong>one</strong>', false)}</li><li>${body('<em>Beta</em> tail', true)}<ul><li>Nested branch</li></ul></li><li>Keep item</li></ul><p>Keep paragraph</p>`;
 };
 const imageSample = () => `<h2>${t('Изображения с подписью', 'Images with captions')}</h2><p>${t('Нажми на изображение и измени размеры, alt или подпись справа.', 'Click the image and edit dimensions, alt text or caption on the right.')}</p><figure><img src="/logo.svg" alt="Morfira" width="160" height="160"><figcaption>${t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption')}</figcaption></figure><p>${t('Здесь можно продолжить текст.', 'Continue writing here.')}</p>`;
+const listPropertySample = () => '<ol title="List properties sample" start="3" reversed="false"><li title="List property first">Alpha <strong>one</strong><ul title="List properties nested"><li>Nested branch</li></ul></li><li title="List property second"><em>Beta</em> tail</li></ol><p title="List properties after">Keep paragraph</p>';
 const fontSample = () => `<p title="Font sample">Alpha <strong>one</strong> <a href="https://example.com">linked</a> tail</p><h2 title="Font imported" style="font-family: Arial, sans-serif; font-size: 1.25em">${t('Импортированный шрифт и размер', 'Imported family and size')}</h2>`;
 const horizontalRuleSample = () => `<p title="Horizontal rule sample">Alpha <strong>one</strong> tail</p><h2>${t('Заголовок тоже можно разделить', 'A heading can split too')}</h2><p>${t('Соседние блоки сохраняются.', 'Neighboring blocks remain.')}</p>`;
 const checklistSample = () => `<h2>${t('Задачи без лишнего', 'Tasks without the weight')}</h2><ul title="Checklist sample"><li title="Checklist first" data-checklist-checked="false">${t('Написать', 'Write')} <strong>${t('идею', 'an idea')}</strong></li><li title="Checklist done" data-checklist-checked="true">${t('Сохранить результат', 'Save the result')}</li><li title="Checklist ordinary">${t('Обычный пункт того же списка', 'An ordinary item in the same list')}</li></ul><p title="Checklist outside">${t('Этот абзац можно превратить в задачу.', 'This paragraph can become a task.')}</p>`;
@@ -113,7 +122,7 @@ const statisticsSample = () => `<h2>${t('Unicode и статистика', 'Unic
 const suggestionSample = () => `<h2>${t('Упоминания и slash-шаблоны', 'Mentions and slash snippets')}</h2><p>${t('Вводи @an для людей или /sig в начале абзаца для текстового шаблона. ArrowUp/Down выбирают, Enter вставляет, Escape закрывает.', 'Type @an for people or /sig at the beginning of a paragraph for a text snippet. ArrowUp/Down navigate, Enter inserts, Escape dismisses.')}</p><p>@an</p><p>/sig</p><p>/h2 · /bullet · /ordered · /quote · /code · /table</p><p>${t('Загруженные примеры буквальны. Кликни в конец токена и открой подсказки кнопкой справа, либо начни новый пример.', 'Loaded examples stay literal. Place the caret at a token end and use Open suggestions on the right, or start a new example.')}</p><p><br></p>`;
 const markdownSample = () => `<h2>Markdown shortcuts</h2><p>${t('Эти примеры загружены как обычный текст. Для преобразования введи маркеры сам и нажми Space; для code fence или разделителя доступен также Enter.', 'These examples are loaded as literal text. Type markers yourself and press Space to transform; code fences and horizontal rules also accept Enter.')}</p><p># ${t('Заголовок', 'Heading')}</p><p>- ${t('Пункт', 'Item')}</p><p>&gt; ${t('Цитата', 'Quote')}</p><p>**${t('полужирный', 'bold')}** · _${t('курсив', 'italic')}_ · ~~${t('зачёркнутый', 'strike')}~~ · \`${t('код', 'code')}\`</p><p>${t('Последняя пустая строка — для твоего ввода. Undo возвращает текст до клавиши-триггера.', 'Use the final empty line for typing. Undo restores text before the trigger key.')}</p><p><br></p>`;
 const searchSample = () => `<h2>${t('Поиск и замена', 'Find and replace')}</h2><p><strong>Mor</strong>fira ${t('помогает писать', 'helps you write')}. <em>Morfira</em> ${t('сохраняет стили', 'preserves styles')}.</p><p><a href="https://example.com">MORFIRA</a> · morfira</p><ul><li>Morfira ${t('в списке', 'in a list')}</li></ul><table><tbody><tr><td rowspan="2"><p>Morfira</p></td><td>A</td></tr><tr><td>B</td></tr></tbody></table><figure><img src="/logo.svg" alt="Morfira" width="64"><figcaption>Morfira</figcaption></figure><p>MorfiraPlus — ${t('совпадение только без целого слова', 'a match only with whole word disabled')}.</p>`;
-const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + checklistSample() + fontSample() + horizontalRuleSample() + markdownSample() + suggestionSample() + searchSample() + tableSample();
+const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + checklistSample() + listPropertySample() + fontSample() + horizontalRuleSample() + markdownSample() + suggestionSample() + searchSample() + tableSample();
 const updateStatistics = (state: StatisticsState) => { statisticsState.value = state; count.value = state.document.characters; words.value = state.document.words; };
 const refresh = () => {
   if (!editor) return;
@@ -127,6 +136,7 @@ const refresh = () => {
   }
   if (checklistAPI) checklistState.value = checklistAPI.getState();
   if (fontAPI) fontState.value = fontAPI.getState();
+  if (listPropertyAPI) listPropertyState.value = listPropertyAPI.getState();
   const formats = editor.getFormats(); const mixed = formats.mixed as string[] | undefined;
   heading.value = mixed?.includes('header') ? 'mixed' : String(formats.header ?? 0);
   list.value = mixed?.includes('list') ? 'mixed' : String(formats.list || '');
@@ -153,6 +163,26 @@ const runChecklist = (action: 'insert' | 'check' | 'uncheck' | 'toggle' | 'remov
   if (action === 'check') checklistAPI.setChecked(true);
   else if (action === 'uncheck') checklistAPI.setChecked(false);
   else checklistAPI[action]();
+});
+const applyListStart = () => run(() => { listPropertyAPI?.setStart(listStartChoice.value); });
+const applyListReversed = () => run(() => { listPropertyAPI?.setReversed(listReversedChoice.value); });
+const applyListMarker = () => run(() => { listPropertyAPI?.setMarker(listMarkerChoice.value); });
+const resetListProperties = () => run((instance) => instance.transact(() => {
+  if (!listPropertyAPI) return;
+  if (listPropertyAPI.getState().kind === 'ordered') {
+    listPropertyAPI.setStart(false);
+    listPropertyAPI.setReversed(false);
+  }
+  listPropertyAPI.setMarker(false);
+}));
+const loadListPropertySample = () => run((instance) => {
+  sample.value = 'list-properties';
+  listReversedChoice.value = true;
+  instance.setHTML(listPropertySample());
+  const first = instance.surface.querySelector('[title="List property first"] strong')?.firstChild;
+  const last = instance.surface.querySelector('[title="List property second"] em')?.firstChild;
+  if (first && last) window.getSelection()?.setBaseAndExtent(last, 2, first, 1);
+  output.value = '';
 });
 const setFontFamily = (reset = false) => run(() => { fontAPI?.setFamily(reset ? false : fontFamilyChoice.value); });
 const setFontSize = (reset = false) => run(() => { fontAPI?.setSize(reset ? false : fontSizeChoice.value); });
@@ -192,7 +222,7 @@ const startStructuralSlash = (command: string) => run((instance) => { const text
 const startSuggestions = (kind: 'mentions' | 'slash') => run((instance) => { const text = kind === 'mentions' ? '@an' : '/sig'; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); (kind === 'mentions' ? mentionAPI : slashAPI)?.open(); });
 const sampleFactories: Record<string, () => string> = {
   empty: () => '<p><br></p>', input: inputSample, paste: inputSample, 'list-selection': listSelectionSample, suggestions: suggestionSample,
-  fonts: fontSample, checklists: checklistSample, 'horizontal-rule': horizontalRuleSample, markdown: markdownSample, statistics: statisticsSample, search: searchSample,
+  'list-properties': listPropertySample, fonts: fontSample, checklists: checklistSample, 'horizontal-rule': horizontalRuleSample, markdown: markdownSample, statistics: statisticsSample, search: searchSample,
   images: imageSample, styling: stylingSample, lists: listSample,
   tables: tableSample, article, showcase,
 };
@@ -472,6 +502,7 @@ onMounted(async () => {
     { markdownCommands },
     { checklists, checklistCommands },
     { fonts, fontCommands },
+    { listProperties, listPropertyCommands },
     { mentionCommands },
     { slashCommands, createSlashActions },
     { createLinkForm },
@@ -488,6 +519,7 @@ onMounted(async () => {
     import('@morfira-dev/wysiwyg/plugins/markdown'),
     import('@morfira-dev/wysiwyg/plugins/checklists'),
     import('@morfira-dev/wysiwyg/plugins/fonts'),
+    import('@morfira-dev/wysiwyg/plugins/list-properties'),
     import('@morfira-dev/wysiwyg/plugins/mentions'),
     import('@morfira-dev/wysiwyg/plugins/slash'),
     import('@morfira-dev/wysiwyg/ui/links'),
@@ -507,7 +539,7 @@ onMounted(async () => {
   };
   const preset = props.full ? createExtendedPreset({
     ...common,
-    plugins: [checklists(), fonts({
+    plugins: [checklists(), listProperties(), fonts({
       families: fontFamilies.map((option) => ({ id: option.id, label: t(option.ru, option.en), family: option.family })),
       sizes: fontSizes,
     })],
@@ -521,6 +553,7 @@ onMounted(async () => {
   if (props.full) {
     checklistAPI = checklistCommands(editor);
     fontAPI = fontCommands(editor);
+    listPropertyAPI = listPropertyCommands(editor);
     mentionAPI = mentionCommands(editor); slashAPI = slashCommands(editor);
     mentionState.value = mentionAPI.getState(); slashState.value = slashAPI.getState();
     unmention = mentionAPI.subscribe((state) => { mentionState.value = state; }); unslash = slashAPI.subscribe((state) => { slashState.value = state; });
@@ -576,7 +609,7 @@ onBeforeUnmount(() => {
     </header>
     <div class="demo-controls">
       <template v-if="full">
-        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="paste">{{ t('Вставка между блоками', 'Paste between blocks') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="list-selection">{{ t('Выделение пунктов списка', 'List item selection') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="horizontal-rule">{{ t('Разделитель', 'Horizontal rule') }}</option><option value="fonts">{{ t('Шрифты и размер текста', 'Font family and size') }}</option><option value="checklists">{{ t('Чек-листы', 'Checklists') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
+        <label>{{ t('Документ', 'Document') }}<select v-model="sample" :aria-label="t('Пример документа', 'Document sample')"><option value="showcase">{{ t('Все форматы', 'All formats') }}</option><option value="paste">{{ t('Вставка между блоками', 'Paste between blocks') }}</option><option value="input">{{ t('Границы блоков', 'Block boundaries') }}</option><option value="article">{{ t('Статья', 'Article') }}</option><option value="list-selection">{{ t('Выделение пунктов списка', 'List item selection') }}</option><option value="lists">{{ t('Списки и вложенность', 'Lists and nesting') }}</option><option value="horizontal-rule">{{ t('Разделитель', 'Horizontal rule') }}</option><option value="list-properties">{{ t('Свойства списка', 'List properties') }}</option><option value="fonts">{{ t('Шрифты и размер текста', 'Font family and size') }}</option><option value="checklists">{{ t('Чек-листы', 'Checklists') }}</option><option value="suggestions">{{ t('Упоминания и шаблоны', 'Mentions and snippets') }}</option><option value="markdown">Markdown shortcuts</option><option value="statistics">{{ t('Unicode и статистика', 'Unicode and statistics') }}</option><option value="search">{{ t('Поиск и замена', 'Find and replace') }}</option><option value="images">{{ t('Изображения', 'Images') }}</option><option value="styling">{{ t('Цвета и ссылки', 'Colors and links') }}</option><option value="tables">{{ t('Таблицы', 'Tables') }}</option><option value="empty">{{ t('Пустой', 'Empty') }}</option></select></label>
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <label>{{ t('Язык редактора', 'Editor language') }}<select v-model="editorLocale" :disabled="!ready" :aria-label="t('Язык интерфейса редактора', 'Editor interface language')" @change="updateEditorLocale"><option value="ru">Русский</option><option value="en">English</option></select></label>
@@ -698,6 +731,18 @@ onBeforeUnmount(() => {
           <button @click="selectListBackspace">{{ t('Курсор перед Backspace', 'Caret before Backspace') }}</button>
           <p class="lab-hint">{{ t('Загрузка заменяет документ. Затем поставь курсор кнопкой и нажми настоящий Backspace: первый блок соединится с последним блоком предыдущего пункта, первый корневой пункт выйдет из списка, а первый вложенный поднимется на уровень. Последующие тела и ветки сохраняются; Undo возвращает исходный документ. Результаты проверок — в дорожной карте.', 'Loading replaces the document. Then use the caret button and press actual Backspace: the first body joins the previous item’s final body, the first root item exits the list, or the first nested item lifts one level. Later bodies and branches remain; Undo restores the original document. See the roadmap for verification results.') }}</p>
           <p v-if="listBackspaceScenario === 'nested-followed'" class="lab-hint">{{ t('В этом примере ранняя ветка остаётся у родителя. Под поднятым пунктом идут его собственная ветка, оставшиеся пункты исходного списка, затем две поздние ветки родителя в прежнем порядке. Типы списков и выравнивание сохраняются; ветки не склеиваются.', 'In this sample the earlier branch stays with the owner. The lifted item retains its own branch, then the source list’s remaining items, then the owner’s two later branches in their original order. List kinds and alignment remain; branches are not coalesced.') }}</p>
+        </fieldset></details>
+        <details class="lab-list-properties"><summary>{{ t('Свойства списка', 'List properties') }}</summary><fieldset :disabled="!ready || readOnly">
+          <button @click="loadListPropertySample">{{ t('Загрузить свойства списка', 'Load list properties sample') }}</button>
+          <label>{{ t('Начальное число OL', 'OL starting number') }}<input v-model.number="listStartChoice" type="number" min="-2147483648" max="2147483647" step="1" :aria-label="t('Начальное число списка', 'List starting number')"></label>
+          <button @click="applyListStart">{{ t('Применить начало', 'Apply start') }}</button>
+          <label><input v-model="listReversedChoice" type="checkbox" :aria-label="t('Обратная нумерация', 'Reversed numbering')">{{ t('Обратная нумерация OL', 'Reversed OL numbering') }}</label>
+          <button @click="applyListReversed">{{ t('Применить направление нумерации', 'Apply numbering direction') }}</button>
+          <label>{{ t('Маркер', 'Marker') }}<select v-model="listMarkerChoice" :aria-label="t('Маркер списка', 'List marker')"><optgroup label="OL"><option v-for="marker in orderedMarkers" :key="marker" :value="marker">{{ marker }}</option></optgroup><optgroup label="UL"><option v-for="marker in bulletMarkers" :key="marker" :value="marker">{{ marker }}</option></optgroup></select></label>
+          <div class="lab-button-grid"><button @click="applyListMarker">{{ t('Применить маркер', 'Apply marker') }}</button><button @click="resetListProperties">{{ t('Сбросить свойства', 'Reset properties') }}</button></div>
+          <p role="status" aria-live="polite">{{ t('Тип', 'Kind') }}: {{ listPropertyState.kind || '—' }}; start: {{ listPropertyState.start === false ? t('Не задан', 'Not set') : listPropertyState.start }}; reversed: {{ listPropertyState.reversed }}; marker: {{ listPropertyState.marker || t('Не задан', 'Not set') }}.</p>
+          <p class="lab-hint">{{ t('Загрузка выбирает части двух пунктов обратным диапазоном. Свойства меняют весь текущий контейнер списка, не только выбранные пункты. Курсор во вложенном UL нацелит его отдельно: выбирай маркер того же типа. Начало и reversed относятся только к OL; сброс снимает явные свойства одной транзакцией. Значения полей — черновики, состояние ниже — сохранённые атрибуты, не вычисленная нумерация.', 'Loading sets a backward range across parts of two items. Properties affect the whole current list container, not only selected items. A caret in nested UL targets it separately: choose a marker of the matching kind. Start and reversed apply only to OL; reset removes explicit properties in one transaction. Fields are drafts; state reports stored attributes, not computed numbering.') }}</p>
+          <p class="lab-hint">{{ t('В примере reversed="false" означает true, потому что HTML учитывает наличие атрибута. Отсутствующий start — «Не задан», а не вычисленная единица. Структурные копии сохраняют свойства, но числовые смещения при разделении и продолжение нумерации между списками не пересчитываются. Плагин подключён явно только в полной демке.', 'In the sample reversed="false" means true because HTML tests attribute presence. Missing start is Not set, not a computed one. Structural clones retain properties, but splitting does not recalculate numeric offsets or continue counters across lists. The plugin is explicitly installed only in the full demo.') }}</p>
         </fieldset></details>
         <details class="lab-fonts"><summary>{{ t('Шрифты и размер текста', 'Font family and size') }}</summary><fieldset :disabled="!ready || readOnly">
           <button @click="loadFontSample">{{ t('Загрузить пример шрифтов', 'Load font sample') }}</button>

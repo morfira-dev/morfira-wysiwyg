@@ -10,6 +10,7 @@ import { createImageForm } from '@morfira-dev/wysiwyg/ui/images';
 import { createSearchForm } from '@morfira-dev/wysiwyg/ui/search';
 import { checklists } from '@morfira-dev/wysiwyg/plugins/checklists';
 import { fonts, fontCommands } from '@morfira-dev/wysiwyg/plugins/fonts';
+import { listProperties, listPropertyCommands } from '@morfira-dev/wysiwyg/plugins/list-properties';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
@@ -44,7 +45,7 @@ const sdkPlugin: EditorPlugin = {
   }),
 };
 export const plugins: EditorPlugin[] = createExtendedPreset({
-  plugins: [sdkPlugin, checklists(), fonts()],
+  plugins: [sdkPlugin, checklists(), fonts(), listProperties()],
   mentions: { provide: () => [{ id: 'anna', label: 'Anna' }], debounceMs: 0 },
   slash: {
     provide: () => [{ id: 'heading', label: 'Heading 2', action: 'heading2' }],
@@ -56,6 +57,8 @@ export const ready = (editor: Editor) => {
   probe.editor = editor;
   const fontAPI = fontCommands(editor);
   probe.fonts = fontAPI;
+  const listAPI = listPropertyCommands(editor);
+  probe.listProperties = listAPI;
   const uiHost = document.createElement('div');
   uiHost.dataset.consumerReadyUi = '';
   document.body.append(uiHost);
@@ -107,6 +110,7 @@ export const ready = (editor: Editor) => {
     uiHost.remove();
     if (probe.ui === ui) delete probe.ui;
     if (probe.fonts === fontAPI) delete probe.fonts;
+    if (probe.listProperties === listAPI) delete probe.listProperties;
     if (probe.forms === forms) delete probe.forms;
     if (probe.insertNote === insertNote) delete probe.insertNote;
   });
