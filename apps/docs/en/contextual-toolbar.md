@@ -56,3 +56,5 @@ const contextual = createContextualToolbar(overlayHost, editor, {
 ```
 
 These are trusted synchronous side-effect-free callbacks. Other native-selection-only APIs are not automatically projected. A snapshot does not authorize execution: UI restores a valid range and the command checks the actual target. Labels/errors render as plain text. Actual verification is recorded in the [roadmap](/en/roadmap#verification-and-limits).
+
+A caret inside a text link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open, the existing edit form and Undoable unlinking. Expanded selections remain the text toolbar’s scope; presets do not install this UI.

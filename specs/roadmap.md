@@ -60,3 +60,6 @@ P4 guards are active in `scripts/size.ts` for the measured standard/extended clo
 ## Delivery limits
 
 Current tests do not certify arbitrary Office documents, every mobile/IME input path, accessibility conformance, memory-leak freedom or production readiness. New public API/document changes require explicit compatibility notes and migration decisions. Publication, deployment and Git writes remain separate user-authorized actions; the documentation site remains local-only.
+
+
+The next independently imported caret-link UI slice is specified in [contextual-links.md](contextual-links.md). It reuses the existing link form for whole-anchor metadata edits/unlink and adds explicit safe Open, without introducing a node-selection model. Image/table contexts and expanded-range link menus remain separate future work. Implementation and actual validation results must be reported separately.

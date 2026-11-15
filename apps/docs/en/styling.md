@@ -37,3 +37,5 @@ Allowed URLs use http/https/mailto/tel or relative references. Unsafe URLs and i
 The [homepage](/en/#editor) and [playground](/en/playground) include a “Colors and links” sample, text/highlight controls, link title and new-tab options. Form focus preserves the editor selection. Reset buttons affect inline document colors; theme CSS variables are controlled separately.
 
 API behavior change: an invalid link-command URL could previously be ignored. Now handle the exception, for example in the form’s try/catch. HTML/JSON imports still sanitize unsupported attributes.
+
+You can separately install [link actions at the caret](/en/contextual-links): a validated address preview, Open/Edit/Remove and the existing form. This independent `/ui/contextual-link` changes neither presets nor ready toolbar; image/table contexts remain outside this first slice.

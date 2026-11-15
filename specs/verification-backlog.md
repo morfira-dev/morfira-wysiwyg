@@ -1,6 +1,33 @@
-# Verification record — contextual text UI, optional features and editor
+# Verification record — contextual links and editor
 
-Status: contextual text UI is implemented with completed staged local validation. Full check 3639/3639 passed before the final narrow constructor/remount correction; after that context-only fix, the static chain, 156/156 affected browser executions, docs 171/171 and packed consumers 18/18 passed. This is not a single full-suite pass on the final build. Direction `e77e99d` and earlier results below remain historical evidence. CI optimization is separately committed locally as `b5698cd`; no new push or GitHub runner timing is claimed.
+## Current caret-link UI — 2026-11-15
+
+The independent `/ui/contextual-link` module implements `contextual-links.md`: caret-only URL preview, explicit safe native Open, existing link-form editing and whole-anchor removal, exact caret/history, localized controls, clipped viewport placement and per-instance cleanup. Presets/core do not install it implicitly. Expanded-range link menus and image/table contexts remain future work.
+
+| Final local check | Actual result |
+| --- | --- |
+| Affected contextual links/text toolbar/link form | **78/78 passed**, Chromium/Firefox/WebKit, 24.6s |
+| RU/EN site from built artifacts | `docs:build:site` passed; complete docs suite **173/173 passed** |
+| Actual installed tarball consumers | **15/15 default + 3/3 Angular 22 passed**, all three engines; Angular 22 used Node 24.16.0 |
+| Package/type/import/size validation | Final `check:static` chain passed before browser executions; subsequent builds passed after the focus fixes |
+| SDK/Web Component fresh-server diagnostic | **57/57 passed** after stopping the task-owned server that had survived artifact rebuilds |
+| Complete final `pnpm run check` | Running on a fresh server; no complete final-suite result is claimed yet |
+
+Initial focused runs exposed real new-UI bugs in transient focus restoration, native Open focus transfer, and changed-form blur/change reentrancy. These were corrected with retained regressions. A later focused timeout was an outside fixture field covered by the floating form; the field now occupies a genuinely clickable separate layer without forced clicks. The final affected run passed. An initial complete run was interrupted after unrelated SDK token-instance errors: a reused Vite server had retained HMR-versioned core module URLs alongside plain dynamic imports. A fresh server passed all 57 SDK/Web Component cases; no core behavior was changed. Never report the interrupted run as a passing global check.
+
+Generated sizes on the final runtime, decimal bytes, shared JS counted once per selected graph:
+
+| Selection | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Contextual-link entry, including reused form | 21061 | 8006 | 7079 | 1683 | 678 | 548 |
+| Standard ready | 202212 | 59004 | 50436 | 11504 | 3747 | 3038 |
+| Standard + contextual-link ready | 214004 | 62594 | 53311 | 13187 | 4425 | 3586 |
+
+The standalone CSS column is only the new stylesheet; the selected ready graph includes core/table/forms/editor/new UI CSS once. The new module contributes **3590 gzip JS bytes** over standard ready in the deduplicated profile. Core remains **90311 / 27796 / 24380** raw/gzip/Brotli JS bytes, unchanged and still above its 80000-byte soft raw target. Existing guards are unchanged; the new entry meets 16000 gzip JS / 3000 raw CSS guards and its standard profile meets 65000 gzip JS / 20000 raw CSS. Framework runtimes, fonts, maps and declarations remain excluded. These results do not certify all accessibility/device/Office inputs or every optional-module combination. Feature work is local only; the earlier CI measurement push succeeded separately as recorded in continuous-integration.md.
+
+## Previous contextual text UI stage
+
+Status: contextual text UI is implemented with completed staged local validation. Full check 3639/3639 passed before the final narrow constructor/remount correction; after that context-only fix, the static chain, 156/156 affected browser executions, docs 171/171 and packed consumers 18/18 passed. This is not a single full-suite pass on the final build. Direction `e77e99d` and earlier results below remain historical evidence. The later authorized CI measurement run 43740723004 succeeded: 5m08s required gate / 7m35s including publication; see continuous-integration.md. Subsequent feature work remains local only.
 
 ## Current contextual text-toolbar verification — completed staged validation
 

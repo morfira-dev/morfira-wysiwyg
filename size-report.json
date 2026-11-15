@@ -49,6 +49,11 @@
     "gzip": 599,
     "brotli": 488
   },
+  "ui-contextual-link.css": {
+    "raw": 1683,
+    "gzip": 678,
+    "brotli": 548
+  },
   "ui-contextual.css": {
     "raw": 470,
     "gzip": 272,
@@ -90,9 +95,14 @@
     "brotli": 38003
   },
   "ui/contextual.js": {
-    "raw": 30685,
-    "gzip": 11207,
-    "brotli": 9876
+    "raw": 30839,
+    "gzip": 11491,
+    "brotli": 10093
+  },
+  "ui/contextual-link.js": {
+    "raw": 21061,
+    "gzip": 8006,
+    "brotli": 7079
   },
   "images.js": {
     "raw": 8501,
@@ -290,19 +300,29 @@
     "brotli": 3038
   },
   "profile-standard-contextual-ready.js": {
-    "raw": 210339,
-    "gzip": 61595,
-    "brotli": 52452
+    "raw": 210343,
+    "gzip": 61603,
+    "brotli": 52436
   },
   "profile-standard-contextual-ready.css": {
     "raw": 11974,
     "gzip": 4019,
     "brotli": 3260
   },
+  "profile-standard-contextual-link-ready.js": {
+    "raw": 214004,
+    "gzip": 62594,
+    "brotli": 53311
+  },
+  "profile-standard-contextual-link-ready.css": {
+    "raw": 13187,
+    "gzip": 4425,
+    "brotli": 3586
+  },
   "profile-standard-fonts-list-properties-text-direction-contextual-ready.js": {
-    "raw": 218421,
-    "gzip": 64143,
-    "brotli": 54339
+    "raw": 218425,
+    "gzip": 64133,
+    "brotli": 54315
   },
   "profile-standard-fonts-list-properties-text-direction-contextual-ready.css": {
     "raw": 11974,

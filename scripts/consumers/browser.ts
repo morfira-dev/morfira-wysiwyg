@@ -84,6 +84,29 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeContextual.html, `${adapter}: contextual formatting undoes once`);
           await page.evaluate(() => window.morfiraConsumer.hideContextual!());
           await expect(contextual).toHaveCount(0);
+          await page.evaluate(() => {
+            const editor = window.morfiraConsumer.editor!;
+            editor.setSelection(0, 7);
+            editor.format('link', 'https://example.com/consumer');
+            editor.setSelection(2);
+            window.morfiraConsumer.showContextualLink!();
+            window.morfiraConsumer.contextualLink!.refresh();
+          });
+          const linkContext = page.locator('[data-consumer-contextual-link]');
+          await expect(linkContext.locator('.mw-contextual-link')).toBeVisible();
+          await expect(linkContext.locator('[data-mw-link-action="open"]')).toHaveAttribute('href', 'https://example.com/consumer');
+          const linked = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
+          await linkContext.locator('[data-mw-link-action="remove"]').click();
+          await expect(content.locator('a')).toHaveCount(0);
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), linked.changes + 1, `${adapter}: installed contextual unlink emits one update`);
+          await page.evaluate(() => {
+            window.morfiraConsumer.editor!.undo();
+            window.morfiraConsumer.hideContextualLink!();
+          });
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), linked.html, `${adapter}: installed contextual unlink undoes once`);
+          await expect(linkContext).toHaveCount(0);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeContextual.html, `${adapter}: link creation undoes independently`);
           const beforeOverflow = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), undo: window.morfiraConsumer.editor!.canUndo(), changes: window.morfiraConsumer.changes }));
           await page.evaluate(() => window.morfiraConsumer.showOverflow!());
           const overflowHost = page.locator('[data-consumer-overflow]');

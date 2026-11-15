@@ -167,3 +167,5 @@ editor.setLocale('en', {
 CSS ограничен `.mw-form`. Он использует общие `--mw-text`, `--mw-muted`, `--mw-surface`, `--mw-border`, `--mw-accent` и необязательные `--mw-form-font-size`, `--mw-form-gap`, `--mw-form-padding`, `--mw-form-radius`, `--mw-form-control-radius`, `--mw-form-error`. На главной и в [playground](/playground) показаны эти же публичные модули; дополнительный demo-engine подключать не требуется.
 
 Для форматирования непустого выделения доступен отдельный [контекстный UI](/contextual-toolbar), а не новый behavior-плагин: `/ui/contextual` и явный `/ui/contextual.css`. Он не устанавливается пресетами и использует существующие команды/историю.
+
+Для курсора внутри текстовой ссылки есть отдельные [контекстные действия ссылки](/contextual-links): `/ui/contextual-link`, явные core/forms/contextual-link CSS, безопасное открытие, существующая форма редактирования и удаление с Undo. Непустое выделение остаётся задачей текстовой панели; пресеты этот UI не подключают.

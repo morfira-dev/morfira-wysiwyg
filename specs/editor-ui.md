@@ -1,6 +1,6 @@
 # Optional ready editor UI
 
-Status: U1 baseline shell, U2 standard controls/forms and U3a opt-in group-priority overflow are implemented locally with explicit public entries. Wrapping remains the compatible default; U3b contextual text formatting is implemented through a separate opt-in entry. Link/image/table/caret contexts remain later U3 work. Existing toolbar/forms remain available under their current public contracts. Actual current verification is recorded in `verification-backlog.md`. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
+Status: U1 baseline shell, U2 standard controls/forms and U3a opt-in group-priority overflow are implemented locally with explicit public entries. Wrapping remains the compatible default; U3b contextual text formatting is implemented through a separate opt-in entry. The independent U3c caret-link UI follows `contextual-links.md`; image/table and expanded-range link contexts remain later U3 work. Existing toolbar/forms remain available under their current public contracts. Actual current verification is recorded in `verification-backlog.md`. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
 
 ## Outcome and boundaries
 
@@ -41,7 +41,7 @@ One interaction remains one transaction/history step. Opening, closing, resizing
 
 ### U3a — Opt-in group-priority overflow — implementation contract
 
-Add `overflow?: 'wrap' | 'more'` to shell and ready standard/extended options. The default remains `wrap` for compatibility: existing integrations and their controls remain visible. Applications and the live demo can explicitly enable `more`; changing options requires destroying/remounting the UI, never replacing the editor/document. The separate U3b contextual text toolbar follows `contextual-toolbar.md`; link/image/table/caret contexts and a default-overflow-mode change remain later decisions.
+Add `overflow?: 'wrap' | 'more'` to shell and ready standard/extended options. The default remains `wrap` for compatibility: existing integrations and their controls remain visible. Applications and the live demo can explicitly enable `more`; changing options requires destroying/remounting the UI, never replacing the editor/document. The separate U3b contextual text toolbar follows `contextual-toolbar.md`; image/table and expanded-range link contexts and a default-overflow-mode change remain later decisions.
 
 The shell also accepts `groupPriorities?: readonly number[]`, with exactly one finite number per configured group. Larger values retain a group longer; equal priorities retain earlier groups. Reject invalid modes, lengths or numbers before mounting/listeners. Standard/extended own their fixed priorities rather than exposing positional priority arrays for conditional built-in groups.
 
@@ -96,7 +96,7 @@ On close/destroy release every owned form/menu controller, listener, subscriptio
 
 ## Delivery and acceptance
 
-U1/P1, U2/P2, extended P3 and U3a opt-in overflow are implemented locally; U3b contextual text formatting is implemented with staged validation; link/image/table/caret contexts remain future work. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
+U1/P1, U2/P2, extended P3 and U3a opt-in overflow are implemented locally; U3b contextual text formatting is implemented with staged validation; the U3c caret-link UI follows `contextual-links.md`; image/table and expanded-range link contexts remain future work. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
 
 Required evidence for the implemented slice:
 
@@ -124,4 +124,7 @@ UI composition guards follow core cancellation: an authoritative API document re
 
 ## U3b — Contextual text formatting
 
-The implemented independent contextual text-formatting slice follows [contextual-toolbar.md](contextual-toolbar.md). It composes the existing shell with explicit saved-range state projection, visibility/keyboard/dismissal and bounded viewport geometry; no implicit preset installation or image/table/caret context is promised. Validation is staged: the 3639/3639 full check preceded the final narrow constructor/remount correction; final static checks, 156/156 affected browser executions, docs 171/171 and installed consumers 18/18 passed after it. This does not claim a single final-build full-suite pass; see `verification-backlog.md`. Existing future statements refer to link/image/table/caret contexts.
+The implemented independent contextual text-formatting slice follows [contextual-toolbar.md](contextual-toolbar.md). It composes the existing shell with explicit saved-range state projection, visibility/keyboard/dismissal and bounded viewport geometry; no implicit preset installation or image/table/caret context is promised. Validation is staged: the 3639/3639 full check preceded the final narrow constructor/remount correction; final static checks, 156/156 affected browser executions, docs 171/171 and installed consumers 18/18 passed after it. This does not claim a single final-build full-suite pass; see `verification-backlog.md`. Future statements exclude the independently specified U3c caret-link slice.
+
+
+The next independently imported caret-link UI slice is specified in [contextual-links.md](contextual-links.md). It reuses the existing link form for whole-anchor metadata edits/unlink and adds explicit safe Open, without introducing a node-selection model. Image/table contexts and expanded-range link menus remain separate future work. Implementation and actual validation results must be reported separately.

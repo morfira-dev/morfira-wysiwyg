@@ -134,3 +134,6 @@ The user explicitly clarified that the original 200 kB core and roughly 100–15
 ## Horizontal-rule capability
 
 Standard and extended presets include the small `horizontalRule()` behavior by default, after autolink and before application plugins. `horizontalRule?: boolean` accepts false to omit its instance; other runtime values reject before creating an editor. Minimal stays unchanged. As with existing presets, a runtime opt-out does not remove static imports: consumers needing a narrower graph use selective entries. The public behavior entry is `/plugins/horizontal-rule`; it requires no additional stylesheet. Scope follows `horizontal-rule.md`, including same-block root P/H targets and disabled nested/semantic targets. Profile budgets stay unchanged and must include the additional selected capability once.
+
+
+The separately measured `standard-contextual-link-ready` selection adds only `createContextualLinkUI` and its explicit stylesheet to standard ready. Its shared link form is counted once; it keeps the same 65000 gzip JS / 20000 raw CSS guard. It does not combine every optional feature or install the UI implicitly. The standalone contextual-link closure is guarded at 16000 gzip JS bytes and its extra CSS at 3000 raw bytes.

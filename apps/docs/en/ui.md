@@ -167,3 +167,5 @@ Dictionary exports are `linkFormMessages`, `imageFormMessages`, `searchFormMessa
 CSS is scoped to `.mw-form`. It uses common `--mw-text`, `--mw-muted`, `--mw-surface`, `--mw-border`, `--mw-accent` plus optional `--mw-form-font-size`, `--mw-form-gap`, `--mw-form-padding`, `--mw-form-radius`, `--mw-form-control-radius`, `--mw-form-error`. The homepage and [playground](/en/playground) demonstrate the same public modules; no separate demo engine is required.
 
 Nonempty selections can use the separate [contextual UI](/en/contextual-toolbar), rather than a behavior plugin: `/ui/contextual` plus explicit `/ui/contextual.css`. Presets do not install it; it reuses existing commands/history.
+
+A caret inside a text link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open, the existing edit form and Undoable unlinking. Expanded selections remain the text toolbar’s scope; presets do not install this UI.

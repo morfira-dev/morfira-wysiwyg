@@ -3,6 +3,8 @@ import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg';
 import type { ConsumerProbe } from './types.js';
 import { createExtendedPreset } from '@morfira-dev/wysiwyg/presets/extended';
 import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
+import { createContextualLinkUI } from '@morfira-dev/wysiwyg/ui/contextual-link';
+import '@morfira-dev/wysiwyg/ui/contextual-link.css';
 import { createContextualToolbar } from '@morfira-dev/wysiwyg/ui/contextual';
 import { slashCommands, createSlashActions } from '@morfira-dev/wysiwyg/plugins/slash';
 import { createSuggestionMenu } from '@morfira-dev/wysiwyg/plugins/suggestions';
@@ -88,6 +90,25 @@ export const ready = (editor: Editor) => {
   };
   probe.showContextual = showContextual;
   probe.hideContextual = hideContextual;
+  let contextualLink: ReturnType<typeof createContextualLinkUI> | undefined;
+  let contextualLinkHost: HTMLElement | undefined;
+  const hideContextualLink = () => {
+    contextualLink?.destroy();
+    contextualLinkHost?.remove();
+    contextualLink = undefined;
+    contextualLinkHost = undefined;
+    delete probe.contextualLink;
+  };
+  const showContextualLink = () => {
+    hideContextualLink();
+    contextualLinkHost = document.createElement('div');
+    contextualLinkHost.dataset.consumerContextualLink = '';
+    document.body.append(contextualLinkHost);
+    contextualLink = createContextualLinkUI(contextualLinkHost, editor, { label: 'Consumer contextual link' });
+    probe.contextualLink = contextualLink;
+  };
+  probe.showContextualLink = showContextualLink;
+  probe.hideContextualLink = hideContextualLink;
   let overflowUI: ReturnType<typeof createStandardEditorUI> | undefined;
   let overflowHost: HTMLElement | undefined;
   const hideOverflow = () => {
@@ -125,6 +146,9 @@ export const ready = (editor: Editor) => {
   editor.events.on('destroy', () => {
     hideOverflow();
     hideContextual();
+    hideContextualLink();
+    if (probe.showContextualLink === showContextualLink) delete probe.showContextualLink;
+    if (probe.hideContextualLink === hideContextualLink) delete probe.hideContextualLink;
     if (probe.showContextual === showContextual) delete probe.showContextual;
     if (probe.hideContextual === hideContextual) delete probe.hideContextual;
     if (probe.showOverflow === showOverflow) delete probe.showOverflow;

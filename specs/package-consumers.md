@@ -31,3 +31,6 @@ The list-properties smoke explicitly installs the optional entry, creates an ord
 The text-direction smoke explicitly installs its public optional entry, applies RTL to a selected ordinary block, checks actual dir/computed direction and unchanged text/alignment, and undoes that one revision. It preserves the existing fixture/history before later operations. Detailed target, codec, native bidi and mixed/reset behavior remains in the feature suite rather than a new adapter matrix.
 
 The explicit contextual UI smoke resolves its public JS/types/CSS from installed tarballs, mounts an external overlay host, opens on selected text, applies one format with one Undo and disposes the controller. It coexists with ready UI without changing preset defaults; wrapper lifecycle smoke checks the owned host is empty after unmount. Geometry/selection race matrices stay in the feature suite.
+
+
+The explicit `/ui/contextual-link` installed-tarball smoke resolves JS/types/CSS, mounts at a real caret in a link, performs whole-link removal with one controlled update and Undo, then disposes without replacing ready UI defaults. Detailed URL/focus/race contracts stay in the three-engine feature suite.

@@ -161,3 +161,5 @@ Builtin UI использует RU/EN-каталоги `ui.editor.*` и `ui.stan
 Контроллеры предоставляют `element`, `refresh()` и идемпотентный `destroy()`. Destroy UI оставляет редактор и application-owned search state рабочими; editor destroy автоматически освобождает связанный UI. Отсоединённые controls инертны. Все подписки, формы и меню имеют cleanup. Desktop browser tests не являются сертификацией mobile/IME или скринридеров.
 
 Размеры измеряются отдельно как minified JS, gzip, Brotli и CSS, с устранением общих чанков. Framework runtime, карты исходников и декларации не входят в runtime-size. Состав и ограничения профилей — на странице [пресетов](/presets).
+
+Дополнительно можно явно подключить [действия ссылки у курсора](/contextual-links): просмотр безопасного адреса, Open/Edit/Remove и существующая форма. Это отдельный `/ui/contextual-link`, без изменения пресета или ready toolbar; image/table contexts остаются вне первого среза.

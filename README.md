@@ -66,6 +66,8 @@ document.querySelector('#editor-host')!.append(field);
 
 Light DOM, свойства `value/readOnly/locale/translations/plugins`, события `value-change/change/ready`; автоматической связи с HTML forms пока нет. [Контракт и примеры](apps/docs/adapters.md#web-component-без-фреймворка).
 
+Контекстные действия со ссылкой подключаются отдельно через `/ui/contextual-link` и `/ui/contextual-link.css` вместе с `/ui/forms.css`. `createContextualLinkUI(host, editor)` показывает предпросмотр и Open/Edit/Remove при курсоре внутри текстовой ссылки; редактирование использует существующую форму, форматирование и историю. Пустой overlay-host размещается вне содержимого редактора. Пресеты модуль автоматически не подключают. Контракт, безопасность URL и примеры: [RU](apps/docs/contextual-links.md) / [EN](apps/docs/en/contextual-links.md).
+
 ## Структура
 
 - `packages/core`: типизированное дерево документа, HTML/JSON-валидация, Selection/Range, история, транзакции, API плагинов и необязательная панель.

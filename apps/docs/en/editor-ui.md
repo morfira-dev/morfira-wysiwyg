@@ -161,3 +161,5 @@ Density is `comfortable` or `compact`. Scoped CSS uses `--mw-*`: existing surfac
 Controllers expose `element`, `refresh()` and idempotent `destroy()`. Destroying UI leaves the editor and application-owned search state usable; editor destruction automatically disposes related UI. Detached controls are inert. Every subscription, form and menu has cleanup. Desktop browser tests do not certify mobile/IME or screen-reader behavior.
 
 Measure minified JS, gzip, Brotli and CSS separately, counting shared chunks once. Framework runtimes, maps and declarations are excluded from runtime size. See [presets](/en/presets) for profile contents and limits.
+
+You can separately install [link actions at the caret](/en/contextual-links): a validated address preview, Open/Edit/Remove and the existing form. This independent `/ui/contextual-link` changes neither presets nor ready toolbar; image/table contexts remain outside this first slice.

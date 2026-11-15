@@ -309,3 +309,5 @@ Optional [list properties](/en/list-properties), through `/plugins/list-properti
 Optional [LTR/RTL text direction](/en/text-direction), through `/plugins/text-direction`, changes explicit dir on the closest ordinary block or siblings sharing a parent/cell. Reset inherits surrounding direction rather than forcing LTR; presets and ready toolbar do not install it automatically.
 
 The optional [contextual selection toolbar](/en/contextual-toolbar) uses the independent `/ui/contextual` entry. `getFormats(range?)` projects a remembered current Range without moving Selection/focus; omission retains existing behavior. Shell custom readers receive a cloned range as their second argument, while commands still validate the actual target.
+
+A caret inside a text link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open, the existing edit form and Undoable unlinking. Expanded selections remain the text toolbar’s scope; presets do not install this UI.
