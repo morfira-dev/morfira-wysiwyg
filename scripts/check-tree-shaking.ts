@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { build } from 'esbuild';
 
-const features = ['checklists', 'tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions'];
+const features = ['horizontal-rule', 'checklists', 'tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions'];
 const forms = ['ui/links', 'ui/images', 'ui/search'];
-const standardFeatures = ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink'];
-const standardUI = ['ui/editor', 'ui/shared', 'ui/standard', ...forms, 'tables', 'images', 'search'];
+const standardFeatures = ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'horizontal-rule'];
+const standardUI = ['ui/editor', 'ui/shared', 'ui/standard', ...forms, 'tables', 'images', 'search', 'horizontal-rule'];
 const originalInputs = JSON.parse(await readFile('packages/plugins/dist/bundled-inputs.json', 'utf8')) as Record<string, string[]>;
 const owner = (path: string): string | undefined => {
   const relative = path.replaceAll('\\', '/').split('packages/plugins/src/')[1];
@@ -23,7 +23,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component', allowed: [] },
   ...features.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/plugins/${feature}`,
-    symbol: ({ checklists: 'checklists', tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],
+    symbol: ({ 'horizontal-rule': 'horizontalRule', checklists: 'checklists', tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],
     feature,
     allowed: feature === 'suggestions' ? ['suggestions-core', 'suggestions-menu'] : [feature, ...(['mentions', 'slash'].includes(feature) ? ['suggestions-core'] : [])],
   })),

@@ -295,9 +295,25 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
     }
     element.append(toolbar, status);
     listen(toolbar, 'keydown', keyboard);
-    listen(editor.surface, 'compositionstart', () => { composing = true; refresh(); });
+    listen(editor.surface, 'compositionstart', () => {
+      if (editor.isReadOnly()) return;
+      composing = true;
+      refresh();
+    });
     listen(editor.surface, 'compositionend', () => { composing = false; refresh(); });
-    cleanups.push(editor.subscribe(refresh), editor.onSelectionChange(refresh), editor.events.on('localechange', refresh), editor.events.on('readonlychange', refresh), editor.events.on('destroy', destroy));
+    cleanups.push(
+      editor.subscribe((change) => {
+        if (change.source === 'api') composing = false;
+        refresh();
+      }),
+      editor.onSelectionChange(refresh),
+      editor.events.on('localechange', refresh),
+      editor.events.on('readonlychange', (readOnly) => {
+        if (readOnly) composing = false;
+        refresh();
+      }),
+      editor.events.on('destroy', destroy),
+    );
     host.append(element);
     refresh();
   }

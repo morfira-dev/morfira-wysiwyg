@@ -5,7 +5,7 @@
 | Импорт | Фабрика | Состав по умолчанию |
 | --- | --- | --- |
 | `@morfira-dev/wysiwyg/presets/minimal` | `createMinimalPreset` | Только ядро и явно переданные плагины приложения |
-| `@morfira-dev/wysiwyg/presets/standard` | `createStandardPreset` | Таблицы, изображения, поиск, статистика, Markdown shortcuts, autolink |
+| `@morfira-dev/wysiwyg/presets/standard` | `createStandardPreset` | Таблицы, изображения, поиск, статистика, Markdown shortcuts, autolink, разделитель |
 | `@morfira-dev/wysiwyg/presets/extended` | `createExtendedPreset` | Standard плюс mentions и slash с вашими provider-функциями |
 
 Это композиции текущих возможностей: Markdown shortcuts не являются Markdown import/export, mentions сохраняют обычный редактируемый текст, autolink поддерживает нативный Space, контролируемый Enter и ограниченную plain-URL вставку из буфера — [точные условия](/autolink). Атомарные mentions, node views, decorations и будущие видео/формулы автоматически не добавляются.
@@ -60,7 +60,7 @@ const editor = createEditor(editorHost, options);
 const ui = createStandardEditorUI(toolbarHost, editor);
 ```
 
-Standard устанавливает плагины в порядке `tables`, `images`, `search`, `statistics`, `markdown-shortcuts`, `autolink`, затем плагины приложения. Поля конфигурации пресета не попадают в `EditorOptions`: там остаются параметры ядра и готовый массив `plugins`.
+Standard устанавливает плагины в порядке `tables`, `images`, `search`, `statistics`, `markdown-shortcuts`, `autolink`, `horizontal-rule`, затем плагины приложения. Поля конфигурации пресета не попадают в `EditorOptions`: там остаются параметры ядра и готовый массив `plugins`.
 
 Без `images.upload` вставка по URL доступна; реальная загрузка файлов требует callback приложения. Пресет не выбирает endpoint, не отправляет файл и не вставляет демо-изображение. Callback передаётся как `images: { upload: applicationUpload }` и следует [контракту изображений](/images).
 
@@ -74,6 +74,7 @@ Standard устанавливает плагины в порядке `tables`, `
 | `statistics` | `StatisticsOptions` или `false` | Locale сегментации текста или отключение плагина |
 | `markdown` | `MarkdownShortcutOptions` или `false` | `enabled`, `blocks`, `inline` или отключение плагина |
 | `autolink` | `AutolinkOptions` или `false` | `enabled` или отключение плагина |
+| `horizontalRule` | `boolean` | `false` исключает команду разделителя |
 
 Если опция отсутствует, соответствующий плагин включён с его обычными настройками. `autolink: { enabled: false }` устанавливает отключённый плагин с доступным API переключения; `autolink: false` не устанавливает его.
 
@@ -155,3 +156,5 @@ const options = createStandardPreset({
 Сборка проверяет измеренные headless- и ready-профили: Standard — максимум 200000 minified / 65000 gzip байт JS; Extended — 350000 / 110000 байт JS. Каждый профиль ограничен 20000 байт minified CSS. Minimal измеряется отдельно без дополнительного preset-лимита. Фактические raw/gzip/Brotli/CSS сохраняются в `size-report.json`; framework runtime не входит в эти комплектации.
 
 Адаптивное перенесение контролов не означает готовое priority/More overflow или contextual bubbles. Реальные mobile/IME и скринридеры требуют отдельной проверки. Полные DOCX/PDF, совместное редактирование и офисный layout не входят в пресеты.
+
+Команда [разделителя](/horizontal-rule) включена в standard/extended по умолчанию, с кнопкой в готовой панели. `horizontalRule: false` отключает её экземпляр; runtime-флаг не удаляет статические импорты. Для более узкого бандла используй выборочную композицию.

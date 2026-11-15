@@ -11,7 +11,7 @@ export type { ExtendedPresetOptions } from './types.js';
 
 /** Providers are explicit application callbacks; the preset never supplies demo data or network I/O. */
 export const createExtendedPreset = (options: ExtendedPresetOptions): EditorOptions => {
-  checkedPresetOptions(options, ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash']);
+  checkedPresetOptions(options, ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'horizontalRule', 'mentions', 'slash']);
   if (options.mentions === undefined || options.slash === undefined) throw new TypeError('Extended presets require mention and slash providers.');
   const mention = featureOptions<MentionOptions>(options.mentions, 'mentions', ['provide', 'minQueryLength', 'maxItems', 'debounceMs']);
   const slashOptions = featureOptions<SlashOptions>(options.slash, 'slash', ['provide', 'minQueryLength', 'maxItems', 'debounceMs', 'actions']);

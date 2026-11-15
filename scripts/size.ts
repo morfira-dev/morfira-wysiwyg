@@ -34,11 +34,12 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     const css = await readFile(`${path}/suggestions.css`); report['suggestions.css'] = { raw: css.length, gzip: gzipSync(css).length, brotli: brotliCompressSync(css).length };
     const formCSS = await readFile(`${path}/ui/forms.css`); report['ui-forms.css'] = { raw: formCSS.length, gzip: gzipSync(formCSS).length, brotli: brotliCompressSync(formCSS).length };
     const editorCSS = await readFile(`${path}/ui/editor.css`); report['ui-editor.css'] = { raw: editorCSS.length, gzip: gzipSync(editorCSS).length, brotli: brotliCompressSync(editorCSS).length };
-    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'images', 'search', 'statistics', 'markdown', 'autolink', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
+    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'images', 'search', 'statistics', 'markdown', 'autolink', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].raw > 150_000) { console.error(`${entry}: exceeds 150000 byte JS budget`); failed = true; }
       if (entry === 'checklists' && report[`${entry}.js`].raw > 8000) { console.error('checklists: exceeds 8000 byte JS budget'); failed = true; }
+      if (entry === 'horizontal-rule' && report[`${entry}.js`].raw > 5000) { console.error('horizontal-rule: exceeds 5000 byte JS budget'); failed = true; }
     }
   }
   const budget = name === 'core' ? 200_000 : name === 'plugins' ? 150_000 : 10_000;

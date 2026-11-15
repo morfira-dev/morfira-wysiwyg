@@ -35,8 +35,8 @@ test('all preset imports and factory calls are server-safe, fresh and never invo
   `], { cwd: process.cwd(), encoding: 'utf8' });
   expect(JSON.parse(result)).toEqual({
     minimal: [],
-    standard: ['tables', 'images', 'search', 'statistics', 'markdown-shortcuts', 'autolink'],
-    extended: ['tables', 'images', 'search', 'statistics', 'markdown-shortcuts', 'autolink', 'mentions', 'slash'],
+    standard: ['tables', 'images', 'search', 'statistics', 'markdown-shortcuts', 'autolink', 'horizontal-rule'],
+    extended: ['tables', 'images', 'search', 'statistics', 'markdown-shortcuts', 'autolink', 'horizontal-rule', 'mentions', 'slash'],
     freshArray: true,
     freshPlugins: true,
   });
@@ -139,13 +139,13 @@ test('feature options are copied and disabled features do not install plugin sta
     const path = '/packages/plugins/dist/presets/standard.js';
     const { createStandardPreset } = await import(/* @vite-ignore */ path) as typeof import('@morfira-dev/wysiwyg/presets/standard');
     const source = { enabled: false };
-    const options = createStandardPreset({ markdown: source, tables: false, images: false, search: false, statistics: false, autolink: false, locale: 'ru' });
+    const options = createStandardPreset({ markdown: source, tables: false, images: false, search: false, statistics: false, autolink: false, horizontalRule: false, locale: 'ru' });
     source.enabled = true;
     window.editor.destroy();
     const host = document.createElement('div');
     document.body.append(host);
     window.editor = window.createEditor(host, options);
-    return { plugins: options.plugins!.map((plugin) => plugin.name), keys: Object.keys(options).sort(), markdown: window.markdownCommands(window.editor).getState().enabled, absent: ['tables', 'images', 'search', 'statistics', 'autolink'].every((key) => window.editor.getPlugin(key) === undefined) };
+    return { plugins: options.plugins!.map((plugin) => plugin.name), keys: Object.keys(options).sort(), markdown: window.markdownCommands(window.editor).getState().enabled, absent: ['tables', 'images', 'search', 'statistics', 'autolink', 'horizontal-rule'].every((key) => window.editor.getPlugin(key) === undefined) };
   });
   expect(result).toEqual({ plugins: ['markdown-shortcuts'], keys: ['locale', 'plugins'], markdown: false, absent: true });
 });
@@ -240,7 +240,7 @@ test('invalid preset configuration fails early while duplicate app plugin names 
     const extendedPath = '/packages/plugins/dist/presets/extended.js';
     const { createStandardPreset } = await import(/* @vite-ignore */ standardPath) as typeof import('@morfira-dev/wysiwyg/presets/standard');
     const { createExtendedPreset } = await import(/* @vite-ignore */ extendedPath) as typeof import('@morfira-dev/wysiwyg/presets/extended');
-    const malformed: unknown[] = [null, [], { unknown: true }, { images: true }, { search: {} }, { tables: { onClipboardError: 1 } }, { images: { upload: 1 } }, { autolink: { enabled: 'yes' } }, { historyLimit: 0 }];
+    const malformed: unknown[] = [null, [], { unknown: true }, { images: true }, { search: {} }, { horizontalRule: {} }, { tables: { onClipboardError: 1 } }, { images: { upload: 1 } }, { autolink: { enabled: 'yes' } }, { historyLimit: 0 }];
     let rejected = 0;
     for (const input of malformed) {
       try { createStandardPreset(input as never); }
@@ -254,5 +254,5 @@ test('invalid preset configuration fails early while duplicate app plugin names 
     try { window.createEditor(host, duplicate); } catch { duplicateRejected = true; }
     return { rejected, providersRejected, duplicateRejected, untouchedHost: host.childNodes.length };
   });
-  expect(result).toEqual({ rejected: 9, providersRejected: true, duplicateRejected: true, untouchedHost: 0 });
+  expect(result).toEqual({ rejected: 10, providersRejected: true, duplicateRejected: true, untouchedHost: 0 });
 });

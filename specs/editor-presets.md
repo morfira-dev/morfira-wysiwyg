@@ -55,6 +55,7 @@ The first preset release includes only working, documented capabilities. New mod
 | Literal search and replace | Excluded | `search()` | Included |
 | Unicode document/selection statistics | Excluded | `statistics()` | Included |
 | Existing Markdown typing shortcuts | Excluded | `markdownShortcuts()` | Included |
+| Explicit horizontal rule in one ordinary root paragraph/heading | Excluded | `horizontalRule()` | Included |
 | Editable-text mentions and structural slash actions | Excluded | Excluded | `mentions(configuration)` and `slash(configuration)` |
 | Suggestion menu view | Excluded | Excluded | Separate extended UI composition; behavior preset loads no menu view |
 | Link/image/search forms | Separate optional UI | Separate standard UI composition | Separate extended UI composition |
@@ -112,7 +113,7 @@ Real P1–P3 entries and profile guards now exist; the activation and accounting
 
 ## First implementation decision
 
-P1–P3 behavior factories and U1/U2 UI are implemented locally. Standard additionally includes the now-implemented Space-only `autolink()`; `false` may disable a built-in instance, but runtime flags do not erase statically imported code. Minimal imports no optional behavior. Extended requires explicit mention/slash provider configuration; it installs no example provider or network transport. Additional application plugins/schema are appended/copied without mutating input. The precise option types and default built-in list are documented with the public factories.
+P1–P3 behavior factories and U1/U2 UI are implemented locally. Standard additionally includes the bounded Space/controlled-Enter/plain-URL-paste `autolink()` and `horizontalRule()`; `false` may disable a built-in instance, but runtime flags do not erase statically imported code. Minimal imports no optional behavior. Extended requires explicit mention/slash provider configuration; it installs no example provider or network transport. Additional application plugins/schema are appended/copied without mutating input. The precise option types and default built-in list are documented with the public factories.
 
 The first release uses responsive wrapping rather than a priority/More overflow menu. Full measured overflow and contextual selection bubbles remain U3 follow-up, not implied by the first modern toolbar. Every implemented profile must have measured raw/gzip/Brotli/CSS before enabling its proposed budget guard.
 
@@ -125,3 +126,7 @@ The first implemented presets and ready UI have been measured through bundled pu
 - Extended: at most 350000 raw minified JS bytes, 110000 gzip JS bytes and 20000 raw CSS bytes.
 
 The product reason is to preserve the lightweight envelope now demonstrated by real usable compositions as subsequent capabilities are added. Each JS profile bundles core, its preset and its applicable ready-UI factory once; required CSS is an explicit deduplicated list. Minified/gzip/Brotli results remain separate, framework runtimes/fonts/source maps/declarations remain excluded, and no runtime feature flag is counted as tree-shaking. Minimal remains reported without a new profile guard. Existing core/table/adapter guards are unchanged. This note activates P4 for these implemented profiles; it does not claim U3 overflow, contextual bubbles or later SDK phases are complete.
+
+## Horizontal-rule capability
+
+Standard and extended presets include the small `horizontalRule()` behavior by default, after autolink and before application plugins. `horizontalRule?: boolean` accepts false to omit its instance; other runtime values reject before creating an editor. Minimal stays unchanged. As with existing presets, a runtime opt-out does not remove static imports: consumers needing a narrower graph use selective entries. The public behavior entry is `/plugins/horizontal-rule`; it requires no additional stylesheet. Scope follows `horizontal-rule.md`, including same-block root P/H targets and disabled nested/semantic targets. Profile budgets stay unchanged and must include the additional selected capability once.

@@ -5,7 +5,7 @@ A preset is a pure `EditorOptions` factory: it selects ready behavior, copies it
 | Import | Factory | Default capabilities |
 | --- | --- | --- |
 | `@morfira-dev/wysiwyg/presets/minimal` | `createMinimalPreset` | Core and explicitly supplied application plugins only |
-| `@morfira-dev/wysiwyg/presets/standard` | `createStandardPreset` | Tables, images, search, statistics, Markdown shortcuts and autolink |
+| `@morfira-dev/wysiwyg/presets/standard` | `createStandardPreset` | Tables, images, search, statistics, Markdown shortcuts, autolink and horizontal rule |
 | `@morfira-dev/wysiwyg/presets/extended` | `createExtendedPreset` | Standard plus mentions/slash with your provider functions |
 
 These compose current features: Markdown shortcuts are not Markdown import/export, mentions remain ordinary editable text, and autolink supports native Space, controlled Enter and bounded plain-URL clipboard completion — [exact conditions](/en/autolink). Atomic mentions, node views, decorations and future video/formula modules are not silently included.
@@ -60,7 +60,7 @@ const editor = createEditor(editorHost, options);
 const ui = createStandardEditorUI(toolbarHost, editor);
 ```
 
-Standard installs `tables`, `images`, `search`, `statistics`, `markdown-shortcuts`, `autolink`, then application plugins. Preset-only fields do not leak into `EditorOptions`: the result contains core settings and the composed `plugins` array.
+Standard installs `tables`, `images`, `search`, `statistics`, `markdown-shortcuts`, `autolink`, `horizontal-rule`, then application plugins. Preset-only fields do not leak into `EditorOptions`: the result contains core settings and the composed `plugins` array.
 
 Without `images.upload`, URL insertion remains available; actual file upload needs an application callback. The preset chooses no endpoint, sends no file and inserts no demo placeholder. Pass it as `images: { upload: applicationUpload }` following the [image contract](/en/images).
 
@@ -74,6 +74,7 @@ Without `images.upload`, URL insertion remains available; actual file upload nee
 | `statistics` | `StatisticsOptions` or `false` | Text-segmentation locale, or omission |
 | `markdown` | `MarkdownShortcutOptions` or `false` | `enabled`, `blocks`, `inline`, or omission |
 | `autolink` | `AutolinkOptions` or `false` | `enabled`, or omission |
+| `horizontalRule` | `boolean` | `false` omits the horizontal-rule command |
 
 An omitted option enables that plugin with its normal defaults. `autolink: { enabled: false }` installs a disabled plugin with a preference API; `autolink: false` omits the plugin entirely.
 
@@ -155,3 +156,5 @@ Measure headless presets, UI and the final deduplicated closure containing core,
 The build enforces measured headless and ready profiles: Standard — at most 200000 minified / 65000 gzip JS bytes; Extended — 350000 / 110000 JS bytes. Each profile is limited to 20000 minified CSS bytes. Minimal is measured separately without an additional preset guard. Actual raw/gzip/Brotli/CSS sizes are saved in `size-report.json`; framework runtimes are excluded from these profiles.
 
 Responsive wrapping does not imply a priority/More overflow menu or contextual bubbles. Real mobile/IME and screen-reader behavior still needs dedicated verification. Full DOCX/PDF conversion, collaboration and office-style layout are outside these presets.
+
+The [horizontal-rule command](/en/horizontal-rule) is included in standard/extended by default, with a ready toolbar button. `horizontalRule: false` omits its instance; a runtime flag does not erase static imports. Use selective composition for a narrower bundle.

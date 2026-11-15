@@ -115,7 +115,11 @@
       "types": "./dist/plugins/checklists.d.ts",
       "import": "./dist/plugins/checklists.js"
     },
-    "./plugins/checklists.css": "./dist/plugins/checklists.css"
+    "./plugins/checklists.css": "./dist/plugins/checklists.css",
+    "./plugins/horizontal-rule": {
+      "types": "./dist/plugins/horizontal-rule.d.ts",
+      "import": "./dist/plugins/horizontal-rule.js"
+    }
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.6.1",

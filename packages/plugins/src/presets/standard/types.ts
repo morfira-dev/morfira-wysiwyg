@@ -12,4 +12,5 @@ export interface StandardPresetOptions extends MinimalPresetOptions {
   statistics?: StatisticsOptions | false;
   markdown?: MarkdownShortcutOptions | false;
   autolink?: AutolinkOptions | false;
+  horizontalRule?: boolean;
 }

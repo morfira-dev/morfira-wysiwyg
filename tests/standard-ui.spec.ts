@@ -48,6 +48,62 @@ const launcher = (page: Page, id: string) => tools(page).locator(`[data-mw-ui-ac
 const panel = (page: Page) => tools(page).locator('.mw-ui-panel');
 const html = (page: Page) => page.evaluate(() => window.editor.getHTML());
 
+test('standard preset exposes a localized keyboard horizontal-rule action with guarded one-step history', async ({ page }) => {
+  await initialize(page, '<p>AB</p>', 1, 0);
+  await expect(launcher(page, 'horizontal-rule')).toHaveCount(0);
+  await page.evaluate(async () => {
+    window.editor.getPlugin<StandardEditorUIController>('test-standard-ui')!.destroy();
+    window.editor.destroy();
+    const presetPath = '/packages/plugins/dist/presets/standard.js';
+    const uiPath = '/packages/plugins/dist/ui/standard.js';
+    const { createStandardPreset } = await import(/* @vite-ignore */ presetPath) as typeof import('@morfira-dev/wysiwyg/presets/standard');
+    const { createStandardEditorUI } = await import(/* @vite-ignore */ uiPath) as typeof import('@morfira-dev/wysiwyg/ui/standard');
+    window.editor = window.createEditor(document.querySelector<HTMLElement>('.standard-editor')!, createStandardPreset({ value: '<p>AB</p>', locale: 'en' }));
+    window.editor.setSelection(1);
+    const ui = createStandardEditorUI(document.querySelector<HTMLElement>('.standard-ui-host')!, window.editor);
+    window.dispose = () => { ui.destroy(); window.editor.destroy(); };
+  });
+  await expect(launcher(page, 'horizontal-rule')).toHaveAccessibleName('Horizontal rule');
+  await launcher(page, 'horizontal-rule').focus();
+  await page.keyboard.press('Enter');
+  expect(await html(page)).toBe('<p>A</p><hr><p>B</p>');
+  await expect(content(page)).toBeFocused();
+  await page.evaluate(() => window.editor.undo());
+  expect(await html(page)).toBe('<p>AB</p>');
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+  await page.evaluate(() => window.editor.setLocale('ru'));
+  await expect(launcher(page, 'horizontal-rule')).toHaveAccessibleName('Разделитель');
+  await page.evaluate(() => window.editor.setReadOnly(true));
+  await expect(launcher(page, 'horizontal-rule')).toBeDisabled();
+  expect(await html(page)).toBe('<p>AB</p>');
+  await page.evaluate(() => {
+    const editor = window.editor;
+    editor.setReadOnly(false);
+    editor.setSelection(1);
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    // Authoritative external replacement cancels composition without requiring
+    // a later browser compositionend to release the visible command guard.
+    editor.setHTML('<p>New</p>');
+    editor.setSelection(1);
+  });
+  await expect(launcher(page, 'horizontal-rule')).toBeEnabled();
+  await launcher(page, 'horizontal-rule').click();
+  expect(await html(page)).toBe('<p>N</p><hr><p>ew</p>');
+  await page.evaluate(() => window.editor.undo());
+  expect(await html(page)).toBe('<p>New</p>');
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+  await page.evaluate(() => {
+    const editor = window.editor;
+    editor.setSelection(1);
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    editor.setReadOnly(true);
+    editor.setReadOnly(false);
+    editor.setSelection(1);
+  });
+  await expect(launcher(page, 'horizontal-rule')).toBeEnabled();
+  expect(await html(page)).toBe('<p>New</p>');
+});
+
 test('link popup preserves a rich backwards selection through field focus and one-step history', async ({ page }) => {
   await initialize(page);
   await page.evaluate(() => {

@@ -27,6 +27,7 @@
 .mw-content h2 { font-size: 1.5em; }
 .mw-content h3 { font-size: 1.25em; }
 .mw-content a { color: var(--mw-accent); text-decoration: underline; }
+.mw-content hr { border: 0; border-block-start: 1px solid var(--mw-horizontal-rule-color, var(--mw-border)); margin-block: var(--mw-horizontal-rule-spacing, 1em); }
 .mw-content ul, .mw-content ol { margin: .65em 0; padding-left: 1.5em; }
 .mw-content ul { list-style: disc; }
 .mw-content ol { list-style: decimal; }

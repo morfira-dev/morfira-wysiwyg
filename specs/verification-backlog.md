@@ -1,25 +1,61 @@
-# Verification record — editor, security and autolink input completion
+# Verification record — horizontal rule, editor and security
 
-Status: the bounded autolink Enter/plain-URL clipboard slice, typed core input receipts and inline-normalization/caret correction completed project, full editor, documentation and packed-consumer verification successfully. Earlier checklist/security baseline `ddc5aaf` and diagnostic runs remain historical evidence. No push, package publication or deployment is authorized by this record.
+Status: current horizontal-rule focused browser, TypeScript, documentation and packed-consumer checks passed. The full check exited 1 on three stale SSR inventory expectations; the corrected static-pipeline/last-failed rerun passed (exit 0, 3/3 SSR executions). Combined coverage is 3531 executions, not a new single-run full pass. Earlier autolink and checklist/security results below remain historical evidence. No push, package publication or deployment is authorized by this record.
 
-## Current autolink input-completion verification — completed
+## Current horizontal-rule verification — completed with corrected targeted rerun
 
-The working tree adds controlled collapsed-caret Enter completion, one plain-text URL from an actual clipboard event, and core-owned readonly `inputcommit` receipts. Shift+Enter, native-only paragraph edits, HTML/whitespace/multiline clipboard payloads, selected replacement and API insertion remain excluded. Conversion is a separate history operation with no preview/network requests or core import of autolink. Exact caret/history restoration includes the Redo regression described below. Contracts: `autolink.md`, `events.md`.
+The optional `/plugins/horizontal-rule` entry provides `horizontalRule()` and typed `horizontalRuleCommands(editor)`. Standard/extended install it by default; `horizontalRule: false` omits its instance, while selective imports are required to narrow the static graph. Ready UI adds a localized native button only when installed. A single ordinary direct-root P/H caret or same-block range splits into same-tag prefix, bare HR and editable same-tag suffix, retaining empty BR edges and one Undo/Redo step. Lists, quotes, tables, PRE, root-offset/cross-block selections and source blocks with any image or owning semantic descendant are disabled, including descendants outside the selection. Contract: `horizontal-rule.md`.
+
+The ready UI reads a saved Range through side-effect-free `getState(range?)`; activation restores valid selection and `insert()` still checks the actual native selection. This slice also fixes stale collapsed typing-format overrides for initially expanded outer transactions, retaining legitimate collapsed affinity. HR content CSS exposes scoped color/spacing variables; no plugin stylesheet or runtime dependency is added.
 
 | Check | Actual current status |
+| --- | --- |
+| Focused browser regression suite | **252/252 passed**, 59.1 seconds, across Chromium, Firefox and WebKit; a focused run, not a complete-editor pass |
+| TypeScript checking | Passed with zero errors |
+| Complete `pnpm run check` | Exit **1**: **3528 passed / 3 failed**, 13.1 minutes, from **1177 cases × 3 engines = 3531 executions**. All failures were the same extended-UI SSR inventory expectation (expected 8, actual 9), with no DOM/fetch/provider effects |
+| Corrected last-failed check | Only the stale inventory expectation changed from 8 to 9. `pnpm run check --last-failed --workers=3` completed the entire static pipeline and **3/3** SSR executions (3.0 seconds), **exit 0**. Together with the initial 3528 passes this covers all **3531** executions; it is not a new single-run full-suite pass |
+| RU/EN documentation build and documentation browser suite | `docs:build` exit 0; **161/161** Chromium scenarios passed, 2.4 minutes, including both new localized ready-HR controls |
+| Default packed consumers | **15/15** passed, exit 0: Vue, React, Svelte, Angular 21 and Web Component × Chromium/Firefox/WebKit |
+| Angular 22 packed consumers | **3/3 passed**, exit 0; combined current packed-consumer total **18/18** |
+| Bundle measurements | Current build-generated `size-report.json` measurements below; they do not establish full-suite or performance success |
+
+Initial focused diagnostics were **92/96**, exposing stale caret-format restoration and a WebKit selection/UI issue; a later **66/69** run exposed composition cancellation in the UI. These were real failures addressed before the final **252/252** focused pass, not additional successful runs or complete-editor evidence.
+
+## Current generated measurements — horizontal-rule slice
+
+Minified JS and CSS are separate; gzip/Brotli are compression measurements, with shared chunks counted once per selected profile. Framework runtimes, maps and declarations are excluded. No input-latency or history-memory benchmark was run for this slice.
+
+| Entry / selected profile | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core entry | 87250 | 26812 | 23512 | 3293 | 1164 | 962 |
+| Optional horizontal-rule entry | 2241 | 1197 | 1033 | 0 | 0 | 0 |
+| Minimal headless | 83729 | 25307 | 22157 | 3293 | 1164 | 962 |
+| Minimal ready | 102031 | 30725 | 26850 | 7342 | 2291 | 1891 |
+| Standard headless | 138975 | 42276 | 36584 | 5106 | 1880 | 1505 |
+| Standard ready | 194792 | 56501 | 48223 | 10661 | 3606 | 2922 |
+| Extended headless | 151518 | 46220 | 39746 | 5106 | 1880 | 1505 |
+| Extended ready | 215973 | 62999 | 53389 | 11857 | 4098 | 3298 |
+
+Core is **87250 raw minified JS bytes**, **7250 above** the working 80000-byte target; its enforced 200000-byte guard stays unchanged. The new optional command is **2241 / 1197 / 1033** raw/gzip/Brotli JS bytes, within its 5000-byte feature guard. Standard ready is **194792 raw / 56501 gzip** JS bytes; extended ready is **215973 raw / 62999 gzip**. Their existing JS/CSS budgets remain unchanged. Core content CSS is **3293 / 1164 / 962** raw/gzip/Brotli bytes. Earlier measurements below are retained for provenance; do not sum standalone entries to derive shared profile totals.
+
+## Historical autolink input-completion verification — completed
+
+That completed source added controlled collapsed-caret Enter completion, one plain-text URL from an actual clipboard event, and core-owned readonly `inputcommit` receipts. Shift+Enter, native-only paragraph edits, HTML/whitespace/multiline clipboard payloads, selected replacement and API insertion remain excluded. Conversion is a separate history operation with no preview/network requests or core import of autolink. Exact caret/history restoration includes the Redo regression described below. Contracts: `autolink.md`, `events.md`.
+
+| Check | Recorded status for that source |
 | --- | --- |
 | Full project build, declarations, package boundaries, tree-shaking, budgets and types | Passed in the final `pnpm run check`, exit 0 |
 | Complete editor suite, Chromium / Firefox / WebKit | Passed: final `pnpm run check`, exit 0; **3507/3507 browser executions = 1169 cases × 3 engines**, 12.5 minutes; baseline 1154 cases plus 15 new receipt/autolink definitions. The first 3504-execution run was intentionally interrupted by the parent with exit 130 for the additional inline-normalization/caret correction; it was not a pass |
 | RU/EN documentation build and Chromium suite | Passed after the inline-normalization/caret correction: final docs build and **159/159** Chromium scenarios, exit 0, 1.9 minutes |
-| Packed consumers | Passed against final current tarballs: **18/18**, including 15 default-wrapper and 3 Angular 22 browser scenarios |
+| Packed consumers | Passed against that source’s final tarballs: **18/18**, including 15 default-wrapper and 3 Angular 22 browser scenarios |
 | Focused receipt/autolink verification | After the inline-normalization/caret fix, **237/237** executions across seven focused specs passed, 58.1 seconds. Earlier source separately passed 72/72; these are targeted historical results separate from the final full run |
 | Bundle measurements | Fresh post-fix build-generated measurements are recorded below; preceding autolink and security-baseline measurements remain historical evidence |
 
-An initial focused run recorded **69/72**: three pending-format expectations were corrected to compare the actual preceding state rather than assume it was empty. Subsequent diagnosis exposed a real Redo caret defect: restoring a post-paste point could leave subsequent typing inside the generated anchor. Caret normalization was corrected; the final focused 72/72 run passed. These diagnostic and targeted results are historical; the final complete run above establishes the current success. No large-document scans, preview fetches or new runtime dependencies are introduced; core receipt/typing-guard size overhead is measured in the current table below.
+An initial focused run recorded **69/72**: three pending-format expectations were corrected to compare the actual preceding state rather than assume it was empty. Subsequent diagnosis exposed a real Redo caret defect: restoring a post-paste point could leave subsequent typing inside the generated anchor. Caret normalization was corrected; the final focused 72/72 run passed. These diagnostic and targeted results are historical; the final complete run above establishes success for that historical source. No large-document scans, preview fetches or new runtime dependencies are introduced; core receipt/typing-guard size overhead is measured in the current table below.
 
 A subsequent isolated probe (`/tmp/morfira-autolink-undo-probe.ts`) demonstrated a generic core plain-text-paste Redo offset error even with autolink disabled, plus an enabled-autolink first-Undo offset error. This is an actual editing defect, not an incorrect pending-format expectation. The accepted fix normalizes local block inline text before fallback bookmark restoration; paste completion now restores the point in the actual text node following the anchor, including the terminal-punctuation offset. One additional terminal-punctuation regression brings the new total to 1169 cases. The corrected isolated probe now reports the expected offset **26** for disabled-autolink Redo, enabled-autolink first Undo and enabled-autolink Redo. The post-fix seven-spec run passed **237/237**, 58.1 seconds. Final full, documentation and packed-consumer reruns after these corrections passed as recorded above.
 
-## Current generated measurements — after inline-normalization/caret correction
+## Historical generated measurements — after inline-normalization/caret correction
 
 Read from fresh `size-report.json` after the correction. Minified JavaScript, gzip, Brotli and CSS are reported separately; shared profile chunks are counted once, excluding framework runtimes, maps and declarations. Autolink has no CSS. These are size measurements, separate from the full-suite results above and not performance evidence.
 
@@ -34,11 +70,11 @@ Read from fresh `size-report.json` after the correction. Minified JavaScript, gz
 | Extended headless | 149245 | 45607 | 39249 | 4951 |
 | Extended with ready UI | 213105 | 62202 | 52766 | 11702 |
 
-Current core is **87218 raw minified bytes**, **7218 bytes above** the working 80000-byte target, with the enforced 200000-byte guard unchanged. Against security baseline `ddc5aaf`, core increased by **810 raw bytes**. Optional autolink is **6786 / 2992 / 2675** raw/gzip/Brotli bytes. CSS remains unchanged. Earlier measurements below are retained for provenance.
+That source’s core was **87218 raw minified bytes**, **7218 bytes above** the working 80000-byte target, with the enforced 200000-byte guard unchanged. Against security baseline `ddc5aaf`, core increased by **810 raw bytes**. Optional autolink is **6786 / 2992 / 2675** raw/gzip/Brotli bytes. CSS remains unchanged. Earlier measurements below are retained for provenance.
 
 ## Historical autolink measurements — before inline-normalization/caret correction
 
-Read from the preceding autolink build-generated `size-report.json`, before the additional inline-normalization/caret correction; current weights await a fresh build. Raw JavaScript is minified; gzip/Brotli are separate. Selected profile closures count shared chunks once and exclude framework runtimes, declarations and source maps. CSS remains unchanged; the standalone autolink entry needs no CSS. These are bundle measurements, not performance benchmarks or a full-suite pass.
+Read from the preceding autolink build-generated `size-report.json`, before the additional inline-normalization/caret correction; those weights preceded the subsequent correction. Raw JavaScript is minified; gzip/Brotli are separate. Selected profile closures count shared chunks once and exclude framework runtimes, declarations and source maps. CSS remains unchanged; the standalone autolink entry needs no CSS. These are bundle measurements, not performance benchmarks or a full-suite pass.
 
 | Entry / selected profile | JS bytes | gzip bytes | Brotli bytes | Raw CSS bytes |
 | --- | ---: | ---: | ---: | ---: |

@@ -348,6 +348,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     pendingSelectionNotification = false;
     let changed = false;
     try {
+      // A replacement can return to the old text offset without a selectionchange flush.
+      const initialRange = activeRange(surface);
+      if (initialRange && !initialRange.collapsed) clearTyping();
       invoke();
       if (transactionFailed)
         throw transactionError;

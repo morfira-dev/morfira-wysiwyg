@@ -298,3 +298,6 @@ Undo/redo restores pending caret formatting along with its position. This is int
 See [events, plugin cooperation and composable transactions](/en/events). Structural slash actions are documented [here](/en/suggestions#structural-slash-commands).
 
 For post-input extension observers, see [controlled input commit receipts](/en/events#controlled-input-commit-receipts): `EditorInputCommit` covers only validated controlled Enter/clipboard paths, not arbitrary input or a cancellable transform. Follow-up commands remain separate history operations.
+
+
+The optional [horizontal-rule command](/en/horizontal-rule) is available through `/plugins/horizontal-rule`: one root paragraph/heading, an editable suffix and one Undo step. Standard/extended install it and its ready toolbar button by default; `horizontalRule: false` omits the instance.

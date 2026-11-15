@@ -5,7 +5,7 @@ import type { EditorOptions } from '@morfira-dev/wysiwyg';
 import type { StandardPresetOptions } from '@morfira-dev/wysiwyg/presets/standard';
 
 const minimal: EditorOptions = createMinimalPreset({ plugins: Object.freeze([]), locale: 'ru' });
-const standard: EditorOptions = createStandardPreset({ images: { maxFileSize: 1024 }, search: false, markdown: { blocks: false }, autolink: false });
+const standard: EditorOptions = createStandardPreset({ images: { maxFileSize: 1024 }, search: false, markdown: { blocks: false }, autolink: false, horizontalRule: false });
 const extended: EditorOptions = createExtendedPreset({ mentions: { provide: () => [] }, slash: { provide: () => [] } });
 const options: StandardPresetOptions = { readOnly: true, statistics: { locale: 'en' } };
 void minimal;
@@ -18,6 +18,8 @@ createMinimalPreset({ images: {} });
 createStandardPreset({ images: true });
 // @ts-expect-error search has no factory options; configure its query after editor creation
 createStandardPreset({ search: { wholeWord: true } });
+// @ts-expect-error horizontal rule has only a boolean feature switch
+createStandardPreset({ horizontalRule: {} });
 // @ts-expect-error extended requires explicit application providers
 createExtendedPreset({});
 // @ts-expect-error a mention provider is a function

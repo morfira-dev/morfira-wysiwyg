@@ -93,7 +93,11 @@
       "types": "./dist/checklists/index.d.ts",
       "import": "./dist/checklists.js"
     },
-    "./checklists.css": "./dist/checklists.css"
+    "./checklists.css": "./dist/checklists.css",
+    "./horizontal-rule": {
+      "types": "./dist/horizontal-rule/index.d.ts",
+      "import": "./dist/horizontal-rule.js"
+    }
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.6.1"

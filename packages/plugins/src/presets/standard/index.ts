@@ -5,6 +5,7 @@ import { search } from '../../search/index.js';
 import { statistics } from '../../statistics/index.js';
 import { markdownShortcuts } from '../../markdown/index.js';
 import { autolink } from '../../autolink/index.js';
+import { horizontalRule } from '../../horizontal-rule/index.js';
 import { checkedPresetOptions, copyEditorOptions, featureOptions } from '../shared/options.js';
 import type { StandardPresetOptions } from './types.js';
 
@@ -12,8 +13,9 @@ export type { StandardPresetOptions } from './types.js';
 
 /** Compose the supported everyday behaviors without creating DOM or UI. */
 export const createStandardPreset = (options: StandardPresetOptions = {}): EditorOptions => {
-  checkedPresetOptions(options, ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink']);
+  checkedPresetOptions(options, ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'horizontalRule']);
   if (options.search !== undefined && typeof options.search !== 'boolean') throw new TypeError('Preset search must be boolean.');
+  if (options.horizontalRule !== undefined && typeof options.horizontalRule !== 'boolean') throw new TypeError('Preset horizontalRule must be boolean.');
   const editor = copyEditorOptions(options);
   const table = options.tables === false ? undefined : featureOptions(options.tables, 'tables', ['onClipboardError']);
   if (table?.onClipboardError !== undefined && typeof table.onClipboardError !== 'function') throw new TypeError('Table diagnostics must be a function.');
@@ -28,6 +30,7 @@ export const createStandardPreset = (options: StandardPresetOptions = {}): Edito
       ...(options.statistics === false ? [] : [statistics(featureOptions(options.statistics, 'statistics', ['locale']))]),
       ...(options.markdown === false ? [] : [markdownShortcuts(featureOptions(options.markdown, 'markdown', ['enabled', 'blocks', 'inline']))]),
       ...(options.autolink === false ? [] : [autolink(featureOptions(options.autolink, 'autolink', ['enabled']))]),
+      ...(options.horizontalRule === false ? [] : [horizontalRule()]),
       ...editor.plugins!,
     ],
   };

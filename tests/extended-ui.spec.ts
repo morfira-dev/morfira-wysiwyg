@@ -40,7 +40,8 @@ test('extended public imports are server-safe without touching DOM or registerin
     const provide = () => { throw new Error('Provider invoked'); };
     console.log(JSON.stringify({ factory: typeof createExtendedEditorUI, plugins: createExtendedPreset({ mentions: { provide }, slash: { provide } }).plugins.length }));
   `], { cwd: process.cwd(), encoding: 'utf8' });
-  expect(JSON.parse(result)).toEqual({ factory: 'function', plugins: 8 });
+  // Extended includes the standard horizontal-rule behavior before its providers.
+  expect(JSON.parse(result)).toEqual({ factory: 'function', plugins: 9 });
 });
 
 test('native mention typing and pointer choice insert literal text with one completion undo', async ({ page }) => {

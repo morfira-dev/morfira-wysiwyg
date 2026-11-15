@@ -3,6 +3,7 @@ import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { tableCommands } from '../../tables/index.js';
 import { imageCommands } from '../../images/index.js';
 import { searchCommands } from '../../search/index.js';
+import { horizontalRuleCommands } from '../../horizontal-rule/index.js';
 import { createEditorUI, createDefaultEditorUIGroups } from '../editor/index.js';
 import type { EditorUIController, EditorUIItem } from '../editor/types.js';
 import { createFormSelection } from '../shared/selection.js';
@@ -209,7 +210,11 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
     if (active && !event.composedPath().includes(element)) closePanel(false);
   };
   const closeClick = () => closePanel(true);
-  const startComposition = () => { composing = true; refresh(); };
+  const startComposition = () => {
+    if (editor.isReadOnly()) return;
+    composing = true;
+    refresh();
+  };
   const endComposition = () => { composing = false; refresh(); };
   const destroy = () => {
     if (disposed) return;
@@ -231,11 +236,18 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
       enabled: (instance: Editor) => !composing && (kind !== 'table' || !instance.isReadOnly()),
       run: () => openPanel(kind),
     }));
+    const dividers: EditorUIItem[] = editor.getPlugin('horizontal-rule') ? [{
+      id: 'horizontal-rule',
+      label: (instance) => localize(instance.getLocale(), 'ui.standard.horizontalRule', standardEditorUIMessages),
+      text: '—',
+      enabled: (instance) => !horizontalRuleCommands(instance).getState(selection.peek()).disabled,
+      run: (instance) => horizontalRuleCommands(instance).insert(),
+    }] : [];
     shell = createEditorUI(toolbarHost, editor, {
       density: options.density,
       label: options.label,
       onError: (error) => diagnose(error),
-      groups: [...createDefaultEditorUIGroups(), launchers],
+      groups: [...createDefaultEditorUIGroups(), ...(dividers.length ? [dividers] : []), launchers],
     });
     element.addEventListener('pointerdown', capture, true);
     element.addEventListener('keydown', keydown, true);
@@ -251,9 +263,13 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
       () => editor.surface.removeEventListener('compositionstart', startComposition),
       () => editor.surface.removeEventListener('compositionend', endComposition),
       editor.events.on('localechange', refresh),
-      editor.events.on('readonlychange', refresh),
+      editor.events.on('readonlychange', (readOnly) => {
+        if (readOnly) composing = false;
+        refresh();
+      }),
       editor.subscribe((change) => {
         if (change.source === 'api') {
+          composing = false;
           closePanel(false, false);
           linkDraft = undefined;
           imageDraft = undefined;
