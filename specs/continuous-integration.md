@@ -1,6 +1,6 @@
 # Continuous integration — bounded feedback time
 
-Status: accepted optimization contract. User target is ideally five minutes, at most roughly seven–ten minutes for ordinary CI feedback. A local configuration or extrapolation is not proof of GitHub wall time; record actual follow-up runs separately. No push is authorized for this implementation stage.
+Status: accepted optimization contract. User target is ideally five minutes, at most roughly seven–ten minutes for ordinary CI feedback. A local configuration or extrapolation is not proof of GitHub wall time; record actual follow-up runs separately. The user authorized one measurement push on 2026-11-15; subsequent feature work returns to local commits only.
 
 ## Measured baseline and decision
 
@@ -22,7 +22,7 @@ Use unique failure artifact names per browser/shard/job so parallel uploads cann
 
 ## Acceptance and follow-up measurement
 
-Validate the workflow graph, exact matrix coverage, failure aggregation and public script arguments. Execute the actual static job command, representative targeted shards across all engines (the full global partitions are checked by exact metadata enumeration), docs-from-built-output and both installed consumer profiles locally; a complete local feature check may provide the broader editor evidence. Do not claim that a local representative shard proves the entire GitHub matrix or target wall time. Keep tests for tooling logic meaningful; avoid source-text snapshots freezing YAML spelling. Record that GitHub still needs an explicit later push to measure the new graph.
+Validate the workflow graph, exact matrix coverage, failure aggregation and public script arguments. Execute the actual static job command, representative targeted shards across all engines (the full global partitions are checked by exact metadata enumeration), docs-from-built-output and both installed consumer profiles locally; a complete local feature check may provide the broader editor evidence. Do not claim that a local representative shard proves the entire GitHub matrix or target wall time. Keep tests for tooling logic meaningful; avoid source-text snapshots freezing YAML spelling. Record actual GitHub measurements separately from local configuration validation.
 
 Any later test removal requires a concrete redundant assertion/duplicate risk or obsolete contract, with the retained regression identified. If this parallel graph misses the target, use per-shard job timing before increasing worker pressure, adding more runners, changing required profiles or moving checks off the ordinary path. Performance observations must distinguish runner execution, queue/artifact/setup and release time.
 
@@ -32,4 +32,10 @@ The revised workflows passed official actionlint 1.7.12 (checksum-verified tempo
 
 The actual workflow tar/restore commands round-tripped all 364 built files across the eleven declared paths with identical SHA256. The new check:static command passed with the redundant late facade declaration invocation removed; the early Angular-required invocation remains. Representative actual targeted shard 1/4 runs on contextual-toolbar.spec.ts passed 2/2 in Chromium, 2/2 in Firefox and 2/2 in WebKit. These targeted executions validate CLI/project/shard integration, not the entire distributed GitHub run or its duration. The complete local editor run passed 3639/3639 before the final narrow contextual remount correction; final affected browser/docs/consumer evidence belongs to verification-backlog.md.
 
-No new workflow run has been published: the user's instruction is local commits only. The observed 37m41s baseline and calculated 5–10 minute feedback goal must not be presented as an already measured improvement. A future explicitly authorized push is required to observe runner queue/setup/artifact/shard and release time.
+## Real GitHub validation — 2026-11-15
+
+The explicitly authorized measurement push produced [run 43740723004](https://github.com/morfira-dev/morfira-wysiwyg/actions/runs/43740723004), commit 6e73a0aadd7bdec459dcba3c1e6eaef093ba5825. The complete run succeeded: created 17:22:14 UTC, required aggregate check completed 17:27:22 UTC (**5m08s feedback**), publication completed 17:29:49 UTC (**7m35s including release**). All twelve editor shards, documentation and both packed-consumer profiles passed; no failure fix or rerun was needed.
+
+Build/static executed 17:22:16–17:23:25 (1m09s). Parallel jobs started at 17:23:27–28: documentation 3m08s, default consumers 2m11s, Angular 22 consumers 1m56s. The slowest editor shard was WebKit 2/4, 17:23:27–17:27:16 (3m49s). Aggregate check took 4s after its start at 17:27:18. Release plan took 29s; publish took 1m53s, with their queue/transitions included in total wall time. This run met the requested 5–10 minute target without removing regressions or dropping a browser/profile. The old 37m41s baseline and new 7m35s are observed complete runs, not universal timing guarantees; runner load and future suite changes can vary.
+
+No further push is authorized for ordinary feature work. Preserve the complete gate and inspect real per-job timing if feedback regresses.
