@@ -1,6 +1,7 @@
 import { safeURL } from './security.js';
 import { normalizeFontFamily } from './font-family.js';
 import { normalizeListMarker } from './list-marker.js';
+import { normalizeDirection } from './direction.js';
 import { countText, countElement, maximumHTMLLength, maximumNodes, maximumDepth } from './budget.js';
 import type { DocumentAttributeResolver, DocumentBudget } from './internal-types.js';
 import type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
@@ -51,6 +52,12 @@ const orderedListStart = (value: unknown): string | undefined => {
 const attributesFor = (tag: DocumentTag, input: Record<string, unknown>, source: 'html' | 'json', resolve?: DocumentAttributeResolver, originalTag?: string): Record<string, string> => {
   const output: Record<string, string> = {};
   for (const [key, value] of Object.entries(input)) {
+    if (key === 'dir') {
+      const direction = normalizeDirection(tag, value, source === 'json');
+      if (direction) output.dir = direction;
+      else if (source === 'json') throw new TypeError('Direction must be canonical ltr or rtl on a supported block.');
+      continue;
+    }
     if (key === 'start') {
       const clean = tag === 'ol' ? orderedListStart(value) : undefined;
       if (clean !== undefined) output.start = clean;

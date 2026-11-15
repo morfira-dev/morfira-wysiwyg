@@ -105,6 +105,10 @@
     "./list-properties": {
       "types": "./dist/list-properties/index.d.ts",
       "import": "./dist/list-properties.js"
+    },
+    "./text-direction": {
+      "types": "./dist/text-direction/index.d.ts",
+      "import": "./dist/text-direction.js"
     }
   },
   "peerDependencies": {

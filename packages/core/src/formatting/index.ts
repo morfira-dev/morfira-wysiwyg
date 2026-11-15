@@ -2,6 +2,7 @@ import type { DocumentSchema } from '../schema/types.js';
 import type { DocumentTag } from '../document/index.js';
 import { documentHTML, parseHTML } from '../document/index.js';
 import { normalizeFontFamily } from '../document/font-family.js';
+import { copyDirection } from '../document/direction.js';
 import { activeRange, readTextSelection, selectText, preserveRange } from '../selection/index.js';
 import { inlineStyles, normalizeInlineStyle, transformInlineAttributes } from './inline-attributes.js';
 import { applyLink } from './links.js';
@@ -146,6 +147,7 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown, sch
         else {
           replacement.append(...block.childNodes);
           replacement.setAttribute('style', block.getAttribute('style') ?? '');
+          copyDirection(block, replacement);
           block.replaceWith(replacement);
         }
       }

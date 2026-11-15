@@ -56,6 +56,18 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeListProperties.html, `${adapter}: list properties undo once`);
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeFonts.html, `${adapter}: list creation undo retains the original document`);
+          const beforeDirection = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes, text: window.morfiraConsumer.editor!.getText(), alignment: getComputedStyle(window.morfiraConsumer.editor!.surface.querySelector('p')!).textAlign }));
+          await page.evaluate(() => {
+            const { editor, textDirection } = window.morfiraConsumer;
+            editor!.setSelection(0, 7);
+            textDirection!.setDirection('rtl');
+          });
+          await expect(content.locator('p')).toHaveAttribute('dir', 'rtl');
+          await expect(content.locator('p')).toHaveCSS('direction', 'rtl');
+          assert.deepEqual(await page.evaluate(() => ({ text: window.morfiraConsumer.editor!.getText(), alignment: getComputedStyle(window.morfiraConsumer.editor!.surface.querySelector('p')!).textAlign })), { text: beforeDirection.text, alignment: beforeDirection.alignment }, `${adapter}: direction preserves text and alignment`);
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeDirection.changes + 1, `${adapter}: installed direction emits one controlled update`);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeDirection.html, `${adapter}: installed direction undoes once`);
           const beforeOverflow = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), undo: window.morfiraConsumer.editor!.canUndo(), changes: window.morfiraConsumer.changes }));
           await page.evaluate(() => window.morfiraConsumer.showOverflow!());
           const overflowHost = page.locator('[data-consumer-overflow]');

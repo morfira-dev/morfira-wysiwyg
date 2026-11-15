@@ -1,8 +1,41 @@
-# Verification record — list properties, optional features and editor
+# Verification record — text direction, optional features and editor
 
-Status: current list-properties runtime completed verification: full check 3591/3591 (1197 cases × three engines, exit 0), documentation 167/167, packed consumers 18/18 and corrected focused 153/153 passed. Final test-only conversion assertions and the adjacent type move passed 21/21 focused executions and repeated type checking; runtime is unchanged. Fonts `a092286` and earlier results below remain historical baselines.
+Status: the first optional LTR/RTL slice completed final local verification: full check 3615/3615 (1205 cases × three engines, 15.1 minutes, exit 0), documentation 169/169 and packed consumers 18/18 passed. Corrected direction tests passed 24/24 and TypeScript reported zero errors. Completed list-properties `9b06a69` and earlier results below remain historical evidence. Push `43b4408` contains preceding work; LTR/RTL remains local. Remote CI was still in its pnpm check step in the 19:16 MSK snapshot; its final conclusion is unknown and is not implied by local passes.
 
-## Current optional list-properties verification — runtime verified
+## Current optional text-direction verification — completed locally
+
+The explicit `/plugins/text-direction` entry provides guarded LTR/RTL/reset commands and stored/mixed state, outside preset defaults and ready-toolbar built-ins. Targets are closest ordinary blocks or supported siblings sharing a parent/cell boundary; cross-parent inner LI paragraphs and unsupported structural endpoints remain barriers. Reset inherits rather than forcing LTR. Native bidi stays browser-owned: no text/control-character rewriting, automatic detection, inline direction wrappers or spoofing guarantee. HTML normalizes accepted dir values; recognized invalid own JSON dir now rejects atomically rather than being treated as an unknown filtered attribute. Older readers may lose the additive attribute. No runtime dependencies or plugin CSS were added.
+
+| Check | Current status |
+| --- | --- |
+| Review and regressions | Astra identified two exit-path bugs; both fixed with regressions before the measured build. Review is not a passing test result |
+| Package build / budgets | Passed, exit 0; current measurements below |
+| Initial focused browser suite | **291/294 passed**, 1.3 minutes. Three failures were one fixture expecting a safe span wrapper to disappear when its unsupported dir was stripped; only the expectation changed, runtime unchanged |
+| Corrected direction suite | **24/24 passed**, 15.9 seconds, Chromium/Firefox/WebKit (`/tmp/morfira-text-direction-corrected.log`) |
+| TypeScript checks | Passed, zero errors |
+| Documentation build / focused controls | Build passed, exit 0; both new localized controls **2/2 passed**, 7.4 seconds |
+| Complete documentation browser suite | **169/169 passed**, 1.7 minutes, exit 0 (`/tmp/morfira-text-direction-docs-full.log`) |
+| Default installed consumers | **15/15 passed**, exit 0, across five wrappers and three engines; actual dir/computed direction, unchanged text/alignment and one Undo |
+| New definitions | Eight editor definitions and two localized docs definitions; counts are not execution evidence |
+| Angular 22 installed consumers | **3/3 passed**, exit 0, Node 24.16.0; current total **18/18** installed consumer scenarios |
+| Final full check | **3615/3615 passed**, **1205 cases × Chromium/Firefox/WebKit**, 15.1 minutes, **exit 0**, including the entire static pipeline |
+
+### Current text-direction generated sizes
+
+Read from current `size-report.json`: raw minified JS, gzip, Brotli and CSS separately, shared chunks once per selected profile. Framework runtimes/maps/declarations/application assets are excluded. These measurements do not establish input latency, memory behavior or complete accessibility.
+
+| Entry / selected profile | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 89916 | 27679 | 24337 | 3293 | 1164 | 962 |
+| Optional text direction | 2246 | 1108 | 974 | 0 | 0 | 0 |
+| Standard ready | 201628 | 58815 | 50301 | 11504 | 3747 | 3038 |
+| Standard + direction ready | 203633 | 59641 | 50823 | 11504 | 3747 | 3038 |
+| Standard + fonts + list properties + direction ready | 209710 | 61441 | 52160 | 11504 | 3747 | 3038 |
+| Extended ready | 222799 | 64947 | 55338 | 12700 | 4239 | 3414 |
+
+Core is **89916 / 27679 / 24337** raw/gzip/Brotli JS bytes, **+823 raw / +221 gzip** versus list-properties `9b06a69`, and **9916 raw bytes above** the soft 80000-byte target. Optional direction is **2246 / 1108 / 974**, below its unchanged 8000-byte gzip feature ceiling. Standard+direction is **59641 gzip** (5359 bytes below 65000); the explicit fonts+list-properties+direction ready profile is **61441 gzip** (3559 bytes below 65000). CSS is unchanged. Core 200000 gzip, optional entry 150000 gzip, standard/extended 65000/110000 gzip, profile CSS 20000 raw, adapter and existing small-feature guards remain unchanged.
+
+## Historical list-properties baseline — `9b06a69`
 
 The explicit `/plugins/list-properties` entry changes stored start/reversed/bounded-marker properties on one whole current UL/OL, using native selection and validated transactions. Presets and ready-toolbar built-ins remain unchanged. The actual container/item/branch nodes and selected range are preserved by property operations; read-only/composition and same-cell/semantic/malformed-source guards apply. Native reversed uses presence semantics, missing explicit start stays false, and older readers may discard new properties. Structural clones retain attributes without recalculating split offsets or continued counters; li.value/custom counters are unsupported. No runtime dependencies or plugin CSS were added.
 
@@ -19,7 +52,7 @@ The explicit `/plugins/list-properties` entry changes stored start/reversed/boun
 | Final full check | **3591/3591 passed**, **1197 cases × Chromium/Firefox/WebKit**, 14.1 minutes, **exit 0**, including the complete static pipeline (`/tmp/morfira-list-properties-full-check.log`) |
 | Final test-only strengthening | Existing OL↔UL conversion assertions and adjacent type declarations: **21/21 passed**, 13.1 seconds, plus repeated type checking with zero errors; runtime unchanged (`/tmp/morfira-list-properties-final-assertions.log`, `/tmp/morfira-list-properties-final-types.log`) |
 
-### Current list-properties generated sizes
+### Historical list-properties generated sizes — `9b06a69`
 
 From current build-generated `size-report.json`: raw minified JS, gzip, Brotli and CSS separately, with shared chunks counted once per selected graph. Framework runtimes, source maps, declarations and application assets are excluded. These are bundle measurements, not input/performance evidence.
 

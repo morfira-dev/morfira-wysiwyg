@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { build } from 'esbuild';
 
-const features = ['list-properties', 'fonts', 'horizontal-rule', 'checklists', 'tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions'];
+const features = ['text-direction', 'list-properties', 'fonts', 'horizontal-rule', 'checklists', 'tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions'];
 const forms = ['ui/links', 'ui/images', 'ui/search'];
 const standardFeatures = ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'horizontal-rule'];
 const standardUI = ['ui/editor', 'ui/shared', 'ui/standard', ...forms, 'tables', 'images', 'search', 'horizontal-rule'];
@@ -23,13 +23,13 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component', allowed: [] },
   ...features.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/plugins/${feature}`,
-    symbol: ({ 'list-properties': 'listProperties', fonts: 'fonts', 'horizontal-rule': 'horizontalRule', checklists: 'checklists', tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],
+    symbol: ({ 'text-direction': 'textDirection', 'list-properties': 'listProperties', fonts: 'fonts', 'horizontal-rule': 'horizontalRule', checklists: 'checklists', tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],
     feature,
     allowed: feature === 'suggestions' ? ['suggestions-core', 'suggestions-menu'] : [feature, ...(['mentions', 'slash'].includes(feature) ? ['suggestions-core'] : [])],
   })),
   ...forms.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/${feature}`,
-    symbol: ({ 'ui/links': 'createLinkForm', 'ui/images': 'createImageForm', 'ui/search': 'createSearchForm' } as Record<string, string>)[feature],
+    symbol: ({ 'text-direction': 'textDirection', 'ui/links': 'createLinkForm', 'ui/images': 'createImageForm', 'ui/search': 'createSearchForm' } as Record<string, string>)[feature],
     feature,
     allowed: [feature, 'ui/shared', ...(feature === 'ui/images' ? ['images'] : feature === 'ui/search' ? ['search'] : [])],
   })),

@@ -127,6 +127,10 @@
     "./plugins/list-properties": {
       "types": "./dist/plugins/list-properties.d.ts",
       "import": "./dist/plugins/list-properties.js"
+    },
+    "./plugins/text-direction": {
+      "types": "./dist/plugins/text-direction.d.ts",
+      "import": "./dist/plugins/text-direction.js"
     }
   },
   "dependencies": {

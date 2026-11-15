@@ -191,6 +191,9 @@ const copyAttributes = (source: HTMLElement, target: HTMLElement) => {
     if (value !== null)
       target.setAttribute(name, value);
   }
+  const direction = source.getAttribute('dir');
+  if ((direction === 'ltr' || direction === 'rtl') && /^(p|h[1-6]|pre|blockquote|ul|ol|li)$/.test(source.localName)
+    && /^(p|h[1-6]|pre|blockquote|ul|ol|li)$/.test(target.localName)) target.setAttribute('dir', direction);
 };
 const blockRule = (prefix: string): string | undefined => {
   if (/^#{1,6}$/.test(prefix))

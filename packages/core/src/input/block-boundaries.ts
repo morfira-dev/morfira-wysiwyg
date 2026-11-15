@@ -1,4 +1,5 @@
 import { activeRange, placeCaret } from '../selection/index.js';
+import { copyDirection } from '../document/direction.js';
 
 const blockTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
 const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br']);
@@ -61,7 +62,9 @@ export const editBlockInput = (root: HTMLElement, inputType: string): void => {
     const headingEnd = block.localName !== 'p' && (!hasContent(tail) || emptyHeading);
     if (emptyHeading && !block.hasAttribute('data-mw-node')) {
       const paragraph = document.createElement('p');
-      for (const attribute of block.attributes) paragraph.setAttribute(attribute.name, attribute.value);
+      for (const attribute of block.attributes)
+        if (attribute.name !== 'dir') paragraph.setAttribute(attribute.name, attribute.value);
+      copyDirection(block, paragraph);
       paragraph.append(document.createElement('br'));
       block.replaceWith(paragraph);
       placeCaret(paragraph);
@@ -71,8 +74,9 @@ export const editBlockInput = (root: HTMLElement, inputType: string): void => {
     if (headingEnd) {
       // A semantic identity is valid only on its declared wrapper, never on an exit paragraph.
       for (const attribute of block.attributes) {
-        if (!attribute.name.startsWith('data-')) next.setAttribute(attribute.name, attribute.value);
+        if (!attribute.name.startsWith('data-') && attribute.name !== 'dir') next.setAttribute(attribute.name, attribute.value);
       }
+      copyDirection(block, next);
     }
     next.append(tail);
     if (!next.textContent && !next.querySelector('br')) next.replaceChildren(document.createElement('br'));

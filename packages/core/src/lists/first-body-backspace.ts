@@ -1,4 +1,5 @@
 import { activeRange } from '../selection/index.js';
+import { copyDirection } from '../document/direction.js';
 import { editListForwardDelete } from './forward-delete.js';
 import { inspectListItem } from './selection-boundaries.js';
 import type { ListItemBoundary } from './internal-types.js';
@@ -71,6 +72,8 @@ export const editFirstBodyBackspace = (root: HTMLElement, boundary: ListItemBoun
   const container = start.startContainer;
   const offset = start.startOffset;
   if (plan.kind === 'unwrap') {
+    for (const body of boundary.bodies)
+      if (/^(p|h[1-6])$/.test(body.localName) && !body.hasAttribute('dir')) copyDirection(boundary.item, body);
     plan.list.before(...boundary.bodies, ...boundary.nestedLists);
     boundary.item.remove();
   } else {

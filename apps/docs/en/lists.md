@@ -160,3 +160,5 @@ See [verification and remaining limits](/en/roadmap#verification-and-limits) for
 Boolean inline styles (bold/italic/underline/strike/code/subscript/superscript) use a local validated transformation when selection stays in one plain paragraph or heading. Unrelated blocks and their DOM listeners remain connected. Unsupported/complex and cross-block selections keep the general path. Adding an already inherited mark is a no-op; undo/redo and public HTML/JSON validation retain their contracts. No application configuration is required.
 
 Optional [list properties](/en/list-properties), through `/plugins/list-properties`, change start/reversed/marker on one whole current container with Undo. They are explicitly installed, excluded from preset defaults and do not recalculate continued numbering.
+
+Optional [LTR/RTL text direction](/en/text-direction), through `/plugins/text-direction`, changes explicit dir on the closest ordinary block or siblings sharing a parent/cell. Reset inherits surrounding direction rather than forcing LTR; presets and ready toolbar do not install it automatically.

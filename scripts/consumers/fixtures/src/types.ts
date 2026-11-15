@@ -5,6 +5,7 @@ import type { StandardEditorUIController } from '@morfira-dev/wysiwyg/ui/standar
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
 import type { FontCommands } from '@morfira-dev/wysiwyg/plugins/fonts';
 import type { ListPropertyCommands } from '@morfira-dev/wysiwyg/plugins/list-properties';
+import type { TextDirectionCommands } from '@morfira-dev/wysiwyg/plugins/text-direction';
 
 export interface ConsumerProbe {
   editor?: Editor;
@@ -12,6 +13,7 @@ export interface ConsumerProbe {
   ui?: StandardEditorUIController;
   fonts?: FontCommands;
   listProperties?: ListPropertyCommands;
+  textDirection?: TextDirectionCommands;
   showOverflow?: () => void;
   hideOverflow?: () => void;
   insertNote?: (text: string) => boolean;

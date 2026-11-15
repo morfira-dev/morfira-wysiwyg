@@ -10,6 +10,10 @@ HTML parsing uses an inert template. String serialization (`sanitizeHTML`, schem
 
 A pre-hardening isolated localhost route-abort probe confirmed unwanted image fetches from sanitizeHTML/documentHTML in Chromium, Firefox and WebKit, with parseHTML alone producing none. Evidence: /tmp/morfira-codec-network-probe.ts and /tmp/morfira-codec-network-probe.log. This was a resource-fetch side effect, not a demonstrated XSS exploit; the permanent security-codec regression covers the repaired property.
 
+## Text direction boundaries
+
+Text direction follows `text-direction.md`: only native ltr/rtl values on the fixed block/container tag set survive import. Explicit JSON rejects wrong tags/types/noncanonical values atomically; HTML filters invalid values. No CSS direction, unicode-bidi, writing-mode, bdi/bdo or arbitrary attributes are enabled. Commands validate payloads before eligibility and respect semantic/structural/cell boundaries. Normal text and Unicode bidi characters are retained; this is not a visual-spoofing defense or a language detector.
+
 ## List property boundaries
 
 List properties follow `list-properties.md`: marker styles accept only the fixed, per-kind UL/OL enum, without URLs/functions/custom counters or list-style-image. OL reversed is HTML presence but canonical JSON empty-string only; explicit wrong-tag or malformed JSON values reject before live mutation. Commands validate payloads before eligibility, verify one ordinary list/cell owner and mutate only container attributes through existing guarded history. No resource request or executable markup is introduced.

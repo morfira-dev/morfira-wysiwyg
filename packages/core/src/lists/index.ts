@@ -1,6 +1,7 @@
 export { inspectWrappedListInput, editWrappedListInput } from './wrapped-input.js';
 import { activeRange, placeCaret, preserveRange } from '../selection/index.js';
 import { normalizeListMarker } from '../document/list-marker.js';
+import { copyDirection } from '../document/direction.js';
 export { handlesListForwardDelete, editListForwardDelete } from './forward-delete.js';
 export { inspectListItem, listSelectionReplacement } from './selection-boundaries.js';
 export { prepareListSelectionPaste, replaceListSelection, replaceListSelectionWithFragment, handlesCollapsedListBlockPaste } from './replace-selection.js';
@@ -72,7 +73,8 @@ const depth = (root: HTMLElement, item: HTMLElement): number => {
 };
 const numberedBoundary = (list: Element): boolean => list.localName === 'ol' && (list.hasAttribute('start') || list.hasAttribute('reversed'));
 const compatible = (a: Element | null, b: Element): a is HTMLElement => !!a && a.localName === b.localName && isList(a)
-  && !numberedBoundary(a) && !numberedBoundary(b) && a.getAttribute('style') === b.getAttribute('style');
+  && !numberedBoundary(a) && !numberedBoundary(b) && a.getAttribute('dir') === b.getAttribute('dir')
+  && a.getAttribute('style') === b.getAttribute('style');
 const joinLists = (root: HTMLElement): void => {
   for (const list of [...root.querySelectorAll<HTMLElement>('ul,ol')]) {
     if (!root.contains(list))
@@ -97,8 +99,10 @@ const splitAround = (item: HTMLLIElement, replacement: Node[]): void => {
 const ownContent = (item: HTMLElement) => [...item.childNodes].filter((node) => !(node instanceof Element && isList(node)));
 const unwrapRoot = (item: HTMLLIElement, paragraphOnly = false): void => {
   const paragraphNode = () => {
-    const node = document.createElement('p'); if (item.hasAttribute('style'))
-      node.setAttribute('style', item.getAttribute('style')!); return node;
+    const node = document.createElement('p');
+    if (item.hasAttribute('style')) node.setAttribute('style', item.getAttribute('style')!);
+    copyDirection(item, node);
+    return node;
   };
   let paragraph = paragraphNode();
   const nested = [...item.children].filter(isList);
@@ -107,12 +111,14 @@ const unwrapRoot = (item: HTMLLIElement, paragraphOnly = false): void => {
   const output: Node[] = [];
   for (const node of content) {
     if (paragraphOnly && node instanceof HTMLElement && /^(p|h[1-6]|blockquote|pre)$/.test(node.localName)) {
+      copyDirection(node, paragraph);
       paragraph.append(...node.childNodes);
     }
     else if (node instanceof HTMLElement && /^(p|h[1-6]|blockquote|pre)$/.test(node.localName)) {
       if (paragraph.childNodes.length)
         output.push(paragraph);
       paragraph = paragraphNode();
+      if (/^(p|h[1-6])$/.test(node.localName) && !node.hasAttribute('dir')) copyDirection(item, node);
       output.push(node);
     }
     else
@@ -191,6 +197,7 @@ export const applyList = (root: HTMLElement, value: unknown): void => {
         const list = document.createElement(tag);
         if (block.parentElement!.hasAttribute('style'))
           list.setAttribute('style', block.parentElement!.getAttribute('style')!);
+        copyDirection(block.parentElement!, list);
         const marker = list.style.getPropertyValue('list-style-type');
         if (marker && !normalizeListMarker(tag, marker)) {
           list.style.removeProperty('list-style-type');
@@ -204,6 +211,7 @@ export const applyList = (root: HTMLElement, value: unknown): void => {
         const item = document.createElement('li');
         if (block.hasAttribute('style'))
           item.setAttribute('style', block.getAttribute('style')!);
+        copyDirection(block, item);
         item.append(...block.childNodes);
         list.append(item);
         block.replaceWith(list);
