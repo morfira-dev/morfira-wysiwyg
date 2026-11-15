@@ -8,6 +8,8 @@ export interface ConsumerProbe {
   editor?: Editor;
   changes: number;
   ui?: StandardEditorUIController;
+  showOverflow?: () => void;
+  hideOverflow?: () => void;
   insertNote?: (text: string) => boolean;
   forms?: {
     links: LinkFormController;

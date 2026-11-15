@@ -42,10 +42,11 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
   editor.getLocale();
   if (host.childNodes.length || host === editor.surface || editor.surface.contains(host))
     throw new Error('Mount editor UI into an empty host outside persisted editor content.');
-  if (!record(options) || Object.keys(options).some((key) => !['density', 'label', 'onError', 'links', 'images', 'search', 'table'].includes(key)))
+  if (!record(options) || Object.keys(options).some((key) => !['density', 'overflow', 'label', 'onError', 'links', 'images', 'search', 'table'].includes(key)))
     throw new TypeError('Expected standard editor UI options.');
   if (options.label !== undefined && typeof options.label !== 'string') throw new TypeError('The UI label must be a string.');
   if (options.onError !== undefined && typeof options.onError !== 'function') throw new TypeError('The UI error handler must be a callback.');
+  if (options.overflow !== undefined && !['wrap', 'more'].includes(options.overflow)) throw new TypeError('Invalid standard UI overflow.');
   for (const value of [options.links, options.images, options.search, options.table]) {
     if (value !== undefined && !record(value)) throw new TypeError('UI feature options must be objects.');
   }
@@ -139,7 +140,10 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
     finally {
       body.replaceChildren();
       updateLaunchers();
-      if (restoreFocus && invoker?.isConnected && !invoker.disabled) invoker.focus();
+      if (restoreFocus && invoker?.isConnected && !invoker.disabled) {
+        const target = invoker.closest('[hidden]') ? toolbarHost.querySelector<HTMLButtonElement>('[data-mw-ui-more]') : invoker;
+        target?.focus();
+      }
     }
   };
   const refresh = () => {
@@ -245,9 +249,11 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
     }] : [];
     shell = createEditorUI(toolbarHost, editor, {
       density: options.density,
+      overflow: options.overflow,
       label: options.label,
       onError: (error) => diagnose(error),
       groups: [...createDefaultEditorUIGroups(), ...(dividers.length ? [dividers] : []), launchers],
+      groupPriorities: [100, 90, 80, 40, 20, ...(dividers.length ? [10] : []), 60],
     });
     element.addEventListener('pointerdown', capture, true);
     element.addEventListener('keydown', keydown, true);

@@ -6,6 +6,7 @@ import type { standardEditorUIMessages } from './messages.js';
 
 export interface StandardEditorUIOptions {
   density?: EditorUIOptions['density'];
+  overflow?: EditorUIOptions['overflow'];
   label?: string;
   onError?: (error: unknown) => void;
   links?: LinkFormOptions;

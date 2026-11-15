@@ -3,7 +3,8 @@ import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { createFormSelection } from '../shared/selection.js';
 import { createEditorUIIcon } from './icons.js';
 import { editorUIMessages } from './messages.js';
-import type { EditorUIControl } from './internal-types.js';
+import { createEditorUIOverflow } from './overflow.js';
+import type { EditorUIControl, EditorUIOverflow } from './internal-types.js';
 import type { EditorUIAction, EditorUIBuiltin, EditorUIController, EditorUIItem, EditorUIMessageKey, EditorUIOptions } from './types.js';
 
 export { editorUIMessages } from './messages.js';
@@ -23,8 +24,13 @@ const validateGroups = (options: EditorUIOptions): EditorUIItem[][] => {
   if (options.label !== undefined && typeof options.label !== 'string') throw new TypeError('Editor UI label must be a string.');
   if (options.onError !== undefined && typeof options.onError !== 'function') throw new TypeError('Editor UI onError must be a function.');
   if (options.density !== undefined && !['comfortable', 'compact'].includes(options.density)) throw new TypeError('Invalid editor UI density.');
+  if (options.overflow !== undefined && !['wrap', 'more'].includes(options.overflow)) throw new TypeError('Invalid editor UI overflow.');
   const requested = options.groups ?? createDefaultEditorUIGroups();
   if (!Array.isArray(requested) || !requested.length || requested.length > 32) throw new TypeError('Expected 1–32 editor UI groups.');
+  if (options.groupPriorities !== undefined && (!Array.isArray(options.groupPriorities)
+    || options.groupPriorities.length !== requested.length
+    || Array.from(options.groupPriorities).some((priority) => typeof priority !== 'number' || !Number.isFinite(priority))))
+    throw new TypeError('Expected one finite priority per editor UI group.');
   const ids = new Set<string>();
   return requested.map((group) => {
     if (!Array.isArray(group) || !group.length || group.length > 64) throw new TypeError('Editor UI groups must contain 1–64 items.');
@@ -79,6 +85,8 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
   status.setAttribute('role', 'status');
   status.setAttribute('aria-live', 'polite');
   const controls: EditorUIControl[] = [];
+  const groupNodes: HTMLElement[] = [];
+  let overflow: EditorUIOverflow | undefined;
   const cleanups: (() => void)[] = [];
   const selection = createFormSelection(editor);
   let disposed = false;
@@ -97,12 +105,22 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
     if (typeof label !== 'string') throw new TypeError('Action label reader must return text.');
     return label;
   };
+  const navigation = (scope: HTMLElement): (HTMLButtonElement | HTMLSelectElement | HTMLInputElement)[] => {
+    const nodes = controls.filter((control) => scope.contains(control.element) && !control.element.disabled).map((control) => control.element);
+    if (scope === toolbar && overflow && !overflow.button.hidden) nodes.push(overflow.button);
+    return nodes;
+  };
   const updateTabs = () => {
     const active = controls.findIndex((control) => control.element === document.activeElement);
     if (active >= 0 && !controls[active].element.disabled) focused = active;
-    if (!controls[focused] || controls[focused].element.disabled) focused = controls.findIndex((control) => !control.element.disabled);
-    controls.forEach((control, index) => { control.element.tabIndex = index === focused ? 0 : -1; });
-    toolbar.tabIndex = focused < 0 ? 0 : -1;
+    controls.forEach((control) => { control.element.tabIndex = -1; });
+    if (overflow) overflow.button.tabIndex = -1;
+    for (const scope of [toolbar, ...(overflow && !overflow.region.hidden ? [overflow.region] : [])]) {
+      const nodes = navigation(scope);
+      const target = nodes.find((node) => node === document.activeElement) ?? nodes.find((node) => node === controls[focused]?.element) ?? nodes[0];
+      if (target) target.tabIndex = 0;
+      if (scope === toolbar) toolbar.tabIndex = target ? -1 : 0;
+    }
   };
   const refresh = () => {
     if (disposed) return;
@@ -150,6 +168,7 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
       }
     }
     status.textContent = statusKey ? message(statusKey) : '';
+    overflow?.refresh();
     updateTabs();
   };
   const activate = (control: EditorUIControl) => {
@@ -157,6 +176,7 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
     focused = controls.indexOf(control);
     const mutates = control.action?.mutates !== false;
     const chosen = control.element instanceof HTMLInputElement || control.element instanceof HTMLSelectElement ? control.element.value : undefined;
+    const fromOverflow = overflow?.region.contains(control.element);
     if (mutates && (editor.isReadOnly() || composing)) return;
     try {
       statusKey = undefined;
@@ -194,6 +214,7 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
           editor.format(id, (formats.mixed as string[] | undefined)?.includes(id) || !formats[id]);
         }
       }
+      if (fromOverflow && overflow) overflow.close(overflow.region.contains(document.activeElement));
       refresh();
     }
     catch (error) { report(error); }
@@ -223,25 +244,25 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
         : ['left', 'center', 'right', 'justify'].map((value) => ({ value, key: `ui.editor.${value}` as EditorUIMessageKey }))),
   ] as readonly { value: string; key: EditorUIMessageKey }[];
   const keyboard = (event: KeyboardEvent) => {
-    if (disposed || event.isComposing || event.keyCode === 229) return;
+    if (disposed || event.defaultPrevented || event.isComposing || event.keyCode === 229) return;
     if (event.key === 'Escape') {
       event.preventDefault();
       if (!selection.restore()) editor.focus();
       return;
     }
-    const current = controls.findIndex((control) => control.element === event.target);
-    if (current < 0 || event.ctrlKey || event.metaKey) return;
+    const scope = overflow?.region.contains(event.target as Node) ? overflow.region : toolbar;
+    const enabled = navigation(scope);
+    const position = enabled.findIndex((node) => node === event.target);
+    if (position < 0 || event.ctrlKey || event.metaKey) return;
     const native = event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement;
     if (native && !event.altKey) return;
     if (event.altKey && !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-    const enabled = controls.filter((control) => !control.element.disabled);
-    const position = enabled.indexOf(controls[current]);
     const direction = getComputedStyle(toolbar).direction === 'rtl' ? -1 : 1;
     const next = event.key === 'Home' ? 0 : event.key === 'End' ? enabled.length - 1 : event.key === 'ArrowRight' ? (position + direction + enabled.length) % enabled.length : event.key === 'ArrowLeft' ? (position - direction + enabled.length) % enabled.length : -1;
     if (next < 0 || !enabled.length) return;
     event.preventDefault();
-    focused = controls.indexOf(enabled[next]);
-    enabled[next].element.focus();
+    focused = controls.findIndex((control) => control.element === enabled[next]);
+    enabled[next].focus();
     updateTabs();
   };
   const destroy = () => {
@@ -252,9 +273,11 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
     element.remove();
   };
   try {
-    for (const items of groups) {
+    for (const [index, items] of groups.entries()) {
       const group = document.createElement('div');
       group.className = 'mw-ui-group';
+      group.dataset.mwUiGroup = String(index);
+      groupNodes.push(group);
       for (const item of items) {
         if (typeof item !== 'string') {
           button(group, { id: item.id, action: item });
@@ -294,7 +317,15 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
       toolbar.append(group);
     }
     element.append(toolbar, status);
-    listen(toolbar, 'keydown', keyboard);
+    if (options.overflow === 'more') {
+      overflow = createEditorUIOverflow({
+        element, toolbar, groups: groupNodes,
+        priorities: options.groupPriorities ? [...options.groupPriorities] : groups.map(() => 0),
+        label: () => message('ui.editor.more'), capture: selection.capture, updateTabs,
+      });
+      cleanups.push(overflow.destroy);
+    }
+    listen(element, 'keydown', keyboard);
     listen(editor.surface, 'compositionstart', () => {
       if (editor.isReadOnly()) return;
       composing = true;

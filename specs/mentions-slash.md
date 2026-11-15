@@ -2,7 +2,7 @@
 
 Status: **phase 1 implemented; phase 2 structural actions implemented locally; phase 3 remains proposed**. This follows the Markdown shortcuts milestone. The first slice is an asynchronous suggestion picker that inserts ordinary text. Persistent, atomic identity-bearing mentions remain a later slice; structural slash actions follow the phase-2 contract below.
 
-Original strict TypeScript/MIT, no new runtime dependencies. Core must not import these plugins or their UI. Reuse platform Selection/Range and the existing plugin lifecycle. The existing six-package layout can expose new subpaths without adding packages. Each independently loadable entry, including its shared chunks, uses the existing optional-module 150000-byte minified JS envelope; measure gzip/Brotli and optional CSS separately.
+Original strict TypeScript/MIT, no new runtime dependencies. Core must not import these plugins or their UI. Reuse platform Selection/Range and the existing plugin lifecycle. Existing packages can expose new subpaths without adding packages. Each independently loadable entry, including its shared chunks, uses the user-directed optional-module 150000-byte gzip JS envelope; measure raw JS/Brotli and optional CSS separately.
 
 ## Current constraints verified in source
 

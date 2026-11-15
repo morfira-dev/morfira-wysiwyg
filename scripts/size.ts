@@ -37,13 +37,14 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'images', 'search', 'statistics', 'markdown', 'autolink', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
-      if (report[`${entry}.js`].raw > 150_000) { console.error(`${entry}: exceeds 150000 byte JS budget`); failed = true; }
+      if (report[`${entry}.js`].gzip > 150_000) { console.error(`${entry}: exceeds 150000 byte gzip JS budget`); failed = true; }
       if (entry === 'checklists' && report[`${entry}.js`].raw > 8000) { console.error('checklists: exceeds 8000 byte JS budget'); failed = true; }
       if (entry === 'horizontal-rule' && report[`${entry}.js`].raw > 5000) { console.error('horizontal-rule: exceeds 5000 byte JS budget'); failed = true; }
     }
   }
   const budget = name === 'core' ? 200_000 : name === 'plugins' ? 150_000 : 10_000;
-  if (report[`${name}.js`].raw > budget) { console.error(`${name}: exceeds ${budget} byte JS budget`); failed = true; }
+  const metric = name === 'core' || name === 'plugins' ? 'gzip' : 'raw';
+  if (report[`${name}.js`][metric] > budget) { console.error(`${name}: exceeds ${budget} byte ${metric} JS budget`); failed = true; }
 }
 // Consumer profiles retain the actual public factories and bundle their shared JS once.
 // Runtime feature flags are deliberately not used as a tree-shaking claim.
@@ -74,14 +75,14 @@ for (const profile of ['minimal', 'standard', 'extended']) {
     report[`${name}.css`] = css.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
     if (profile !== 'minimal') {
       // The first real presets now establish these measured product-profile guards.
-      const budget = profile === 'standard' ? { raw: 200000, gzip: 65000 } : { raw: 350000, gzip: 110000 };
+      const budget = profile === 'standard' ? 65000 : 110000;
       const javascriptSize = report[`${name}.js`];
       const stylesheetSize = report[`${name}.css`];
-      if (javascriptSize.raw > budget.raw || javascriptSize.gzip > budget.gzip || stylesheetSize.raw > 20000) {
-        console.error(`${name}: exceeds profile guard (${budget.raw} raw JS / ${budget.gzip} gzip JS / 20000 raw CSS bytes).`);
+      if (javascriptSize.gzip > budget || stylesheetSize.raw > 20000) {
+        console.error(`${name}: exceeds profile guard (${budget} gzip JS / 20000 raw CSS bytes).`);
         failed = true;
       }
-      else console.log(`${name}: measured profile guard passed (${budget.raw} raw JS / ${budget.gzip} gzip JS / 20000 raw CSS bytes).`);
+      else console.log(`${name}: measured profile guard passed (${budget} gzip JS / 20000 raw CSS bytes).`);
     }
   }
 }

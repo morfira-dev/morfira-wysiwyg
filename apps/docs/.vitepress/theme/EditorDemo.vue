@@ -23,6 +23,8 @@ const { lang } = useData();
 const ru = computed(() => lang.value === 'ru');
 const t = (russian: string, english: string) => ru.value ? russian : english;
 const editorLocale = ref(ru.value ? 'ru' : 'en');
+const toolbarOverflow = ref<'wrap' | 'more'>('wrap');
+let mountEditorUI: (() => void) | undefined;
 const host = ref<HTMLElement>(); const toolbar = ref<HTMLElement>();
 const linkFormHost = ref<HTMLElement>();
 const imageFormHost = ref<HTMLElement>();
@@ -150,6 +152,7 @@ const loadChecklistSample = () => {
   loadSample();
 };
 const toggleMarkdown = () => { markdownAPI?.setEnabled(markdownEnabled.value); };
+const updateToolbarOverflow = () => run(() => { mountEditorUI?.(); }, false);
 const updateEditorLocale = () => {
   editor?.setLocale(editorLocale.value);
 };
@@ -505,15 +508,20 @@ onMounted(async () => {
       initialValues: { query: 'Morfira', replacement: 'Morfira Studio', caseSensitive: false, wholeWord: false },
     });
   }
-  const ui = props.full ? createExtendedEditorUI(toolbar.value!, editor, {
-    label: t('Форматирование', 'Formatting'),
-    links: { initialValues: { href: 'https://example.com' } },
-    images: { initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64' } },
-    search: { initialValues: { query: 'Morfira', replacement: 'Morfira Studio' } },
-    mentions: { labels: { label: t('Люди', 'People'), loading: t('Ищем людей…', 'Finding people…'), empty: t('Люди не найдены', 'No people found'), error: t('Ошибка поиска людей', 'People lookup failed'), results: t('Людей: {count}', 'People: {count}') } },
-    slash: { labels: { label: t('Шаблоны', 'Snippets'), loading: t('Ищем шаблоны…', 'Finding snippets…'), empty: t('Шаблоны не найдены', 'No snippets found'), error: t('Ошибка поиска шаблонов', 'Snippet lookup failed'), results: t('Шаблонов: {count}', 'Snippets: {count}') } },
-  }) : createEditorUI(toolbar.value!, editor);
-  disposeEditorUI = ui.destroy;
+  mountEditorUI = () => {
+    disposeEditorUI?.();
+    const ui = props.full ? createExtendedEditorUI(toolbar.value!, editor!, {
+      label: t('Форматирование', 'Formatting'),
+      overflow: toolbarOverflow.value,
+      links: { initialValues: { href: 'https://example.com' } },
+      images: { initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64' } },
+      search: { initialValues: { query: 'Morfira', replacement: 'Morfira Studio' } },
+      mentions: { labels: { label: t('Люди', 'People'), loading: t('Ищем людей…', 'Finding people…'), empty: t('Люди не найдены', 'No people found'), error: t('Ошибка поиска людей', 'People lookup failed'), results: t('Людей: {count}', 'People: {count}') } },
+      slash: { labels: { label: t('Шаблоны', 'Snippets'), loading: t('Ищем шаблоны…', 'Finding snippets…'), empty: t('Шаблоны не найдены', 'No snippets found'), error: t('Ошибка поиска шаблонов', 'Snippet lookup failed'), results: t('Шаблонов: {count}', 'Snippets: {count}') } },
+    }) : createEditorUI(toolbar.value!, editor!, { overflow: toolbarOverflow.value });
+    disposeEditorUI = ui.destroy;
+  };
+  mountEditorUI();
   unsubscribe = editor.subscribe(refresh); unselect = editor.onSelectionChange(refresh); ready.value = true; refresh();
 });
 onBeforeUnmount(() => {
@@ -543,11 +551,13 @@ onBeforeUnmount(() => {
         <button :disabled="!ready || readOnly" @click="loadSample">{{ t('Загрузить пример', 'Load sample') }}</button>
       </template>
       <label>{{ t('Язык редактора', 'Editor language') }}<select v-model="editorLocale" :disabled="!ready" :aria-label="t('Язык интерфейса редактора', 'Editor interface language')" @change="updateEditorLocale"><option value="ru">Русский</option><option value="en">English</option></select></label>
+      <label>{{ t('Режим панели', 'Toolbar layout') }}<select v-model="toolbarOverflow" :disabled="!ready" :aria-label="t('Режим панели', 'Toolbar layout')" @change="updateToolbarOverflow"><option value="wrap">{{ t('Перенос строк', 'Wrap controls') }}</option><option value="more">{{ t('Скрывать в «Ещё»', 'Move into More') }}</option></select></label>
       <button @click="dark = !dark">{{ t('Сменить тему', 'Toggle theme') }}</button>
       <button :disabled="!ready" @click="toggleReadOnly">{{ readOnly ? t('Редактировать', 'Edit') : t('Только чтение', 'Read only') }}</button>
       <button :disabled="!ready" @click="snapshot('html')">HTML</button><button v-if="full" :disabled="!ready" @click="snapshot('json')">JSON</button>
     </div>
     <p class="lab-hint">{{ t('Язык меняет готовую панель и формы без замены документа. Подписи примеров и провайдеров подсказок остаются на языке страницы.', 'Language changes the ready toolbar and forms without replacing the document. Sample and suggestion-provider labels remain in the page language.') }}</p>
+    <p v-if="toolbarOverflow === 'more'" class="lab-hint">{{ t('«Ещё» переносит целые группы по доступной ширине панели. Смена режима пересоздаёт только UI: документ, история и выделение редактора сохраняются. Контекстные всплывающие инструменты остаются в плане.', 'More moves whole groups according to the toolbar host width. Changing modes remounts only UI: the editor document, history and selection remain. Contextual floating controls remain planned.') }}</p>
     <p v-if="full && sample === 'input'" class="lab-hint">{{ t('Выдели от конца «Alpha » до середины «Beta» и введи X или нажми Backspace/Delete. Сохраняются начало первого блока и форматированный остаток второго. Такой же пример есть внутри цитаты и объединённой ячейки; выделения между разными контейнерами пока не нормализуются этим обработчиком.', 'Select from the end of “Alpha ” into “Beta”, then type X or press Backspace/Delete. The first block prefix and formatted second-block suffix remain. Try the same within the quote or merged cell; this handler does not normalize selections across different containers.') }}</p>
     <div v-if="message" class="lab-message" :class="{ 'is-error': failed }" :role="failed ? 'alert' : 'status'">{{ message }}</div>
     <div class="demo-workspace">
@@ -562,7 +572,7 @@ onBeforeUnmount(() => {
           <label>{{ t('Выделение цветом', 'Highlight color') }}<input v-model="highlight" type="color"></label><button @click="format('background', highlight)">{{ t('Применить выделение', 'Apply highlight') }}</button><button @click="format('background', false)">{{ t('Сбросить выделение', 'Reset highlight') }}</button>
           <span>{{ t('Текст / фон', 'Text / background') }}: {{ activeStyles }}</span>
         </fieldset>
-        <div ref="toolbar"></div><div ref="host" @compositionstart="refresh" @compositionend="refresh"></div>
+        <div ref="toolbar" class="demo-toolbar-host"></div><div ref="host" @compositionstart="refresh" @compositionend="refresh"></div>
         <div class="demo-status"><span>{{ count }} {{ t('символов', 'characters') }}<template v-if="full"> · {{ words }} {{ t('слов', 'words') }}</template></span><span v-if="full">undo {{ undoAvailable ? '●' : '○' }} · redo {{ redoAvailable ? '●' : '○' }} · {{ source }}</span><span v-else>{{ t('Минимальный пресет · готовая панель', 'Minimal preset · ready toolbar') }}</span></div>
         <p v-if="full" class="lab-hint">{{ t('Выделяй текст перед форматированием. Кликни в ячейку перед табличной командой. Ctrl/Cmd+Z — отмена; Ctrl/Cmd+B/I/U — формат; Enter — новый пункт, пустой — выход; Tab/Shift+Tab — вложенность. В таблице Tab — следующая ячейка.', 'Select text before formatting. Click a cell before a table command. Ctrl/Cmd+Z undoes; Ctrl/Cmd+B/I/U formats; Enter splits an item; an empty item exits. Tab/Shift+Tab nests lists; in tables Tab moves to the next cell.') }}</p>
       </div>

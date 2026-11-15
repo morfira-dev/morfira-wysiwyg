@@ -58,6 +58,8 @@ import '@morfira-dev/wysiwyg/ui/editor.css';
 const editor = createEditor(editorHost, createMinimalPreset({ locale: 'ru' }));
 const ui = createEditorUI(toolbarHost, editor, {
   density: 'compact',
+  overflow: 'more',
+  groupPriorities: [100, 80, 60, 20],
   groups: [
     ['undo', 'redo'],
     ['bold', 'italic', 'underline'],
@@ -69,7 +71,25 @@ const ui = createEditorUI(toolbarHost, editor, {
 
 Доступные builtin IDs: `undo`, `redo`, `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`, `blockquote`, `clear`, `indent`, `outdent`, `block`, `list`, `align`, `color`, `background`. `createDefaultEditorUIGroups()` возвращает свежие группы по умолчанию. Повторные/неизвестные идентификаторы отклоняются при создании.
 
-Первые элементы групп отражают порядок панели, а не приоритет команд. `block` включает абзац, заголовки и блок кода; `list` — обычный текст, bullet и ordered list; `align` — четыре текущих варианта выравнивания. Цвет и выделение используют нативный color input и отдельный сброс. Полная custom palette и priority overflow пока не реализованы.
+Порядок групп задаёт порядок панели; `groupPriorities` отдельно задаёт их приоритет при overflow. `block` включает абзац, заголовки и блок кода; `list` — обычный текст, bullet и ordered list; `align` — четыре текущих варианта выравнивания. Цвет и выделение используют нативный color input и отдельный сброс. Полная custom palette пока не реализована; приоритетный overflow включается явно, как в примере.
+
+## Перенос строк или «Ещё»
+
+`overflow: 'wrap'` — значение по умолчанию для shell, standard и extended: все группы остаются видимыми с переносом строк. `overflow: 'more'` явно включает измерение ширины **host панели**, а не viewport. Панель переносит существующие целые группы в «Ещё» без копий controls; порядок, обработчики и состояние сохраняются. Очень широкая группа или узкий host используют ограниченный перенос строк.
+
+В shell `groupPriorities` должен содержать ровно по одному конечному числу на группу. Большее число дольше сохраняет группу на панели; при равенстве раньше скрывается более поздняя группа. Неверный режим, длина или число отклоняются до монтажа. Standard/extended задают собственные приоритеты; позиционный массив им не передаётся:
+
+```ts
+import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
+
+const ui = createStandardEditorUI(toolbarHost, editor, { overflow: 'more' });
+```
+
+Нативная кнопка «Ещё» имеет `aria-expanded` и `aria-controls`. Это раскрываемая немодальная область с обычными кнопками/select/input, а не ARIA menu. Закрытые controls исключены из навигации. Открытие с клавиатуры переводит фокус к первому доступному control; Escape закрывает область и возвращает фокус кнопке «Ещё». Внешнее действие закрывает её без перехвата фокуса; команда закрывает overflow, сохраняя фокус редактора или открытой формы.
+
+Измерение и открытие не меняют документ, выделение или историю. Фокусируемая группа остаётся на месте при resize до ухода фокуса; сохранение открытого системного picker при resize не обещается. `refresh()` повторно учитывает ширину и локализацию; без ResizeObserver его вызывают явно. Destroy отключает observer и запланированные callbacks. Новых runtime-зависимостей нет; headless-ядро не загружает overflow UI.
+
+На главной и в playground переключатель **«Режим панели»** меняет только UI через destroy/remount, сохраняя редактор, документ, историю и выделение. Режим по умолчанию — перенос строк. При смене режима открытые UI-панели и их несохранённые черновики пересоздаются; это не замена документа. Контекстные floating-инструменты и изменение режима по умолчанию остаются отдельными будущими решениями.
 
 ## Действие через SDK
 
@@ -136,7 +156,7 @@ const ui = createExtendedEditorUI(toolbarHost, editor, { density: 'compact' });
 
 Builtin UI использует RU/EN-каталоги `ui.editor.*` и `ui.standard.*`, формы — свои `ui.links.*`, `ui.images.*`, `ui.search.*`. `editor.setLocale(...)` обновляет подписи и сообщения без замены документа и черновиков. Явный `label` и custom action labels принадлежат приложению; callback `label: (editor) => ...` позволяет им реагировать на locale.
 
-Плотность — `comfortable` или `compact`. Scoped CSS использует `--mw-*`: существующие surface/text/accent/border/hover плюс `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Стили документа не переписываются при смене темы. Поддерживаются responsive wrapping и reduced motion; More/priority overflow и contextual bubbles остаются следующими этапами.
+Плотность — `comfortable` или `compact`. Scoped CSS использует `--mw-*`: существующие surface/text/accent/border/hover плюс `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Стили документа не переписываются при смене темы. Поддерживаются responsive wrapping, явный More/priority overflow и reduced motion; contextual bubbles остаются следующим этапом.
 
 Контроллеры предоставляют `element`, `refresh()` и идемпотентный `destroy()`. Destroy UI оставляет редактор и application-owned search state рабочими; editor destroy автоматически освобождает связанный UI. Отсоединённые controls инертны. Все подписки, формы и меню имеют cleanup. Desktop browser tests не являются сертификацией mobile/IME или скринридеров.
 

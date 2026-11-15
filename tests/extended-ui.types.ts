@@ -4,7 +4,7 @@ import type { ExtendedEditorUIController, ExtendedEditorUIOptions } from '@morfi
 import { createExtendedPreset } from '@morfira-dev/wysiwyg/presets/extended';
 
 const checkExtendedUITypes = (host: HTMLElement, editor: Editor) => {
-  const options: ExtendedEditorUIOptions = { density: 'compact', mentions: { locale: 'ru', labels: { label: 'People' } }, slash: { labels: { empty: 'No commands' } }, table: { rows: 3 } };
+  const options: ExtendedEditorUIOptions = { density: 'compact', overflow: 'more', mentions: { locale: 'ru', labels: { label: 'People' } }, slash: { labels: { empty: 'No commands' } }, table: { rows: 3 } };
   const ui: ExtendedEditorUIController = createExtendedEditorUI(host, editor, options);
   ui.refresh();
   ui.destroy();
@@ -16,5 +16,7 @@ const checkExtendedUITypes = (host: HTMLElement, editor: Editor) => {
   createExtendedEditorUI(host, editor, { slash: { locale: 'de' } });
   // @ts-expect-error document lifecycle belongs to the editor
   ui.setHTML('<p>Wrong owner</p>');
+  // @ts-expect-error extended UI retains the explicit overflow modes
+  createExtendedEditorUI(host, editor, { overflow: 'menu' });
 };
 void checkExtendedUITypes;

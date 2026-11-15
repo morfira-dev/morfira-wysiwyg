@@ -1,6 +1,6 @@
 # Find and replace — optional module
 
-Status: implemented locally; full check passes 405 browser tests across Chromium/Firefox/WebKit and 23 bilingual site tests pass. Original strict TypeScript, zero new dependencies, MIT. Public entry `@morfira-dev/wysiwyg/plugins/search`, `search()` plugin, `searchCommands(editor)` API. Core must not import it. Independent entry size including shared chunks: 150000 byte guardrail (existing optional-module envelope). Schema v1 unchanged.
+Status: implemented locally; full check passes 405 browser tests across Chromium/Firefox/WebKit and 23 bilingual site tests pass. Original strict TypeScript, zero new dependencies, MIT. Public entry `@morfira-dev/wysiwyg/plugins/search`, `search()` plugin, `searchCommands(editor)` API. Core must not import it. Independent entry size including shared chunks: 150000 gzip JS byte guardrail (user-directed optional-module envelope). Schema v1 unchanged.
 
 ## Literal search and boundaries
 

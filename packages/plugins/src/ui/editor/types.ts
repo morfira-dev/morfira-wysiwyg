@@ -18,6 +18,8 @@ export type EditorUIItem = EditorUIBuiltin | EditorUIAction;
 export interface EditorUIOptions {
   readonly groups?: readonly (readonly EditorUIItem[])[];
   readonly density?: 'comfortable' | 'compact';
+  readonly overflow?: 'wrap' | 'more';
+  readonly groupPriorities?: readonly number[];
   readonly label?: string;
   readonly onError?: (error: unknown) => void;
 }

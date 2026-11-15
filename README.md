@@ -85,7 +85,7 @@ pnpm run docs:build
 pnpm run test:docs
 ```
 
-Проверяются стрелочные const-реализации, MIT, runtime-границы, типы, декларации, сборка, размер и браузерное поведение. `size-report.json` содержит minified JS, gzip, Brotli и CSS отдельно. Бюджеты: core JS 200000 байт, table JS 150000, каждый адаптер 10000, без runtime фреймворков.
+Проверяются стрелочные const-реализации, MIT, runtime-границы, типы, декларации, сборка, размер и браузерное поведение. `size-report.json` содержит minified JS, gzip, Brotli и CSS отдельно. По уточнению пользователя исходные бюджеты считаются в gzip: core JS 200000 байт, optional/table JS 150000. Готовые Standard/Extended сохраняют более строгие лимиты 65000/110000 gzip байт JS и 20000 minified байт CSS; raw JS измеряется без прежних preset-ограничений. Каждый адаптер ограничен отдельно 10000 minified байт JS, без runtime фреймворков.
 
 ## Контракты
 

@@ -58,6 +58,24 @@ export const ready = (editor: Editor) => {
   document.body.append(uiHost);
   const ui = createStandardEditorUI(uiHost, editor, { label: 'Consumer ready tools', density: 'compact' });
   probe.ui = ui;
+  let overflowUI: ReturnType<typeof createStandardEditorUI> | undefined;
+  let overflowHost: HTMLElement | undefined;
+  const hideOverflow = () => {
+    overflowUI?.destroy();
+    overflowHost?.remove();
+    overflowUI = undefined;
+    overflowHost = undefined;
+  };
+  const showOverflow = () => {
+    hideOverflow();
+    overflowHost = document.createElement('div');
+    overflowHost.dataset.consumerOverflow = '';
+    overflowHost.style.width = '180px';
+    document.body.append(overflowHost);
+    overflowUI = createStandardEditorUI(overflowHost, editor, { overflow: 'more', label: 'Consumer overflow tools' });
+  };
+  probe.showOverflow = showOverflow;
+  probe.hideOverflow = hideOverflow;
   const insertNote = (text: string) => editor.commands.execute(insertNoteCommand, { text });
   probe.insertNote = insertNote;
   createSuggestionMenu(editor, slashCommands(editor));
@@ -75,6 +93,9 @@ export const ready = (editor: Editor) => {
   };
   probe.forms = forms;
   editor.events.on('destroy', () => {
+    hideOverflow();
+    if (probe.showOverflow === showOverflow) delete probe.showOverflow;
+    if (probe.hideOverflow === hideOverflow) delete probe.hideOverflow;
     forms.links.destroy();
     forms.images.destroy();
     forms.search.destroy();

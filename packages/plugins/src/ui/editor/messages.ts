@@ -1,5 +1,6 @@
 export const editorUIMessages = Object.freeze({
   en: Object.freeze({
+    'ui.editor.more': 'More',
     'ui.editor.label': 'Editor tools', 'ui.editor.undo': 'Undo', 'ui.editor.redo': 'Redo',
     'ui.editor.bold': 'Bold', 'ui.editor.italic': 'Italic', 'ui.editor.underline': 'Underline', 'ui.editor.strike': 'Strikethrough',
     'ui.editor.code': 'Inline code', 'ui.editor.subscript': 'Subscript', 'ui.editor.superscript': 'Superscript',
@@ -14,6 +15,7 @@ export const editorUIMessages = Object.freeze({
     'ui.editor.keyboard': 'Use arrows on buttons. Alt+Left or Alt+Right moves between all controls. Escape returns to the editor.',
   }),
   ru: Object.freeze({
+    'ui.editor.more': 'Ещё',
     'ui.editor.label': 'Инструменты редактора', 'ui.editor.undo': 'Отменить', 'ui.editor.redo': 'Повторить',
     'ui.editor.bold': 'Полужирный', 'ui.editor.italic': 'Курсив', 'ui.editor.underline': 'Подчёркнутый', 'ui.editor.strike': 'Зачёркнутый',
     'ui.editor.code': 'Строчный код', 'ui.editor.subscript': 'Нижний индекс', 'ui.editor.superscript': 'Верхний индекс',

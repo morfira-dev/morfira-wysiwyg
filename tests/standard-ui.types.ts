@@ -5,6 +5,7 @@ import type { StandardEditorUIController, StandardEditorUIOptions } from '@morfi
 const checkStandardUITypes = (host: HTMLElement, editor: Editor) => {
   const options: StandardEditorUIOptions = {
     density: 'compact',
+    overflow: 'more',
     links: { initialValues: { href: 'https://example.com' } },
     images: { initialValues: { src: '/logo.svg', width: '64' } },
     search: { initialValues: { query: 'word', wholeWord: true } },
@@ -19,5 +20,7 @@ const checkStandardUITypes = (host: HTMLElement, editor: Editor) => {
   createStandardEditorUI(host, editor, { density: 'framework' });
   // @ts-expect-error image drafts use string values
   createStandardEditorUI(host, editor, { images: { initialValues: { width: 20 } } });
+  // @ts-expect-error ready UI owns its conditional group priorities
+  createStandardEditorUI(host, editor, { groupPriorities: [1] });
 };
 void checkStandardUITypes;

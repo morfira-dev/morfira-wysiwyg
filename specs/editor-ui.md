@@ -1,6 +1,6 @@
 # Optional ready editor UI
 
-Status: U1 baseline shell and U2 standard controls/forms are implemented locally with explicit public entries. U3 priority/More overflow and contextual controls remain future work. Existing toolbar/forms remain available under their current public contracts. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
+Status: U1 baseline shell, U2 standard controls/forms and U3a opt-in group-priority overflow are implemented locally with explicit public entries. Wrapping remains the compatible default; contextual controls remain later U3 work. Existing toolbar/forms remain available under their current public contracts. Actual current verification is recorded in `verification-backlog.md`. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
 
 ## Outcome and boundaries
 
@@ -33,11 +33,27 @@ Add ready link/image/search launchers, localized block/list/alignment selectors 
 
 The standard UI checks required plugins before leaving mounted DOM or listeners. Missing image/search/table configuration must not produce a button that fails only after interaction. Minimal shell users may explicitly configure the controls supported by their editor without importing standard feature renderers.
 
-### U3 — Responsive overflow and contextual controls — future work
+### U3 — Responsive overflow and contextual controls — staged work
 
 Add measured overflow and small contextual link/image/table affordances after the baseline shell/forms pass acceptance. Context is read through public selection/plugin APIs. The UI does not simulate a new atomic selection model or persist controls in the document. Use contextual controls only for capabilities with stable existing selection contracts; later node-view/decorations SDK work is not assumed implemented.
 
 One interaction remains one transaction/history step. Opening, closing, resizing/repositioning or changing a UI panel is not a document edit. Advanced table/image operations must still satisfy their feature specifications before a new control exposes them.
+
+### U3a — Opt-in group-priority overflow — implementation contract
+
+Add `overflow?: 'wrap' | 'more'` to shell and ready standard/extended options. The default remains `wrap` for compatibility: existing integrations and their controls remain visible. Applications and the live demo can explicitly enable `more`; changing options requires destroying/remounting the UI, never replacing the editor/document. Contextual bubbles and a default-mode change are separate later decisions.
+
+The shell also accepts `groupPriorities?: readonly number[]`, with exactly one finite number per configured group. Larger values retain a group longer; equal priorities retain earlier groups. Reject invalid modes, lengths or numbers before mounting/listeners. Standard/extended own their fixed priorities rather than exposing positional priority arrays for conditional built-in groups.
+
+In `more` mode measure the mounted toolbar's available width, including its padding/gaps and the disclosure button, inside its host. Move whole existing group nodes at lowest priority first, breaking ties from the end. Keep the original order in both visible toolbar and overflow region, preserve control identity/listeners/state and never create duplicate active controls. Oversized groups and an extremely narrow host use bounded wrapping. A hidden or initially zero-width host is safe and recomputes when shown. Use bounded measurement and a per-instance ResizeObserver/scheduled callback, not polling or a global overlay. `refresh()` recomputes locale/control-label widths. Without ResizeObserver, explicit refresh still lays out the UI.
+
+More / Ещё is a native disclosure button with localized accessible name, unique controls ID and expanded state. Its labelled nonmodal region contains existing native controls, not ARIA menu items. Closed controls are hidden and excluded from keyboard navigation. The toolbar's roving path includes the disclosure when visible; the open region has its own predictable control path. Native select/input keys remain native. Keyboard opening focuses the first enabled overflow control. Escape closes overflow and returns focus to More; outside dismissal does not steal focus from the user's chosen target or swallow its click. Collapse the in-flow region only after the click target is established, so page/scroll movement between pointerdown and pointerup cannot cancel outside activation. Preserve native browser focus behavior; WebKit may blur an ordinary pointer-clicked button even without this UI. Activating an overflow action closes the region without stealing focus from the editor or a newly opened standard form.
+
+Opening, closing and layout do not change editor content, native selection or history. Existing selection capture/restore and action guards still apply. Preserve an actively focused group's location during responsive layout (bounded wrapping may remain temporarily), then recompute after focus leaves; do not detach the focused control or claim preservation of an open native OS picker during resize. API replacement invalidates saved selection normally. Read-only/composition, locale changes, standard form launch/return focus, multiple editors and detached stale controls keep their existing contracts.
+
+Destroy disconnects the observer, cancels pending work and releases all listeners; setup rollback owns only newly created resources. Core and headless profiles must not gain overflow code. Follow the user-directed gzip policy in `editor-presets.md` and measure raw/gzip/Brotli JS and CSS separately.
+
+Representative acceptance covers: (1) width/priority/tie changes and whole-group node identity, including a native select and hidden host; (2) rich backward selection, keyboard disclosure and one editing Undo without layout history; (3) focus during resize, Escape/outside and no closed-region Tab stops; (4) locale/read-only/composition/API replacement and standard form focus; (5) two-instance cleanup, queued resize and malformed options. Add RU/EN public examples and narrow-host demo smoke tests without repeating the complete editor matrix.
 
 ## Selection, focus and keyboard contract
 
@@ -80,19 +96,19 @@ On close/destroy release every owned form/menu controller, listener, subscriptio
 
 ## Delivery and acceptance
 
-U1/P1, U2/P2 and extended P3 are implemented locally; responsive/contextual U3 remains the next UI slice. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
+U1/P1, U2/P2, extended P3 and U3a opt-in overflow are implemented locally; contextual U3 controls remain future work. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
 
 Required evidence for the implemented slice:
 
 1. Chromium, Firefox and WebKit behavior tests for selected rich text, empty blocks, backwards ranges, table-cell selections, command state, history, read-only/composition, outside/API replacement, popup keyboard paths, two instances and cleanup. Keep merged-cell regressions when table controls change.
 2. Visual/browser examples for wide and narrow hosts, RU/EN, light/dark, compact/standard density, focused/mixed/disabled/error states, zoom and reduced motion. Verify page overflow and focus after responsive moves rather than relying only on snapshots. Record actual visual checks; screenshots alone do not establish screen-reader/mobile support.
 3. Real installed-tarball imports/declarations/CSS through the existing five-wrapper consumer profiles, including React StrictMode and Angular 21/22. SSR imports do not touch DOM, register globals or load framework/UI dependencies into core.
-4. Individual shell/standard/extended and deduplicated preset closure measurements as minified raw JS, gzip and Brotli, plus CSS separately. Standard 200000 raw / 65000 gzip JS bytes, extended 350000 / 110000 and standard 20000-byte CSS are targets until measured profiles are explicitly guarded. Existing core/table/adapter guards remain unchanged.
+4. Individual shell/standard/extended and deduplicated preset closure measurements as minified raw JS, gzip and Brotli, plus CSS separately. Active standard/extended profile guards are 65000/110000 gzip JS bytes and 20000 raw CSS bytes each. Core and optional-entry product caps use gzip; independent adapter/small-feature raw guards follow `editor-presets.md`.
 5. RU/EN API and live examples use these public UI factories. The homepage presents ready scenarios while the playground remains the detailed laboratory; neither retains duplicate form/toolbar behavior. Document unsupported contextual/selection/device behavior precisely.
 
 ## First implementation decision
 
-Deliver the grouped icon toolbar shell and standard panel composition now. Standard includes native block/list/alignment controls, inline formatting/history, color/highlight controls, table insertion and the existing link/image/search forms. Native form controls are allowed when they provide the appropriate interaction; a custom color grid and priority overflow need not block this release. At narrow widths controls wrap within their host. Priority/More overflow and contextual bubbles remain U3 follow-up and must not be described as shipped.
+The baseline delivers the grouped icon toolbar shell and standard panel composition. Standard includes native block/list/alignment controls, inline formatting/history, color/highlight controls, table insertion and the existing link/image/search forms. Native form controls are allowed when they provide the appropriate interaction; a custom color grid remains separate work. At narrow widths controls wrap within their host by default. U3a adds explicit opt-in priority/More overflow under the contract above; contextual bubbles remain a later follow-up.
 
 Custom action callbacks may invoke existing typed SDK tokens through closures; action IDs remain UI identities only. All mutation paths recheck read-only/composition and restore a valid range. Non-mutating panel/search actions may remain usable read-only. Closing a panel releases its owned controllers/listeners and cancels only its own upload; reopened drafts may be retained as copied per-instance UI values without changing plugin/document state. Standard creation validates required plugins before mounting, uses no editor/schema replacement, and forwards safe localized errors plus optional original diagnostics.
 

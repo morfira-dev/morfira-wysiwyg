@@ -23,17 +23,17 @@ This is an early engine: snapshot history is simple and bounded rather than a co
 
 `pnpm run build` writes `size-report.json`: minified raw JS, gzip and Brotli; CSS is separate. It includes every emitted runtime chunk, excluding declarations/maps. Svelte component source is compiled/minified for measurement, not mistaken for just its tiny entry file. Framework runtimes are excluded.
 
-Current guardrails: core JS 200000 bytes, table JS 150000, each adapter 10000. Measurements are per package; compressed sizes sum actual compressed emitted files. New plugins must keep independent entry budgets.
+The user clarified that the original limits mean **gzip**: core has a 200000-byte gzip JS guard, while table and individual optional entries have 150000-byte gzip JS guards. Adapters retain their separate 10000-byte raw minified JS guard; it was not one of those original user limits. Core’s 80000-byte raw JS working target remains a soft optimization goal. Tighter raw HR/checklist feature guards remain. Compressed sizes sum actual compressed files in the selected graph, counting shared chunks once; report raw/gzip/Brotli and CSS separately.
 
 ## Source contracts
 
 `pnpm run check:project` enforces arrow-function implementations, MIT package metadata and zero core/plugin runtime dependencies. SDD contracts live in `specs/editor.md` and `specs/tables.md`; read `AGENTS.md` before changing them. API/document-format changes need SemVer and bilingual documentation updates.
 
-Image commands use `/plugins/images` and remain outside the core graph. `images.js` measures that entry and its shared chunks separately; `plugins.js` continues to measure the table entry and its shared chunks. Each entry has a 150000-byte minified JS guardrail, matching the existing optional-plugin envelope; shared chunks count in each independently loadable entry.
+Image commands use `/plugins/images` and remain outside the core graph. `images.js` measures that entry and its shared chunks separately; `plugins.js` continues to measure the table entry and its shared chunks. Each entry has a 150000-byte gzip JS guardrail, matching the existing optional-plugin envelope; shared chunks count in each independently loadable entry.
 
-`search.js` measures the search entry and its shared chunks independently from images/tables. Its minified JS guardrail is 150000 bytes, matching other optional modules. Native Selection/Range selects results without persistent highlight wrappers.
+`search.js` measures the search entry and its shared chunks independently from images/tables. Its gzip JS guardrail is 150000 bytes, matching other optional modules. Native Selection/Range selects results without persistent highlight wrappers.
 
-`markdown.js` is measured independently with its shared chunks under the same 150000-byte minified JS guardrail as other optional modules. Core does not import it.
+`markdown.js` is measured independently with its shared chunks under the same 150000-byte gzip JS guardrail as other optional modules. Core does not import it.
 
 `mentions.js`, `slash.js`, `suggestions.js` are measured as independent entries including shared chunks. Loading them together loads the shared engine once; summing entry sizes overcounts shared code. Menu CSS (`suggestions.css`) is measured separately from table CSS.
 
@@ -41,7 +41,7 @@ Image commands use `/plugins/images` and remain outside the core graph. `images.
 
 Source now follows functional folders: `core/src/{editor,document,selection,formatting,lists,events,ui/toolbar}` and `plugins/src/{tables,images,search,statistics,markdown,mentions,slash,suggestions}`. Named types belong to adjacent `types.ts`/`*.types.ts`; entrypoints expose explicit public contracts. Source moves preserve public subpaths and names.
 
-Essential features/plugins ship ready to use. Applications choose imports and may implement custom plugins; core does not auto-register modules or framework runtimes. `pnpm run check:tree-shaking` bundles real public consumer imports and rejects unrelated plugin entries, mandatory CSS and framework leakage. A sanitizer-only import must exclude editor/toolbar creation. These checks complement per-entry raw/gzip/Brotli budgets.
+Essential features/plugins ship ready to use. Applications choose imports and may implement custom plugins; core does not auto-register modules or framework runtimes. `pnpm run check:tree-shaking` bundles real public consumer imports and rejects unrelated plugin entries, mandatory CSS and framework leakage. A sanitizer-only import must exclude editor/toolbar creation. These checks complement per-entry gzip guards and separate raw/Brotli measurements.
 
 [Typed per-instance events and composable transactions](/en/events) support extension cooperation without a global singleton or command RPC bus. Heavy office conversion/collaboration processing is not a default feature or a parity target.
 

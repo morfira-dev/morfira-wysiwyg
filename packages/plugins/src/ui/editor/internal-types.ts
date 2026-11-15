@@ -9,3 +9,21 @@ export interface EditorUIControl {
   readonly labelKey?: EditorUIMessageKey;
   readonly options?: readonly { value: string; key: EditorUIMessageKey }[];
 }
+
+export interface EditorUIOverflow {
+  readonly button: HTMLButtonElement;
+  readonly region: HTMLElement;
+  refresh(): void;
+  close(restoreFocus?: boolean): void;
+  destroy(): void;
+}
+
+export interface EditorUIOverflowOptions {
+  element: HTMLElement;
+  toolbar: HTMLElement;
+  groups: readonly HTMLElement[];
+  priorities: readonly number[];
+  label: () => string;
+  capture: () => void;
+  updateTabs: () => void;
+}

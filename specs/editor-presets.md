@@ -97,8 +97,8 @@ Real P1–P3 entries and profile guards now exist; the activation and accounting
 
 ## Size accounting and targets
 
-- Existing enforced limits remain core 200000 raw minified JS bytes, table entry 150000 and each adapter 10000. The working core target is 80000 bytes.
-- Standard target: 200000 raw / 65000 gzip JS bytes, plus at most 20000 raw CSS bytes. Extended target: 350000 raw / 110000 gzip JS bytes. These are active profile guards as detailed in the P4 activation note below.
+- User-directed product limits are core 200000 gzip JS bytes and optional/table entries 150000 gzip JS bytes. Each adapter retains its separate 10000 raw JS byte guard. The working core target is 80000 minified bytes, a soft optimization goal.
+- Standard guard: 65000 gzip JS bytes, plus at most 20000 raw CSS bytes. Extended guard: 110000 gzip JS bytes and 20000 raw CSS bytes. Raw JS remains measured but no longer has a profile cap. These active guards follow the P4 policy below.
 - Measure minified raw JS, gzip, Brotli and CSS separately for each entry and a deduplicated selected closure. Headless and ready-UI profiles must be separate. Do not add independent per-entry totals that count shared chunks twice.
 - Include core, selected plugin implementations, UI/forms/icons and any required helper chunks in the chosen profile. Report optional locale alternatives, fonts/media and separately lazy-loaded modules outside the initial closure, with their own sizes and load triggers. Framework runtimes, source maps and declarations are excluded.
 - A feature being hidden or disabled at runtime does not establish tree-shaking. Verify actual built public imports exclude unrelated implementations and mandatory CSS.
@@ -115,17 +115,21 @@ Real P1–P3 entries and profile guards now exist; the activation and accounting
 
 P1–P3 behavior factories and U1/U2 UI are implemented locally. Standard additionally includes the bounded Space/controlled-Enter/plain-URL-paste `autolink()` and `horizontalRule()`; `false` may disable a built-in instance, but runtime flags do not erase statically imported code. Minimal imports no optional behavior. Extended requires explicit mention/slash provider configuration; it installs no example provider or network transport. Additional application plugins/schema are appended/copied without mutating input. The precise option types and default built-in list are documented with the public factories.
 
-The first release uses responsive wrapping rather than a priority/More overflow menu. Full measured overflow and contextual selection bubbles remain U3 follow-up, not implied by the first modern toolbar. Every implemented profile must have measured raw/gzip/Brotli/CSS before enabling its proposed budget guard.
+The first release uses responsive wrapping by default. The U3a contract in `editor-ui.md` adds explicit `overflow: 'more'` to ready UI while preserving that default; it does not alter preset behavior or add UI to headless imports. Contextual selection bubbles remain a separate U3 follow-up. Every implemented profile must have measured raw/gzip/Brotli/CSS before enabling its proposed budget guard.
 
 
 ## P4 — Measured profile guards activated
 
 The first implemented presets and ready UI have been measured through bundled public facade imports. This establishes the previously proposed limits as active guards in `scripts/size.ts` for both headless and ready standard/extended profiles:
 
-- Standard: at most 200000 raw minified JS bytes, 65000 gzip JS bytes and 20000 raw CSS bytes.
-- Extended: at most 350000 raw minified JS bytes, 110000 gzip JS bytes and 20000 raw CSS bytes.
+- Standard: at most 65000 gzip JS bytes and 20000 raw CSS bytes.
+- Extended: at most 110000 gzip JS bytes and 20000 raw CSS bytes.
 
-The product reason is to preserve the lightweight envelope now demonstrated by real usable compositions as subsequent capabilities are added. Each JS profile bundles core, its preset and its applicable ready-UI factory once; required CSS is an explicit deduplicated list. Minified/gzip/Brotli results remain separate, framework runtimes/fonts/source maps/declarations remain excluded, and no runtime feature flag is counted as tree-shaking. Minimal remains reported without a new profile guard. Existing core/table/adapter guards are unchanged. This note activates P4 for these implemented profiles; it does not claim U3 overflow, contextual bubbles or later SDK phases are complete.
+The product reason is to preserve the lightweight envelope now demonstrated by real usable compositions as subsequent capabilities are added. Each JS profile bundles core, its preset and its applicable ready-UI factory once; required CSS is an explicit deduplicated list. Minified/gzip/Brotli results remain separate, framework runtimes/fonts/source maps/declarations remain excluded, and no runtime feature flag is counted as tree-shaking. Minimal remains reported without a new profile guard. The gzip clarification below governs current core/table/profile guards; adapters retain their independent raw guard. P4 does not imply contextual bubbles or later SDK phases are complete.
+
+### User-directed gzip policy clarification
+
+The user explicitly clarified that the original 200 kB core and roughly 100–150 kB additional-module envelopes refer to gzip transfer size. Therefore core and optional-entry/table guards use gzip, and the former 200000/350000 raw JS profile caps are retired. Retain the already stricter 65000/110000 gzip guards for standard/extended; this clarification is not a reason to grow those profiles to the broader product ceilings. Adapter and feature-specific raw guards and raw CSS guards are independent engineering limits and remain unchanged. Continue reporting minified JS, gzip, Brotli and CSS, counting shared emitted files once per selected closure; compressed entry sizes sum the actual emitted compressed files. Historical verification records retain the policy used for those historical runs. Smaller-than-competitor claims require equivalent feature profiles and compression evidence, not a comparison with full vendor distributions.
 
 ## Horizontal-rule capability
 

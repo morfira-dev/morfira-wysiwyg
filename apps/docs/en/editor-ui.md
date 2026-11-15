@@ -58,6 +58,8 @@ import '@morfira-dev/wysiwyg/ui/editor.css';
 const editor = createEditor(editorHost, createMinimalPreset({ locale: 'en' }));
 const ui = createEditorUI(toolbarHost, editor, {
   density: 'compact',
+  overflow: 'more',
+  groupPriorities: [100, 80, 60, 20],
   groups: [
     ['undo', 'redo'],
     ['bold', 'italic', 'underline'],
@@ -69,7 +71,25 @@ const ui = createEditorUI(toolbarHost, editor, {
 
 Available builtin IDs: `undo`, `redo`, `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`, `blockquote`, `clear`, `indent`, `outdent`, `block`, `list`, `align`, `color`, `background`. `createDefaultEditorUIGroups()` returns fresh default groups. Duplicate/unknown identifiers are rejected during creation.
 
-Group order describes toolbar order, not command priority. `block` provides paragraphs, headings and code blocks; `list` provides no list, bullet and ordered lists; `align` provides the four current alignment values. Text/highlight colors use native color inputs and separate reset controls. A full custom palette and priority overflow are not implemented yet.
+Group order defines toolbar order; `groupPriorities` separately defines overflow priority. `block` provides paragraphs, headings and code blocks; `list` provides no list, bullet and ordered lists; `align` provides the four current alignment values. Text/highlight colors use native color inputs and separate reset controls. A full custom palette is not implemented; priority overflow is explicitly enabled as above.
+
+## Wrapping or More
+
+`overflow: 'wrap'` is the default for shell, standard and extended: all groups remain visible with wrapping. `overflow: 'more'` explicitly measures the **toolbar host**, rather than the viewport. It moves existing whole groups into More without copying controls; order, listeners and state remain. An oversized group or extremely narrow host uses bounded wrapping.
+
+Shell `groupPriorities` must contain exactly one finite number per group. Higher values retain groups longer; ties hide later groups first. Invalid modes, lengths or numbers reject before mounting. Standard/extended own their priorities; do not pass them a positional array:
+
+```ts
+import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
+
+const ui = createStandardEditorUI(toolbarHost, editor, { overflow: 'more' });
+```
+
+The native More disclosure has `aria-expanded` and `aria-controls`. Its nonmodal region contains ordinary buttons/selects/inputs, not ARIA menu items. Closed controls are excluded from navigation. Keyboard opening focuses the first enabled control; Escape closes it and returns focus to More. Outside interaction dismisses it without stealing focus; an action closes overflow while keeping focus in the editor or a newly opened form.
+
+Measurement and opening do not change content, selection or history. An actively focused group stays in place during resize until focus leaves; preservation of an open OS picker during resize is not promised. `refresh()` recomputes widths and localized labels; call it explicitly without ResizeObserver. Destroy disconnects observers and scheduled callbacks. There are no new runtime dependencies, and headless core does not load overflow UI.
+
+On the homepage and playground, **Toolbar layout** remounts only UI while preserving the editor, document, history and selection. The default is wrapping. Switching modes recreates open UI panels and their unsaved drafts; it does not replace the document. Contextual floating controls and changing the default mode remain separate future decisions.
 
 ## An action using the SDK
 
@@ -136,7 +156,7 @@ There is one roving toolbar tab stop. Arrow keys on button rows and Home/End mov
 
 Built-in UI uses RU/EN catalogs `ui.editor.*` and `ui.standard.*`; forms use `ui.links.*`, `ui.images.*` and `ui.search.*`. `editor.setLocale(...)` updates labels/messages without replacing the document or drafts. Explicit `label` and custom action labels belong to the application; `label: (editor) => ...` can react to locale changes.
 
-Density is `comfortable` or `compact`. Scoped CSS uses `--mw-*`: existing surface/text/accent/border/hover tokens plus `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Theme changes do not rewrite content styles. Responsive wrapping and reduced motion are supported; More/priority overflow and contextual bubbles remain follow-up work.
+Density is `comfortable` or `compact`. Scoped CSS uses `--mw-*`: existing surface/text/accent/border/hover tokens plus `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Theme changes do not rewrite content styles. Responsive wrapping, explicit More/priority overflow and reduced motion are supported; contextual bubbles remain follow-up work.
 
 Controllers expose `element`, `refresh()` and idempotent `destroy()`. Destroying UI leaves the editor and application-owned search state usable; editor destruction automatically disposes related UI. Detached controls are inert. Every subscription, form and menu has cleanup. Desktop browser tests do not certify mobile/IME or screen-reader behavior.
 

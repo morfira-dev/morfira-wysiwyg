@@ -20,7 +20,7 @@ getState calculates current metrics and returns independent snapshots. subscribe
 
 Browser cases in Chromium/Firefox/WebKit: split inline words/graphemes, family emoji/flags/combining marks; real whitespace versus synthetic block/br/img boundaries; list/caption/merged-cell text without alt/attributes; partial selection across marks/blocks, collapsed/outside/image selection; input/undo/redo/external replacement/read-only; independent copied states/subscriptions/instances, disposal/reuse; invalid locale and SSR-safe import/factory. Parent integrates public entries, independent bundle measurement, live bilingual demo and docs. Full project/docs checks run by parent; no Git operations in this milestone without user request.
 
-Independent statistics entry size includes shared chunks and uses the existing optional-module 150000-byte minified JS envelope. Parent demo status/inspector use its document and selection counts in both languages.
+Independent statistics entry size includes shared chunks and uses the user-directed optional-module 150000-byte gzip JS envelope. Raw JS, Brotli and CSS remain reported separately. Parent demo status/inspector use its document and selection counts in both languages.
 
 ## Bounded reuse of semantic-run counts
 

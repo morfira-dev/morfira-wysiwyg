@@ -1,8 +1,45 @@
-# Verification record — horizontal rule, editor and security
+# Verification record — optional UI overflow, editor and security
 
-Status: current horizontal-rule focused browser, TypeScript, documentation and packed-consumer checks passed. The full check exited 1 on three stale SSR inventory expectations; the corrected static-pipeline/last-failed rerun passed (exit 0, 3/3 SSR executions). Combined coverage is 3531 executions, not a new single-run full pass. Earlier autolink and checklist/security results below remain historical evidence. No push, package publication or deployment is authorized by this record.
+Status: U3a opt-in whole-group overflow is implemented and verified on final source: full check 3549/3549 (exit 0), documentation 163/163 and packed consumers 18/18 passed. Default wrap and headless boundaries are preserved. The earlier interrupted run and diagnostic fixture corrections remain separate evidence. Historical baselines below are not substituted for current-source results.
 
-## Current horizontal-rule verification — completed with corrected targeted rerun
+## Current U3a verification — completed
+
+`overflow: 'more'` adds measured whole-group overflow to optional shell/standard/extended UI; `wrap` remains the default. The shell validates finite priorities; ready compositions own their priorities. Existing controls move without duplication, native More opens a nonmodal region, and editor selection/history stay under the existing UI contracts. Demo switching remounts only UI. Contextual controls remain future work. No runtime dependencies or core/headless overflow imports are added.
+
+| Check | Actual current status |
+| --- | --- |
+| Build and bundle guards | Corrected-source `docs:build` passed, exit 0, under the clarified gzip policy (`/tmp/morfira-u3-final-docs-build.log`); current sizes below |
+| Project rules | Passed |
+| TypeScript checking | Passed, zero errors |
+| Initial focused browser run | **144/147** passed across Chromium, Firefox and WebKit; three expectations incorrectly assumed the read-only link launcher was disabled. The existing launcher may open a form whose mutating controls are disabled; only those assertions were corrected, runtime unchanged |
+| Final new overflow suite | **18/18 passed**, 19.4 seconds, six definitions × three engines (`/tmp/morfira-u3-overflow-verified.log`). Earlier **15/18** used an incorrect stale-range fixture; a corrected-source **146/147** focused run exposed a WebKit native button-focus expectation, reproduced without UI (focus moved to BODY). The assertion now checks UI does not steal focus; no runtime change for that adjustment |
+| Complete `pnpm run check` | **3549/3549 passed**, **1183 cases × Chromium/Firefox/WebKit**, 14.1 minutes, **exit 0**, including the entire static pipeline (`/tmp/morfira-u3-verified-check.log`) |
+| Documentation build / Chromium suite | Final corrected-source build passed after the gzip-policy change; **163/163** Chromium scenarios passed, 2.7 minutes, **exit 0**. Both real-theme/outside-click regressions also passed their focused **2/2** run, 5.9 seconds |
+| Packed consumers | Final **18/18 passed**, exit 0: 15 default-wrapper scenarios plus 3 Angular 22 scenarios |
+
+The earlier full check was intentionally interrupted with **exit 130**: **1853 passed / 1688 did not run**, plus interrupted current cases, 7.0 minutes. It was not a pass. Pre-fix docs **163/163** (3.6 minutes) and consumers **18/18** remain prior-source evidence; final corrected-source results are in the table above.
+
+A real visual probe found that closing the in-flow overflow region on outside `pointerdown` could shift the external theme button before mouseup/click and swallow the intended action. The runtime correction changes only the overflow document listener from `pointerdown` to `click`. Both existing localized docs smoke cases now use a real external theme click and assert dark computed toolbar CSS, dismissal and unchanged content/history before continuing. The corrected-source two-case docs regression passed; real screenshots also confirmed mobile light and desktop 520px-host dark layouts, including `dark-demo` and computed toolbar background `rgb(34, 40, 57)`. These observations do not claim complete accessibility/device coverage.
+
+### Current corrected-source U3a generated sizes
+
+Read from current corrected-source build-generated `size-report.json`: minified JS/CSS, gzip and Brotli separately; shared profile chunks counted once, framework runtimes/maps/declarations excluded. These are bundle measurements, not input/performance results.
+
+| Entry / selected profile | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 87250 | 26812 | 23512 | 3293 | 1164 | 962 |
+| Optional UI shell | 22369 | 7905 | 6946 | 4892 | 1268 | 1045 |
+| Minimal headless | 83729 | 25307 | 22157 | 3293 | 1164 | 962 |
+| Minimal ready | 105762 | 32079 | 28057 | 8185 | 2432 | 2007 |
+| Standard headless | 138975 | 42276 | 36584 | 5106 | 1880 | 1505 |
+| Standard ready | 198785 | 57907 | 49467 | 11504 | 3747 | 3038 |
+| Extended headless | 151518 | 46220 | 39746 | 5106 | 1880 | 1505 |
+| Extended ready | 219956 | 64434 | 54576 | 12700 | 4239 | 3414 |
+
+Core and all three headless profiles are unchanged from `4818ffd`: core remains **87250** raw JS bytes, **7250 above** the working 80000-byte target. Standard ready is **198785** raw JS bytes and **57907 gzip**, leaving **7093 gzip bytes** below its retained 65000-byte profile guard; the duplicate 200000-byte raw profile guard is removed. Extended ready is **219956 / 64434 / 54576** raw/gzip/Brotli JS bytes. Ready CSS stays below the existing 20000-byte profile guard. The user clarified the original limits as gzip: core hard 200000 gzip JS bytes; table/individual optional entries hard 150000 gzip. Existing stricter standard/extended gzip guards of 65000/110000 remain; their duplicate 200000/350000 raw JS guards are removed. Adapter 10000-byte raw and tighter HR/checklist raw guards remain, as does the soft core 80000-byte raw optimization target. These are current corrected-source measurements from the successful clarified-policy build; the final full browser/documentation/consumer passes are recorded separately above.
+
+
+## Historical horizontal-rule baseline — `4818ffd`
 
 The optional `/plugins/horizontal-rule` entry provides `horizontalRule()` and typed `horizontalRuleCommands(editor)`. Standard/extended install it by default; `horizontalRule: false` omits its instance, while selective imports are required to narrow the static graph. Ready UI adds a localized native button only when installed. A single ordinary direct-root P/H caret or same-block range splits into same-tag prefix, bare HR and editable same-tag suffix, retaining empty BR edges and one Undo/Redo step. Lists, quotes, tables, PRE, root-offset/cross-block selections and source blocks with any image or owning semantic descendant are disabled, including descendants outside the selection. Contract: `horizontal-rule.md`.
 
@@ -21,7 +58,7 @@ The ready UI reads a saved Range through side-effect-free `getState(range?)`; ac
 
 Initial focused diagnostics were **92/96**, exposing stale caret-format restoration and a WebKit selection/UI issue; a later **66/69** run exposed composition cancellation in the UI. These were real failures addressed before the final **252/252** focused pass, not additional successful runs or complete-editor evidence.
 
-## Current generated measurements — horizontal-rule slice
+## Historical generated measurements — horizontal-rule baseline `4818ffd`
 
 Minified JS and CSS are separate; gzip/Brotli are compression measurements, with shared chunks counted once per selected profile. Framework runtimes, maps and declarations are excluded. No input-latency or history-memory benchmark was run for this slice.
 

@@ -1,0 +1,66 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`opt-in More keeps ready editor selection and history in ${english ? 'English narrow desktop host' : 'Russian mobile homepage'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.setViewportSize({ width: english ? 1280 : 390, height: 900 });
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const panel = page.locator('.lab-horizontal-rule');
+  await panel.locator('summary').click();
+  await panel.getByRole('button', { name: t('Загрузить пример разделителя', 'Load horizontal rule sample'), exact: true }).click();
+  const original = await content.innerHTML();
+  const originalContent = await content.elementHandle();
+  const uiHost = page.locator('.demo-toolbar-host');
+  await uiHost.evaluate((host) => { host.style.width = '100%'; host.style.maxWidth = '310px'; });
+  const layout = page.getByRole('combobox', { name: t('Режим панели', 'Toolbar layout'), exact: true });
+  await expect(layout).toHaveValue('wrap');
+  await layout.selectOption('more');
+  expect(await originalContent!.evaluate((node) => node.isConnected)).toBe(true);
+  expect(await content.innerHTML()).toBe(original);
+  const more = uiHost.locator('[data-mw-ui-more]');
+  const overflow = uiHost.locator('.mw-ui-overflow');
+  await expect(more).toBeVisible();
+  await expect(more).toHaveAccessibleName(t('Ещё', 'More'));
+  await expect(more).toHaveAttribute('aria-expanded', 'false');
+  await expect(overflow).toBeHidden();
+  await more.focus();
+  await more.press('Enter');
+  await expect(more).toHaveAttribute('aria-expanded', 'true');
+  await expect(overflow).toBeVisible();
+  await expect(uiHost.locator('[data-mw-ui-action="undo"]')).toBeDisabled();
+  // Closing an inline overflow region must not move the outside pointer target
+  // between pointerdown and click, even after scrolling to the toolbar.
+  await uiHost.scrollIntoViewIfNeeded();
+  await page.getByRole('button', { name: t('Сменить тему', 'Toggle theme'), exact: true }).click();
+  await expect(page.locator('.demo-shell')).toHaveClass(/dark-demo/);
+  await expect.poll(() => uiHost.locator('.mw-editor-toolbar').evaluate((node) => {
+    const style = getComputedStyle(node);
+    return { background: style.backgroundColor, token: style.getPropertyValue('--mw-toolbar-bg').trim() };
+  })).toEqual({ background: 'rgb(34, 40, 57)', token: '#222839' });
+  await expect(overflow).toBeHidden();
+  await expect(more).toHaveAttribute('aria-expanded', 'false');
+  expect(await content.innerHTML()).toBe(original);
+  await expect(uiHost.locator('[data-mw-ui-action="undo"]')).toBeDisabled();
+  await more.focus();
+  await more.press('Enter');
+  await expect(overflow).toBeVisible();
+  const insert = overflow.getByRole('button', { name: t('Разделитель', 'Horizontal rule'), exact: true });
+  await expect(insert).toBeEnabled();
+  await insert.click();
+  await expect(overflow).toBeHidden();
+  await expect(content.locator(':scope > hr')).toHaveCount(1);
+  await expect(content.locator(':scope > p').first()).toHaveText('Alpha o');
+  await expect(content.locator(':scope > hr + p')).toHaveText('ne tail');
+  await uiHost.locator('[data-mw-ui-action="undo"]').click();
+  expect(await content.innerHTML()).toBe(original);
+  await layout.selectOption('wrap');
+  expect(await originalContent!.evaluate((node) => node.isConnected)).toBe(true);
+  expect(await content.innerHTML()).toBe(original);
+  await expect(uiHost.locator('[data-mw-ui-action="redo"]')).toBeEnabled();
+  await uiHost.locator('[data-mw-ui-action="redo"]').click();
+  await expect(content.locator(':scope > hr')).toHaveCount(1);
+  await expect(uiHost.locator('[data-mw-ui-action="horizontal-rule"]')).toHaveCount(1);
+  await expect(uiHost.locator('[data-mw-ui-more]')).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+});
