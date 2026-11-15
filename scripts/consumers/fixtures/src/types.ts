@@ -2,6 +2,7 @@ import type { Editor } from '@morfira-dev/wysiwyg';
 import type { LinkFormController } from '@morfira-dev/wysiwyg/ui/links';
 import type { ImageFormController } from '@morfira-dev/wysiwyg/ui/images';
 import type { StandardEditorUIController } from '@morfira-dev/wysiwyg/ui/standard';
+import type { ContextualToolbarController } from '@morfira-dev/wysiwyg/ui/contextual';
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
 import type { FontCommands } from '@morfira-dev/wysiwyg/plugins/fonts';
 import type { ListPropertyCommands } from '@morfira-dev/wysiwyg/plugins/list-properties';
@@ -11,6 +12,9 @@ export interface ConsumerProbe {
   editor?: Editor;
   changes: number;
   ui?: StandardEditorUIController;
+  contextual?: ContextualToolbarController;
+  showContextual?: () => void;
+  hideContextual?: () => void;
   fonts?: FontCommands;
   listProperties?: ListPropertyCommands;
   textDirection?: TextDirectionCommands;

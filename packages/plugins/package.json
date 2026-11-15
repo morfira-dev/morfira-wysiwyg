@@ -109,7 +109,12 @@
     "./text-direction": {
       "types": "./dist/text-direction/index.d.ts",
       "import": "./dist/text-direction.js"
-    }
+    },
+    "./ui/contextual": {
+      "types": "./dist/ui/contextual/index.d.ts",
+      "import": "./dist/ui/contextual.js"
+    },
+    "./ui/contextual.css": "./dist/ui/contextual.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.7.0"

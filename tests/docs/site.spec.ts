@@ -77,7 +77,7 @@ test('full demo formats text, changes blocks and inserts a checked link and loca
     const selection = window.getSelection()!; selection.removeAllRanges(); selection.addRange(range);
   });
   await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe('Hello');
-  await page.getByRole('button', { name: 'Полужирный', exact: true }).click(); await expect(page.locator('.mw-content strong')).toHaveText('Hello');
+  await page.getByRole('toolbar', { name: 'Форматирование', exact: true }).getByRole('button', { name: 'Полужирный', exact: true }).click(); await expect(page.locator('.mw-content strong')).toHaveText('Hello');
   await page.locator('.lab-block-controls').getByLabel('Формат блока', { exact: true }).selectOption('3'); await expect(page.locator('.mw-content h3')).toHaveText('Hello world');
   await content.focus();
   await content.evaluate((element) => {

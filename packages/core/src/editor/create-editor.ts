@@ -459,7 +459,10 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     },
     getSelection: () => { assertActive(); return readTextSelection(surface); },
     setSelection: (index, length = 0) => { assertActive(); selectText(surface, index, length); notifySelection(); },
-    getFormats: () => { assertActive(); return { ...readFormats(surface), ...(typingAtCaret() ? typingOverrides : {}) }; },
+    getFormats: (range) => {
+      assertActive();
+      return range === undefined ? { ...readFormats(surface), ...(typingAtCaret() ? typingOverrides : {}) } : readFormats(surface, range);
+    },
     setReadOnly: (value) => {
       assertActive();
       rejectDuringTransaction('setReadOnly');

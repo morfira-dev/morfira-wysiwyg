@@ -27,7 +27,7 @@
 | `setJSON(document)` | Validate schema before replacing content |
 | `getSelection()` | `{ index, length }` text offsets, or undefined outside the surface |
 | `setSelection(index, length?)` | Select text; nonnegative integer offsets |
-| `getFormats()` | Formats at selection start, `mixed`, list depth and indentation availability |
+| `getFormats(range?)` | Formats at selection start, `mixed`, list depth and indentation availability |
 | `format(name, value)` | Undoable user-format command |
 | `insertHTML(html)` | Validated paste-like replacement of the current selection |
 | `setReadOnly(value) / isReadOnly()` | Control and query user editing |
@@ -307,3 +307,5 @@ The optional [font plugin](/en/fonts), through `/plugins/fonts`, provides config
 Optional [list properties](/en/list-properties), through `/plugins/list-properties`, change start/reversed/marker on one whole current container with Undo. They are explicitly installed, excluded from preset defaults and do not recalculate continued numbering.
 
 Optional [LTR/RTL text direction](/en/text-direction), through `/plugins/text-direction`, changes explicit dir on the closest ordinary block or siblings sharing a parent/cell. Reset inherits surrounding direction rather than forcing LTR; presets and ready toolbar do not install it automatically.
+
+The optional [contextual selection toolbar](/en/contextual-toolbar) uses the independent `/ui/contextual` entry. `getFormats(range?)` projects a remembered current Range without moving Selection/focus; omission retains existing behavior. Shell custom readers receive a cloned range as their second argument, while commands still validate the actual target.

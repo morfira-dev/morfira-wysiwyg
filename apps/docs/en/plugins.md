@@ -80,3 +80,5 @@ The optional [font plugin](/en/fonts), through `/plugins/fonts`, provides config
 The explicit [list-properties plugin](/en/list-properties) provides start, reversed and bounded container list-style-type, without extra CSS, a counter engine or preset changes.
 
 Optional [LTR/RTL text direction](/en/text-direction), through `/plugins/text-direction`, changes explicit dir on the closest ordinary block or siblings sharing a parent/cell. Reset inherits surrounding direction rather than forcing LTR; presets and ready toolbar do not install it automatically.
+
+Nonempty selections can use the separate [contextual UI](/en/contextual-toolbar), rather than a behavior plugin: `/ui/contextual` plus explicit `/ui/contextual.css`. Presets do not install it; it reuses existing commands/history.

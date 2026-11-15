@@ -3,6 +3,7 @@ import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg';
 import type { ConsumerProbe } from './types.js';
 import { createExtendedPreset } from '@morfira-dev/wysiwyg/presets/extended';
 import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
+import { createContextualToolbar } from '@morfira-dev/wysiwyg/ui/contextual';
 import { slashCommands, createSlashActions } from '@morfira-dev/wysiwyg/plugins/slash';
 import { createSuggestionMenu } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import { createLinkForm } from '@morfira-dev/wysiwyg/ui/links';
@@ -18,6 +19,7 @@ import '@morfira-dev/wysiwyg/plugins/suggestions.css';
 import '@morfira-dev/wysiwyg/plugins/checklists.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 import '@morfira-dev/wysiwyg/ui/editor.css';
+import '@morfira-dev/wysiwyg/ui/contextual.css';
 
 const probe: ConsumerProbe = { changes: 0 };
 window.morfiraConsumer = probe;
@@ -67,6 +69,25 @@ export const ready = (editor: Editor) => {
   document.body.append(uiHost);
   const ui = createStandardEditorUI(uiHost, editor, { label: 'Consumer ready tools', density: 'compact' });
   probe.ui = ui;
+  let contextual: ReturnType<typeof createContextualToolbar> | undefined;
+  let contextualHost: HTMLElement | undefined;
+  const hideContextual = () => {
+    contextual?.destroy();
+    contextualHost?.remove();
+    contextual = undefined;
+    contextualHost = undefined;
+    delete probe.contextual;
+  };
+  const showContextual = () => {
+    hideContextual();
+    contextualHost = document.createElement('div');
+    contextualHost.dataset.consumerContextual = '';
+    document.body.append(contextualHost);
+    contextual = createContextualToolbar(contextualHost, editor, { label: 'Consumer contextual', density: 'compact' });
+    probe.contextual = contextual;
+  };
+  probe.showContextual = showContextual;
+  probe.hideContextual = hideContextual;
   let overflowUI: ReturnType<typeof createStandardEditorUI> | undefined;
   let overflowHost: HTMLElement | undefined;
   const hideOverflow = () => {
@@ -103,6 +124,9 @@ export const ready = (editor: Editor) => {
   probe.forms = forms;
   editor.events.on('destroy', () => {
     hideOverflow();
+    hideContextual();
+    if (probe.showContextual === showContextual) delete probe.showContextual;
+    if (probe.hideContextual === hideContextual) delete probe.hideContextual;
     if (probe.showOverflow === showOverflow) delete probe.showOverflow;
     if (probe.hideOverflow === hideOverflow) delete probe.hideOverflow;
     forms.links.destroy();

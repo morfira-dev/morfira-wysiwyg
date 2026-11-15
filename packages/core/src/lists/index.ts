@@ -52,8 +52,8 @@ export const selectedBlocks = (root: HTMLElement, range = activeRange(root), pre
   return [...root.querySelectorAll<HTMLElement>(blocks)].filter((block) => found.has(block));
 };
 const topItems = (items: HTMLElement[]) => items.filter((item) => !items.some((parent) => parent !== item && parent.contains(item)));
-const itemRange = (root: HTMLElement): HTMLLIElement[] => {
-  const items = topItems(selectedBlocks(root));
+const itemRange = (root: HTMLElement, range?: Range): HTMLLIElement[] => {
+  const items = topItems(selectedBlocks(root, range));
   if (!items.length || items.some((item) => item.localName !== 'li' || !isList(item.parentElement)))
     return [];
   const parent = items[0].parentElement;
@@ -148,8 +148,8 @@ const lift = (items: HTMLLIElement[]): void => {
   if (!list.childNodes.length)
     list.remove();
 };
-export const listState = (root: HTMLElement) => {
-  const items = itemRange(root);
+export const listState = (root: HTMLElement, range?: Range) => {
+  const items = itemRange(root, range);
   const canIndent = !!items.length && items[0].previousElementSibling?.localName === 'li' && items.every((item) => [item, ...item.querySelectorAll<HTMLElement>('li')].every((child) => depth(root, child) < 8));
   return { listDepth: items.length ? depth(root, items[0]) : 0, canIndent, canOutdent: !!items.length };
 };

@@ -1,0 +1,3 @@
+.mw-contextual-toolbar { position: fixed; z-index: var(--mw-ui-contextual-z-index, 1000); width: max-content; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; color: var(--mw-text, #263043); background: var(--mw-toolbar-bg, #fafbfc); border-radius: var(--mw-ui-radius, var(--mw-radius, 12px)); box-shadow: var(--mw-ui-contextual-shadow, 0 6px 24px #172b4d26); }
+.mw-contextual-toolbar[hidden] { display: none; }
+.mw-contextual-toolbar .mw-editor-toolbar { max-width: 100%; }

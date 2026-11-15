@@ -1,6 +1,6 @@
 # Optional ready editor UI
 
-Status: U1 baseline shell, U2 standard controls/forms and U3a opt-in group-priority overflow are implemented locally with explicit public entries. Wrapping remains the compatible default; contextual controls remain later U3 work. Existing toolbar/forms remain available under their current public contracts. Actual current verification is recorded in `verification-backlog.md`. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
+Status: U1 baseline shell, U2 standard controls/forms and U3a opt-in group-priority overflow are implemented locally with explicit public entries. Wrapping remains the compatible default; U3b contextual text formatting is implemented through a separate opt-in entry. Link/image/table/caret contexts remain later U3 work. Existing toolbar/forms remain available under their current public contracts. Actual current verification is recorded in `verification-backlog.md`. Preset composition follows `editor-presets.md`; SDK scope follows `plugin-sdk.md`.
 
 ## Outcome and boundaries
 
@@ -41,7 +41,7 @@ One interaction remains one transaction/history step. Opening, closing, resizing
 
 ### U3a — Opt-in group-priority overflow — implementation contract
 
-Add `overflow?: 'wrap' | 'more'` to shell and ready standard/extended options. The default remains `wrap` for compatibility: existing integrations and their controls remain visible. Applications and the live demo can explicitly enable `more`; changing options requires destroying/remounting the UI, never replacing the editor/document. Contextual bubbles and a default-mode change are separate later decisions.
+Add `overflow?: 'wrap' | 'more'` to shell and ready standard/extended options. The default remains `wrap` for compatibility: existing integrations and their controls remain visible. Applications and the live demo can explicitly enable `more`; changing options requires destroying/remounting the UI, never replacing the editor/document. The separate U3b contextual text toolbar follows `contextual-toolbar.md`; link/image/table/caret contexts and a default-overflow-mode change remain later decisions.
 
 The shell also accepts `groupPriorities?: readonly number[]`, with exactly one finite number per configured group. Larger values retain a group longer; equal priorities retain earlier groups. Reject invalid modes, lengths or numbers before mounting/listeners. Standard/extended own their fixed priorities rather than exposing positional priority arrays for conditional built-in groups.
 
@@ -96,7 +96,7 @@ On close/destroy release every owned form/menu controller, listener, subscriptio
 
 ## Delivery and acceptance
 
-U1/P1, U2/P2, extended P3 and U3a opt-in overflow are implemented locally; contextual U3 controls remain future work. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
+U1/P1, U2/P2, extended P3 and U3a opt-in overflow are implemented locally; U3b contextual text formatting is implemented with staged validation; link/image/table/caret contexts remain future work. Each slice ships a working feature rather than stubs for later SDK phases. Later dedicated UI specification updates may narrow exact keyboard/layout details before implementation; ordinary implementation choices do not require a separate permission flow.
 
 Required evidence for the implemented slice:
 
@@ -108,7 +108,7 @@ Required evidence for the implemented slice:
 
 ## First implementation decision
 
-The baseline delivers the grouped icon toolbar shell and standard panel composition. Standard includes native block/list/alignment controls, inline formatting/history, color/highlight controls, table insertion and the existing link/image/search forms. Native form controls are allowed when they provide the appropriate interaction; a custom color grid remains separate work. At narrow widths controls wrap within their host by default. U3a adds explicit opt-in priority/More overflow under the contract above; contextual bubbles remain a later follow-up.
+The baseline delivers the grouped icon toolbar shell and standard panel composition. Standard includes native block/list/alignment controls, inline formatting/history, color/highlight controls, table insertion and the existing link/image/search forms. Native form controls are allowed when they provide the appropriate interaction; a custom color grid remains separate work. At narrow widths controls wrap within their host by default. U3a adds explicit opt-in priority/More overflow under the contract above; the separate U3b text toolbar is implemented, while link/image/table/caret context remains a later follow-up.
 
 Custom action callbacks may invoke existing typed SDK tokens through closures; action IDs remain UI identities only. All mutation paths recheck read-only/composition and restore a valid range. Non-mutating panel/search actions may remain usable read-only. Closing a panel releases its owned controllers/listeners and cancels only its own upload; reopened drafts may be retained as copied per-instance UI values without changing plugin/document state. Standard creation validates required plugins before mounting, uses no editor/schema replacement, and forwards safe localized errors plus optional original diagnostics.
 
@@ -121,3 +121,7 @@ The core content stylesheet styles the existing schema-v1 HR (also produced by M
 The horizontal-rule action reads `getState(selection.peek())` against the UI-owned remembered Range. This is a side-effect-free state projection; toolbar focus must not disable a valid target when WebKit drops the native selection. Activation still restores the current valid saved range and executes the ordinary guarded command. A projected state never supplies execution authority or moves the document selection.
 
 UI composition guards follow core cancellation: an authoritative API document replacement or enabling read-only clears local composition state without requiring compositionend. Ignore compositionstart while read-only. This applies to the shell and standard panel composition so commands resume after cancellation, while ordinary active composition remains guarded.
+
+## U3b — Contextual text formatting
+
+The implemented independent contextual text-formatting slice follows [contextual-toolbar.md](contextual-toolbar.md). It composes the existing shell with explicit saved-range state projection, visibility/keyboard/dismissal and bounded viewport geometry; no implicit preset installation or image/table/caret context is promised. Validation is staged: the 3639/3639 full check preceded the final narrow constructor/remount correction; final static checks, 156/156 affected browser executions, docs 171/171 and installed consumers 18/18 passed after it. This does not claim a single final-build full-suite pass; see `verification-backlog.md`. Existing future statements refer to link/image/table/caret contexts.

@@ -1,8 +1,41 @@
-# Verification record — text direction, optional features and editor
+# Verification record — contextual text UI, optional features and editor
 
-Status: the first optional LTR/RTL slice completed final local verification: full check 3615/3615 (1205 cases × three engines, 15.1 minutes, exit 0), documentation 169/169 and packed consumers 18/18 passed. Corrected direction tests passed 24/24 and TypeScript reported zero errors. Completed list-properties `9b06a69` and earlier results below remain historical evidence. Push `43b4408` contains preceding work; LTR/RTL remains local. Remote CI was still in its pnpm check step in the 19:16 MSK snapshot; its final conclusion is unknown and is not implied by local passes.
+Status: contextual text UI is implemented with completed staged local validation. Full check 3639/3639 passed before the final narrow constructor/remount correction; after that context-only fix, the static chain, 156/156 affected browser executions, docs 171/171 and packed consumers 18/18 passed. This is not a single full-suite pass on the final build. Direction `e77e99d` and earlier results below remain historical evidence. CI optimization is separately committed locally as `b5698cd`; no new push or GitHub runner timing is claimed.
 
-## Current optional text-direction verification — completed locally
+## Current contextual text-toolbar verification — completed staged validation
+
+The explicit `/ui/contextual` factory composes the existing shell for eligible visible text ranges with saved-range state projection, Alt+F10/Escape, per-instance dismissal/geometry and cleanup. It is outside preset defaults and ready UI installation; the full demo enables it through its own optional switch. Automatic showing takes no focus and creates no history. Image/table/collapsed-caret link contexts remain future work. No runtime dependency, model change or complete accessibility/device certification is implied.
+
+| Check / source checkpoint | Actual result |
+| --- | --- |
+| Initial focused suite | **150/153 passed**: one fixture repeated the same range after read-only dismissal; corrected targeted run **24/24 passed**, 15.0 seconds |
+| Full check before final constructor/remount fix | **3639/3639 passed**, **1213 cases × Chromium/Firefox/WebKit**, 14.8 minutes, including the static pipeline. This preceded the final context-only correction and is not a final-build single-run pass |
+| New docs discovery after that full run | Initial **0/2** exposed a real constructor/remount suppression bug for a range the new controller had never owned. A narrow context-only branch was corrected |
+| Final-build static checks | Passed, exit 0, after the constructor/remount correction |
+| Final affected browser suite | **156/156 passed**, 44.5 seconds: contextual UI, editor UI and all three forms |
+| Final complete docs browser suite | **171/171 passed**, 1.4 minutes, exit 0 |
+| Final installed consumers | **18/18 passed**, exit 0, including Angular 22 on Node 24.16.0 |
+| Final site-only build | **7.01 seconds**, passed; checked package artifacts were reused and no packages were rebuilt during browser checks |
+| Separate CI optimization | Local commit `b5698cd` contains the CI change and its actionlint/static validation. No new GitHub runner timing, completed remote CI result or push is claimed here |
+
+The final static/affected/docs/consumer passes cover the actual narrow correction; the preceding full run remains a distinct checkpoint. They are not presented as a new full-suite execution on the final build. Existing history, selection, cleanup and headless boundaries remain the acceptance contract.
+
+### Current contextual generated sizes
+
+Fresh `size-report.json`: minified JS, gzip and Brotli separately; CSS is separate, shared shell chunks count once per selected graph. Framework runtimes, maps, declarations and application assets are excluded. The contextual JS entry includes its existing shared shell, not merely placement code. Its CSS column reports only the additional contextual stylesheet; existing ui/editor.css is also required and is counted once in each selected ready profile.
+
+| Entry / selected profile | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 90311 | 27796 | 24380 | 3293 | 1164 | 962 |
+| Contextual entry including shell | 30685 | 11207 | 9876 | 470 | 272 | 222 |
+| Standard ready | 202212 | 59004 | 50436 | 11504 | 3747 | 3038 |
+| Standard + contextual ready | 210339 | 61595 | 52452 | 11974 | 4019 | 3260 |
+| Standard + fonts + list properties + direction + contextual ready | 218421 | 64143 | 54339 | 11974 | 4019 | 3260 |
+| Extended ready | 223386 | 65150 | 55555 | 12700 | 4239 | 3414 |
+
+Core is **90311 / 27796 / 24380** raw/gzip/Brotli JS bytes, **10311 raw bytes above** the soft 80000-byte optimization target. The contextual entry is **30685 / 11207 / 9876**, within its 16000-byte gzip guard, with **470 / 272 / 222** extra CSS bytes within its 2000-byte raw guard. Standard+contextual is **61595 gzip**, leaving **3405** bytes below 65000; the explicit all-selected profile is **64143 gzip**, leaving **857**. Core/optional/adapter/profile guards remain unchanged; no feature size is hidden by adding already-counted shell code again.
+
+## Historical text-direction baseline — `e77e99d`
 
 The explicit `/plugins/text-direction` entry provides guarded LTR/RTL/reset commands and stored/mixed state, outside preset defaults and ready-toolbar built-ins. Targets are closest ordinary blocks or supported siblings sharing a parent/cell boundary; cross-parent inner LI paragraphs and unsupported structural endpoints remain barriers. Reset inherits rather than forcing LTR. Native bidi stays browser-owned: no text/control-character rewriting, automatic detection, inline direction wrappers or spoofing guarantee. HTML normalizes accepted dir values; recognized invalid own JSON dir now rejects atomically rather than being treated as an unknown filtered attribute. Older readers may lose the additive attribute. No runtime dependencies or plugin CSS were added.
 
@@ -20,7 +53,7 @@ The explicit `/plugins/text-direction` entry provides guarded LTR/RTL/reset comm
 | Angular 22 installed consumers | **3/3 passed**, exit 0, Node 24.16.0; current total **18/18** installed consumer scenarios |
 | Final full check | **3615/3615 passed**, **1205 cases × Chromium/Firefox/WebKit**, 15.1 minutes, **exit 0**, including the entire static pipeline |
 
-### Current text-direction generated sizes
+### Historical text-direction generated sizes — `e77e99d`
 
 Read from current `size-report.json`: raw minified JS, gzip, Brotli and CSS separately, shared chunks once per selected profile. Framework runtimes/maps/declarations/application assets are excluded. These measurements do not establish input latency, memory behavior or complete accessibility.
 

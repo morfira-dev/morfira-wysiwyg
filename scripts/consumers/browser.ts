@@ -68,6 +68,22 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeDirection.changes + 1, `${adapter}: installed direction emits one controlled update`);
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeDirection.html, `${adapter}: installed direction undoes once`);
+          const beforeContextual = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
+          await page.evaluate(() => {
+            window.morfiraConsumer.editor!.setSelection(0, 7);
+            window.morfiraConsumer.showContextual!();
+            window.morfiraConsumer.contextual!.refresh();
+          });
+          const contextual = page.locator('[data-consumer-contextual]');
+          const contextualToolbar = contextual.getByRole('toolbar', { name: 'Consumer contextual', exact: true });
+          await expect(contextualToolbar).toBeVisible();
+          await contextualToolbar.getByRole('button', { name: 'Underline', exact: true }).click();
+          await expect(content.locator('u')).toHaveText('Initial');
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeContextual.changes + 1, `${adapter}: contextual format emits one controlled update`);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeContextual.html, `${adapter}: contextual formatting undoes once`);
+          await page.evaluate(() => window.morfiraConsumer.hideContextual!());
+          await expect(contextual).toHaveCount(0);
           const beforeOverflow = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), undo: window.morfiraConsumer.editor!.canUndo(), changes: window.morfiraConsumer.changes }));
           await page.evaluate(() => window.morfiraConsumer.showOverflow!());
           const overflowHost = page.locator('[data-consumer-overflow]');

@@ -41,7 +41,7 @@ export interface Editor {
   setJSON(value: EditorDocument): void;
   getSelection(): TextSelection | undefined;
   setSelection(index: number, length?: number): void;
-  getFormats(): Record<string, unknown>;
+  getFormats(range?: Range): Record<string, unknown>;
   setReadOnly(value: boolean): void;
   isReadOnly(): boolean;
   format(name: string, value: unknown): void;

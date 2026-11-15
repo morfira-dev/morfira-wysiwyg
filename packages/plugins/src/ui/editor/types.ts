@@ -6,12 +6,12 @@ export type EditorUIIcon = EditorUIBuiltin | 'link' | 'image' | 'search' | 'tabl
 export type EditorUIMessageKey = keyof typeof editorUIMessages.en;
 export interface EditorUIAction {
   readonly id: string;
-  readonly label: string | ((editor: Editor) => string);
+  readonly label: string | ((editor: Editor, range?: Range) => string);
   readonly icon?: EditorUIIcon;
   readonly text?: string;
   readonly run: (editor: Editor) => void;
-  readonly enabled?: (editor: Editor) => boolean;
-  readonly pressed?: (editor: Editor) => boolean | 'mixed';
+  readonly enabled?: (editor: Editor, range?: Range) => boolean;
+  readonly pressed?: (editor: Editor, range?: Range) => boolean | 'mixed';
   readonly mutates?: boolean;
 }
 export type EditorUIItem = EditorUIBuiltin | EditorUIAction;

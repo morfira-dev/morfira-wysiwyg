@@ -89,7 +89,7 @@ const ui = createStandardEditorUI(toolbarHost, editor, { overflow: 'more' });
 
 Измерение и открытие не меняют документ, выделение или историю. Фокусируемая группа остаётся на месте при resize до ухода фокуса; сохранение открытого системного picker при resize не обещается. `refresh()` повторно учитывает ширину и локализацию; без ResizeObserver его вызывают явно. Destroy отключает observer и запланированные callbacks. Новых runtime-зависимостей нет; headless-ядро не загружает overflow UI.
 
-На главной и в playground переключатель **«Режим панели»** меняет только UI через destroy/remount, сохраняя редактор, документ, историю и выделение. Режим по умолчанию — перенос строк. При смене режима открытые UI-панели и их несохранённые черновики пересоздаются; это не замена документа. Контекстные floating-инструменты и изменение режима по умолчанию остаются отдельными будущими решениями.
+На главной и в playground переключатель **«Режим панели»** меняет только UI через destroy/remount, сохраняя редактор, документ, историю и выделение. Режим по умолчанию — перенос строк. При смене режима открытые UI-панели и их несохранённые черновики пересоздаются; это не замена документа. Отдельная [контекстная панель текста](/contextual-toolbar) подключается явно; инструменты изображений/таблиц и изменение режима overflow по умолчанию остаются будущими решениями.
 
 ## Действие через SDK
 
@@ -156,7 +156,7 @@ const ui = createExtendedEditorUI(toolbarHost, editor, { density: 'compact' });
 
 Builtin UI использует RU/EN-каталоги `ui.editor.*` и `ui.standard.*`, формы — свои `ui.links.*`, `ui.images.*`, `ui.search.*`. `editor.setLocale(...)` обновляет подписи и сообщения без замены документа и черновиков. Явный `label` и custom action labels принадлежат приложению; callback `label: (editor) => ...` позволяет им реагировать на locale.
 
-Плотность — `comfortable` или `compact`. Scoped CSS использует `--mw-*`: существующие surface/text/accent/border/hover плюс `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Стили документа не переписываются при смене темы. Поддерживаются responsive wrapping, явный More/priority overflow и reduced motion; contextual bubbles остаются следующим этапом.
+Плотность — `comfortable` или `compact`. Scoped CSS использует `--mw-*`: существующие surface/text/accent/border/hover плюс `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Стили документа не переписываются при смене темы. Поддерживаются responsive wrapping, явный More/priority overflow и reduced motion; отдельная [текстовая контекстная панель](/contextual-toolbar) реализована и прошла локальную поэтапную проверку, описанную в [дорожной карте](/roadmap#проверки-и-ограничения); контекстные инструменты изображений/таблиц остаются будущей работой.
 
 Контроллеры предоставляют `element`, `refresh()` и идемпотентный `destroy()`. Destroy UI оставляет редактор и application-owned search state рабочими; editor destroy автоматически освобождает связанный UI. Отсоединённые controls инертны. Все подписки, формы и меню имеют cleanup. Desktop browser tests не являются сертификацией mobile/IME или скринридеров.
 

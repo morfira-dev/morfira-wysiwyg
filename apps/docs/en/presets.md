@@ -155,7 +155,7 @@ Measure headless presets, UI and the final deduplicated closure containing core,
 
 The build enforces measured headless and ready profiles: Standard — at most 65000 gzip JS bytes; Extended — 110000 gzip JS bytes. The user clarified that the original limits mean gzip; these stricter existing profile gzip limits remain, while the duplicate 200000/350000 raw JS guards are removed. Raw size remains a separately reported measurement. Each profile is limited to 20000 minified CSS bytes. Minimal is measured separately without an additional preset guard. Actual raw/gzip/Brotli/CSS sizes are saved in `size-report.json`; framework runtimes are excluded from these profiles.
 
-UI wraps by default; explicit `overflow: 'more'` enables verified priority-based whole-group overflow. Contextual floating controls remain future work. Real mobile/IME and screen-reader behavior still needs dedicated verification. Full DOCX/PDF conversion, collaboration and office-style layout are outside these presets.
+UI wraps by default; explicit `overflow: 'more'` enables verified priority-based whole-group overflow. The text [contextual toolbar](/en/contextual-toolbar) is installed separately from presets; image/table menus remain future work. Real mobile/IME and screen-reader behavior still needs dedicated verification. Full DOCX/PDF conversion, collaboration and office-style layout are outside these presets.
 
 The [horizontal-rule command](/en/horizontal-rule) is included in standard/extended by default, with a ready toolbar button. `horizontalRule: false` omits its instance; a runtime flag does not erase static imports. Use selective composition for a narrower bundle.
 

@@ -101,7 +101,7 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
     catch { /* Diagnostics cannot break UI cleanup or committed document changes. */ }
   };
   const labelFor = (action: EditorUIAction): string => {
-    const label = typeof action.label === 'function' ? action.label(editor) : action.label;
+    const label = typeof action.label === 'function' ? action.label(editor, selection.peek()) : action.label;
     if (typeof label !== 'string') throw new TypeError('Action label reader must return text.');
     return label;
   };
@@ -124,7 +124,10 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
   };
   const refresh = () => {
     if (disposed) return;
-    const formats = editor.getFormats();
+    selection.capture();
+    const native = editor.getSelection();
+    const remembered = selection.peek();
+    const formats = editor.getFormats(native ? undefined : remembered);
     const mixed = formats.mixed as string[] | undefined;
     const readOnly = editor.isReadOnly();
     toolbar.setAttribute('aria-label', explicitLabel ?? message('ui.editor.label'));
@@ -137,11 +140,11 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
         node.title = label;
         if (control.action) {
           const action = control.action;
-          const enabled = action.enabled ? action.enabled(editor) : true;
+          const enabled = action.enabled ? action.enabled(editor, selection.peek()) : true;
           if (typeof enabled !== 'boolean') throw new TypeError('Action enabled reader must return a boolean.');
           node.disabled = (action.mutates !== false && (readOnly || composing)) || !enabled;
           if (action.pressed) {
-            const pressed = action.pressed(editor);
+            const pressed = action.pressed(editor, selection.peek());
             if (typeof pressed !== 'boolean' && pressed !== 'mixed') throw new TypeError('Action pressed reader must return boolean or mixed.');
             node.setAttribute('aria-pressed', String(pressed));
           }
@@ -149,7 +152,7 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
           continue;
         }
         const id = control.builtin!;
-        node.disabled = readOnly || composing || (id === 'undo' ? !editor.canUndo() : id === 'redo' ? !editor.canRedo() : id === 'clear' ? !editor.getSelection()?.length : id === 'indent' ? !formats.canIndent : id === 'outdent' ? !formats.canOutdent : false);
+        node.disabled = readOnly || composing || (id === 'undo' ? !editor.canUndo() : id === 'redo' ? !editor.canRedo() : id === 'clear' ? !(native?.length ?? remembered?.toString().length) : id === 'indent' ? !formats.canIndent : id === 'outdent' ? !formats.canOutdent : false);
         if (control.options) {
           [...(node as HTMLSelectElement).options].forEach((option, index) => { option.textContent = message(control.options![index].key); });
           const property = id === 'block' ? 'header' : id;
@@ -178,13 +181,14 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
     const chosen = control.element instanceof HTMLInputElement || control.element instanceof HTMLSelectElement ? control.element.value : undefined;
     const fromOverflow = overflow?.region.contains(control.element);
     if (mutates && (editor.isReadOnly() || composing)) return;
+    selection.capture();
     try {
       statusKey = undefined;
-      if (control.action?.enabled && !control.action.enabled(editor)) return;
       if (mutates && !selection.restore()) {
         report(new Error('Editor selection is no longer available.'), 'ui.editor.selection');
         return;
       }
+      if (control.action?.enabled && !control.action.enabled(editor, selection.peek())) return;
       if (control.action) {
         if (mutates) editor.transact(() => control.action!.run(editor));
         else {

@@ -131,7 +131,12 @@
     "./plugins/text-direction": {
       "types": "./dist/plugins/text-direction.d.ts",
       "import": "./dist/plugins/text-direction.js"
-    }
+    },
+    "./ui/contextual": {
+      "types": "./dist/ui/contextual.d.ts",
+      "import": "./dist/ui/contextual.js"
+    },
+    "./ui/contextual.css": "./dist/ui/contextual.css"
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.7.0",

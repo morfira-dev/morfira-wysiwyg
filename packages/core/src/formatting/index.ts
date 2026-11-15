@@ -44,14 +44,24 @@ const formatsAt = (root: HTMLElement, node: Node): Record<string, unknown> => {
   }
   return formats;
 };
-export const readFormats = (root: HTMLElement): Record<string, unknown> => {
-  const range = activeRange(root);
+export const readFormats = (root: HTMLElement, projection?: Range): Record<string, unknown> => {
+  let range: Range | undefined;
+  if (projection === undefined) range = activeRange(root);
+  else {
+    try { range = root.ownerDocument.defaultView!.Range.prototype.cloneRange.call(projection); }
+    catch { throw new TypeError('Expected a native Range for format projection.'); }
+    if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return {};
+  }
   if (!range)
     return {};
   let formats = formatsAt(root, range.startContainer);
   const mixed = new Set<string>();
   if (!range.collapsed) {
-    const { index, length } = readTextSelection(root)!;
+    const prefix = root.ownerDocument.createRange();
+    prefix.selectNodeContents(root);
+    prefix.setEnd(range.startContainer, range.startOffset);
+    const index = prefix.toString().length;
+    const length = range.toString().length;
     const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     let position = 0;
     let node: Node | null;
@@ -70,7 +80,7 @@ export const readFormats = (root: HTMLElement): Record<string, unknown> => {
       if (samples.some((sample) => normalized(sample, key) !== normalized(samples[0], key)))
         mixed.add(key);
   }
-  return { ...formats, align: formats.align ?? 'left', mixed: [...mixed], ...listState(root) };
+  return { ...formats, align: formats.align ?? 'left', mixed: [...mixed], ...listState(root, range) };
 };
 export const applyFormat = (root: HTMLElement, name: string, value: unknown, schema?: DocumentSchema): void => {
   const range = activeRange(root);

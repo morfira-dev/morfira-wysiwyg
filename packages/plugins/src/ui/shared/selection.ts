@@ -9,6 +9,7 @@ export const createFormSelection = (editor: Editor): FormSelection => {
   let backward = false;
   let blocked = false;
   let disposed = false;
+  let apiRevision = 0;
   const valid = (range: Range): boolean => surface.contains(range.startContainer) && surface.contains(range.endContainer);
   const capture = () => {
     if (disposed || (document.activeElement !== surface && !surface.contains(document.activeElement))) return;
@@ -25,13 +26,17 @@ export const createFormSelection = (editor: Editor): FormSelection => {
     if (saved && !valid(saved)) saved = undefined;
     if (!saved) {
       if (blocked) return false;
+      const revision = apiRevision;
       editor.focus();
+      if (disposed || apiRevision !== revision) return false;
       capture();
     }
     if (!saved) return false;
     const range = saved.cloneRange();
     const reverse = backward;
+    const revision = apiRevision;
     editor.focus();
+    if (disposed || apiRevision !== revision || !saved || !valid(range)) return false;
     const selection = document.getSelection();
     if (!selection) return false;
     selection.removeAllRanges();
@@ -43,6 +48,7 @@ export const createFormSelection = (editor: Editor): FormSelection => {
   const stopSelection = editor.onSelectionChange(capture);
   const stopChange = editor.subscribe((change) => {
     if (change.source === 'api') {
+      apiRevision++;
       saved = undefined;
       blocked = true;
     }
