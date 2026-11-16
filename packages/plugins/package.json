@@ -1,6 +1,6 @@
 {
   "name": "@morfira-dev/wysiwyg-plugins",
-  "version": "1.13.0",
+  "version": "1.13.1",
   "type": "module",
   "files": [
     "dist"
@@ -132,7 +132,7 @@
     "./ui/contextual-table.css": "./dist/ui/contextual-table.css"
   },
   "peerDependencies": {
-    "@morfira-dev/wysiwyg-core": "^1.9.0"
+    "@morfira-dev/wysiwyg-core": "^1.9.1"
   },
   "repository": {
     "type": "git",
