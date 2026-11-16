@@ -2,6 +2,7 @@ import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { createEditorUI } from '../editor/index.js';
 import { createFormSelection } from '../shared/selection.js';
+import { listenToUI } from '../shared/events.js';
 import { contextualToolbarMessages } from './messages.js';
 import { contextualAnchor, placeContextualToolbar } from './geometry.js';
 import { nativeContextualRange, sameContextualRange, validContextualRange } from './selection.js';
@@ -261,9 +262,8 @@ export const createContextualToolbar = (host: HTMLElement, editor: Editor, optio
     composing = false;
     dismiss();
   };
-  const listen = (target: EventTarget, type: string, listener: EventListener, capture = false): void => {
-    target.addEventListener(type, listener, capture);
-    cleanups.push(() => target.removeEventListener(type, listener, capture));
+  const listen = (target: EventTarget, type: keyof HTMLElementEventMap, listener: EventListener, capture = false): void => {
+    cleanups.push(listenToUI(target, type, listener, capture));
   };
   const destroy = (): void => {
     if (disposed) return;

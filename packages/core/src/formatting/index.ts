@@ -1,6 +1,5 @@
 import type { DocumentSchema } from '../schema/types.js';
 import type { DocumentTag } from '../document/index.js';
-import { documentHTML, parseHTML } from '../document/index.js';
 import { normalizeFontFamily } from '../document/font-family.js';
 import { copyDirection } from '../document/direction.js';
 import { activeRange, readTextSelection, selectText, preserveRange } from '../selection/index.js';
@@ -82,7 +81,7 @@ export const readFormats = (root: HTMLElement, projection?: Range): Record<strin
   }
   return { ...formats, align: formats.align ?? 'left', mixed: [...mixed], ...listState(root, range) };
 };
-export const applyFormat = (root: HTMLElement, name: string, value: unknown, schema?: DocumentSchema): void => {
+export const applyFormat = (root: HTMLElement, name: string, value: unknown, schema: DocumentSchema): void => {
   const range = activeRange(root);
   if (!range)
     return;
@@ -101,17 +100,17 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown, sch
   if (name === 'clear') {
     if (value !== true || !selection.length)
       return;
-    let content = (schema?.parseHTML ?? parseHTML)(root.innerHTML);
+    let content = schema.parseHTML(root.innerHTML);
     for (const tag of [...Object.values(inlineFormats), 'a', 'span'] as DocumentTag[])
       content = inlineDocument(content, selection.index, selection.index + selection.length, tag, false);
-    root.innerHTML = (schema?.documentHTML ?? documentHTML)(content);
+    root.innerHTML = schema.documentHTML(content);
     selectText(root, selection.index, selection.length);
     return;
   }
   if (tag) {
     if (range.collapsed)
       return;
-    root.innerHTML = (schema?.documentHTML ?? documentHTML)(inlineDocument((schema?.parseHTML ?? parseHTML)(root.innerHTML), selection.index, selection.index + selection.length, tag, Boolean(value)));
+    root.innerHTML = schema.documentHTML(inlineDocument(schema.parseHTML(root.innerHTML), selection.index, selection.index + selection.length, tag, Boolean(value)));
     selectText(root, selection.index, selection.length);
     return;
   }
@@ -123,7 +122,7 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown, sch
     const style = normalizeInlineStyle(name, value);
     if (!selection.length)
       return;
-    root.innerHTML = (schema?.documentHTML ?? documentHTML)(transformInlineAttributes((schema?.parseHTML ?? parseHTML)(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'style', property: inlineStyles[name], value: style }));
+    root.innerHTML = schema.documentHTML(transformInlineAttributes(schema.parseHTML(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'style', property: inlineStyles[name], value: style }));
     selectText(root, selection.index, selection.length);
     return;
   }

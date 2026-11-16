@@ -1,6 +1,8 @@
 import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { searchCommands } from '../../search/index.js';
+import { createFormInput, createUIButton, createUIElement, createUIStatus } from '../shared/elements.js';
+import { listenToUI } from '../shared/events.js';
 import type { SearchState } from '../../search/types.js';
 import { searchFormMessages } from './messages.js';
 import type { SearchFormController, SearchFormMessageKey, SearchFormOptions, SearchFormValues } from './types.js';
@@ -38,54 +40,27 @@ export const createSearchForm = (host: HTMLElement, editor: Editor, options: Sea
     wholeWord: state.options.wholeWord,
   }, options.initialValues ?? {});
   let disposed = false;
+  let stopDOM: (() => void)[] = [];
   let statusMessage: SearchFormMessageKey | undefined;
   let replaced = 0;
   const document = host.ownerDocument;
-  const element = document.createElement('section');
-  element.className = 'mw-form mw-search-form';
+  const element = createUIElement(document, 'section', 'mw-form mw-search-form');
   element.setAttribute('role', 'form');
-  const fields = document.createElement('div');
-  fields.className = 'mw-form-fields';
-  const actions = document.createElement('div');
-  actions.className = 'mw-form-actions';
-  const status = document.createElement('p');
-  status.className = 'mw-form-status';
-  status.setAttribute('role', 'status');
-  status.setAttribute('aria-live', 'polite');
-  const queryLabel = document.createElement('label');
-  const queryText = document.createElement('span');
-  const query = document.createElement('input');
-  query.type = 'text'; query.maxLength = 1000;
-  queryLabel.append(queryText, query);
-  const replacementLabel = document.createElement('label');
-  const replacementText = document.createElement('span');
-  const replacement = document.createElement('input');
-  replacement.type = 'text'; replacement.maxLength = 20000;
-  replacementLabel.append(replacementText, replacement);
-  const caseLabel = document.createElement('label');
-  caseLabel.className = 'mw-form-checkbox';
-  const caseSensitive = document.createElement('input');
-  caseSensitive.type = 'checkbox';
-  const caseText = document.createElement('span');
-  caseLabel.append(caseSensitive, caseText);
-  const wholeLabel = document.createElement('label');
-  wholeLabel.className = 'mw-form-checkbox';
-  const wholeWord = document.createElement('input');
-  wholeWord.type = 'checkbox';
-  const wholeText = document.createElement('span');
-  wholeLabel.append(wholeWord, wholeText);
-  const find = document.createElement('button');
-  find.type = 'button';
-  const previous = document.createElement('button');
-  previous.type = 'button';
-  const next = document.createElement('button');
-  next.type = 'button';
-  const replaceCurrent = document.createElement('button');
-  replaceCurrent.type = 'button';
-  const replaceAll = document.createElement('button');
-  replaceAll.type = 'button';
-  const clear = document.createElement('button');
-  clear.type = 'button';
+  const fields = createUIElement(document, 'div', 'mw-form-fields');
+  const actions = createUIElement(document, 'div', 'mw-form-actions');
+  const status = createUIStatus(document, 'mw-form-status');
+  const { label: queryLabel, caption: queryText, input: query } = createFormInput(document);
+  query.maxLength = 1000;
+  const { label: replacementLabel, caption: replacementText, input: replacement } = createFormInput(document);
+  replacement.maxLength = 20000;
+  const { label: caseLabel, caption: caseText, input: caseSensitive } = createFormInput(document, 'checkbox', true);
+  const { label: wholeLabel, caption: wholeText, input: wholeWord } = createFormInput(document, 'checkbox', true);
+  const find = createUIButton(document);
+  const previous = createUIButton(document);
+  const next = createUIButton(document);
+  const replaceCurrent = createUIButton(document);
+  const replaceAll = createUIButton(document);
+  const clear = createUIButton(document);
   fields.append(queryLabel, caseLabel, wholeLabel, replacementLabel);
   actions.append(find, previous, next, replaceCurrent, replaceAll, clear);
   element.append(fields, actions, status);
@@ -227,15 +202,7 @@ export const createSearchForm = (host: HTMLElement, editor: Editor, options: Sea
     unsubscribeLocale();
     unsubscribeReadOnly();
     unsubscribeDestroy();
-    find.removeEventListener('click', submit);
-    element.removeEventListener('keydown', keydown);
-    element.removeEventListener('input', input);
-    element.removeEventListener('change', input);
-    previous.removeEventListener('click', previousClick);
-    next.removeEventListener('click', nextClick);
-    replaceCurrent.removeEventListener('click', replaceClick);
-    replaceAll.removeEventListener('click', replaceAllClick);
-    clear.removeEventListener('click', clearSearch);
+    for (const stop of stopDOM) stop();
     element.remove();
   };
   const unsubscribeSearch = api.subscribe(acceptState);
@@ -244,15 +211,17 @@ export const createSearchForm = (host: HTMLElement, editor: Editor, options: Sea
   const unsubscribeDestroy = editor.events.on('destroy', destroy);
   writeFields();
   updateLocale();
-  find.addEventListener('click', submit);
-  element.addEventListener('keydown', keydown);
-  element.addEventListener('input', input);
-  element.addEventListener('change', input);
-  previous.addEventListener('click', previousClick);
-  next.addEventListener('click', nextClick);
-  replaceCurrent.addEventListener('click', replaceClick);
-  replaceAll.addEventListener('click', replaceAllClick);
-  clear.addEventListener('click', clearSearch);
+  stopDOM = [
+    listenToUI(find, 'click', submit),
+    listenToUI(element, 'keydown', keydown),
+    listenToUI(element, 'input', input),
+    listenToUI(element, 'change', input),
+    listenToUI(previous, 'click', previousClick),
+    listenToUI(next, 'click', nextClick),
+    listenToUI(replaceCurrent, 'click', replaceClick),
+    listenToUI(replaceAll, 'click', replaceAllClick),
+    listenToUI(clear, 'click', clearSearch),
+  ];
   host.append(element);
   return {
     element,

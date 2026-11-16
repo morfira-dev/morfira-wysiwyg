@@ -1,6 +1,8 @@
 import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { createFormSelection } from '../shared/selection.js';
+import { createFormInput, createUIButton, createUIElement, createUIStatus } from '../shared/elements.js';
+import { listenToUI } from '../shared/events.js';
 import { linkFormMessages } from './messages.js';
 import type { LinkFormController, LinkFormMessageKey, LinkFormOptions, LinkFormValues } from './types.js';
 
@@ -40,19 +42,13 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
   if (options.onError !== undefined && typeof options.onError !== 'function') throw new TypeError('The link form error callback must be a function.');
   const initial = checkedValues(options.initialValues ?? {});
   const document = host.ownerDocument;
-  const element = document.createElement('section');
-  element.className = 'mw-form mw-link-form';
+  const element = createUIElement(document, 'section', 'mw-form mw-link-form');
   element.setAttribute('role', 'form');
-  const fields = document.createElement('fieldset');
-  fields.className = 'mw-form-fields';
+  const fields = createUIElement(document, 'fieldset', 'mw-form-fields');
   const captions = new Map<HTMLElement, LinkFormMessageKey>();
   const textField = (key: LinkFormMessageKey, type = 'text') => {
-    const label = document.createElement('label');
-    const caption = document.createElement('span');
-    const input = document.createElement('input');
-    input.type = type;
+    const { label, caption, input } = createFormInput(document, type);
     input.maxLength = 20000;
-    label.append(caption, input);
     fields.append(label);
     captions.set(caption, key);
     return input;
@@ -60,26 +56,15 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
   const href = textField('ui.links.href');
   const title = textField('ui.links.title');
   const text = textField('ui.links.text');
-  const checkboxLabel = document.createElement('label');
-  checkboxLabel.className = 'mw-form-checkbox';
-  const newTab = document.createElement('input');
-  newTab.type = 'checkbox';
-  const checkboxCaption = document.createElement('span');
+  const { label: checkboxLabel, caption: checkboxCaption, input: newTab } = createFormInput(document, 'checkbox', true);
   captions.set(checkboxCaption, 'ui.links.newTab');
-  checkboxLabel.append(newTab, checkboxCaption);
   fields.append(checkboxLabel);
-  const actions = document.createElement('div');
-  actions.className = 'mw-form-actions';
-  const submit = document.createElement('button');
-  submit.type = 'button';
-  const unlink = document.createElement('button');
-  unlink.type = 'button';
+  const actions = createUIElement(document, 'div', 'mw-form-actions');
+  const submit = createUIButton(document);
+  const unlink = createUIButton(document);
   actions.append(submit, unlink);
   fields.append(actions);
-  const status = document.createElement('p');
-  status.className = 'mw-form-status';
-  status.setAttribute('role', 'status');
-  status.setAttribute('aria-live', 'polite');
+  const status = createUIStatus(document, 'mw-form-status');
   element.append(fields, status);
   const selection = createFormSelection(editor);
   let disposed = false;
@@ -87,6 +72,7 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
   let signature: string | undefined;
   let statusKey: LinkFormMessageKey | undefined;
   const subscriptions: (() => void)[] = [];
+  let stopDOM: (() => void)[] = [];
   const assertActive = () => {
     if (disposed) throw new Error('Link form has been destroyed.');
   };
@@ -188,18 +174,16 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
     disposed = true;
     for (const stop of subscriptions) stop();
     selection.destroy();
-    element.removeEventListener('pointerdown', capture);
-    element.removeEventListener('focusin', capture);
-    submit.removeEventListener('click', submitted);
-    element.removeEventListener('keydown', keydown);
-    unlink.removeEventListener('click', removed);
+    for (const stop of stopDOM) stop();
     element.remove();
   };
-  element.addEventListener('pointerdown', capture);
-  element.addEventListener('focusin', capture);
-  submit.addEventListener('click', submitted);
-  element.addEventListener('keydown', keydown);
-  unlink.addEventListener('click', removed);
+  stopDOM = [
+    listenToUI(element, 'pointerdown', capture),
+    listenToUI(element, 'focusin', capture),
+    listenToUI(submit, 'click', submitted),
+    listenToUI(element, 'keydown', keydown),
+    listenToUI(unlink, 'click', removed),
+  ];
   subscriptions.push(editor.onSelectionChange(refresh), editor.subscribe((change) => {
     if (change.source === 'api') { editing = false; signature = undefined; statusKey = undefined; }
     refresh();

@@ -1,5 +1,6 @@
 import { cutSelectionReplacement, ensureReplacementPlaceholder, finishSelectionReplacement, insertInlineFragment } from '../input/index.js';
 import { activeRange } from '../selection/index.js';
+import { ensureBodyPlaceholder, insertReplacementBlocks } from '../input/replacement-blocks.js';
 import { listPasteSelection, listSelectionReplacement } from './selection-boundaries.js';
 import { formattingWhitespace, inlinePayloadNode, isOrdinaryQuote, ordinaryPayloadBody, quoteBodyBlocks } from './paste-payload.js';
 import { replaceQuoteCrossing } from './quote-crossing.js';
@@ -37,17 +38,6 @@ const blockPasteCandidate = (fragment: DocumentFragment): boolean => multiBlockC
 const ordinaryBlocks = (fragment: DocumentFragment): HTMLElement[] | undefined => {
   const nodes = [...fragment.childNodes].filter((node) => !formattingWhitespace(node));
   return nodes.length > 1 && nodes.every(ordinaryPayloadBody) ? nodes : undefined;
-};
-const stripPlaceholder = (body: HTMLElement): void => {
-  if (!body.textContent && !body.querySelector('img') && body.querySelectorAll('br').length <= 1) {
-    for (const placeholder of body.querySelectorAll('br')) placeholder.remove();
-  }
-};
-const ensureBodyPlaceholder = (body: HTMLElement): void => {
-  const caret = body.ownerDocument.createRange();
-  caret.selectNodeContents(body);
-  caret.collapse(true);
-  ensureReplacementPlaceholder(body, caret);
 };
 const requireSupported = (selected: ListSelectionResult): ListSelectionPlan | undefined => {
   if (selected.status === 'blocked') throw new RangeError(selected.reason);
@@ -165,7 +155,8 @@ export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: Do
   // Keep the original end wrapper before a direct start is promoted by the cut.
   const suffix = standalone ? (selected.endBody === (selected.quote?.container ?? selected.last.item)
     ? root.ownerDocument.createElement('p') : selected.endBody.cloneNode(false) as HTMLElement) : undefined;
-  const { left, tail, caret, following, branches, container } = cutListSelection(selected, Boolean(blocks || standalone));
+  const cut = cutListSelection(selected, Boolean(blocks || standalone));
+  const { left, tail, caret, following, branches, container } = cut;
   if (standalone && suffix) {
     left.after(standalone, suffix);
     ensureReplacementPlaceholder(left, caret);
@@ -184,23 +175,7 @@ export const replaceListSelectionWithFragment = (root: HTMLElement, fragment: Do
     return true;
   }
   if (blocks) {
-    const first = blocks[0];
-    const last = blocks[blocks.length - 1];
-    stripPlaceholder(first);
-    const prefix = root.ownerDocument.createDocumentFragment();
-    prefix.append(...first.childNodes);
-    first.remove();
-    insertInlineFragment(left, caret, prefix);
-    left.after(...blocks.slice(1));
-    ensureReplacementPlaceholder(left, caret);
-    left.normalize();
-    for (const middle of blocks.slice(1, -1)) ensureBodyPlaceholder(middle);
-    stripPlaceholder(last);
-    const end = root.ownerDocument.createRange();
-    end.selectNodeContents(last);
-    end.collapse(false);
-    last.append(tail);
-    finishSelectionReplacement(last, end);
+    insertReplacementBlocks(cut, blocks);
     container.append(...following, ...branches);
     return true;
   }

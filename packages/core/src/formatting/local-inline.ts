@@ -1,6 +1,5 @@
 import type { DocumentSchema } from '../schema/types.js';
 import type { DocumentTag } from '../document/index.js';
-import { parseHTML, renderDocument } from '../document/index.js';
 import { selectText } from '../selection/index.js';
 import { inlineDocument } from './inline-document.js';
 
@@ -19,7 +18,7 @@ const isInlineTree = (parent: Element): boolean => {
 };
 
 /** Transform one schema-validated leaf while keeping unrelated editor DOM connected. */
-export const applyLocalInline = (root: HTMLElement, range: Range, tag: DocumentTag, enabled: boolean, schema?: DocumentSchema): boolean => {
+export const applyLocalInline = (root: HTMLElement, range: Range, tag: DocumentTag, enabled: boolean, schema: DocumentSchema): boolean => {
   const block = elementAt(range.startContainer)?.closest<HTMLElement>(leaves);
   if (!block || !root.contains(block) || block.namespaceURI !== 'http://www.w3.org/1999/xhtml') return false;
   if (elementAt(range.endContainer)?.closest(leaves) !== block || !isInlineTree(block)) return false;
@@ -35,8 +34,8 @@ export const applyLocalInline = (root: HTMLElement, range: Range, tag: DocumentT
   if (!length || from + length > (block.textContent?.length ?? 0)) return false;
   const native = root.ownerDocument.getSelection();
   const backward = native?.anchorNode === range.endContainer && native.anchorOffset === range.endOffset;
-  const content = inlineDocument((schema?.parseHTML ?? parseHTML)(block.outerHTML), from, from + length, tag, enabled);
-  const fragment = (schema?.renderDocument ?? renderDocument)(content);
+  const content = inlineDocument(schema.parseHTML(block.outerHTML), from, from + length, tag, enabled);
+  const fragment = schema.renderDocument(content);
   const replacement = fragment.firstElementChild;
   if (fragment.childNodes.length !== 1 || !(replacement instanceof HTMLElement) || replacement.localName !== block.localName) return false;
 

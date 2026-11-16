@@ -1,6 +1,8 @@
 import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { createFormSelection } from '../shared/selection.js';
+import { createUIButton, createUIStatus } from '../shared/elements.js';
+import { listenToUI } from '../shared/events.js';
 import { createEditorUIIcon } from './icons.js';
 import { editorUIMessages } from './messages.js';
 import { createEditorUIOverflow } from './overflow.js';
@@ -80,10 +82,7 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
   const toolbar = document.createElement('div');
   toolbar.className = 'mw-editor-toolbar';
   toolbar.setAttribute('role', 'toolbar');
-  const status = document.createElement('p');
-  status.className = 'mw-ui-status';
-  status.setAttribute('role', 'status');
-  status.setAttribute('aria-live', 'polite');
+  const status = createUIStatus(document, 'mw-ui-status');
   const controls: EditorUIControl[] = [];
   const groupNodes: HTMLElement[] = [];
   let overflow: EditorUIOverflow | undefined;
@@ -224,12 +223,10 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
     catch (error) { report(error); }
   };
   const listen = <K extends keyof HTMLElementEventMap>(target: HTMLElement, type: K, callback: (event: HTMLElementEventMap[K]) => void) => {
-    target.addEventListener(type, callback);
-    cleanups.push(() => target.removeEventListener(type, callback));
+    cleanups.push(listenToUI(target, type, callback));
   };
   const button = (group: HTMLElement, control: Omit<EditorUIControl, 'element'>) => {
-    const node = document.createElement('button');
-    node.type = 'button';
+    const node = createUIButton(document);
     node.className = 'mw-ui-button';
     const icon = createEditorUIIcon(document, control.action?.icon ?? control.builtin!);
     if (icon) node.append(icon);

@@ -7,6 +7,8 @@ import { horizontalRuleCommands } from '../../horizontal-rule/index.js';
 import { createEditorUI, createDefaultEditorUIGroups } from '../editor/index.js';
 import type { EditorUIController, EditorUIItem } from '../editor/types.js';
 import { createFormSelection } from '../shared/selection.js';
+import { createUIButton, createUIStatus } from '../shared/elements.js';
+import { listenToUI } from '../shared/events.js';
 import { createLinkForm } from '../links/index.js';
 import type { LinkFormValues } from '../links/types.js';
 import { createImageForm } from '../images/index.js';
@@ -73,19 +75,14 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
   title.className = 'mw-ui-panel-title';
   title.id = `${panel.id}-title`;
   panel.setAttribute('aria-labelledby', title.id);
-  const close = document.createElement('button');
-  close.className = 'mw-ui-panel-close';
-  close.type = 'button';
+  const close = createUIButton(document, 'mw-ui-panel-close');
   const header = document.createElement('div');
   header.className = 'mw-ui-panel-header';
   header.append(title, close);
   const body = document.createElement('div');
   body.className = 'mw-ui-panel-body';
   panel.append(header, body);
-  const status = document.createElement('p');
-  status.className = 'mw-ui-status';
-  status.setAttribute('role', 'status');
-  status.setAttribute('aria-live', 'polite');
+  const status = createUIStatus(document, 'mw-ui-status');
   element.append(toolbarHost, panel, status);
   const selection = createFormSelection(editor);
   const cleanups: (() => void)[] = [];
@@ -255,19 +252,16 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
       groups: [...createDefaultEditorUIGroups(), ...(dividers.length ? [dividers] : []), launchers],
       groupPriorities: [100, 90, 80, 40, 20, ...(dividers.length ? [10] : []), 60],
     });
-    element.addEventListener('pointerdown', capture, true);
-    element.addEventListener('keydown', keydown, true);
-    document.addEventListener('pointerdown', outside, true);
-    close.addEventListener('click', closeClick);
-    editor.surface.addEventListener('compositionstart', startComposition);
-    editor.surface.addEventListener('compositionend', endComposition);
+    const stopDOM = [
+      listenToUI(element, 'pointerdown', capture, true),
+      listenToUI(element, 'keydown', keydown, true),
+      listenToUI(document, 'pointerdown', outside, true),
+      listenToUI(close, 'click', closeClick),
+      listenToUI(editor.surface, 'compositionstart', startComposition),
+      listenToUI(editor.surface, 'compositionend', endComposition),
+    ];
     cleanups.push(
-      () => element.removeEventListener('pointerdown', capture, true),
-      () => element.removeEventListener('keydown', keydown, true),
-      () => document.removeEventListener('pointerdown', outside, true),
-      () => close.removeEventListener('click', closeClick),
-      () => editor.surface.removeEventListener('compositionstart', startComposition),
-      () => editor.surface.removeEventListener('compositionend', endComposition),
+      ...stopDOM,
       editor.events.on('localechange', refresh),
       editor.events.on('readonlychange', (readOnly) => {
         if (readOnly) composing = false;

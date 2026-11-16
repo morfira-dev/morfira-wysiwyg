@@ -1,11 +1,10 @@
+import { sourceInlineNode as inlineNode } from './source-inline.js';
 import { activeRange } from '../selection/index.js';
 import { isOrdinaryQuote } from './paste-payload.js';
 import { directQuoteAt, quotePasteContext } from './quote-selection.js';
 import { quoteCrossingContext } from './quote-crossing.js';
 import type { ListItemBoundary, ListSelectionOptions, ListSelectionResult } from './internal-types.js';
 
-const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br']);
-const inlineNode = (node: Node): boolean => node.nodeType === 3 || (node instanceof HTMLElement && node.namespaceURI === 'http://www.w3.org/1999/xhtml' && inlineTags.has(node.localName) && [...node.childNodes].every(inlineNode));
 const isList = (node: Node): node is HTMLElement => node instanceof HTMLElement && /^(ul|ol)$/.test(node.localName);
 const itemAt = (root: HTMLElement, node: Node): HTMLElement | undefined => {
   const element = node.nodeType === 1 ? node as Element : node.parentElement;
@@ -50,8 +49,7 @@ const inspectItem = (root: HTMLElement, item: HTMLElement, preserveQuotes: boole
   ownEnd.selectNodeContents(bodies[bodies.length - 1]);
   if (body === item && nestedLists.length) ownEnd.setEndBefore(nestedLists[0]);
   ownEnd.collapse(false);
-  const breaks = ownNodes.reduce((count, node) => count + (node instanceof Element ? node.querySelectorAll('br').length + Number(node.localName === 'br') : 0), 0);
-  return { item: item as HTMLLIElement, body, bodies, ownNodes, nestedLists, interleaved, ownStart, ownEnd, ownEmpty: ownNodes.every((node) => !node.textContent) && breaks <= 1 };
+  return { item: item as HTMLLIElement, body, bodies, ownNodes, nestedLists, interleaved, ownStart, ownEnd };
 };
 
 /** Native/boundary callers deliberately keep the ordinary inline/p/h profile. */

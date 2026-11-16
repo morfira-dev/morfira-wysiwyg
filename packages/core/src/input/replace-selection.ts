@@ -1,9 +1,8 @@
+import { inlineSourceChildren as inlineTree } from './inline-source.js';
 import { activeRange } from '../selection/index.js';
 import type { SelectionReplacement, CutSelectionReplacement } from './internal-types.js';
 
 const leafTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
-const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br']);
-const inlineTree = (element: Element): boolean => [...element.childNodes].every((node) => node.nodeType === 3 || (node instanceof HTMLElement && inlineTags.has(node.localName) && inlineTree(node)));
 const ordinaryLeaf = (root: HTMLElement, node: Node): HTMLElement | undefined => {
   const parent = node.nodeType === 1 ? node as Element : node.parentElement;
   const leaf = parent?.closest<HTMLElement>('p,h1,h2,h3,h4,h5,h6');

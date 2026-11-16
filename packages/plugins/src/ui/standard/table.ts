@@ -2,6 +2,8 @@ import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { tableCommands } from '../../tables/index.js';
 import type { FormSelection } from '../shared/types.js';
+import { createFormInput, createUIButton, createUIElement } from '../shared/elements.js';
+import { listenToUI } from '../shared/events.js';
 import type { TablePanelController } from './internal-types.js';
 import { standardEditorUIMessages } from './messages.js';
 import type { StandardEditorUIMessageKey } from './types.js';
@@ -17,26 +19,20 @@ export const createTablePanel = (
 ): TablePanelController => {
   const api = tableCommands(editor);
   const document = host.ownerDocument;
-  const form = document.createElement('section');
-  form.className = 'mw-form mw-table-form';
+  const form = createUIElement(document, 'section', 'mw-form mw-table-form');
   form.setAttribute('role', 'form');
   const makeField = (value: number) => {
-    const label = document.createElement('label');
-    const caption = document.createElement('span');
-    const input = document.createElement('input');
-    input.type = 'number';
+    const { label, caption, input } = createFormInput(document, 'number');
     input.min = '1';
     input.max = '100';
     input.step = '1';
     input.value = String(value);
-    label.append(caption, input);
     form.append(label);
     return { caption, input };
   };
   const rows = makeField(initial.rows);
   const columns = makeField(initial.columns);
-  const insert = document.createElement('button');
-  insert.type = 'button';
+  const insert = createUIButton(document);
   form.append(insert);
   let disposed = false;
   const refresh = () => {
@@ -72,8 +68,7 @@ export const createTablePanel = (
     if (event.key !== 'Enter' || event.isComposing || event.keyCode === 229 || !(event.target instanceof HTMLInputElement)) return;
     submit(event);
   };
-  insert.addEventListener('click', submit);
-  form.addEventListener('keydown', keydown);
+  const stopDOM = [listenToUI(insert, 'click', submit), listenToUI(form, 'keydown', keydown)];
   host.append(form);
   refresh();
   return {
@@ -81,8 +76,7 @@ export const createTablePanel = (
     destroy: () => {
       if (disposed) return;
       disposed = true;
-      insert.removeEventListener('click', submit);
-      form.removeEventListener('keydown', keydown);
+      for (const stop of stopDOM) stop();
       form.remove();
     },
   };

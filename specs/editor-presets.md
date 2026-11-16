@@ -143,3 +143,6 @@ The independent `standard-contextual-image-ready` selection adds only createCont
 
 
 The independent `standard-contextual-table-ready` selection adds only `createContextualTableUI` and its explicit stylesheet to standard ready. Shared grid/table/selection code counts once. `getTableSelection` is a separate selective export rather than a method retained by every table command instance. Presets do not mount contextual controls. Keep the existing 65000 gzip JS / 20000 raw CSS profile guards, and standalone 16000 gzip JS / 3000 raw CSS guards. The all-optional-context-UI combination is not represented by this profile.
+
+
+The 2026-11-16 structural optimization under bundle-optimization.md preserves every profile factory and capability. Largest standard is 64482 gzip JS bytes (previously 64999), leaving 518 bytes under the unchanged 65000 guard; standard ready is 59394 gzip bytes. This is a modest measured reduction, not the original 2000-byte reserve aim. CSS/compression/charset/profile boundaries and tests are unchanged. Actual validation belongs to verification-backlog.md.

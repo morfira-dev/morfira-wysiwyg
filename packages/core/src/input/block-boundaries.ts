@@ -1,9 +1,8 @@
+import { inlineSourceChildren as inlineTree } from './inline-source.js';
 import { activeRange, placeCaret } from '../selection/index.js';
 import { copyDirection } from '../document/direction.js';
 
 const blockTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
-const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br']);
-const inlineTree = (element: Element): boolean => [...element.childNodes].every((node) => node.nodeType === 3 || (node instanceof HTMLElement && inlineTags.has(node.localName) && inlineTree(node)));
 const parentOf = (node: Node): Element | null => node.nodeType === 1 ? node as Element : node.parentElement;
 const editableBlock = (root: HTMLElement, node: Node): HTMLElement | undefined => {
   const block = parentOf(node)?.closest<HTMLElement>('p,h1,h2,h3,h4,h5,h6');

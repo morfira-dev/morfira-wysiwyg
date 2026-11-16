@@ -1,4 +1,39 @@
-# Verification record — contextual tables and editor
+# Verification record — bundle optimization
+
+## Current behavior-preserving bundle slice — 2026-11-16
+
+Baseline: 691f32f. Contract: bundle-optimization.md. The selected factories, plugin/default capabilities, public API, schema, labels, DOM hierarchy, errors and budgets are unchanged. Reused exact validated multi-block composition, source-inline predicates, native form construction and listener/disposer plumbing; factored table-axis mechanics while retaining per-operation grid rebuilds; removed unreachable internal codec fallbacks and unread ownEmpty state. No runtime/dev dependency, minifier setting, charset, compression policy or feature/test removal is retained.
+
+The largest standard closure decreased from **220993 / 64999 / 55110** to **216326 / 64482 / 54754** raw/gzip/Brotli JS bytes: **4667 raw / 517 gzip / 356 Brotli bytes saved**, with **518 bytes** below the unchanged 65000 gzip guard. Standard ready is **59394 gzip bytes**, down **535**. Core is **27637 gzip bytes**, down **159**; its raw size remains **9148 bytes above** the 80000-byte soft target. The initial aim of 2000 bytes reserve was **not reached**; this is a modest safe structural reduction, not a larger reserve claim.
+
+| Check | Actual result |
+| --- | --- |
+| Structural-build and final static chains | Passed, including package/declaration/type/tree-shaking/size checks; final chain repeated after metadata integration |
+| Release-metadata integration | Fast-forwarded 1e5bb01 (only plugin/facade versions and lock metadata); offline frozen install passed. All **113 runtime/style outputs are SHA-256-identical** before/after rebuild |
+| Final complete check | **3747/3747 passed**, 1249 cases × Chromium/Firefox/WebKit, 17.2 minutes, two workers, fresh task-owned server, exit 0 |
+| Built RU/EN site and full live-example suite | Initial run: **159 passed / 18 failed**, 2.6h across the prolonged pause; unchanged `--last-failed` repeat: **18/18 passed**, 14.6s, exit 0. All 177 scenarios covered in stages; no single all-green site-suite run is claimed |
+| Installed tarball consumers (default + Angular 22) | **15/15 default + 3/3 Angular 22 passed**, all three engines, final version metadata; Angular 22 used Node 24.16.0 |
+| Final site/verification-text refresh | Site-only build passed in **6.19s** before the site tests, with current size/full-check/consumer status. Final verification-record update changes only this project specification |
+
+The site process completed after the user interruption/prolonged pause, reporting timeouts, closed pages and a few unmet assertions. All 18 failed scenarios then passed on the same built site and unchanged code/default timeouts. Preserve the initial failed run separately from the successful repeat; this is staged site coverage rather than a new complete all-green site run.
+
+All existing editor/docs tests remain unchanged. The complete existing browser suite includes the affected formatting/schema/security, multi-block/list/quote/caret/history, merged-table/clipboard and UI/lifecycle regressions rather than adding implementation-mirroring tests or repeating a focused matrix without a new failure. Local browser-heavy jobs are sequential for this slice; no package builds run under active editor tests. No new runtime-performance benchmark or GitHub runner timing is claimed.
+
+Generated decimal bytes, shared JS once per selected graph; framework runtimes/maps/declarations/fonts excluded. CSS is separate and unchanged:
+
+| Selection | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 89148 | 27637 | 24281 | 3293 | 1164 | 962 |
+| Standard ready | 200151 | 59394 | 50946 | 11504 | 3747 | 3038 |
+| Largest standard selection | 216326 | 64482 | 54754 | 11974 | 4019 | 3260 |
+| Standard table-context ready | 210933 | 62866 | 53729 | 12787 | 4322 | 3500 |
+| Extended ready | 221339 | 65528 | 56052 | 12700 | 4239 | 3414 |
+
+Rejected diagnostics are retained separately under ignored artifacts/bundle-optimization. UTF-8 emission gave only about 189 bytes in a diagnostic and was not adopted. Terser 5.51.2 per-module minification increased the unchanged consumer profile: 65294/65572/65704 gzip bytes for 1/2/3 passes against the structural checkpoint 64527. Core-only and plugin-only variants also regressed. Its temporary dev dependency was removed; package.json and pnpm-lock.yaml are unchanged. Private-field shortening gave only 122 additional gzip bytes for audited long names and 251 for a broader unapproved estimate; no field renaming, source-prefix policy or mangle configuration was adopted. Tests, validation and diagnostic strings were not traded for bytes.
+
+The latest user instruction authorizes committing and pushing this completed slice, followed by stopping until explicitly resumed. Documentation hosting remains local-only; no manual npm publication/deployment is part of this work.
+
+## Previous contextual tables stage
 
 ## Current contextual table structure — 2026-11-15–16
 

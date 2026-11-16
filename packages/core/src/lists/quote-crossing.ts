@@ -1,4 +1,5 @@
-import { ensureReplacementPlaceholder, finishSelectionReplacement } from '../input/replace-selection.js';
+import { finishSelectionReplacement } from '../input/replace-selection.js';
+import { ensureBodyPlaceholder as ensureBody } from '../input/replacement-blocks.js';
 import { quoteBodyBlocks } from './paste-payload.js';
 import { directQuoteAt, quoteEndpointPoint, quoteSourceBodies } from './quote-selection.js';
 import type { ListItemBoundary, QuoteCrossingContext } from './internal-types.js';
@@ -53,13 +54,6 @@ export const quoteCrossingContext = (boundaries: ListItemBoundary[], range: Rang
   } : undefined;
   return { startRoot, endRoot, startQuoteBody: startPoint?.body, endQuoteBody: endPoint?.body,
     range: normalized, covered: affected.slice(1, -1), siblings, ordered };
-};
-
-const ensureBody = (body: HTMLElement): void => {
-  const point = body.ownerDocument.createRange();
-  point.selectNodeContents(body);
-  point.collapse(true);
-  ensureReplacementPlaceholder(body, point);
 };
 
 /** Move actual retained inline descendants into a body, keeping the source item as owner. */

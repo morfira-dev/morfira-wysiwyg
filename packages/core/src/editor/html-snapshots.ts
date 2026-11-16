@@ -1,7 +1,7 @@
-import { sanitizeHTML } from '../document/index.js';
+import type { DocumentSchema } from '../schema/types.js';
 
 /** Reuse only a successfully validated string for the exact current serialized DOM. */
-export const createHTMLSnapshots = (surface: HTMLElement, sanitize = sanitizeHTML) => {
+export const createHTMLSnapshots = (surface: HTMLElement, sanitize: DocumentSchema['sanitizeHTML']) => {
   let previousInput: string | undefined;
   let previousHTML = '';
 

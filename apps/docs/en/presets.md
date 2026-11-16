@@ -155,7 +155,21 @@ Measure headless presets, UI and the final deduplicated closure containing core,
 
 The build enforces measured headless and ready profiles: Standard — at most 65000 gzip JS bytes; Extended — 110000 gzip JS bytes. The user clarified that the original limits mean gzip; these stricter existing profile gzip limits remain, while the duplicate 200000/350000 raw JS guards are removed. Raw size remains a separately reported measurement. Each profile is limited to 20000 minified CSS bytes. Minimal is measured separately without an additional preset guard. Actual raw/gzip/Brotli/CSS sizes are saved in `size-report.json`; framework runtimes are excluded from these profiles.
 
-UI wraps by default; explicit `overflow: 'more'` enables verified priority-based whole-group overflow. The text [contextual toolbar](/en/contextual-toolbar) is installed separately from presets; image/table menus remain future work. Real mobile/IME and screen-reader behavior still needs dedicated verification. Full DOCX/PDF conversion, collaboration and office-style layout are outside these presets.
+### Current optimization measurements
+
+The 2026-11-16 build preserves the existing factories, plugins, features and test set. The largest standard selection decreased from **64999 to 64482 gzip JS bytes**: **517 bytes saved**, leaving **518 bytes** below 65000. The 2000-byte reserve target is **not met yet**. Production build and compression settings are unchanged; no new dependency was retained. CSS is unchanged.
+
+| Selection | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 89148 | 27637 | 24281 | 3293 | 1164 | 962 |
+| Standard ready | 200151 | 59394 | 50946 | 11504 | 3747 | 3038 |
+| Standard + table context | 210933 | 62866 | 53729 | 12787 | 4322 | 3500 |
+| Standard + fonts + list properties + LTR/RTL + text-context UI | 216326 | 64482 | 54754 | 11974 | 4019 | 3260 |
+| Extended ready | 221339 | 65528 | 56052 | 12700 | 4239 | 3414 |
+
+All values are decimal bytes from generated `size-report.json`; JS and CSS are separate, with shared chunks counted once per selected composition. Framework runtimes, source maps, declarations and fonts are excluded. The fonts/list-properties/LTR/RTL/contextual selection is explicit composition, not new Standard defaults. Core remains **9148 raw JS bytes** above its soft 80000-byte target. These measurements do not establish regression-test success or input performance; the complete `check` outcome and current example validation are recorded in `specs/verification-backlog.md`.
+
+UI wraps by default; explicit `overflow: 'more'` enables verified priority-based whole-group overflow. The text [contextual toolbar](/en/contextual-toolbar), [link actions](/en/contextual-links), [image properties](/en/contextual-images) and [table panel](/en/contextual-tables) are separate optional modules outside preset defaults. Real mobile/IME and screen-reader behavior still needs dedicated verification. Full DOCX/PDF conversion, collaboration and office-style layout are outside these presets.
 
 The [horizontal-rule command](/en/horizontal-rule) is included in standard/extended by default, with a ready toolbar button. `horizontalRule: false` omits its instance; a runtime flag does not erase static imports. Use selective composition for a narrower bundle.
 

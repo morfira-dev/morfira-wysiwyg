@@ -7,7 +7,6 @@ export interface ListItemBoundary {
   interleaved: boolean;
   ownStart: Range;
   ownEnd: Range;
-  ownEmpty: boolean;
 }
 
 export interface ListSelectionPlan {

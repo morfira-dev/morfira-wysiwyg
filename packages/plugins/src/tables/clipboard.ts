@@ -1,6 +1,6 @@
 import type { CellRectangle, GridCell, TableClipboardInput, TableClipboardData, TablePastePlan } from './types.js';
 export type { TableClipboardInput, TableClipboardData, TablePastePlan } from './types.js';
-import { sanitizeHTML } from '@morfira-dev/wysiwyg-core';
+import type { DocumentSchema } from '@morfira-dev/wysiwyg-core';
 import { cellsInRectangle, emptyCell, readGrid, rebuildGrid, selectionRectangle } from './grid.js';
 const LIMIT = 5000000;
 const checkLength = (value: string): void => {
@@ -93,7 +93,7 @@ const plainCell = (value: string, row: number, column: number): GridCell => {
   cell.element.replaceChildren(paragraph);
   return cell;
 };
-export const readClipboardTable = (data: TableClipboardInput, sanitize = sanitizeHTML): HTMLTableElement => {
+export const readClipboardTable = (data: TableClipboardInput, sanitize: DocumentSchema['sanitizeHTML']): HTMLTableElement => {
   if (data.html !== undefined)
     checkLength(data.html);
   if (data.text !== undefined)
@@ -153,7 +153,7 @@ const cellText = (cell: HTMLTableCellElement): string => {
   return [...cell.childNodes].map(visit).join('').replace(/\n$/, '');
 };
 const quoteTSV = (value: string): string => /[\t\r\n"]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
-export const copyTableRange = (table: HTMLTableElement, cells: HTMLTableCellElement[], sanitize = sanitizeHTML): TableClipboardData => {
+export const copyTableRange = (table: HTMLTableElement, cells: HTMLTableCellElement[], sanitize: DocumentSchema['sanitizeHTML']): TableClipboardData => {
   const grid = readGrid(table);
   const rectangle = selectionRectangle(grid, cells);
   const selected = cellsInRectangle(grid, rectangle);

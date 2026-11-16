@@ -103,45 +103,32 @@ export const selectionRectangle = (grid: TableGrid, selected: HTMLTableCellEleme
   return rectangle;
 };
 export const cellsInRectangle = (grid: TableGrid, rectangle: CellRectangle): GridCell[] => grid.cells.filter((cell) => cell.row >= rectangle.top && cell.column >= rectangle.left && cell.row + cell.rowspan - 1 <= rectangle.bottom && cell.column + cell.colspan - 1 <= rectangle.right);
-export const insertGridRow = (table: HTMLTableElement, index: number): void => {
+const insertGridAxis = (table: HTMLTableElement, index: number, row: boolean): void => {
   const grid = readGrid(table);
+  const position = row ? 'row' : 'column';
+  const span = row ? 'rowspan' : 'colspan';
   for (const cell of grid.cells) {
-    if (cell.row < index && cell.row + cell.rowspan > index)
-      cell.rowspan++;
-    else if (cell.row >= index)
-      cell.row++;
+    if (cell[position] < index && cell[position] + cell[span] > index)
+      cell[span]++;
+    else if (cell[position] >= index)
+      cell[position]++;
   }
-  rebuildGrid(table, grid.cells, grid.rows + 1, grid.columns);
+  rebuildGrid(table, grid.cells, grid.rows + (row ? 1 : 0), grid.columns + (row ? 0 : 1));
 };
-export const insertGridColumn = (table: HTMLTableElement, index: number): void => {
+const deleteGridAxis = (table: HTMLTableElement, index: number, row: boolean): void => {
   const grid = readGrid(table);
-  for (const cell of grid.cells) {
-    if (cell.column < index && cell.column + cell.colspan > index)
-      cell.colspan++;
-    else if (cell.column >= index)
-      cell.column++;
-  }
-  rebuildGrid(table, grid.cells, grid.rows, grid.columns + 1);
-};
-export const deleteGridRow = (table: HTMLTableElement, index: number): void => {
-  const grid = readGrid(table);
-  const cells = grid.cells.filter((cell) => cell.row !== index || cell.rowspan > 1);
+  const position = row ? 'row' : 'column';
+  const span = row ? 'rowspan' : 'colspan';
+  const cells = grid.cells.filter((cell) => cell[position] !== index || cell[span] > 1);
   for (const cell of cells) {
-    if (cell.row <= index && cell.row + cell.rowspan > index)
-      cell.rowspan--;
-    if (cell.row > index)
-      cell.row--;
+    if (cell[position] <= index && cell[position] + cell[span] > index)
+      cell[span]--;
+    if (cell[position] > index)
+      cell[position]--;
   }
-  rebuildGrid(table, cells, grid.rows - 1, grid.columns);
+  rebuildGrid(table, cells, grid.rows - (row ? 1 : 0), grid.columns - (row ? 0 : 1));
 };
-export const deleteGridColumn = (table: HTMLTableElement, index: number): void => {
-  const grid = readGrid(table);
-  const cells = grid.cells.filter((cell) => cell.column !== index || cell.colspan > 1);
-  for (const cell of cells) {
-    if (cell.column <= index && cell.column + cell.colspan > index)
-      cell.colspan--;
-    if (cell.column > index)
-      cell.column--;
-  }
-  rebuildGrid(table, cells, grid.rows, grid.columns - 1);
-};
+export const insertGridRow = (table: HTMLTableElement, index: number): void => insertGridAxis(table, index, true);
+export const insertGridColumn = (table: HTMLTableElement, index: number): void => insertGridAxis(table, index, false);
+export const deleteGridRow = (table: HTMLTableElement, index: number): void => deleteGridAxis(table, index, true);
+export const deleteGridColumn = (table: HTMLTableElement, index: number): void => deleteGridAxis(table, index, false);

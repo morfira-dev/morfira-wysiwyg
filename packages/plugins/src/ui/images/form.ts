@@ -3,6 +3,8 @@ import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { imageCommands } from '../../images/index.js';
 import type { ImagePatch, ImageValue } from '../../images/types.js';
 import { createFormSelection } from '../shared/selection.js';
+import { createFormInput, createUIButton, createUIElement, createUIStatus } from '../shared/elements.js';
+import { listenToUI } from '../shared/events.js';
 import { imageFormMessages } from './messages.js';
 import type { ImageFormController, ImageFormField, ImageFormMessageKey, ImageFormOptions, ImageFormValues } from './types.js';
 
@@ -33,50 +35,32 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   if (options.label !== undefined && typeof options.label !== 'string') throw new TypeError('Image form label must be a string.');
   if (options.onError !== undefined && typeof options.onError !== 'function') throw new TypeError('Image form onError must be a callback.');
   const document = host.ownerDocument;
-  const form = document.createElement('section');
-  form.className = 'mw-form mw-image-form';
+  const form = createUIElement(document, 'section', 'mw-form mw-image-form');
   form.setAttribute('role', 'form');
   const selection = createFormSelection(editor);
   const inputs = {} as Record<ImageFormField, HTMLInputElement>;
   const labels = {} as Record<ImageFormField, HTMLSpanElement>;
-  const fieldset = document.createElement('fieldset');
-  fieldset.className = 'mw-form-fields';
+  const fieldset = createUIElement(document, 'fieldset', 'mw-form-fields');
   for (const field of fields) {
-    const label = document.createElement('label');
-    const text = document.createElement('span');
-    const input = document.createElement('input');
-    input.type = 'text';
+    const { label, caption: text, input } = createFormInput(document);
     if (field === 'width' || field === 'height') input.inputMode = 'numeric';
     if (field === 'caption') input.maxLength = 5000;
     if (field === 'alt') input.maxLength = 20000;
     input.value = initial[field] ?? '';
     inputs[field] = input;
     labels[field] = text;
-    label.append(text, input);
     fieldset.append(label);
   }
-  const actions = document.createElement('div');
-  actions.className = 'mw-form-actions';
-  const insert = document.createElement('button');
-  insert.type = 'button';
-  const update = document.createElement('button');
-  update.type = 'button';
-  const remove = document.createElement('button');
-  remove.type = 'button';
+  const actions = createUIElement(document, 'div', 'mw-form-actions');
+  const insert = createUIButton(document);
+  const update = createUIButton(document);
+  const remove = createUIButton(document);
   if (mode === 'all') actions.append(insert);
   actions.append(update, remove);
-  const uploadLabel = document.createElement('label');
-  const uploadText = document.createElement('span');
-  const file = document.createElement('input');
-  file.type = 'file';
+  const { label: uploadLabel, caption: uploadText, input: file } = createFormInput(document, 'file');
   file.accept = 'image/png,image/jpeg,image/gif,image/webp,image/avif';
-  uploadLabel.append(uploadText, file);
-  const cancel = document.createElement('button');
-  cancel.type = 'button';
-  const status = document.createElement('p');
-  status.className = 'mw-form-status';
-  status.setAttribute('role', 'status');
-  status.setAttribute('aria-live', 'polite');
+  const cancel = createUIButton(document);
+  const status = createUIStatus(document, 'mw-form-status');
   form.append(fieldset, actions);
   if (mode === 'all') form.append(uploadLabel, cancel);
   form.append(status);
@@ -249,28 +233,20 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     });
   };
   const capture = () => selection.capture();
-  form.addEventListener('pointerdown', capture, true);
-  form.addEventListener('focusin', capture, true);
-  form.addEventListener('keydown', keyboard);
-  insert.addEventListener('click', insertImage);
-  update.addEventListener('click', updateImage);
-  remove.addEventListener('click', removeImage);
-  cancel.addEventListener('click', cancelUpload);
-  file.addEventListener('change', uploadFile);
-  cleanups.push(
-    () => form.removeEventListener('pointerdown', capture, true),
-    () => form.removeEventListener('focusin', capture, true),
-    () => form.removeEventListener('keydown', keyboard),
-    () => insert.removeEventListener('click', insertImage),
-    () => update.removeEventListener('click', updateImage),
-    () => remove.removeEventListener('click', removeImage),
-    () => cancel.removeEventListener('click', cancelUpload),
-    () => file.removeEventListener('change', uploadFile),
-  );
+  const stopDOM = [
+    listenToUI(form, 'pointerdown', capture, true),
+    listenToUI(form, 'focusin', capture, true),
+    listenToUI(form, 'keydown', keyboard),
+    listenToUI(insert, 'click', insertImage),
+    listenToUI(update, 'click', updateImage),
+    listenToUI(remove, 'click', removeImage),
+    listenToUI(cancel, 'click', cancelUpload),
+    listenToUI(file, 'change', uploadFile),
+  ];
+  cleanups.push(...stopDOM);
   cleanups.push(editor.onSelectionChange(refresh));
   // Inspect synchronously before an application moves focus into a field.
-  editor.surface.addEventListener('click', refresh);
-  cleanups.push(() => editor.surface.removeEventListener('click', refresh));
+  cleanups.push(listenToUI(editor.surface, 'click', refresh));
   cleanups.push(editor.subscribe((change) => {
     if (change.source === 'api') {
       apiRevision++;
@@ -291,12 +267,11 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   const compositionStart = () => { composing = true; updateControls(); };
   const compositionEnd = () => { composing = false; updateControls(); };
   if (mode === 'edit') {
-    editor.surface.addEventListener('compositionstart', compositionStart);
-    editor.surface.addEventListener('compositionend', compositionEnd);
-    cleanups.push(
-      () => editor.surface.removeEventListener('compositionstart', compositionStart),
-      () => editor.surface.removeEventListener('compositionend', compositionEnd),
-    );
+    const stopComposition = [
+      listenToUI(editor.surface, 'compositionstart', compositionStart),
+      listenToUI(editor.surface, 'compositionend', compositionEnd),
+    ];
+    cleanups.push(...stopComposition);
   }
   const destroy = () => {
     if (disposed) return;

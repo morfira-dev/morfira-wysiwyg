@@ -1,10 +1,7 @@
+import { sourceInlineNode } from './source-inline.js';
 import { formattingWhitespace, isOrdinaryQuote } from './paste-payload.js';
 import type { QuoteBodyPoint, QuotePasteContext } from './internal-types.js';
 
-const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br']);
-const sourceInlineNode = (node: Node): boolean => node.nodeType === 3 || (node instanceof HTMLElement
-  && node.namespaceURI === 'http://www.w3.org/1999/xhtml' && inlineTags.has(node.localName)
-  && [...node.childNodes].every(sourceInlineNode));
 const sourceBody = (node: Node): node is HTMLElement => node instanceof HTMLElement
   && node.namespaceURI === 'http://www.w3.org/1999/xhtml' && /^(p|h[1-6])$/.test(node.localName)
   && !node.hasAttribute('data-mw-node') && [...node.childNodes].every(sourceInlineNode);
