@@ -1,4 +1,38 @@
-# Verification record — bundle optimization
+# Verification record — table picker and image input
+
+## Optional table picker and raster input — 2026-11-17
+
+Working tree after 99b3de6. Contracts: [table-picker.md](table-picker.md), [image-input.md](image-input.md). Both modules are explicit imports, outside preset defaults; standard UI retains only a type-only factory contract and optional integration glue. Existing numeric dimensions remain 1–100. Core source and runtime dependencies are unchanged. Before committing, main includes 855fd84, the preceding release metadata synchronization (package versions/internal dependency ranges and pnpm-lock.yaml only). The implementation checks below were run before that metadata-only fast-forward; no editing source changed during integration. No manual package publication or documentation deployment was performed.
+
+| Check | Actual result |
+| --- | --- |
+| Static chain | Passed: project rules, three consumer-toolchain tests, package/declaration builds, archive exports, selective imports, gzip/CSS budgets, TypeScript/Svelte/Vue diagnostics. Final build, types and selective-import checks repeated after empty-block hardening, all exit 0 |
+| Complete editor suite before the final optional empty-block correction | **3804/3804 passed**, 1268 cases × Chromium/Firefox/WebKit, **17.6 minutes**, four workers, fresh task-owned server on 5185, exit 0 |
+| Final affected browser suite | **123/123 passed**, images, image-input and table-picker in all three engines, **1.2 minutes**, two workers, rebuilt packages and a fresh task-owned server, exit 0 |
+| Site build and existing live examples | Initial whole-site run: **177 passed / 4 new cases failed**, **2.4 minutes**. The four failures were investigated rather than counted as passing |
+| Final new RU/EN examples | **4/4 passed**, **5.7 seconds**, after loading the intended sample and fixing the empty-editor boundary; the RU picker case runs at 390px and checks page overflow; final site-only build passed in **15.41s**. This is staged coverage of 181 scenarios, not one all-green full-site run on the final build |
+| Installed tarball consumers | **15/15 default + 3/3 Angular 22 passed**, all three engines, final built packages and new public JS/CSS exports; Angular 22 used Node 24.16.0. Existing five-adapter scenarios now also exercise picker insertion and file paste with controlled updates and one-step Undo |
+
+The complete suite predates a narrow change confined to the opt-in image-input target resolver. It normalizes a collapsed surface boundary only when the document contains exactly one empty ordinary P/H with empty text or attribute-free HTML BR placeholders. Native browser clicks in the empty editor produced DIV/0 boundaries; this was a real acceptance gap, not merely a fixture issue. Nonempty/multiple blocks and protected placeholders remain refused. Final affected regressions cover paste, fresh-point drop, one-step Undo and these refusal cases. No second complete-suite pass is claimed after this correction; core, default preset code, standard UI and existing images code were unchanged by it.
+
+Earlier focused runs found a real panel-focus bug resetting the roving picker to 1×1, Firefox synthetic ClipboardEvent fixtures not delivering clipboardData, and focus fixtures relying on unfocused selection retention. The panel now respects negative tabindex; fixtures explicitly deliver clipboard data and test actual fired focus callbacks through drop, while a separate test uses the native pointer API. Initial focused outcomes were 42 passed / 15 failed and then 54 passed / 3 focus-fixture failures. Diagnostic retries and corrections are retained separately from the final passing results. New docs fixtures also initially selected a sample without clicking Load sample. The final new examples use the public controls and target the paragraph.
+
+Security review closed selected foreign SVG/MathML descendants with HTML parent endpoints, contained sync/async error-presentation failures, validated options and rechecked actual target/revision/editability after focus. Both images and image-input ignore compositionstart while already read-only, preserving resumption after returning to editable state. No upload transport, file decoding or backend security claim was added. The demo returns /logo.svg without sending or storing selected files.
+
+Current generated decimal bytes; shared JS counted once per profile, framework runtimes/maps/declarations excluded. Entry closures exclude external core and may share existing image/UI logic; do not add them to a ready profile arithmetically.
+
+| Selection | JS raw | JS gzip | JS Brotli | CSS raw |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 89148 | 27637 | 24281 | 3293 |
+| Picker entry | 3969 | 1946 | 1676 | 779 |
+| Image-input entry including its images closure | 12854 | 4981 | 4402 | 0 |
+| Standard ready | 200622 | 59544 | 51044 | 11504 |
+| Standard with explicit picker | 203921 | 60595 | 51783 | 12283 |
+| Standard with explicit image input | 205119 | 61063 | 52136 | 11504 |
+| Standard with both new modules | 208317 | 62053 | 52846 | 12283 |
+| Largest existing standard selection | 216797 | 64602 | 54882 | 11974 |
+
+Picker CSS is 779 raw / 418 gzip / 327 Brotli bytes; selected standard-with-both CSS is 12283 / 4165 / 3365. All unchanged product/profile guards pass. The largest measured standard selection has only 398 gzip bytes of headroom; this is not a claim that every arbitrary combination of optional plugins fits 65000 bytes. Core remains 9148 raw bytes above the 80000-byte soft target, while passing the user-directed gzip guard. No full accessibility, real OS clipboard/device or mobile IME certification is established by simulated events/browser tests. Local browser-heavy jobs were sequential; the existing user-owned server on 5173 was preserved.
 
 ## Current behavior-preserving bundle slice — 2026-11-16
 

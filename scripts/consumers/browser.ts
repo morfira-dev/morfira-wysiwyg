@@ -20,6 +20,27 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await expect(content).toHaveText('Initial text');
           const readyUI = page.locator('[data-consumer-ready-ui]');
           await expect(readyUI.getByRole('toolbar', { name: 'Consumer ready tools', exact: true })).toBeVisible();
+          const beforeInput = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
+          await readyUI.locator('[data-mw-ui-action="table"]').click();
+          await readyUI.getByRole('button', { name: 'Insert table: 2 × 3', exact: true }).click();
+          await expect(content.locator('td')).toHaveCount(6);
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeInput.changes + 1, `${adapter}: picker insertion emits one update`);
+          await page.evaluate(() => {
+            const editor = window.morfiraConsumer.editor!;
+            editor.undo();
+            editor.setSelection(7);
+            const transfer = new DataTransfer();
+            transfer.items.add(new File(['raster'], 'clipboard.png', { type: 'image/png' }));
+            transfer.setData('text/html', '<p>Untrusted fallback</p>');
+            const paste = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+            Object.defineProperty(paste, 'clipboardData', { value: transfer });
+            editor.surface.dispatchEvent(paste);
+          });
+          await expect(content.locator('img')).toHaveAttribute('alt', 'Clipboard image');
+          await expect(content).not.toContainText('Untrusted fallback');
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeInput.changes + 3, `${adapter}: upload and preceding undo emit one update each`);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeInput.html, `${adapter}: packed clipboard image undoes once`);
           const beforeFonts = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
           await page.evaluate(() => {
             const { editor, fonts } = window.morfiraConsumer;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { build } from 'esbuild';
 
-const features = ['text-direction', 'list-properties', 'fonts', 'horizontal-rule', 'checklists', 'tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions'];
+const features = ['text-direction', 'list-properties', 'fonts', 'horizontal-rule', 'checklists', 'tables', 'images', 'image-input', 'search', 'statistics', 'markdown', 'autolink', 'mentions', 'slash', 'suggestions'];
 const forms = ['ui/links', 'ui/images', 'ui/search'];
 const standardFeatures = ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'horizontal-rule'];
 const standardUI = ['ui/editor', 'ui/shared', 'ui/standard', ...forms, 'tables', 'images', 'search', 'horizontal-rule'];
@@ -23,9 +23,9 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component', allowed: [] },
   ...features.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/plugins/${feature}`,
-    symbol: ({ 'text-direction': 'textDirection', 'list-properties': 'listProperties', fonts: 'fonts', 'horizontal-rule': 'horizontalRule', checklists: 'checklists', tables: 'tables', images: 'images', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],
+    symbol: ({ 'text-direction': 'textDirection', 'list-properties': 'listProperties', fonts: 'fonts', 'horizontal-rule': 'horizontalRule', checklists: 'checklists', tables: 'tables', images: 'images', 'image-input': 'imageInput', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],
     feature,
-    allowed: feature === 'suggestions' ? ['suggestions-core', 'suggestions-menu'] : [feature, ...(['mentions', 'slash'].includes(feature) ? ['suggestions-core'] : [])],
+    allowed: feature === 'suggestions' ? ['suggestions-core', 'suggestions-menu'] : [feature, ...(feature === 'image-input' ? ['images'] : []), ...(['mentions', 'slash'].includes(feature) ? ['suggestions-core'] : [])],
   })),
   ...forms.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/${feature}`,
@@ -36,6 +36,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/presets/minimal', symbol: 'createMinimalPreset', feature: 'presets/minimal', allowed: ['presets/minimal', 'presets/shared'] },
   { entry: '@morfira-dev/wysiwyg/presets/standard', symbol: 'createStandardPreset', feature: 'presets/standard', allowed: ['presets/standard', 'presets/shared', ...standardFeatures] },
   { entry: '@morfira-dev/wysiwyg/presets/extended', symbol: 'createExtendedPreset', feature: 'presets/extended', allowed: ['presets/extended', 'presets/standard', 'presets/shared', ...standardFeatures, 'mentions', 'slash', 'suggestions-core'] },
+  { entry: '@morfira-dev/wysiwyg/ui/table-picker', symbol: 'createTablePicker', feature: 'ui/table-picker', allowed: ['ui/table-picker', 'ui/shared'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual-table', symbol: 'createContextualTableUI', feature: 'ui/contextual-table', allowed: ['ui/contextual-table', 'ui/contextual', 'ui/shared', 'tables'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual-image', symbol: 'createContextualImageUI', feature: 'ui/contextual-image', allowed: ['ui/contextual-image', 'ui/contextual', 'ui/images', 'ui/shared', 'images'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual-link', symbol: 'createContextualLinkUI', feature: 'ui/contextual-link', allowed: ['ui/contextual-link', 'ui/contextual', 'ui/links', 'ui/shared'] },

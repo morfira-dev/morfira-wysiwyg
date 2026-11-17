@@ -1,0 +1,7 @@
+.mw-table-picker { color: var(--mw-text, #263043); font-family: var(--mw-font, system-ui, sans-serif); max-width: 100%; margin-block-end: var(--mw-ui-gap, 8px); }
+.mw-table-picker-matrix { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; width: 224px; max-width: 100%; }
+.mw-table-picker-cell { aspect-ratio: 1; min-width: 0; padding: 0; border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-control-radius, 3px); background: var(--mw-surface, #fff); cursor: pointer; }
+.mw-table-picker-selected { background: var(--mw-hover, #f0f2f7); border-color: var(--mw-accent, #6658e8); }
+.mw-table-picker-cell:focus-visible { outline: 2px solid var(--mw-accent, #6658e8); outline-offset: 1px; }
+.mw-table-picker-cell:disabled { opacity: .5; cursor: default; }
+.mw-table-picker-status { margin: 4px 0 0; font-size: .875em; }

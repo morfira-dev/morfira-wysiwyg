@@ -53,8 +53,9 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
     if (value !== undefined && !record(value)) throw new TypeError('UI feature options must be objects.');
   }
   const dimensions = { rows: options.table?.rows ?? 3, columns: options.table?.columns ?? 3 };
-  if (Object.keys(options.table ?? {}).some((key) => key !== 'rows' && key !== 'columns') || Object.values(dimensions).some((value) => !Number.isInteger(value) || value < 1 || value > 100))
+  if (Object.keys(options.table ?? {}).some((key) => !['rows', 'columns', 'picker'].includes(key)) || Object.values(dimensions).some((value) => !Number.isInteger(value) || value < 1 || value > 100))
     throw new RangeError('Initial table dimensions must be integers from 1 to 100.');
+  if (options.table?.picker !== undefined && typeof options.table.picker !== 'function') throw new TypeError('Expected a table picker factory.');
   // Validate all required behavior before mounting UI or installing listeners.
   tableCommands(editor);
   imageCommands(editor);
@@ -188,11 +189,11 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
       else active = {
         kind, controller: createTablePanel(body, editor, selection, dimensions,
           () => !disposed && !composing && !editor.isReadOnly(),
-          () => { closePanel(false); editor.focus(); }, report),
+          () => { closePanel(false); editor.focus(); }, report, options.table?.picker),
       };
       panel.hidden = false;
       refresh();
-      const focusable = body.querySelector<HTMLElement>('input:not(:disabled),select:not(:disabled),textarea:not(:disabled),button:not(:disabled)');
+      const focusable = body.querySelector<HTMLElement>('input:not(:disabled),select:not(:disabled),textarea:not(:disabled),button:not(:disabled):not([tabindex="-1"])');
       (focusable ?? close).focus();
     }
     catch (error) {

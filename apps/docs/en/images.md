@@ -100,7 +100,7 @@ On the [homepage](/en/#editor) and [playground](/en/playground), choose “Image
 }
 ```
 
-Schema v1 adds figure/figcaption: older readers may discard wrapper semantics during import. Existing HTML is not upgraded automatically. Cropping, drag/drop, drag resizing, clipboard file uploads and storage management are not implemented yet.
+Schema v1 adds figure/figcaption: older readers may discard wrapper semantics during import. Existing HTML is not upgraded automatically. Cropping, drag resizing and storage management are not implemented. Optional [raster clipboard/drop input](/en/image-input) is available through a separate plugin.
 
 Inserting with an image selected in a simple figure replaces the whole figure and old caption. Figures are never nested. Insertion inside a complex imported figure is rejected.
 

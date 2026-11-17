@@ -21,3 +21,6 @@ features:
   - title: Your design
     details: CSS custom properties, an optional toolbar, and headless integration.
 ---
+
+
+The full homepage and playground explicitly install the optional [table size picker](/en/table-picker) and [image clipboard/drop input](/en/image-input). Use the Table toolbar button for the 8 × 8 picker, or paste/drop one raster file into ordinary text. The local upload callback returns the logo; it does not send or store the file.

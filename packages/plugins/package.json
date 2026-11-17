@@ -22,6 +22,10 @@
       "types": "./dist/images/index.d.ts",
       "import": "./dist/images.js"
     },
+    "./image-input": {
+      "types": "./dist/image-input/index.d.ts",
+      "import": "./dist/image-input.js"
+    },
     "./search": {
       "types": "./dist/search/index.d.ts",
       "import": "./dist/search.js"
@@ -60,6 +64,11 @@
       "import": "./dist/ui/search.js"
     },
     "./ui/forms.css": "./dist/ui/forms.css",
+    "./ui/table-picker": {
+      "types": "./dist/ui/table-picker/index.d.ts",
+      "import": "./dist/ui/table-picker.js"
+    },
+    "./ui/table-picker.css": "./dist/ui/table-picker.css",
     "./autolink": {
       "types": "./dist/autolink/index.d.ts",
       "import": "./dist/autolink.js"

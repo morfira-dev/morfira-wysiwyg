@@ -7,6 +7,7 @@ import { listenToUI } from '../shared/events.js';
 import type { TablePanelController } from './internal-types.js';
 import { standardEditorUIMessages } from './messages.js';
 import type { StandardEditorUIMessageKey } from './types.js';
+import type { TablePickerController, TablePickerFactory } from '../table-picker/types.js';
 
 export const createTablePanel = (
   host: HTMLElement,
@@ -16,6 +17,7 @@ export const createTablePanel = (
   canEdit: () => boolean,
   success: () => void,
   report: (key: StandardEditorUIMessageKey, error?: unknown) => void,
+  pickerFactory?: TablePickerFactory,
 ): TablePanelController => {
   const api = tableCommands(editor);
   const document = host.ownerDocument;
@@ -35,6 +37,7 @@ export const createTablePanel = (
   const insert = createUIButton(document);
   form.append(insert);
   let disposed = false;
+  let picker: TablePickerController | undefined;
   const refresh = () => {
     if (disposed) return;
     const locale = editor.getLocale();
@@ -46,10 +49,11 @@ export const createTablePanel = (
     rows.input.disabled = !canEdit();
     columns.input.disabled = !canEdit();
     insert.disabled = !canEdit();
+    picker?.refresh({ locale, disabled: !canEdit() });
   };
-  const submit = (event: Event) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const submit = (event?: Event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
     if (disposed || !canEdit()) return;
     try {
       const values = [rows.input.value, columns.input.value];
@@ -59,6 +63,7 @@ export const createTablePanel = (
         report('ui.standard.selection');
         return;
       }
+      if (disposed || !canEdit()) return;
       api.insert(Number(values[0]), Number(values[1]));
       success();
     }
@@ -69,15 +74,38 @@ export const createTablePanel = (
     submit(event);
   };
   const stopDOM = [listenToUI(insert, 'click', submit), listenToUI(form, 'keydown', keydown)];
-  host.append(form);
-  refresh();
-  return {
-    refresh,
-    destroy: () => {
-      if (disposed) return;
-      disposed = true;
+  const destroy = () => {
+    if (disposed) return;
+    disposed = true;
+    try { picker?.destroy(); }
+    finally {
       for (const stop of stopDOM) stop();
       form.remove();
-    },
+    }
+  };
+  try {
+    if (pickerFactory) {
+      const pickerHost = createUIElement(document, 'div');
+      form.prepend(pickerHost);
+      picker = pickerFactory(pickerHost, {
+        ...initial, locale: editor.getLocale(), disabled: !canEdit(),
+        onSelect: (r, c) => {
+          if (disposed || !canEdit()) return;
+          rows.input.value = String(r);
+          columns.input.value = String(c);
+          submit();
+        },
+      });
+    }
+    host.append(form);
+    refresh();
+  }
+  catch (error) {
+    destroy();
+    throw error;
+  }
+  return {
+    refresh,
+    destroy,
   };
 };

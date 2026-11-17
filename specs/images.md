@@ -20,6 +20,11 @@ Options `upload(file, { signal }): Promise<ImageValue>`, optional maxFileSize (d
 
 The reusable optional image form follows `specs/ui-forms.md`, with raw string drafts for src/alt/dimensions/caption, localized status/errors and scoped upload cancellation. It does not provide storage, cropping or resize handles.
 
+Routine lifecycle correction: ignore composition-start events received while
+already read-only, so a late browser event cannot leave uploads locked after
+read-only is disabled. This preserves the existing cancellation/resumption
+contract and adds no new editing capability.
+
 ## Local bilingual demo
 
 Both homepages/playgrounds expose image sample, src/alt/width/height/caption fields, insert/update/remove, file upload and cancellation, loading/error status. The local demonstration callback returns /logo.svg for an accepted raster file and explicitly says it does not upload/store the selected file; it is a callback/lifecycle example, not a file preview or production upload. User files never leave the tab. Demo callback uses AbortSignal with timer cleanup. Show existing image metadata when selection changes, keep drafts during form focus. CSS variables control image/caption spacing, color and font size; scope styles to .mw-content.

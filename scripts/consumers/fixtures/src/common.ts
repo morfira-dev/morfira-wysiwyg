@@ -2,6 +2,9 @@ import { createEditorCommand } from '@morfira-dev/wysiwyg';
 import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg';
 import type { ConsumerProbe } from './types.js';
 import { createExtendedPreset } from '@morfira-dev/wysiwyg/presets/extended';
+import { createTablePicker } from '@morfira-dev/wysiwyg/ui/table-picker';
+import '@morfira-dev/wysiwyg/ui/table-picker.css';
+import { imageInput } from '@morfira-dev/wysiwyg/plugins/image-input';
 import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
 import { createContextualTableUI } from '@morfira-dev/wysiwyg/ui/contextual-table';
 import { getTableSelection, tableCommands } from '@morfira-dev/wysiwyg/plugins/tables';
@@ -56,7 +59,8 @@ const sdkPlugin: EditorPlugin = {
   }),
 };
 export const plugins: EditorPlugin[] = createExtendedPreset({
-  plugins: [sdkPlugin, checklists(), fonts(), listProperties(), textDirection()],
+  plugins: [sdkPlugin, checklists(), fonts(), listProperties(), textDirection(), imageInput()],
+  images: { upload: async () => ({ src: '/consumer-image.svg', alt: 'Clipboard image' }) },
   mentions: { provide: () => [{ id: 'anna', label: 'Anna' }], debounceMs: 0 },
   slash: {
     provide: () => [{ id: 'heading', label: 'Heading 2', action: 'heading2' }],
@@ -75,7 +79,7 @@ export const ready = (editor: Editor) => {
   const uiHost = document.createElement('div');
   uiHost.dataset.consumerReadyUi = '';
   document.body.append(uiHost);
-  const ui = createStandardEditorUI(uiHost, editor, { label: 'Consumer ready tools', density: 'compact' });
+  const ui = createStandardEditorUI(uiHost, editor, { label: 'Consumer ready tools', density: 'compact', table: { picker: createTablePicker } });
   probe.ui = ui;
   let contextual: ReturnType<typeof createContextualToolbar> | undefined;
   let contextualHost: HTMLElement | undefined;

@@ -25,6 +25,7 @@ import '@morfira-dev/wysiwyg/ui/contextual.css';
 import '@morfira-dev/wysiwyg/ui/contextual-link.css';
 import '@morfira-dev/wysiwyg/ui/contextual-image.css';
 import '@morfira-dev/wysiwyg/ui/contextual-table.css';
+import '@morfira-dev/wysiwyg/ui/table-picker.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 import '@morfira-dev/wysiwyg/plugins/checklists.css';
@@ -613,6 +614,8 @@ onMounted(async () => {
     { createContextualImageUI },
     { createContextualTableUI },
     { imageCommands },
+    { createTablePicker },
+    { imageInput },
   ] = await Promise.all([
     import('@morfira-dev/wysiwyg'),
     import('@morfira-dev/wysiwyg/plugins/tables'),
@@ -636,6 +639,8 @@ onMounted(async () => {
     import('@morfira-dev/wysiwyg/ui/contextual-image'),
     import('@morfira-dev/wysiwyg/ui/contextual-table'),
     import('@morfira-dev/wysiwyg/plugins/images'),
+    import('@morfira-dev/wysiwyg/ui/table-picker'),
+    import('@morfira-dev/wysiwyg/plugins/image-input'),
   ]);
   if (cancelled) return;
   const common = {
@@ -646,7 +651,7 @@ onMounted(async () => {
   };
   const preset = props.full ? createExtendedPreset({
     ...common,
-    plugins: [checklists(), listProperties(), textDirection(), fonts({
+    plugins: [imageInput({ onError: (error) => notify(error instanceof Error ? error.message : String(error), true) }), checklists(), listProperties(), textDirection(), fonts({
       families: fontFamilies.map((option) => ({ id: option.id, label: t(option.ru, option.en), family: option.family })),
       sizes: fontSizes,
     })],
@@ -686,6 +691,7 @@ onMounted(async () => {
       links: { initialValues: { href: 'https://example.com' } },
       images: { initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64' } },
       search: { initialValues: { query: 'Morfira', replacement: 'Morfira Studio' } },
+      table: { picker: createTablePicker },
       mentions: { labels: { label: t('Люди', 'People'), loading: t('Ищем людей…', 'Finding people…'), empty: t('Люди не найдены', 'No people found'), error: t('Ошибка поиска людей', 'People lookup failed'), results: t('Людей: {count}', 'People: {count}') } },
       slash: { labels: { label: t('Шаблоны', 'Snippets'), loading: t('Ищем шаблоны…', 'Finding snippets…'), empty: t('Шаблоны не найдены', 'No snippets found'), error: t('Ошибка поиска шаблонов', 'Snippet lookup failed'), results: t('Шаблонов: {count}', 'Snippets: {count}') } },
     }) : createEditorUI(toolbar.value!, editor!, { overflow: toolbarOverflow.value });
@@ -1002,6 +1008,7 @@ onBeforeUnmount(() => {
       <p class="lab-limits">{{ t('Пока нет: совместного редактирования, комментариев, track changes, пагинации, DOCX/PDF и resize изображений мышью. Адаптеры Vue/React/Svelte и примеры подключения — в документации.', 'Not implemented: collaboration, comments, track changes, pagination, DOCX/PDF and image drag resizing. Vue/React/Svelte adapters and integration examples are in the docs.') }}</p>
     </template>
     <pre v-else-if="output" class="demo-output">{{ output }}</pre>
+    <p v-if="full" class="lab-hint demo-input-hint">{{ t('Таблица в панели: быстрая сетка 8 × 8, поля — до 100 × 100. Вставьте или перетащите один PNG/JPEG/GIF/WebP/AVIF в обычный текст. Локальное демо возвращает логотип: файл не отправляется и не сохраняется.', 'Table toolbar: an 8 × 8 quick picker; numeric fields support up to 100 × 100. Paste or drop one PNG/JPEG/GIF/WebP/AVIF into ordinary text. This local demo returns the logo: files are not uploaded or stored.') }}</p>
     <div v-if="full" ref="contextualHost" class="demo-contextual-host"></div>
     <div v-if="full" ref="contextualLinkHost" class="demo-contextual-link-host"></div>
     <div v-if="full" ref="contextualTableHost" class="demo-contextual-table-host"></div>

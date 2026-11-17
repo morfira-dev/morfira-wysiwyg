@@ -289,6 +289,7 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
         }
       };
       const compositionStart = () => {
+        if (editor.isReadOnly()) return;
         composing = true;
         cancel();
       };
