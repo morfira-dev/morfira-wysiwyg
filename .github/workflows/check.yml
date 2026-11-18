@@ -61,7 +61,7 @@ jobs:
           retention-days: 7
 
   editor:
-    name: Editor ${{ matrix.browser }} ${{ matrix.shard }}/4
+    name: Editor ${{ matrix.browser }} ${{ matrix.shard }}/${{ matrix.total }}
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -73,8 +73,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit]
+        browser: [chromium, webkit]
         shard: [1, 2, 3, 4]
+        total: [4]
+        include:
+          - browser: firefox
+            shard: 1
+            total: 6
+          - browser: firefox
+            shard: 2
+            total: 6
+          - browser: firefox
+            shard: 3
+            total: 6
+          - browser: firefox
+            shard: 4
+            total: 6
+          - browser: firefox
+            shard: 5
+            total: 6
+          - browser: firefox
+            shard: 6
+            total: 6
     steps:
       - name: Match browser home ownership to the container user
         run: chown "$(id -u):$(id -g)" "$HOME"
@@ -91,7 +111,7 @@ jobs:
           path: ${{ runner.temp }}/checked-build
       - name: Restore checked packages and Angular fixtures
         run: tar -xzf "$RUNNER_TEMP/checked-build/morfira-build.tar.gz"
-      - run: pnpm test --project=${{ matrix.browser }} --shard=${{ matrix.shard }}/4 --workers=2
+      - run: pnpm test --project=${{ matrix.browser }} --shard=${{ matrix.shard }}/${{ matrix.total }} --workers=2
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
@@ -100,7 +120,7 @@ jobs:
           retention-days: 7
 
   docs:
-    name: Documentation
+    name: Documentation ${{ matrix.shard }}/2
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -109,6 +129,10 @@ jobs:
       options: --init --ipc=host
     env:
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - name: Match browser home ownership to the container user
         run: chown "$(id -u):$(id -g)" "$HOME"
@@ -126,11 +150,11 @@ jobs:
       - name: Restore checked packages and Angular fixtures
         run: tar -xzf "$RUNNER_TEMP/checked-build/morfira-build.tar.gz"
       - run: pnpm run docs:build:site
-      - run: pnpm run test:docs --workers=2
+      - run: pnpm run test:docs --shard=${{ matrix.shard }}/2 --workers=2
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: docs-results-${{ github.run_attempt }}
+          name: docs-results-${{ matrix.shard }}-${{ github.run_attempt }}
           path: |
             test-results/docs/
             artifacts/*.png
