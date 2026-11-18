@@ -37,11 +37,22 @@ export const checkedTablePropertiesPatch = (input: unknown, document: Document):
   if (!input || typeof input !== 'object' || Array.isArray(input)
       || ![Object.prototype, null].includes(Object.getPrototypeOf(input)))
     throw new TypeError('Table properties must be a plain patch object.');
-  const fields = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign'];
+  const fields = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'headerRow', 'headerColumn', 'caption'];
   if (Reflect.ownKeys(input).some((key) => typeof key !== 'string' || !fields.includes(key)))
     throw new TypeError('Unknown table property.');
   const patch = input as Record<string, unknown>;
   const result: TablePropertiesPatch = {};
+  for (const key of ['headerRow', 'headerColumn'] as const) {
+    if (!Object.hasOwn(patch, key)) continue;
+    if (typeof patch[key] !== 'boolean') throw new TypeError('Table header axes must be boolean.');
+    result[key] = patch[key];
+  }
+  if (Object.hasOwn(patch, 'caption')) {
+    const caption = patch.caption;
+    if (caption !== false && (typeof caption !== 'string' || caption.length > 5000))
+      throw new TypeError('Table caption must be text of at most 5000 characters or false.');
+    result.caption = caption === '' ? false : caption;
+  }
   if (Object.hasOwn(patch, 'width')) result.width = widthValue(patch.width);
   if (Object.hasOwn(patch, 'alignment')) result.alignment = alignmentValue(patch.alignment);
   if (Object.hasOwn(patch, 'cellBackground')) result.cellBackground = colorValue(patch.cellBackground, document);

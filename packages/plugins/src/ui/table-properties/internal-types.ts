@@ -11,5 +11,5 @@ export interface TablePropertiesFormTarget {
 export interface TablePropertiesFormControl {
   readonly key: TablePropertiesFormField;
   readonly caption: HTMLSpanElement;
-  readonly input: HTMLInputElement | HTMLSelectElement;
+  readonly input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 }

@@ -1,5 +1,52 @@
 # Verification record
 
+## Table headers and caption — 2026-11-18
+
+Local implementation after 5906743 follows
+[table-headers-caption.md](table-headers-caption.md). The opt-in table-properties
+patch/state adds the first logical header row/column and literal caption. The
+existing form adds localized selects and a multiline caption textarea; public
+string drafts include three new fields. Dirty-only application and existing
+target/focus/lifecycle gates are preserved. Caption appearance has scoped
+--mw-table-caption-* variables. Core schema and runtime dependencies are unchanged.
+
+Header writes plan all crossing-span refusals before changing any styles/content.
+TD/TH conversion moves actual child nodes, preserves spans/attributes and restores
+native endpoints/direction and the private selected rectangle to surviving/new
+wrappers. Unchanged wrappers and table/rows/caption children remain actual nodes;
+retagged cell wrapper identity necessarily changes. Equal caption text preserves
+rich children; changed caption text uses textContent. Unsupported crossing merges
+and header axes without a following body row/column reject atomically.
+
+Passed: final `pnpm run build` with declarations/all bundle guards,
+`pnpm run typecheck`, `pnpm run check:project`,
+`pnpm run check:tree-shaking`, `pnpm run package:check` (eight archives),
+`pnpm run docs:build:site`, and `git diff --check`.
+The final build includes the textarea correction preserving multiline drafts.
+No local behavioral tests, installed-consumer execution or live browser checks
+ran at the user's request. Six API definitions, two form definitions and two
+RU/EN demo definitions, public types and updated existing exact-state expectations
+are authored. Runtime outcomes across all browsers/adapters remain unverified.
+
+Final measured selected closures, bytes (shared JS chunks counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 89363 | 27704 | 24347 | 3293 |
+| Table properties | 31218 | 11405 | 10223 | — |
+| Table properties form | 45490 | 16664 | 14826 | 1922 shared forms |
+| Standard ready | 213221 | 63256 | 54228 | 12162 |
+| Standard ready + properties/form | 235124 | 69509 | 59103 | 12162 |
+
+Core JS/CSS and standard-ready JS are unchanged. Properties grows by 1158 gzip
+JS bytes, its form closure by 1415, and selected standard properties profile by
+1320. The selected properties profile keeps 10491 bytes below its 80000 gzip JS
+guard; headless/form guards remain 15000/20000 gzip bytes. Table CSS measures
+2055 raw / 783 gzip / 622 Brotli bytes (+242 raw, +67 gzip). Standard-ready CSS
+is 12162 / 3924 / 3207. Shared forms CSS remains 1922 / 709 / 578. Other selected
+CSS and JS measurements are in size-report.json; framework runtimes, declarations
+and source maps are excluded. Static passes do not certify browser correctness.
+
 ## Image upload feedback — 2026-11-18
 
 Local implementation after d666f51 follows

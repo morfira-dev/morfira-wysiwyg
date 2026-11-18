@@ -34,9 +34,12 @@ export const createTablePropertiesForm = (host: HTMLElement, editor: Editor, opt
     const field = createUIElement(document, 'label');
     const caption = createUIElement(document, 'span');
     const choice = key === 'alignment' ? ['reset', 'left', 'center', 'right']
-      : key === 'cellVerticalAlign' ? ['reset', 'top', 'middle', 'bottom'] : undefined;
-    const input = choice ? createUIElement(document, 'select') : createUIElement(document, 'input');
+      : key === 'cellVerticalAlign' ? ['reset', 'top', 'middle', 'bottom']
+        : key === 'headerRow' || key === 'headerColumn' ? ['off', 'on'] : undefined;
+    const input = choice ? createUIElement(document, 'select')
+      : key === 'caption' ? createUIElement(document, 'textarea') : createUIElement(document, 'input');
     if (input instanceof document.defaultView!.HTMLInputElement) input.maxLength = 100;
+    if (input instanceof document.defaultView!.HTMLTextAreaElement) { input.maxLength = 5000; input.rows = 2; }
     if (choice) {
       const mixed = createUIElement(document, 'option');
       mixed.value = '__mixed';
@@ -46,7 +49,7 @@ export const createTablePropertiesForm = (host: HTMLElement, editor: Editor, opt
       input.append(mixed);
       for (const value of choice) {
         const option = createUIElement(document, 'option');
-        option.value = value === 'reset' ? '' : value;
+        option.value = value === 'reset' || value === 'off' ? '' : value === 'on' ? 'true' : value;
         option.dataset.mwPropertyLabel = value;
         input.append(option);
       }

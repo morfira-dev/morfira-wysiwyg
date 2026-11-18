@@ -6,6 +6,9 @@ export interface TablePropertiesFormValues {
   cellBackground: string;
   cellBorder: string;
   cellVerticalAlign: string;
+  headerRow: string;
+  headerColumn: string;
+  caption: string;
 }
 export interface TablePropertiesFormOptions {
   label?: string;

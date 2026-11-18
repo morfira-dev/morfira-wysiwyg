@@ -4,11 +4,13 @@ import { tableCommands } from '../tables/plugin.js';
 import type { TableSelectionState } from '../tables/types.js';
 import { sameTablePropertyTarget, tablePropertyTarget } from './target.js';
 import { cellVerticalAlign, checkedTablePropertiesPatch, mixedCellValue, patchMargins, styleChanges, tableAlignment, tableWidth, writeStyle } from './values.js';
-import type { TablePropertiesRequest } from './internal-types.js';
+import { applyTableSemantics, planTableSemantics, tableCaption, tableHeaders } from './semantics.js';
+import type { TablePropertiesRequest, TableSemanticsPlan } from './internal-types.js';
 import type { TablePropertiesCommands, TablePropertiesPatch } from './types.js';
 
 const updateCommand = /* @__PURE__ */ createEditorCommand<TablePropertiesRequest>('table-properties.update');
-const changes = (target: TableSelectionState, patch: TablePropertiesPatch): boolean => {
+const changes = (target: TableSelectionState, patch: TablePropertiesPatch, semantics: TableSemanticsPlan): boolean => {
+  if (semantics.cells.length || semantics.captionChanged) return true;
   if (patch.width !== undefined && (target.table.hasAttribute('width') || styleChanges(target.table, 'width', patch.width))) return true;
   if (patch.alignment !== undefined) {
     const [left, right] = patchMargins(patch.alignment);
@@ -18,7 +20,7 @@ const changes = (target: TableSelectionState, patch: TablePropertiesPatch): bool
     || (patch.cellBorder !== undefined && styleChanges(cell, 'border-color', patch.cellBorder))
     || (patch.cellVerticalAlign !== undefined && styleChanges(cell, 'vertical-align', patch.cellVerticalAlign)));
 };
-const apply = (target: TableSelectionState, patch: TablePropertiesPatch): void => {
+const apply = (editor: Editor, target: TableSelectionState, patch: TablePropertiesPatch, semantics: TableSemanticsPlan): void => {
   if (patch.width !== undefined) {
     target.table.removeAttribute('width');
     writeStyle(target.table, 'width', patch.width);
@@ -33,6 +35,7 @@ const apply = (target: TableSelectionState, patch: TablePropertiesPatch): void =
     if (patch.cellBorder !== undefined) writeStyle(cell, 'border-color', patch.cellBorder);
     if (patch.cellVerticalAlign !== undefined) writeStyle(cell, 'vertical-align', patch.cellVerticalAlign);
   }
+  applyTableSemantics(editor, target, semantics);
 };
 
 export const tableProperties = (): EditorPlugin => ({
@@ -54,7 +57,9 @@ export const tableProperties = (): EditorPlugin => ({
       execute: (_editor, request) => {
         if (disposed || !editor.commands.getState(updateCommand).enabled) return;
         const target = tablePropertyTarget(editor);
-        if (target && sameTablePropertyTarget(request.expected, target) && changes(target, request.patch)) apply(target, request.patch);
+        if (!target || !sameTablePropertyTarget(request.expected, target)) return;
+        const semantics = planTableSemantics(target.table, request.patch);
+        if (changes(target, request.patch, semantics)) apply(editor, target, request.patch, semantics);
       },
     });
     const commands: TablePropertiesCommands = {
@@ -63,7 +68,7 @@ export const tableProperties = (): EditorPlugin => ({
         const patch = checkedTablePropertiesPatch(input, editor.surface.ownerDocument);
         assertActive();
         const target = tablePropertyTarget(editor);
-        if (!target || !changes(target, patch)) return;
+        if (!target || !changes(target, patch, planTableSemantics(target.table, patch))) return;
         editor.commands.execute(updateCommand, { expected: target, patch });
       },
       getState: () => {
@@ -71,6 +76,8 @@ export const tableProperties = (): EditorPlugin => ({
         const target = tablePropertyTarget(editor);
         return {
           disabled: !target || !editor.commands.getState(updateCommand).enabled,
+          ...(target ? tableHeaders(target.table) : { headerRow: false, headerColumn: false }),
+          caption: target ? tableCaption(target.table) : false,
           width: target ? tableWidth(target.table) : false,
           alignment: target ? tableAlignment(target.table) : false,
           cellBackground: target ? mixedCellValue(target.cells, (cell) => cell.style.backgroundColor || false) : false,
