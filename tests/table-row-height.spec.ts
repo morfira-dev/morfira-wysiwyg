@@ -114,6 +114,7 @@ test('focus replacement cannot redirect row sizing and retained commands fail af
     const button = document.createElement('button'); document.body.append(button); button.focus();
     const text = original.querySelector('strong')!.firstChild!;
     document.getSelection()!.setBaseAndExtent(text, 0, text, 0);
+    window.editor.surface.blur();
     window.editor.surface.addEventListener('focusin', () => window.editor.setHTML('<table><tbody><tr><td><p>External</p></td></tr></tbody></table><p>After</p>'), { once: true });
     window.headerProperties.update({ rowMinHeight: '72px' });
     const table = window.editor.surface.querySelector('table')!;

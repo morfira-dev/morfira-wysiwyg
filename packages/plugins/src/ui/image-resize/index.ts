@@ -103,6 +103,14 @@ export const createImageResizeUI = (host: HTMLElement, editor: Editor, options: 
     observed = undefined;
   };
   const ownedFocus = () => document.activeElement === surface || surface.contains(document.activeElement) || element.contains(document.activeElement);
+  const observedTarget = () => {
+    const target = nativeContextualImage(editor);
+    if (target || !current || !element.contains(document.activeElement)) return target;
+    const native = document.getSelection();
+    const range = native?.rangeCount ? native.getRangeAt(0) : undefined;
+    if (range && (surface.contains(range.startContainer) || surface.contains(range.endContainer))) return;
+    return contextualImageTarget(editor, current.target.range);
+  };
   const valid = (geometry: ImageResizeGeometry, version: number): boolean => !disposed && !composing && !editor.isReadOnly() && revision === version
     && ordinaryResizableImage(surface, geometry.target.image) && imageSizeSignature(geometry.target.image) === geometry.signature
     && contextualImageTarget(editor, geometry.target.range)?.image === geometry.target.image;
@@ -146,7 +154,7 @@ export const createImageResizeUI = (host: HTMLElement, editor: Editor, options: 
       return;
     }
     if (suspended || composing || editor.isReadOnly() || !ownedFocus()) { hide(); return; }
-    const target = nativeContextualImage(editor);
+    const target = observedTarget();
     if (element.contains(document.activeElement) && current && target?.image !== current.target.image) { hide(); return; }
     if (!target || target.image === suppressed) { hide(); return; }
     const geometry = imageResizeGeometry(editor, target);
@@ -182,11 +190,11 @@ export const createImageResizeUI = (host: HTMLElement, editor: Editor, options: 
   };
   const commit = (geometry: ImageResizeGeometry, width: number, height: number, version: number): boolean => {
     if (width === geometry.width && height === geometry.height) return false;
-    if (!valid(geometry, version) || !sameGeometry(geometry)) return false;
+    if (!valid(geometry, version) || !sameGeometry(geometry) || observedTarget()?.image !== geometry.target.image) return false;
     restoring++;
     try {
       if (!selection.restore(() => valid(geometry, version) && sameGeometry(geometry)
-        && nativeContextualImage(editor)?.image === geometry.target.image) || !valid(geometry, version)
+        && nativeContextualImage(editor)?.image === geometry.target.image, true) || !valid(geometry, version)
         || nativeContextualImage(editor)?.image !== geometry.target.image) return false;
       applying = true;
       api.update({ width, height });
@@ -263,7 +271,7 @@ export const createImageResizeUI = (host: HTMLElement, editor: Editor, options: 
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); return; }
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) || gesture) return;
     const handle = handles.find((button) => button === event.target);
-    if (!handle || handle.hidden || !current) return;
+    if (!handle || document.activeElement !== handle || handle.hidden || !current) return;
     event.preventDefault();
     event.stopPropagation();
     const geometry = current;
@@ -287,7 +295,7 @@ export const createImageResizeUI = (host: HTMLElement, editor: Editor, options: 
   const geometryChanged = () => { if (gesture) releaseGesture(); discover(); };
   const selectionChanged = () => {
     if (restoring || disposed) return;
-    const image = nativeContextualImage(editor)?.image;
+    const image = observedTarget()?.image;
     if (gesture && image !== gesture.geometry.target.image) releaseGesture();
     if (current && image && image !== current.target.image) keyboardSession = undefined;
     discover();

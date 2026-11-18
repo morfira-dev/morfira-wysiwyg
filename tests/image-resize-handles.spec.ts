@@ -54,6 +54,7 @@ const resetSelection = async (page: Page, html = original) => page.evaluate((val
   window.editor.setHTML(value);
   window.handlesResizeAPI.select(window.editor.surface.querySelector('img')!);
   window.handlesResizeUI.refresh();
+  window.changes = [];
 }, html);
 
 test('pointer preview changes no document data and a proportional drop preserves nodes in one Undo/Redo', async ({ page }) => {
@@ -107,8 +108,8 @@ test('no-motion drops are inert and extreme drags clamp both integer dimensions 
   await page.mouse.up();
   await expect(image(page)).toHaveAttribute('width', '1000');
   await expect(image(page)).toHaveAttribute('height', '667');
-  const minimum = await begin(page);
-  await page.mouse.move(minimum.x - 1100, minimum.y - 733, { steps: 4 });
+  await begin(page);
+  await page.mouse.move(1, 1, { steps: 4 });
   await page.mouse.up();
   await expect(image(page)).toHaveAttribute('width', '1');
   await expect(image(page)).toHaveAttribute('height', '1');
@@ -193,7 +194,7 @@ test('replacement, read-only, composition and destruction invalidate active drag
     await page.mouse.up();
     await settleFrames(page);
     const after = reason === 'focusreplacement' ? await page.evaluate(() => window.handlesFocusExpected) : expected;
-    expect(await page.evaluate(() => ({ html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.length })))
+    expect(await page.evaluate(() => ({ html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.filter((change) => change.source === 'user').length })))
       .toEqual({ html: after, undo: false, changes: 0 });
     if (reason === 'composition') {
       // API replacement ends the old composition session even without compositionend.
@@ -229,9 +230,9 @@ test('native selection departure from focused handles and focus callbacks cannot
       const selection = document.getSelection()!;
       selection.removeAllRanges();
       selection.addRange(range);
-      return document.activeElement === element;
+      return selection.rangeCount === 1 && root.contains(selection.getRangeAt(0).startContainer);
     }, target)).toBe(true);
-    await expect(controls(page)).toBeHidden();
+    if (target === 'text') await expect(controls(page)).toBeHidden();
     await retained.evaluate((element) => element.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })));
     await settleFrames(page);
     expect(await page.evaluate(() => ({ html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.length })))
@@ -269,6 +270,11 @@ test('keyboard sizing uses native focused handles, one-pixel and Shift steps wit
   const before = await page.evaluate(() => window.editor.getHTML());
   const handle = corner(page);
   await handle.focus();
+  await page.evaluate(() => {
+    document.getSelection()?.removeAllRanges();
+    window.handlesResizeUI.refresh();
+  });
+  await expect(handle).toBeFocused();
   await handle.press('ArrowRight');
   await expect(image(page)).toHaveAttribute('width', '121');
   await expect(image(page)).toHaveAttribute('height', '81');

@@ -1,5 +1,33 @@
 # Verification record
 
+## CI follow-up for the image/table batch — 2026-11-18
+
+GitHub run 44382814844 at c698849 failed browser editor/docs jobs; build/static
+checks and both installed-consumer profiles passed. Publication was skipped.
+Logs and retained traces distinguish actual image UI focus/selection issues from
+incorrect test assumptions: unsupported TABLE dir instead of supported TD dir,
+stale total button/example counts, selection APIs refocusing the editor before
+a focus hook was registered, API replacement notifications counted as user edits,
+and a Firefox drag leaving the viewport. No matrix, assertion intent or timeout
+was removed to hide these failures.
+
+Corrections stage an owned image range before focus with post-focus revision and
+identity checks, retain cached image selection only while an actual handle owns
+focus and native selection is outside/empty, and require actual keyboard focus.
+A different native range within the editor still invalidates the target.
+Fixtures explicitly blur after setting native selection so focus races actually
+execute. Tests identify intended controls/standalone cleanup examples and keep
+extreme captured pointer motion within the viewport; cancellation checks count
+user edits separately from externally requested API notifications.
+
+Local package build/declarations/all budgets, type checks, project contracts,
+tree-shaking and diff whitespace pass. No local behavioral tests ran. Current
+measurements (raw/gzip/Brotli JS bytes): core 89363/27704/24347 unchanged,
+standard ready 213569/63336/54186, contextual image 43227/15535/13825,
+image resize UI 29511/11069/9882. CSS is unchanged. Remote verification of the
+correction must be reported from the actual follow-up workflow, not inferred
+from these static passes.
+
 ## Minimum table row height — 2026-11-18
 
 Local implementation after d28a78a follows

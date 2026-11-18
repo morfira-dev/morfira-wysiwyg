@@ -46,7 +46,9 @@ const selectImage = async (page: Page, index = 0) => {
 
 test('edit mode Enter updates the actual image, preserves unchanged rich caption, and removal has a separate Undo', async ({ page }) => {
   const before = await initialize(page);
-  await expect(form(page).getByRole('button')).toHaveCount(2);
+  await expect(form(page).getByRole('button', { name: 'Update image', exact: true })).toHaveCount(1);
+  await expect(form(page).getByRole('button', { name: 'Remove image', exact: true })).toHaveCount(1);
+  await expect(form(page).getByRole('group', { name: 'Image alignment', exact: true }).getByRole('button')).toHaveCount(4);
   await expect(form(page).getByRole('button', { name: 'Insert image', exact: true })).toHaveCount(0);
   await expect(form(page).locator('input[type=file]')).toHaveCount(0);
   await expect(form(page).getByRole('button', { name: 'Cancel upload', exact: true })).toHaveCount(0);

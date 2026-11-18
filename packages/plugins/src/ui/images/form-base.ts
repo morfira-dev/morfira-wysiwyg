@@ -248,6 +248,13 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
     if (disposed || editor.isReadOnly() || composing || uploading() || !target
       || !ordinaryResizableImage(editor.surface, target)
       || selectedImage(editor, selection.peek()) !== target) return;
+    const native = document.getSelection();
+    const nativeRange = native?.rangeCount ? native.getRangeAt(0) : undefined;
+    if (nativeRange && (editor.surface.contains(nativeRange.startContainer) || editor.surface.contains(nativeRange.endContainer))
+      && selectedImage(editor, nativeRange) !== target) {
+      setStatus('ui.images.selection', true);
+      return;
+    }
     const revision = documentRevision;
     const stillOwnsTarget = () => {
       const native = document.getSelection();
@@ -257,7 +264,7 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
     };
     restoring = true;
     try {
-      if (!selection.restore(stillOwnsTarget)) {
+      if (!selection.restore(stillOwnsTarget, true)) {
         setStatus('ui.images.selection', true);
         return;
       }

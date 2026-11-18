@@ -21,7 +21,7 @@ export const createFormSelection = (editor: Editor): FormSelection => {
     backward = !range.collapsed && selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset;
     blocked = false;
   };
-  const restore = (acceptFocus?: () => boolean): boolean => {
+  const restore = (acceptFocus?: () => boolean, stageBeforeFocus = false): boolean => {
     if (disposed) return false;
     if (saved && !valid(saved)) saved = undefined;
     if (!saved) {
@@ -35,6 +35,12 @@ export const createFormSelection = (editor: Editor): FormSelection => {
     const range = saved.cloneRange();
     const reverse = backward;
     const revision = apiRevision;
+    if (stageBeforeFocus) {
+      const native = document.getSelection();
+      if (!native) return false;
+      native.setBaseAndExtent(range.startContainer, range.startOffset, range.endContainer, range.endOffset);
+      if (disposed || apiRevision !== revision || !valid(range)) return false;
+    }
     editor.focus();
     if (disposed || apiRevision !== revision || !saved || !valid(range) || acceptFocus?.() === false) return false;
     const selection = document.getSelection();

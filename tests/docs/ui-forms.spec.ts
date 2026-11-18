@@ -6,7 +6,8 @@ for (const english of [false, true]) test(`UI forms guide exposes standalone pub
   for (const [factory, entry] of [['createLinkForm', 'links'], ['createImageForm', 'images'], ['createSearchForm', 'search']]) {
     await expect(page.getByRole('cell', { name: factory, exact: true })).toHaveCount(1);
     await expect(page.getByRole('cell', { name: `@morfira-dev/wysiwyg/ui/${entry}`, exact: true })).toHaveCount(1);
-    const example = page.locator('.vp-doc pre').filter({ hasText: `const form = ${factory}` });
+    const example = page.locator('.vp-doc pre').filter({ hasText: `const form = ${factory}` })
+      .filter({ hasText: 'editor.destroy()' });
     await expect(example).toHaveCount(1);
     await expect(example).toContainText('@morfira-dev/wysiwyg/ui/forms.css');
     await expect(example).toContainText('form.destroy()');

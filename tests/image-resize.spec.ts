@@ -196,6 +196,7 @@ test('focus-time external replacement cannot redirect a resize to a new image', 
     selection.removeAllRanges();
     selection.addRange(range);
     let expected = '';
+    window.editor.surface.blur();
     window.editor.surface.addEventListener('focusin', () => {
       window.editor.setHTML('<figure><img src="/logo.svg?external" width="200" height="100"><figcaption>External</figcaption></figure><p>Tail</p>');
       expected = window.editor.getHTML();

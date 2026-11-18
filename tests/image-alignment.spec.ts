@@ -100,7 +100,7 @@ test('plugin-free HTML and JSON roundtrips retain bounded placement and reject u
 });
 
 test('inline/list and merged-cell placement preserves surrounding nodes and stays physical under RTL', async ({ page }) => {
-  await initialize(page, '<ul><li><p>Before<img src="/logo.svg" width="80" height="40">After</p></li></ul><table dir="rtl"><tbody><tr><td rowspan="2"><figure><img src="/logo.svg" width="120" height="80"><figcaption>Cell</figcaption></figure></td><td>A</td></tr><tr><td>B</td></tr></tbody></table><p>Tail</p>');
+  await initialize(page, '<ul><li><p>Before<img src="/logo.svg" width="80" height="40">After</p></li></ul><table><tbody><tr><td dir="rtl" rowspan="2"><figure><img src="/logo.svg" width="120" height="80"><figcaption>Cell</figcaption></figure></td><td>A</td></tr><tr><td>B</td></tr></tbody></table><p>Tail</p>');
   expect(await page.evaluate(() => {
     const root = window.editor.surface;
     const paragraph = root.querySelector('li p')!;
@@ -113,7 +113,7 @@ test('inline/list and merged-cell placement preserves surrounding nodes and stay
     window.alignmentImageAPI.align('right');
     return { inline: paragraph.querySelector('img') === inline, parent: inline.parentNode === paragraph, text: paragraph.textContent, blocks: paragraph.querySelectorAll('figure').length,
       table: root.querySelector('table') === table, cell: table.querySelector('td') === cell, cells: table.querySelectorAll('td').length, rowspan: cell.getAttribute('rowspan'),
-      direction: table.getAttribute('dir'), margins: [img.style.marginLeft, img.style.marginRight] };
+      direction: cell.getAttribute('dir'), margins: [img.style.marginLeft, img.style.marginRight] };
   })).toEqual({ inline: true, parent: true, text: 'BeforeAfter', blocks: 0, table: true, cell: true, cells: 3, rowspan: '2', direction: 'rtl', margins: ['auto', '0px'] });
 });
 
@@ -168,6 +168,7 @@ test('read-only/IME prevent alignment and focus replacement cannot receive an ol
     range.selectNode(old);
     const native = document.getSelection()!;
     native.removeAllRanges(); native.addRange(range);
+    window.editor.surface.blur();
     let expected = '';
     window.editor.surface.addEventListener('focusin', () => {
       window.editor.setHTML('<p><img src="/logo.svg?external" width="200" height="100">External</p>');

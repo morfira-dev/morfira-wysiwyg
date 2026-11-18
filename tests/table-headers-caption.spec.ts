@@ -170,6 +170,7 @@ test('readonly, composition and focus replacement cannot apply header/caption wr
     const saved = native.getRangeAt(0).cloneRange();
     const button = document.createElement('button'); document.body.append(button); button.focus();
     native.removeAllRanges(); native.addRange(saved);
+    window.editor.surface.blur();
     window.editor.surface.addEventListener('focus', () => window.editor.setHTML('<p>Replacement</p>'), { once: true });
     window.headerProperties.update({ headerRow: true, caption: 'Stale' });
     const result = { html: window.editor.getHTML(), undo: window.editor.canUndo() };

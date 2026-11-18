@@ -8,6 +8,13 @@ Expose `createImageResizeUI(host, editor, options?)` at `/ui/image-resize`, with
 
 Show four corner buttons only for the existing exact native IMG node range, an ordinary inline IMG or direct simple-figure IMG, known proportions and nonzero visible geometry. Reuse existing contextual-image ownership and clipping queries without importing its full UI/form. No whole-figure/caption caret/multi-image/mixed-text/protected/foreign targets. Read-only and composition hide/invalidate handles. Retain the exact native image range through the owned per-editor form-selection helper while a handle has focus; an unrelated selection/focus departure hides it. No global host registry or table-plugin dependency is introduced. Another editor's controls never share state.
 
+Browser focus correction: while an actual handle owns focus, native selection may
+temporarily leave the editor. Retain its validated cached image range only for
+that outside/empty selection; an actual different range inside the editor remains
+a departure. Keyboard actions require the actual focused handle. Opt-in range
+staging before focus must still revalidate revision/identity after application
+focus handlers, without restoring over a redirect or replacement.
+
 Use actual viewport image geometry and a clipped outline; hide corners outside the image's visible clipped bounds. Reject transformed image/editor ancestors and image boxes whose displayed ratio disagrees materially with the stored/natural ratio (allow integer-pixel rounding). The ratio comes from the same stored-pair/loaded-natural helper as resize, never CSS or a new fetch. Responsive CSS can constrain actual display after the requested pixel dimensions are committed. No image clone, preview resource, canvas, decoding, temporary persisted node or inline image-style preview is created.
 
 ## Pointer transaction
