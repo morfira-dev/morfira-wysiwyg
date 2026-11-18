@@ -1,4 +1,12 @@
-# Verification record — table/cell properties
+# Verification record
+
+## Proportional image dimensions — 2026-11-18
+
+Local implementation after f802a83 follows [image-resize.md](image-resize.md): one-axis `ImageResize`/`resize`, fixed-ratio width/height drafts in both image-form modes, opt-in default-off checkbox and constructor option, atomic existing update/history, stale ownership/readonly/composition guards, and RU/EN live-demo instructions. Pointer handles/cropping remain future work. No new dependencies or CSS were added; the unchanged-source `src` guard avoids re-requesting an image solely for metadata/size updates.
+
+Final package/declaration/budget build, TS/Svelte/Vue type checking and `docs:build:site` passed. The source-contract guard passed during implementation. These are non-test checks: **no browser, docs, release or installed-consumer tests ran**, and no manual browser verification was performed, as requested. Eight command tests, six form tests and two localized demo tests are authored for the existing browser matrix; installed-consumer flows now exercise the checkbox and public resize command without workspace aliases. Actual runtime correctness remains unverified until these run.
+
+The measured image entry is 3859 gzip JS bytes; form closure 9274, contextual image closure 13876, core unchanged at 27690. Standard ready is 61205 gzip JS/11504 minified CSS bytes; standard contextual-image ready is 64478 gzip JS/13166 minified CSS bytes. The largest standard JS profile is 66279 gzip bytes under its 80000 budget. Separate raw/gzip/Brotli/CSS figures are in image-resize.md and generated size-report.json. All existing build budgets passed. This stage is committed locally only; no push, CI run or npm publication is authorized.
 
 ## Table/cell properties and revised standard budget — 2026-11-18
 

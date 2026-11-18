@@ -1,4 +1,5 @@
 import type { ImageValue, ImagePatch, ImageOptions, ImageCommands } from './types.js';
+import { imageAspectRatio, imageSizeSignature, ordinaryResizableImage, proportionalDimensions } from './resize.js';
 
 import { sanitizeHTML } from '@morfira-dev/wysiwyg-core';
 import type { Editor, EditorPlugin, SelectionBookmark } from '@morfira-dev/wysiwyg-core';
@@ -80,7 +81,7 @@ const selectNode = (editor: Editor, image: HTMLImageElement) => {
   selection?.addRange(range);
 };
 const writeImage = (image: HTMLImageElement, value: ImageValue) => {
-  image.setAttribute('src', value.src);
+  if (image.getAttribute('src') !== value.src) image.setAttribute('src', value.src);
   image.setAttribute('alt', value.alt ?? '');
   for (const key of ['width', 'height'] as const) {
     if (value[key] === undefined) {
@@ -160,6 +161,7 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
     name: 'images', setup: (editor) => {
       let disposed = false;
       let composing = false;
+      let revision = 0;
       let pending: AbortController | undefined;
       const active = () => {
         if (disposed)
@@ -223,6 +225,24 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
             }
             selectNode(editor, image);
           });
+        },
+        resize: (size) => {
+          active();
+          if (editor.isReadOnly() || composing) return;
+          const image = selectedImage(editor);
+          if (!image || !ordinaryResizableImage(editor.surface, image)) throw new RangeError('Select one ordinary image to resize.');
+          const dimensions = proportionalDimensions(size, imageAspectRatio(image));
+          const before = readImage(image);
+          if (before.width === dimensions.width && before.height === dimensions.height) return;
+          const previousRevision = revision;
+          const signature = imageSizeSignature(image);
+          editor.surface.focus({ preventScroll: true });
+          active();
+          if (editor.isReadOnly() || composing) return;
+          if (previousRevision !== revision || selectedImage(editor) !== image || !ordinaryResizableImage(editor.surface, image)
+            || imageSizeSignature(image) !== signature) throw new RangeError('Image selection changed before resizing.');
+          // One update keeps the actual IMG and rich caption in one history entry.
+          api.update(dimensions);
         },
         remove: () => {
           active(); if (editor.isReadOnly())
@@ -298,6 +318,7 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
       editor.surface.addEventListener('compositionend', compositionEnd);
       editor.surface.addEventListener('click', click);
       const unsubscribe = editor.subscribe((change) => {
+        revision++;
         if (change.source === 'api') composing = false;
         cancel();
       });

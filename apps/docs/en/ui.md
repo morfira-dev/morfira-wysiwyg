@@ -87,9 +87,24 @@ const dispose = () => {
 
 `/api/uploads` is an example application API, not a supplied server. Return `ImageValue` with a URL and optional alt/dimensions/caption. The plugin validates returned metadata. Choosing a file does not upload it to any external Morfira storage: the application owns transport.
 
-The form supports URL, alt, caption, dimensions, insertion, selected-image update/removal, file selection and cancellation. Empty dimension fields remove those constraints on update. Destroying the form cancels only its own upload; late results are ignored. This module does not add drag resizing, cropping or drag/drop.
+The form supports URL, alt, caption, dimensions, insertion, selected-image update/removal, file selection and cancellation. With aspect-ratio locking disabled, empty dimension fields remove those constraints on update. Destroying the form cancels only its own upload; late results are ignored. This module does not add drag resizing, cropping or drag/drop.
 
 Custom UI can pass a separate signal to `imageCommands(editor).upload(file, { signal })`; its option type is `ImageUploadOptions`. This cancels that specific request. `cancelUpload()` remains the editor-wide current-upload cancellation command. [Image details](/en/images).
+
+### Preserving proportions
+
+The **Keep aspect ratio** checkbox is available for an already selected image. Enable it and edit width or height: the other side is calculated from the inspected image's fixed ratio. Only drafts change until Update image. Enter applies an update in `edit` mode; `all` mode retains its existing Enter-to-insert behavior.
+
+```ts
+const form = createImageForm(formHost, editor, {
+  mode: 'edit',
+  keepAspectRatio: true,
+});
+```
+
+`ImageFormOptions.keepAspectRatio` is an optional boolean, default `false`. It is validated and snapshotted at construction; checkbox state belongs to the form and is never document data. The stored pair takes precedence, otherwise already-loaded natural dimensions provide the ratio. Unknown proportions disable the checkbox; sizing starts no extra image request. The calculated side rounds to a pixel and must remain within 1–1000.
+
+Invalid, blank or oversized locked dimensions are not applied; drafts remain available for correction. Uncheck to edit independent sides or remove dimensions. `setValues` preserves supplied string drafts without automatically recalculating; Apply validates that the final pair matches the fixed ratio. Changing src, switching images or external API replacement cannot apply the old ratio to a new target. Dimensions and other metadata use one Undo step; unchanged rich caption nodes survive. Locale changes translate the checkbox via `ui.images.keepAspectRatio` without resetting drafts. See the [resize command](/en/images#proportional-dimensions).
 
 ### Edit-only image form
 
@@ -103,7 +118,7 @@ const editForm = createImageForm(formHost, editor, { mode });
 
 `mode` is a constructor option: `all` retains the existing Insert/upload/cancel controls and Enter-to-insert; `edit` shows only fields, Update and Remove, and Enter updates the selected image. Recreate the form to change mode. Insert/upload/cancel controls are absent and their handler paths refuse edit mode; it neither starts transport nor cancels another owner's upload. Missing selection cannot become an insertion point.
 
-Edits recheck the same actual IMG after restoring the saved native Range. API replacement invalidates the old draft until a fresh editor selection; locale/field focus preserve drafts. Blank dimensions remove them, explicit dimensions are integers 1–1000, invalid metadata fails atomically. An unchanged caption is omitted from the patch so unrelated metadata edits preserve its rich children; an explicitly changed caption remains literal text. See [contextual image properties](/en/contextual-images) for the optional floating wrapper and exact IMG eligibility.
+Edits recheck the same actual IMG after restoring the saved native Range. API replacement invalidates the old draft until a fresh editor selection; locale/field focus preserve drafts. Blank dimensions remove them with aspect-ratio locking off; explicit dimensions are integers 1–1000 and invalid metadata fails atomically. An unchanged caption is omitted from the patch so unrelated metadata edits preserve its rich children; an explicitly changed caption remains literal text. See [contextual image properties](/en/contextual-images) for the optional floating wrapper and exact IMG eligibility.
 
 ## Find and replace
 

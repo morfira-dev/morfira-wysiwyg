@@ -10,6 +10,7 @@ export interface ImageFormValues {
 export type ImageFormMode = 'all' | 'edit';
 export interface ImageFormOptions {
   mode?: ImageFormMode;
+  keepAspectRatio?: boolean;
   initialValues?: Partial<ImageFormValues>;
   label?: string;
   onError?: (error: unknown) => void;

@@ -1,0 +1,35 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`proportional image drafts, one-step Update and Undo in ${english ? 'English playground' : 'Russian homepage'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  await page.getByLabel(t('Пример документа', 'Document sample'), { exact: true }).selectOption('images');
+  await page.getByRole('button', { name: t('Загрузить пример', 'Load sample'), exact: true }).click();
+  const image = content.locator('figure img');
+  await expect(image).toHaveAttribute('width', '160');
+  await image.click();
+  const panel = page.locator('details').filter({ has: page.locator('.mw-image-form') });
+  await panel.locator('summary').click();
+  const form = panel.locator('.mw-image-form');
+  const lock = form.getByLabel(t('Сохранять пропорции', 'Keep aspect ratio'), { exact: true });
+  await expect(lock).not.toBeChecked();
+  await lock.check();
+  const width = form.getByLabel(t('Ширина изображения', 'Image width'), { exact: true });
+  const height = form.getByLabel(t('Высота изображения', 'Image height'), { exact: true });
+  await width.fill('240');
+  await expect(height).toHaveValue('240');
+  await expect(image).toHaveAttribute('width', '160');
+  await expect(image).toHaveAttribute('height', '160');
+  await expect(panel).toContainText(t('Второе поле пересчитается', 'The other field follows'));
+  await form.getByRole('button', { name: t('Обновить изображение', 'Update image'), exact: true }).click();
+  await expect(image).toHaveAttribute('width', '240');
+  await expect(image).toHaveAttribute('height', '240');
+  await expect(content.locator('figcaption')).toHaveText(t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption'));
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await undo.click();
+  await expect(image).toHaveAttribute('width', '160');
+  await expect(image).toHaveAttribute('height', '160');
+  await expect(undo).toBeDisabled();
+});

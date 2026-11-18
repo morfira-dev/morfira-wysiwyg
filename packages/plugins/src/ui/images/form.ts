@@ -6,6 +6,7 @@ import { createFormSelection } from '../shared/selection.js';
 import { createFormInput, createUIButton, createUIElement, createUIStatus } from '../shared/elements.js';
 import { listenToUI } from '../shared/events.js';
 import { imageFormMessages } from './messages.js';
+import { createImageSizeLock } from './size-lock.js';
 import type { ImageFormController, ImageFormField, ImageFormMessageKey, ImageFormOptions, ImageFormValues } from './types.js';
 
 const fields: readonly ImageFormField[] = ['src', 'alt', 'width', 'height', 'caption'];
@@ -30,6 +31,8 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   if (editor.surface.contains(host)) throw new Error('Mount image forms outside persisted editor content.');
   const mode = options.mode === undefined ? 'all' : options.mode;
   if (mode !== 'all' && mode !== 'edit') throw new TypeError('Image form mode must be all or edit.');
+  if (options.keepAspectRatio !== undefined && typeof options.keepAspectRatio !== 'boolean') throw new TypeError('keepAspectRatio must be boolean.');
+  const keepAspectRatio = options.keepAspectRatio ?? false;
   const api = imageCommands(editor);
   const initial = checkedValues(options.initialValues ?? {});
   if (options.label !== undefined && typeof options.label !== 'string') throw new TypeError('Image form label must be a string.');
@@ -103,6 +106,7 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     remove.disabled = blocked || !selected || Boolean(upload);
     file.disabled = mode === 'edit' || blocked || Boolean(upload);
     cancel.disabled = !upload;
+    sizeLock.render(blocked || composing || !selected || Boolean(upload));
   };
   const renderLocale = () => {
     if (disposed) return;
@@ -114,6 +118,7 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     uploadText.textContent = text('ui.images.uploadFile');
     cancel.textContent = text('ui.images.cancelUpload');
     status.textContent = statusKey ? text(statusKey) : '';
+    sizeLock.render(editor.isReadOnly() || composing || !selected || Boolean(upload));
   };
   const setStatus = (key: ImageFormMessageKey | undefined, error = false) => {
     statusKey = key;
@@ -125,6 +130,8 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     try { options.onError?.(error); }
     catch { /* A diagnostic callback cannot interrupt form cleanup. */ }
   };
+  const sizeLock = createImageSizeLock(editor, fieldset, inputs, keepAspectRatio, report);
+  cleanups.push(sizeLock.destroy);
   const setValues = (values: Partial<ImageFormValues>) => {
     if (disposed) return;
     const checked = checkedValues(values);
@@ -144,6 +151,7 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
       }
     }
     selected = Boolean(image);
+    sizeLock.inspect(image, !focused);
     const figure = image?.parentElement?.localName === 'figure' && image.parentElement.querySelectorAll('img').length === 1 ? image.parentElement : undefined;
     const next = figure?.outerHTML ?? image?.outerHTML ?? '';
     if (image && next !== signature && !form.contains(document.activeElement)) {
@@ -159,8 +167,10 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     return { src: draft.src, alt: draft.alt, caption: draft.caption, ...(draft.width !== '' ? { width: Number(draft.width) } : {}), ...(draft.height !== '' ? { height: Number(draft.height) } : {}) };
   };
   const act = (operation: 'insert' | 'update' | 'remove') => {
-    if (disposed || editor.isReadOnly() || upload || (mode === 'edit' && (composing || operation === 'insert'))) return;
+    if (disposed || editor.isReadOnly() || upload || (composing && sizeLock.isLocked()) || (mode === 'edit' && (composing || operation === 'insert'))) return;
     const target = mode === 'edit' ? editTarget : undefined;
+    const locked = sizeLock.isLocked();
+    const resizeTarget = locked ? selectedImage(editor, selection.peek()) : undefined;
     const revision = apiRevision;
     const draft = getValues();
     if (mode === 'edit' && (!target || !ordinaryImage(target))) {
@@ -168,11 +178,13 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
       return;
     }
     let restored = false;
-    restoring = mode === 'edit';
+    restoring = mode === 'edit' || locked;
     try { restored = selection.restore(); }
     finally { restoring = false; }
     if (disposed) return;
-    if (!restored || editor.isReadOnly() || (mode === 'edit' && (composing || apiRevision !== revision
+    if (!restored || editor.isReadOnly() || (composing && sizeLock.isLocked())
+      || (locked && (apiRevision !== revision || !resizeTarget || selectedImage(editor, selection.peek()) !== resizeTarget))
+      || (mode === 'edit' && (composing || apiRevision !== revision
       || editTarget !== target || !target || !ordinaryImage(target) || selectedImage(editor, selection.peek()) !== target))) {
       setStatus('ui.images.selection', true);
       return;
@@ -180,13 +192,14 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     try {
       if (operation === 'insert') api.insert(value());
       else if (operation === 'update') {
-        const currentDraft = mode === 'edit' ? draft : getValues();
+        const currentDraft = mode === 'edit' || locked ? draft : getValues();
+        sizeLock.validate(selectedImage(editor, selection.peek()), currentDraft);
         const patch: ImagePatch = {
           ...value(currentDraft),
           width: currentDraft.width === '' ? null : Number(currentDraft.width),
           height: currentDraft.height === '' ? null : Number(currentDraft.height),
         };
-        if (mode === 'edit' && draft.caption === inspectedCaption) delete patch.caption;
+        if ((mode === 'edit' || sizeLock.isLocked()) && currentDraft.caption === inspectedCaption) delete patch.caption;
         api.update(patch);
       }
       else api.remove();
@@ -199,10 +212,11 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   };
   const insertImage = () => act('insert');
   const keyboard = (event: KeyboardEvent) => {
-    if (event.key !== 'Enter' || event.isComposing || event.keyCode === 229 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    if (event.defaultPrevented || event.key !== 'Enter' || event.isComposing || event.keyCode === 229 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
     if (!(event.target instanceof HTMLInputElement) || event.target.type === 'file') return;
     event.preventDefault();
     event.stopPropagation();
+    if (event.target.type === 'checkbox') return;
     act(mode === 'edit' ? 'update' : 'insert');
   };
   const updateImage = () => act('update');
@@ -247,6 +261,7 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   cleanups.push(editor.onSelectionChange(refresh));
   // Inspect synchronously before an application moves focus into a field.
   cleanups.push(listenToUI(editor.surface, 'click', refresh));
+  cleanups.push(listenToUI(editor.surface, 'load', refresh, true));
   cleanups.push(editor.subscribe((change) => {
     if (change.source === 'api') {
       apiRevision++;
@@ -254,6 +269,7 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
       editTarget = undefined;
       selected = false;
       signature = '';
+      sizeLock.reset();
       setStatus(undefined);
     }
     refresh();
@@ -266,13 +282,10 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   }));
   const compositionStart = () => { composing = true; updateControls(); };
   const compositionEnd = () => { composing = false; updateControls(); };
-  if (mode === 'edit') {
-    const stopComposition = [
-      listenToUI(editor.surface, 'compositionstart', compositionStart),
-      listenToUI(editor.surface, 'compositionend', compositionEnd),
-    ];
-    cleanups.push(...stopComposition);
-  }
+  cleanups.push(
+    listenToUI(editor.surface, 'compositionstart', compositionStart),
+    listenToUI(editor.surface, 'compositionend', compositionEnd),
+  );
   const destroy = () => {
     if (disposed) return;
     disposed = true;

@@ -142,6 +142,7 @@ export const ready = (editor: Editor) => {
   probe.showContextualImage = showContextualImage;
   probe.hideContextualImage = hideContextualImage;
   const tablesAPI = tableCommands(editor);
+  probe.images = imageCommands(editor);
   probe.tables = tablesAPI;
   probe.tableProperties = tablePropertyCommands(editor);
   const propertiesHost = document.createElement('div');

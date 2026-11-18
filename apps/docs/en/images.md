@@ -32,7 +32,29 @@ api.remove();
 
 `ImageValue` contains `src: string` and optional `alt`, `caption`, `width`, `height`. `ImagePatch` accepts partial metadata and `null` to remove dimensions. Dimensions are integers from 1 to 1000; captions are literal text up to 5000 characters; alt accepts up to 20000. URLs use http/https or relative references; data/blob/script URLs are rejected. Invalid options throw before document mutation.
 
-Update/remove require one selected image or a caret in its caption. Adding a caption to a legacy inline image promotes it to a figure while preserving surrounding text. Removing a simple image figure removes the image and caption; other content in a complex imported figure is retained. Captions can be edited in the document. Each command participates in undo/redo and respects read-only. Empty dimensions restore natural sizing; automatic aspect-ratio locking and drag resizing are not implemented.
+Update/remove require one selected image or a caret in its caption. Adding a caption to a legacy inline image promotes it to a figure while preserving surrounding text. Removing a simple image figure removes the image and caption; other content in a complex imported figure is retained. Captions can be edited in the document. Each command participates in undo/redo and respects read-only. With aspect-ratio locking disabled, empty dimensions restore natural sizing.
+
+## Proportional dimensions
+
+Select an image and provide **one** side. The other is calculated automatically:
+
+```ts
+import type { ImageResize } from '@morfira-dev/wysiwyg/plugins/images';
+
+const image = editor.surface.querySelector<HTMLImageElement>('img');
+if (image) {
+  api.select(image);
+  const size: ImageResize = { width: 320 };
+  api.resize(size); // for example, 640 × 480 → 320 × 240
+  api.resize({ height: 180 }); // 320 × 240 → 240 × 180
+}
+```
+
+`ImageResize` is `{ width: number; height?: never } | { height: number; width?: never }`. The command accepts exactly one width or height, an integer from 1 to 1000. It first uses the stored width/height pair, otherwise the selected image's already available natural dimensions. CSS sizing does not define the ratio; the command creates no preview, decodes no file and starts no separate image request. Unknown proportions, invalid arguments or a calculated side outside 1–1000 throw before document mutation. A fractional calculated side rounds to the nearest pixel, so repeated separately committed resizes do not guarantee exact preservation of the original rational ratio.
+
+One ordinary inline image or an image directly inside a simple single-image figure is supported, including list and merged-cell placement. Complex figures, foreign nodes and protected semantic ownership are rejected. Dimensions and pixel styles persist in HTML/JSON; rich caption children, the IMG and neighboring nodes survive. One change is one Undo step with restored selection. Identical dimensions add no history; read-only and active IME composition leave the document unchanged. Commands are unavailable after editor disposal.
+
+In the [ready form](/en/ui#preserving-proportions), enable **Keep aspect ratio**, edit width or height, and choose **Update image**. The linked field changes only in the draft until Apply. The checkbox defaults to off for compatibility; applications can pass `keepAspectRatio: true` when creating the form. This stage provides numeric/keyboard sizing; drag handles and cropping remain later work.
 
 ## Upload callback
 
@@ -89,7 +111,7 @@ This signal cancels only its associated upload. Aborting an old signal cannot in
 
 ## Demo and appearance
 
-On the [homepage](/en/#editor) and [playground](/en/playground), choose “Images”. Alt/dimension/caption fields populate on image selection; commands preserve selection through form focus. The demo upload returns a local logo instead of the selected file. **Files are not uploaded or stored**: this demonstrates the callback and cancellation rather than previewing file contents.
+On the [homepage](/en/#editor) and [playground](/en/playground), choose “Images”. Select the image, enable Keep aspect ratio and edit one side: its counterpart updates before Apply. Alt/dimension/caption fields populate on image selection; commands preserve selection through form focus. The demo upload returns a local logo instead of the selected file. **Files are not uploaded or stored**: this demonstrates the callback and cancellation rather than previewing file contents.
 
 ```css
 .my-editor {

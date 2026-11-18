@@ -1,6 +1,7 @@
 import type { Editor } from '@morfira-dev/wysiwyg';
 import type { LinkFormController } from '@morfira-dev/wysiwyg/ui/links';
 import type { ImageFormController } from '@morfira-dev/wysiwyg/ui/images';
+import type { ImageCommands } from '@morfira-dev/wysiwyg/plugins/images';
 import type { StandardEditorUIController } from '@morfira-dev/wysiwyg/ui/standard';
 import type { TableCommands, TableSelectionState } from '@morfira-dev/wysiwyg/plugins/tables';
 import type { ContextualTableUIController } from '@morfira-dev/wysiwyg/ui/contextual-table';
@@ -19,6 +20,7 @@ export interface ConsumerProbe {
   tableProperties?: TablePropertiesCommands;
   tablePropertiesForm?: TablePropertiesFormController;
   editor?: Editor;
+  images?: ImageCommands;
   changes: number;
   ui?: StandardEditorUIController;
   contextual?: ContextualToolbarController;

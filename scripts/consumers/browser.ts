@@ -202,12 +202,15 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await imageContext.locator('[data-mw-image-action="edit"]').click();
           await expect(imageContext.getByRole('button', { name: 'Insert image', exact: true })).toHaveCount(0);
           await expect(imageContext.locator('input[type="file"]')).toHaveCount(0);
+          await imageContext.getByLabel('Keep aspect ratio', { exact: true }).check();
           await imageContext.getByLabel('Alt', { exact: true }).fill('Contextual image');
           await imageContext.getByLabel('Image width', { exact: true }).fill('48');
+          await expect(imageContext.getByLabel('Image height', { exact: true })).toHaveValue('36');
           await imageContext.getByLabel('Image width', { exact: true }).press('Enter');
           await expect(content.locator('img')).toHaveCount(1);
           await expect(content.locator('img')).toHaveAttribute('alt', 'Contextual image');
           await expect(content.locator('img')).toHaveAttribute('width', '48');
+          await expect(content.locator('img')).toHaveAttribute('height', '36');
           assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeImageContext.changes + 1, `${adapter}: contextual image Enter updates once without insertion`);
           await page.evaluate(() => {
             window.morfiraConsumer.hideContextualImage!();
@@ -215,6 +218,15 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           });
           assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeImageContext.html, `${adapter}: installed image update undoes once`);
           await expect(imageContext).toHaveCount(0);
+          await page.evaluate(() => {
+            const { editor, images } = window.morfiraConsumer;
+            images!.select(editor!.surface.querySelector('img')!);
+            images!.resize({ height: 18 });
+          });
+          await expect(content.locator('img')).toHaveAttribute('width', '24');
+          await expect(content.locator('img')).toHaveAttribute('height', '18');
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeImageContext.html, `${adapter}: installed proportional resize undoes once`);
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           await expect(content.locator('img')).toHaveCount(0);
           await expect(content).toHaveText('Initial text');
