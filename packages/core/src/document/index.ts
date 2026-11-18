@@ -33,11 +33,13 @@ const safeStyle = (tag: DocumentTag, value: string): string => {
     const length = /^(?:\d{1,4}(?:\.\d{1,3})?)(?:px|%|em|rem)$/;
     const valid = ['color', 'background-color', 'border-color'].includes(property) ? color.test(content)
       : ['width', 'height', 'font-size'].includes(property) ? length.test(content)
-        : property === 'text-align' ? ['left', 'center', 'right', 'justify'].includes(content)
-          : property === 'font-weight' ? /^(bold|normal|[1-9]00)$/.test(content)
-            : property === 'font-style' ? ['italic', 'normal'].includes(content)
-              : property === 'text-decoration' ? /^(underline|line-through|none)$/.test(content)
-                : false;
+        : property === 'vertical-align' ? ['td', 'th'].includes(tag) && ['top', 'middle', 'bottom'].includes(content)
+          : property === 'margin-left' || property === 'margin-right' ? tag === 'table' && ['0px', 'auto'].includes(content)
+            : property === 'text-align' ? ['left', 'center', 'right', 'justify'].includes(content)
+              : property === 'font-weight' ? /^(bold|normal|[1-9]00)$/.test(content)
+                : property === 'font-style' ? ['italic', 'normal'].includes(content)
+                  : property === 'text-decoration' ? /^(underline|line-through|none)$/.test(content)
+                    : false;
     if (valid)
       result.push(`${property}: ${content}`);
   }

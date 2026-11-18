@@ -321,3 +321,6 @@ The explicit [contextual table toolbar](/en/contextual-tables) adds row/column i
 
 
 Optional [table size picker](/en/table-picker) uses an explicit factory and CSS import; [image clipboard/drop input](/en/image-input) delegates to the application-owned images upload callback. Neither changes preset defaults.
+
+
+[Table and cell properties](/en/table-properties) use independent `/plugins/table-properties` and `/ui/table-properties` entries: table width/placement and selected-cell background/border color/vertical alignment. The form applies only dirty fields in one Undo, uses existing `/ui/forms.css`, and is outside preset defaults.

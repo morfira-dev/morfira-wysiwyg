@@ -21,7 +21,7 @@ export const createFormSelection = (editor: Editor): FormSelection => {
     backward = !range.collapsed && selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset;
     blocked = false;
   };
-  const restore = (): boolean => {
+  const restore = (acceptFocus?: () => boolean): boolean => {
     if (disposed) return false;
     if (saved && !valid(saved)) saved = undefined;
     if (!saved) {
@@ -36,7 +36,7 @@ export const createFormSelection = (editor: Editor): FormSelection => {
     const reverse = backward;
     const revision = apiRevision;
     editor.focus();
-    if (disposed || apiRevision !== revision || !saved || !valid(range)) return false;
+    if (disposed || apiRevision !== revision || !saved || !valid(range) || acceptFocus?.() === false) return false;
     const selection = document.getSelection();
     if (!selection) return false;
     selection.removeAllRanges();

@@ -12,7 +12,12 @@ import type { FontCommands } from '@morfira-dev/wysiwyg/plugins/fonts';
 import type { ListPropertyCommands } from '@morfira-dev/wysiwyg/plugins/list-properties';
 import type { TextDirectionCommands } from '@morfira-dev/wysiwyg/plugins/text-direction';
 
+import type { TablePropertiesCommands } from '@morfira-dev/wysiwyg/plugins/table-properties';
+import type { TablePropertiesFormController } from '@morfira-dev/wysiwyg/ui/table-properties';
+
 export interface ConsumerProbe {
+  tableProperties?: TablePropertiesCommands;
+  tablePropertiesForm?: TablePropertiesFormController;
   editor?: Editor;
   changes: number;
   ui?: StandardEditorUIController;

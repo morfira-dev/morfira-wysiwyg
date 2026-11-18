@@ -153,9 +153,11 @@ Presets do not own editor lifetime. Destroying UI leaves its editor usable; dest
 
 Measure headless presets, UI and the final deduplicated closure containing core, plugins, forms and required CSS separately. Keep framework runtimes, source maps, declarations, extra locale alternatives and fonts separate from editor JS.
 
-The build enforces measured headless and ready profiles: Standard — at most 65000 gzip JS bytes; Extended — 110000 gzip JS bytes. The user clarified that the original limits mean gzip; these stricter existing profile gzip limits remain, while the duplicate 200000/350000 raw JS guards are removed. Raw size remains a separately reported measurement. Each profile is limited to 20000 minified CSS bytes. Minimal is measured separately without an additional preset guard. Actual raw/gzip/Brotli/CSS sizes are saved in `size-report.json`; framework runtimes are excluded from these profiles.
+The build enforces measured headless and ready profiles: Standard — at most 80000 gzip JS bytes; Extended — 110000 gzip JS bytes. On 2026-11-18 the user explicitly raised Standard from 65000 to 80000 bytes: the last measured largest selection of 64602 bytes has 15398 bytes of reserve instead of 398. This permits useful everyday features and maintainable code; avoiding unnecessary runtime dependencies, selective imports and tree-shaking remain mandatory. The original core 200000-byte and optional-entry 150000-byte gzip limits, adapter guards and CSS limits are unchanged; duplicate profile raw JS guards of 200000/350000 remain retired. Raw size remains a separately reported measurement. Each profile is limited to 20000 minified CSS bytes. Minimal is measured separately without an additional preset guard. Actual raw/gzip/Brotli/CSS sizes are saved in `size-report.json`; framework runtimes are excluded from these profiles.
 
 ### Current optimization measurements
+
+The dated 2026-11-16 measurement below retains the 65000-byte guard used at that time. The 2026-11-18 policy change does not recalculate those results; new actual sizes are reported after building.
 
 The 2026-11-16 build preserves the existing factories, plugins, features and test set. The largest standard selection decreased from **64999 to 64482 gzip JS bytes**: **517 bytes saved**, leaving **518 bytes** below 65000. The 2000-byte reserve target is **not met yet**. Production build and compression settings are unchanged; no new dependency was retained. CSS is unchanged.
 

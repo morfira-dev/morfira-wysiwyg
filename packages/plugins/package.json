@@ -138,7 +138,15 @@
       "types": "./dist/ui/contextual-table/index.d.ts",
       "import": "./dist/ui/contextual-table.js"
     },
-    "./ui/contextual-table.css": "./dist/ui/contextual-table.css"
+    "./ui/contextual-table.css": "./dist/ui/contextual-table.css",
+    "./table-properties": {
+      "types": "./dist/table-properties/index.d.ts",
+      "import": "./dist/table-properties.js"
+    },
+    "./ui/table-properties": {
+      "types": "./dist/ui/table-properties/index.d.ts",
+      "import": "./dist/ui/table-properties.js"
+    }
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.9.1"

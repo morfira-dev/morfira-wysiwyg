@@ -24,3 +24,6 @@ features:
 
 
 The full homepage and playground explicitly install the optional [table size picker](/en/table-picker) and [image clipboard/drop input](/en/image-input). Use the Table toolbar button for the 8 × 8 picker, or paste/drop one raster file into ordinary text. The local upload callback returns the logo; it does not send or store the file.
+
+
+The Tables section also installs the ready [table and cell properties form](/en/table-properties): select a cell or spanning rectangle, then change width, placement, colors and vertical alignment. Apply edits only dirty fields as one Undo operation.

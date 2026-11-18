@@ -160,7 +160,15 @@
       "types": "./dist/ui/contextual-table.d.ts",
       "import": "./dist/ui/contextual-table.js"
     },
-    "./ui/contextual-table.css": "./dist/ui/contextual-table.css"
+    "./ui/contextual-table.css": "./dist/ui/contextual-table.css",
+    "./plugins/table-properties": {
+      "types": "./dist/plugins/table-properties.d.ts",
+      "import": "./dist/plugins/table-properties.js"
+    },
+    "./ui/table-properties": {
+      "types": "./dist/ui/table-properties.d.ts",
+      "import": "./dist/ui/table-properties.js"
+    }
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.9.1",

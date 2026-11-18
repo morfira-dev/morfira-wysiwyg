@@ -1,6 +1,6 @@
 export interface FormSelection {
   capture(): void;
-  restore(): boolean;
+  restore(acceptFocus?: () => boolean): boolean;
   peek(): Range | undefined;
   destroy(): void;
 }

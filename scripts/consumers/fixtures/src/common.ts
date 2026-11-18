@@ -5,6 +5,8 @@ import { createExtendedPreset } from '@morfira-dev/wysiwyg/presets/extended';
 import { createTablePicker } from '@morfira-dev/wysiwyg/ui/table-picker';
 import '@morfira-dev/wysiwyg/ui/table-picker.css';
 import { imageInput } from '@morfira-dev/wysiwyg/plugins/image-input';
+import { createTablePropertiesForm } from '@morfira-dev/wysiwyg/ui/table-properties';
+import { tableProperties, tablePropertyCommands } from '@morfira-dev/wysiwyg/plugins/table-properties';
 import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
 import { createContextualTableUI } from '@morfira-dev/wysiwyg/ui/contextual-table';
 import { getTableSelection, tableCommands } from '@morfira-dev/wysiwyg/plugins/tables';
@@ -59,7 +61,7 @@ const sdkPlugin: EditorPlugin = {
   }),
 };
 export const plugins: EditorPlugin[] = createExtendedPreset({
-  plugins: [sdkPlugin, checklists(), fonts(), listProperties(), textDirection(), imageInput()],
+  plugins: [tableProperties(), sdkPlugin, checklists(), fonts(), listProperties(), textDirection(), imageInput()],
   images: { upload: async () => ({ src: '/consumer-image.svg', alt: 'Clipboard image' }) },
   mentions: { provide: () => [{ id: 'anna', label: 'Anna' }], debounceMs: 0 },
   slash: {
@@ -141,6 +143,12 @@ export const ready = (editor: Editor) => {
   probe.hideContextualImage = hideContextualImage;
   const tablesAPI = tableCommands(editor);
   probe.tables = tablesAPI;
+  probe.tableProperties = tablePropertyCommands(editor);
+  const propertiesHost = document.createElement('div');
+  propertiesHost.dataset.consumerTableProperties = '';
+  document.body.append(propertiesHost);
+  const propertiesForm = createTablePropertiesForm(propertiesHost, editor, { label: 'Consumer table properties' });
+  probe.tablePropertiesForm = propertiesForm;
   const readTableSelection = () => getTableSelection(editor);
   probe.getTableSelection = readTableSelection;
   let contextualTable: ReturnType<typeof createContextualTableUI> | undefined;
@@ -210,6 +218,10 @@ export const ready = (editor: Editor) => {
     hideContextualLink();
     hideContextualImage();
     hideContextualTable();
+    propertiesForm.destroy();
+    propertiesHost.remove();
+    delete probe.tableProperties;
+    delete probe.tablePropertiesForm;
     if (probe.tables === tablesAPI) delete probe.tables;
     if (probe.getTableSelection === readTableSelection) delete probe.getTableSelection;
     if (probe.showContextualTable === showContextualTable) delete probe.showContextualTable;

@@ -25,6 +25,17 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await readyUI.getByRole('button', { name: 'Insert table: 2 × 3', exact: true }).click();
           await expect(content.locator('td')).toHaveCount(6);
           assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeInput.changes + 1, `${adapter}: picker insertion emits one update`);
+          const beforeProperties = await page.evaluate(() => window.morfiraConsumer.editor!.getHTML());
+          await page.evaluate(() => {
+            const form = window.morfiraConsumer.tablePropertiesForm!;
+            form.refresh();
+            form.setValues({ width: '60%', alignment: 'center', cellVerticalAlign: 'middle' });
+          });
+          await page.getByRole('form', { name: 'Consumer table properties', exact: true }).getByRole('button', { name: 'Apply properties', exact: true }).click();
+          assert.deepEqual(await content.locator('table').evaluate((table) => ({ width: table.style.width, left: table.style.marginLeft, right: table.style.marginRight, vertical: table.querySelector('td')!.style.verticalAlign })), { width: '60%', left: 'auto', right: 'auto', vertical: 'middle' }, `${adapter}: packed form applies one atomic table/cell patch`);
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeInput.changes + 2, `${adapter}: property patch emits one controlled update`);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeProperties, `${adapter}: property patch undoes independently of insertion`);
           await page.evaluate(() => {
             const editor = window.morfiraConsumer.editor!;
             editor.undo();
@@ -38,9 +49,10 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           });
           await expect(content.locator('img')).toHaveAttribute('alt', 'Clipboard image');
           await expect(content).not.toContainText('Untrusted fallback');
-          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeInput.changes + 3, `${adapter}: upload and preceding undo emit one update each`);
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeInput.changes + 5, `${adapter}: upload and preceding property/insertion undo emit one update each`);
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeInput.html, `${adapter}: packed clipboard image undoes once`);
+          await content.scrollIntoViewIfNeeded();
           const beforeFonts = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
           await page.evaluate(() => {
             const { editor, fonts } = window.morfiraConsumer;
@@ -160,7 +172,7 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           const links = page.getByRole('form', { name: 'Consumer links', exact: true });
           const images = page.getByRole('form', { name: 'Consumer images', exact: true });
           const search = page.getByRole('form', { name: 'Consumer search', exact: true });
-          await expect(page.locator('.mw-form')).toHaveCount(3);
+          await expect(page.locator('.mw-form')).toHaveCount(4);
           await page.evaluate(() => {
             const { editor, forms } = window.morfiraConsumer;
             editor!.focus();

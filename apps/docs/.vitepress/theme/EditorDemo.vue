@@ -16,6 +16,7 @@ import type { ContextualLinkUIController } from '@morfira-dev/wysiwyg/ui/context
 import type { ContextualToolbarController } from '@morfira-dev/wysiwyg/ui/contextual';
 import type { LinkFormController } from '@morfira-dev/wysiwyg/ui/links';
 import type { ImageFormController } from '@morfira-dev/wysiwyg/ui/images';
+import type { TablePropertiesFormController } from '@morfira-dev/wysiwyg/ui/table-properties';
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
 import type { TableCommands, TableClipboardData } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/style.css';
@@ -57,9 +58,11 @@ let mountEditorUI: (() => void) | undefined;
 const host = ref<HTMLElement>(); const toolbar = ref<HTMLElement>();
 const linkFormHost = ref<HTMLElement>();
 const imageFormHost = ref<HTMLElement>();
+const tablePropertiesFormHost = ref<HTMLElement>();
 const searchFormHost = ref<HTMLElement>();
 let linkForm: LinkFormController | undefined;
 let imageForm: ImageFormController | undefined;
+let tablePropertiesForm: TablePropertiesFormController | undefined;
 let searchForm: SearchFormController | undefined;
 const dark = ref(false); const readOnly = ref(false); const ready = ref(false);
 const output = ref(''); const outputFormat = ref<'html' | 'json'>('html');
@@ -112,7 +115,7 @@ const listBlockCaret = ref<'start' | 'middle' | 'end'>('middle');
 const listBodyMode = ref<'inline' | 'paragraph' | 'heading' | 'mixed' | 'multiblock'>('inline');
 const listBackspaceScenario = ref<'join' | 'root' | 'nested' | 'nested-followed'>('join');
 const rows = ref(3); const columns = ref(3); const fromRow = ref(1); const fromColumn = ref(1); const toRow = ref(1); const toColumn = ref(2);
-const cellColor = ref('#eeeaff'); const borderColor = ref('#6658e8'); const widthColumn = ref(1); const widthValue = ref(180);
+const widthColumn = ref(1); const widthValue = ref(180);
 const buffer = ref('Название\tЗначение\nЯдро\tTypeScript\nЛицензия\tMIT'); const bufferFormat = ref<'text' | 'html'>('text');
 const accent = ref('#6658e8'); const fontSize = ref(16); const padding = ref(28); const radius = ref(12);
 const themeStyle = computed(() => ({ '--mw-accent': accent.value, '--mw-font-size': `${fontSize.value}px`, '--mw-padding': `${padding.value}px`, '--mw-radius': `${radius.value}px` }));
@@ -616,6 +619,8 @@ onMounted(async () => {
     { imageCommands },
     { createTablePicker },
     { imageInput },
+    { tableProperties },
+    { createTablePropertiesForm },
   ] = await Promise.all([
     import('@morfira-dev/wysiwyg'),
     import('@morfira-dev/wysiwyg/plugins/tables'),
@@ -641,6 +646,8 @@ onMounted(async () => {
     import('@morfira-dev/wysiwyg/plugins/images'),
     import('@morfira-dev/wysiwyg/ui/table-picker'),
     import('@morfira-dev/wysiwyg/plugins/image-input'),
+    import('@morfira-dev/wysiwyg/plugins/table-properties'),
+    import('@morfira-dev/wysiwyg/ui/table-properties'),
   ]);
   if (cancelled) return;
   const common = {
@@ -651,7 +658,7 @@ onMounted(async () => {
   };
   const preset = props.full ? createExtendedPreset({
     ...common,
-    plugins: [imageInput({ onError: (error) => notify(error instanceof Error ? error.message : String(error), true) }), checklists(), listProperties(), textDirection(), fonts({
+    plugins: [tableProperties(), imageInput({ onError: (error) => notify(error instanceof Error ? error.message : String(error), true) }), checklists(), listProperties(), textDirection(), fonts({
       families: fontFamilies.map((option) => ({ id: option.id, label: t(option.ru, option.en), family: option.family })),
       sizes: fontSizes,
     })],
@@ -678,6 +685,9 @@ onMounted(async () => {
     });
     imageForm = createImageForm(imageFormHost.value!, editor, {
       initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64', height: '', caption: '' },
+    });
+    tablePropertiesForm = createTablePropertiesForm(tablePropertiesFormHost.value!, editor, {
+      onError: (error) => notify(error instanceof Error ? error.message : String(error), true),
     });
     searchForm = createSearchForm(searchFormHost.value!, editor, {
       initialValues: { query: 'Morfira', replacement: 'Morfira Studio', caseSensitive: false, wholeWord: false },
@@ -739,6 +749,7 @@ onBeforeUnmount(() => {
   cancelled = true;
   linkForm?.destroy();
   imageForm?.destroy();
+  tablePropertiesForm?.destroy();
   searchForm?.destroy();
   unmention?.();
   unslash?.();
@@ -804,9 +815,12 @@ onBeforeUnmount(() => {
           <hr><p class="lab-hint">{{ t('Прямоугольное выделение: номера с 1.', 'Rectangle selection: positions start at 1.') }}</p>
           <div class="lab-fields"><label>{{ t('От строки', 'From row') }}<input v-model.number="fromRow" type="number" min="1"></label><label>{{ t('От столбца', 'From column') }}<input v-model.number="fromColumn" type="number" min="1"></label><label>{{ t('До строки', 'To row') }}<input v-model.number="toRow" type="number" min="1"></label><label>{{ t('До столбца', 'To column') }}<input v-model.number="toColumn" type="number" min="1"></label></div>
           <button @click="tableRun((api) => api.select({ row: fromRow - 1, column: fromColumn - 1 }, { row: toRow - 1, column: toColumn - 1 }), false)">{{ t('Выделить диапазон', 'Select range') }}</button>
-          <div class="lab-fields"><label>{{ t('Фон ячеек', 'Cell background') }}<input v-model="cellColor" type="color" @change="tableRun((api) => api.background(cellColor))"></label><label>{{ t('Границы', 'Cell borders') }}<input v-model="borderColor" type="color" @change="tableRun((api) => api.border(borderColor))"></label><label>{{ t('Номер столбца', 'Column number') }}<input v-model.number="widthColumn" type="number" min="1"></label><label>{{ t('Ширина, px', 'Width, px') }}<input v-model.number="widthValue" type="number" min="40" max="4000"></label></div>
+          <div class="lab-fields"><label>{{ t('Номер столбца', 'Column number') }}<input v-model.number="widthColumn" type="number" min="1"></label><label>{{ t('Ширина, px', 'Width, px') }}<input v-model.number="widthValue" type="number" min="40" max="4000"></label></div>
           <button @click="tableRun((api) => api.columnWidth(widthColumn - 1, widthValue))">{{ t('Применить ширину', 'Apply width') }}</button>
-        </fieldset></details>
+        </fieldset>
+        <div ref="tablePropertiesFormHost" class="demo-table-properties-host"></div>
+        <p class="lab-hint">{{ t('Свойства: кликните в ячейку или выделите прямоугольник. Меняются только отредактированные поля; один Apply — один Undo. Ширина и положение относятся к таблице, цвета и вертикальное выравнивание — к выбранным ячейкам.', 'Properties: click a cell or select a rectangle. Only edited fields change; one Apply is one Undo. Width and placement belong to the table; colors and vertical alignment belong to selected cells.') }}</p>
+        </details>
         <details class="lab-paste"><summary>{{ t('Вставка между блоками', 'Paste between blocks') }}</summary><fieldset :disabled="!ready || readOnly">
           <p class="lab-hint">{{ t('Загрузи одноимённый пример в меню «Документ», выбери область и выдели пример. Вставка заменяет выделение; Undo возвращает исходный текст и направление выделения. Также можно использовать обычный Ctrl/Cmd+V в редакторе.', 'Load this sample from the Document menu, choose an area and select the sample. Insertion replaces the selection; Undo restores its original text and direction. You can also use ordinary Ctrl/Cmd+V in the editor.') }}</p>
           <label>{{ t('Область вставки', 'Paste area') }}<select v-model="pasteTarget" :aria-label="t('Область вставки', 'Paste area')"><option value="root">{{ t('Основной текст', 'Main text') }}</option><option value="quote">{{ t('Цитата', 'Quote') }}</option><option value="cell">{{ t('Объединённая ячейка', 'Merged cell') }}</option></select></label>
@@ -894,7 +908,7 @@ onBeforeUnmount(() => {
           <button @click="selectContextualTable(true)">{{ t('Выделить область 2 × 2', 'Select 2 × 2 region') }}</button>
           <button @click="selectContextualTable()">{{ t('Вернуть курсор в первую ячейку', 'Return caret to first cell') }}</button>
           <p class="lab-hint">{{ t('Alpha занимает две строки. Область 2 × 2 включает три реальные ячейки; объединение сохраняет Alpha, Beta и Gamma и их оформление. Разделение оставляет содержимое в исходной ячейке. Одна команда — одна отмена. Строки и столбцы ограничены 100; недоступные объединение/разделение отключены. Alt+F10 переводит фокус в панель, Escape возвращает курсор. Выделение текста внутри ячейки открывает текстовую панель; табличная доступна через Alt+F10. Ссылки и изображения используют свои панели.', 'Alpha spans two rows. The 2 × 2 region contains three real cells; merging preserves Alpha, Beta, Gamma and their formatting. Splitting keeps content in the origin cell. One command is one Undo. Rows and columns are bounded at 100; unavailable merge/split are disabled. Alt+F10 enters the toolbar; Escape returns the caret. Text selected inside one cell uses text formatting; Alt+F10 explicitly opens table actions. Links and images use their own panels.') }}</p>
-          <p class="lab-hint">{{ t('Переключатель создаёт и уничтожает только необязательный UI, сохраняя документ и историю. Пресеты его не подключают. Вложенные/неполные таблицы и таблицы с семантическими узлами не поддерживаются этим контекстным модулем. Свойства ячеек, caption и resize не входят в этот этап.', 'The switch creates/destroys only optional UI, preserving document and history. Presets do not install it. Nested/incomplete tables and tables containing semantic nodes are unsupported in this contextual module. Cell properties, captions and resize are outside this slice.') }}</p>
+          <p class="lab-hint">{{ t('Переключатель создаёт и уничтожает только необязательный UI, сохраняя документ и историю. Пресеты его не подключают. Вложенные/неполные таблицы и таблицы с семантическими узлами не поддерживаются этим контекстным модулем. Свойства доступны в отдельной форме раздела «Таблицы»; caption и resize не входят в этот контекстный модуль.', 'The switch creates/destroys only optional UI, preserving document and history. Presets do not install it. Nested/incomplete tables and tables containing semantic nodes are unsupported in this contextual module. Properties are provided by a separate form in the Tables section; captions and resize are outside this contextual module.') }}</p>
         </fieldset></details>
         <details class="lab-contextual-image"><summary>{{ t('Контекстные свойства изображения', 'Contextual image properties') }}</summary><fieldset :disabled="!ready">
           <button :disabled="readOnly" @click="loadContextualImageSample">{{ t('Загрузить пример свойств изображения', 'Load image properties sample') }}</button>

@@ -1,4 +1,38 @@
-# Verification record — table picker and image input
+# Verification record — table/cell properties
+
+## Table/cell properties and revised standard budget — 2026-11-18
+
+Implementation working tree after 5472626, under [table-properties.md](table-properties.md). Explicit `/plugins/table-properties` and `/ui/table-properties` add atomic width/physical placement and selected-cell background/border/vertical-alignment changes. Presets/default UI do not import these modules. Core adds only TABLE 0px/auto margins and TD/TH top/middle/bottom style persistence; schema version 1, no runtime dependencies or external resources. Existing context UI reuses feature-owned shared table-range predicates without public path changes. The shared form selection helper adds an optional internal post-focus acceptance guard; omitted guards preserve existing form behavior.
+
+The user explicitly raised the standard guard from 65000 to **80000 gzip JS bytes** on 2026-11-18. AGENTS, skill, size script, active specifications and RU/EN docs agree; historical 65000 results remain historical. Extended/core/optional/adapter/CSS limits and compression settings are unchanged. This is product reserve for useful functionality and maintainability, not an optimization result or permission to add unnecessary dependencies. The newly introduced form's own guard is 20000 gzip bytes for its complete shipped closure (shared table/query/property code included); headless properties is 15000. The first unmeasured 15000 form draft guard caught a 15006-byte closure, while the selected-profile increment was about 4750 bytes; the revised guard avoids byte-chasing against that draft. Final measurements are below.
+
+| Validation | Actual result |
+| --- | --- |
+| Final static chain | Passed project rules, consumer-toolchain tests, package/declaration builds, archive exports, selective-import ownership, sizes and TS/Svelte/Vue diagnostics. The aggregate check repeats this chain before its browser stage |
+| Aggregate final `pnpm run check` | **3864/3864 passed**, 1288 cases × Chromium/Firefox/WebKit, **23.9 minutes**, two workers, fresh task-owned server 5186, exit 0; final static chain included |
+| New plugin/codec focused coverage | 36/36 headless executions passed in the initial three-browser run; UI corrections followed as recorded below |
+| Final UI WebKit regression | 7/7 passed, 5.6s, including direct DOM focus retarget, API replacement after composition, independent editor destruction and pointer Apply |
+| New built-site examples | 2/2 passed, 4.6s; Russian 390px merged rectangle/atomic patch/Undo and English mixed colors/dirty width/Enter/readonly |
+| Entire final built-site suite | **183/183 passed**, **2.7 minutes**, final built RU/EN site on task-owned preview 4175, exit 0 |
+| Installed tarball consumers | 15/15 default plus 3/3 Angular 22 passed in all three engines; Angular 22 used Node 24.16.0. Existing adapter scenarios now include actual form Apply, table/cell styles, one controlled change and independent Undo |
+
+The initial focused run had 36 passed / 21 UI failures; a too-early native-range check prevented restoring the saved cell Range. The revised run had 52 passed / 5 WebKit failures. Final corrections use a post-focus/pre-restore target guard and retain field focus on pointer Apply in WebKit, while checking actual cells/revision/readonly/IME again before commands. Review also found a mixed-select reset ambiguity and an API-replacement composition tail; both have regressions within the existing seven UI cases. A second-editor fixture now explicitly uses English instead of relying on the default Russian locale. No timeout or assertion was weakened and no unique test was removed.
+
+The first new RU site case exposed implicit-label lookup including SELECT option text; native controls now have explicit localized aria-labels. A debug-only runtime build had removed declarations before the first consumer attempt; the full build restored them. All 125 runtime/CSS outputs were SHA-256 identical before and after declaration restoration and again after the final aggregate check, so the tested site and consumers use the same final runtime. A later consumer fixture scrolled to the new form and left the editor outside the viewport before an existing contextual-toolbar assertion; scrolling the editor back into view preserves the intended assertion. Passing consumer results above are after these corrections.
+
+Current decimal bytes, shared JS once per selected profile, frameworks/maps/declarations excluded. Independent entry closures share existing table code and must not be added arithmetically to profiles. The form uses existing forms.css, with no new stylesheet:
+
+| Selection | JS minified | JS gzip | JS Brotli | Selected CSS minified |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 89310 | 27690 | 24363 | 3293 |
+| Table properties entry | 28122 | 10247 | 9164 | 0 |
+| Properties form closure | 41288 | 15249 | 13563 | 0 |
+| Standard ready | 200795 | 59617 | 51103 | 11504 |
+| Standard properties ready | 218514 | 64592 | 55079 | 11504 |
+| Largest measured standard | 216970 | 64696 | 54947 | 11974 |
+| Extended properties ready | 239701 | 70754 | 60164 | 12700 |
+
+Standard properties ready adds 4975 gzip JS bytes to standard ready. The largest measured standard profile has 15304 bytes below its new 80000 guard. Core adds 162 minified / 53 gzip / 82 Brotli bytes relative to 5472626, but remains above its separate 80000-byte raw soft target. No new runtime-performance benchmark, full accessibility/device IME/system clipboard certification, Office fidelity, header/caption commands or table-metadata rectangle clipboard preservation is claimed. This record describes the locally validated editor implementation before its commit. No push, manual package publication or documentation deployment was performed. The previous push's Release run 44120782836 is independently verified successful; that is not CI evidence for this unpushed code.
 
 ## Optional table picker and raster input — 2026-11-17
 

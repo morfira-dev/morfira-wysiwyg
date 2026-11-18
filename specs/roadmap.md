@@ -43,6 +43,8 @@ Standalone `autolink()` is implemented locally through `/plugins/autolink` for n
 
 ## Size profiles and comparison rules
 
+On 2026-11-18 the user approved increasing the standard JS guard from 65000 to 80000 gzip bytes to retain useful feature headroom. At the last measured 64602-byte largest selection this provides 15398 bytes of reserve instead of 398. Extended, core, optional-entry, adapter and CSS limits, zero-runtime-dependency/tree-shaking rules and compression/accounting remain unchanged. See editor-presets.md P4. Historical measurements and their original guards below are retained.
+
 All sizes below are decimal bytes. Raw means minified JavaScript/CSS, not package archive size. Measure gzip and Brotli separately and count each shared chunk once per selected closure. Framework runtimes, source maps and declarations are excluded; fonts and additional locale alternatives are separate resources.
 
 | Profile | Target or guard | Status |
@@ -51,7 +53,7 @@ All sizes below are decimal bytes. Raw means minified JavaScript/CSS, not packag
 | Core | 200000 gzip JS bytes | User-directed product hard guard |
 | Table / optional entry | 150000 gzip JS bytes | User-directed product hard guard |
 | Each adapter | 10000 raw JS bytes | Existing enforced hard guard, framework excluded |
-| Standard editor with selected plugins/UI | 65000 gzip JS bytes | Active measured-profile guard, headless and ready |
+| Standard editor with selected plugins/UI | 80000 gzip JS bytes | Active measured-profile guard, headless and ready |
 | Extended selection | 110000 gzip JS bytes | Active measured-profile guard, headless and ready |
 | Standard/extended CSS | 20000 raw CSS bytes | Active selected-profile guard, headless and ready |
 
@@ -76,8 +78,8 @@ The explicit opt-in `/ui/contextual-table` module follows [contextual-tables.md]
 Current U3e acceptance: affected 162/162, built bilingual docs 177/177 and installed consumers 18/18 passed. The complete local check ran all 3747 executions: 3745 passed and two unchanged Firefox Angular fixtures timed out under concurrent load; a separate complete Angular repeat then passed 18/18 without code/timeout changes. This is staged coverage rather than a single all-green full check. The selected standard-table profile is 63372 gzip JS bytes; added table-context CSS is 575 gzip bytes. Full measurements and limits remain in verification-backlog.md.
 
 
-### Standard bundle optimization — 2026-11-16
+### Historical standard bundle optimization — 2026-11-16
 
-The behavior-preserving structural slice follows bundle-optimization.md. Current generated largest standard JS is 64482 gzip bytes, down 517, with 518 bytes reserve under the unchanged 65000 guard. Standard ready is 59394 gzip bytes. No feature, test, dependency or safety check was removed; minifier/charset/compression experiments were rejected rather than changing the measurement. The original 2000-byte reserve aim is not achieved. Report completed validation from verification-backlog.md; the latest user instruction is to commit/push this slice and stop until resumed.
+The behavior-preserving structural slice follows bundle-optimization.md. That build’s largest standard JS is 64482 gzip bytes, down 517, with 518 bytes reserve under the unchanged 65000 guard. Standard ready is 59394 gzip bytes. No feature, test, dependency or safety check was removed; minifier/charset/compression experiments were rejected rather than changing the measurement. The original 2000-byte reserve aim is not achieved. Report completed validation from verification-backlog.md; this completed historical slice does not change the current roadmap or authorize new Git operations.
 
 Final local validation for this optimization: complete check 3747/3747 passed in one run, installed consumers 18/18 passed including Angular 22, and site coverage completed as 159 initial passes plus 18/18 successful failed-case repeats after the prolonged pause. No single all-green complete site run is claimed. The release-metadata-only fast-forward and rebuild preserved all 113 runtime/style outputs byte-for-byte. Details are in verification-backlog.md.
