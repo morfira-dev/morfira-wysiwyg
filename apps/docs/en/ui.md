@@ -120,6 +120,45 @@ const editForm = createImageForm(formHost, editor, { mode });
 
 Edits recheck the same actual IMG after restoring the saved native Range. API replacement invalidates the old draft until a fresh editor selection; locale/field focus preserve drafts. Blank dimensions remove them with aspect-ratio locking off; explicit dimensions are integers 1–1000 and invalid metadata fails atomically. An unchanged caption is omitted from the patch so unrelated metadata edits preserve its rich children; an explicitly changed caption remains literal text. See [contextual image properties](/en/contextual-images) for the optional floating wrapper and exact IMG eligibility.
 
+## Image resize handles
+
+The independent `createImageResizeUI` displays four proportional handles around an exactly selected IMG. This module is not a form and is not installed automatically by presets or `createImageForm`. It requires `images()`:
+
+```ts
+import { createImageResizeUI } from '@morfira-dev/wysiwyg/ui/image-resize';
+import type { ImageResizeUIController, ImageResizeUIOptions } from '@morfira-dev/wysiwyg/ui/image-resize';
+import '@morfira-dev/wysiwyg/ui/image-resize.css';
+
+const resizeHost = document.createElement('div');
+document.body.append(resizeHost);
+const options: ImageResizeUIOptions = {
+  onError: (error) => console.error('Image resize failed', error),
+};
+const resizeUI: ImageResizeUIController = createImageResizeUI(resizeHost, editor, options);
+const disposeResize = () => {
+  resizeUI.destroy();
+  resizeHost.remove();
+};
+```
+
+The host must be an empty connected HTML element outside `editor.surface`, in the same document on a normal viewport-overlay layer. Do not place it inside a transformed/paint-containing/clipping container. `options` contains only optional `label` and `onError`; the controller exposes `element`, `refresh()` and idempotent `destroy()`. Disposal releases capture, listeners, observers/RAFs and external-host ownership without destroying the editor.
+
+Clicking the image selects its exact IMG. A corner drag fixes the ratio and changes only the external outline/status until release: document content and history remain untouched. Releasing applies one resize command with one Undo step; unchanged dimensions create no history. Escape and pointer cancellation abandon the gesture. Scroll/resize/blur, document/target replacement, read-only and IME also cancel an unfinished gesture. Focused handles support arrow keys in 1 px steps and Shift+arrows in 10 px steps, with a separate history operation for each key action. Enter/Space do not apply an unfinished drag.
+
+Labels, help and dimension text are localized through `imageResizeUIMessages` and `ImageResizeUIMessageKey` from the same entry; appearance uses scoped `--mw-*` variables and explicit CSS. The module does not depend on documentation-site styles, create thumbnails or fetch an image again. Unknown proportions, hidden/transformed or materially distorted images, caption carets, whole-figure ranges and protected/complex targets produce no handles. Corners outside clipped bounds are hidden. [Full example, boundaries and demo](/en/images#drag-resize-handles).
+
+Set variables on the external host or its ancestor. For example, after `resizeHost.className = 'my-resize-overlay'`:
+
+```css
+.my-resize-overlay {
+  --mw-image-resize-color: #2563eb;
+  --mw-image-resize-handle-size: 28px;
+  --mw-image-resize-radius: 4px;
+  --mw-image-resize-preview: #2563eb12;
+  --mw-image-resize-z-index: 1001;
+}
+```
+
 ## Find and replace
 
 Containers: `<div id="search-editor"></div>` and `<div id="search-controls"></div>`.

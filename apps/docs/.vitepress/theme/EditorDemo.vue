@@ -12,6 +12,7 @@ import type { StatisticsCommands, StatisticsState } from '@morfira-dev/wysiwyg/p
 import type { ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
 import type { ContextualTableUIController } from '@morfira-dev/wysiwyg/ui/contextual-table';
 import type { ContextualImageUIController } from '@morfira-dev/wysiwyg/ui/contextual-image';
+import type { ImageResizeUIController } from '@morfira-dev/wysiwyg/ui/image-resize';
 import type { ContextualLinkUIController } from '@morfira-dev/wysiwyg/ui/contextual-link';
 import type { ContextualToolbarController } from '@morfira-dev/wysiwyg/ui/contextual';
 import type { LinkFormController } from '@morfira-dev/wysiwyg/ui/links';
@@ -25,6 +26,7 @@ import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/ui/contextual.css';
 import '@morfira-dev/wysiwyg/ui/contextual-link.css';
 import '@morfira-dev/wysiwyg/ui/contextual-image.css';
+import '@morfira-dev/wysiwyg/ui/image-resize.css';
 import '@morfira-dev/wysiwyg/ui/contextual-table.css';
 import '@morfira-dev/wysiwyg/ui/table-picker.css';
 import '@morfira-dev/wysiwyg/plugins/suggestions.css';
@@ -46,6 +48,10 @@ const contextualImageHost = ref<HTMLElement>();
 let contextualImageUI: ContextualImageUIController | undefined;
 let mountContextualImageUI: (() => void) | undefined;
 let selectContextualImage: (() => void) | undefined;
+const imageResizeEnabled = ref(true);
+const imageResizeHost = ref<HTMLElement>();
+let imageResizeUI: ImageResizeUIController | undefined;
+let mountImageResizeUI: (() => void) | undefined;
 const contextualLinkEnabled = ref(true);
 const contextualLinkHost = ref<HTMLElement>();
 let contextualLinkUI: ContextualLinkUIController | undefined;
@@ -226,6 +232,7 @@ const loadContextualTableSample = () => {
   selectContextualTable();
 };
 const updateContextualImageUI = () => { mountContextualImageUI?.(); };
+const updateImageResizeUI = () => { mountImageResizeUI?.(); };
 const selectContextualImageSample = () => run(() => { selectContextualImage?.(); }, false);
 const loadContextualImageSample = () => run((instance) => {
   sample.value = 'contextual-image';
@@ -615,6 +622,7 @@ onMounted(async () => {
     { createContextualToolbar },
     { createContextualLinkUI },
     { createContextualImageUI },
+    { createImageResizeUI },
     { createContextualTableUI },
     { imageCommands },
     { createTablePicker },
@@ -642,6 +650,7 @@ onMounted(async () => {
     import('@morfira-dev/wysiwyg/ui/contextual'),
     import('@morfira-dev/wysiwyg/ui/contextual-link'),
     import('@morfira-dev/wysiwyg/ui/contextual-image'),
+    import('@morfira-dev/wysiwyg/ui/image-resize'),
     import('@morfira-dev/wysiwyg/ui/contextual-table'),
     import('@morfira-dev/wysiwyg/plugins/images'),
     import('@morfira-dev/wysiwyg/ui/table-picker'),
@@ -736,12 +745,22 @@ onMounted(async () => {
       contextualImageUI = createContextualImageUI(contextualImageHost.value!, editor!);
   };
   mountContextualImageUI();
+  mountImageResizeUI = () => {
+    imageResizeUI?.destroy();
+    imageResizeUI = undefined;
+    if (props.full && imageResizeEnabled.value)
+      imageResizeUI = createImageResizeUI(imageResizeHost.value!, editor!, {
+        onError: (error) => notify(error instanceof Error ? error.message : String(error), true),
+      });
+  };
+  mountImageResizeUI();
   selectContextualImage = () => {
     const image = editor?.surface.querySelector<HTMLImageElement>('[title="Contextual image sample"] img');
     if (!editor || !image) return;
     image.scrollIntoView({ block: 'center' });
     imageCommands(editor).select(image);
     contextualImageUI?.refresh();
+    imageResizeUI?.refresh();
   };
   unsubscribe = editor.subscribe(refresh); unselect = editor.onSelectionChange(refresh); ready.value = true; refresh();
 });
@@ -758,6 +777,7 @@ onBeforeUnmount(() => {
   unselect?.();
   contextualTableUI?.destroy();
   contextualImageUI?.destroy();
+  imageResizeUI?.destroy();
   contextualLinkUI?.destroy();
   contextualUI?.destroy();
   disposeEditorUI?.();
@@ -781,6 +801,7 @@ onBeforeUnmount(() => {
       <label v-if="full"><input v-model="contextualEnabled" type="checkbox" :disabled="!ready" :aria-label="t('Контекстная панель', 'Contextual toolbar')" @change="updateContextualUI">{{ t('Контекстная панель', 'Contextual toolbar') }}</label>
       <label v-if="full"><input v-model="contextualTableEnabled" type="checkbox" :disabled="!ready" :aria-label="t('Контекстная панель таблиц', 'Contextual table toolbar')" @change="updateContextualTableUI">{{ t('Контекстная панель таблиц', 'Contextual table toolbar') }}</label>
       <label v-if="full"><input v-model="contextualImageEnabled" type="checkbox" :disabled="!ready" :aria-label="t('Контекстные свойства изображения', 'Contextual image properties')" @change="updateContextualImageUI">{{ t('Контекстные свойства изображения', 'Contextual image properties') }}</label>
+      <label v-if="full"><input v-model="imageResizeEnabled" type="checkbox" :disabled="!ready" :aria-label="t('Маркеры размера изображения', 'Image resize handles')" @change="updateImageResizeUI">{{ t('Маркеры размера изображения', 'Image resize handles') }}</label>
       <label v-if="full"><input v-model="contextualLinkEnabled" type="checkbox" :disabled="!ready" :aria-label="t('Действия со ссылкой у курсора', 'Link actions at caret')" @change="updateContextualLinkUI">{{ t('Действия со ссылкой у курсора', 'Link actions at caret') }}</label>
       <button @click="dark = !dark">{{ t('Сменить тему', 'Toggle theme') }}</button>
       <button :disabled="!ready" @click="toggleReadOnly">{{ readOnly ? t('Редактировать', 'Edit') : t('Только чтение', 'Read only') }}</button>
@@ -1010,7 +1031,8 @@ onBeforeUnmount(() => {
           <hr>
           <div ref="imageFormHost"></div>
           <p class="lab-hint">{{ t('Для размера с сохранением пропорций выбери изображение, включи «Сохранять пропорции» и измени ширину или высоту. Второе поле пересчитается; «Обновить изображение» применит оба размера одним Undo. Для независимых размеров и пустого сброса выключи переключатель.', 'To resize proportionally, select an image, enable Keep aspect ratio and change its width or height. The other field follows; Update image applies both dimensions in one Undo. Turn the switch off for independent dimensions or blank resets.') }}</p>
-          <p class="lab-hint">{{ t('Локальный callback возвращает логотип вместо файла. Файл не отправляется и не сохраняется. Для своего сервера передайте upload callback. Пустые размеры снимают ограничения; подпись редактируется и в документе. Resize мышью пока нет.', 'The local callback returns the logo instead of the file. Files are not uploaded or stored. Supply an upload callback for your server. Empty dimensions remove limits; captions are also editable in the document. Drag resizing is not implemented.') }}</p>
+          <p class="lab-hint">{{ t('Для перетаскивания включи «Маркеры размера изображения» и нажми на саму картинку. Потяни угловой маркер: рамка показывает пропорциональный размер, а отпускание применяет его одним Undo. Escape отменяет жест. На маркере доступны стрелки, Shift меняет шаг с 1 до 10 px.', 'For dragging, enable Image resize handles and click the image itself. Drag a corner: the outline previews proportional dimensions, and releasing applies them in one Undo. Escape cancels the gesture. A focused handle supports arrow keys; Shift changes the step from 1 to 10 px.') }}</p>
+          <p class="lab-hint">{{ t('Локальный callback возвращает логотип вместо файла. Файл не отправляется и не сохраняется. Для своего сервера передайте upload callback. Пустые размеры снимают ограничения при выключенных пропорциях; подпись редактируется и в документе.', 'The local callback returns the logo instead of the file. Files are not uploaded or stored. Supply an upload callback for your server. Empty dimensions remove limits with ratio locking off; captions are also editable in the document.') }}</p>
         </details>
         <details><summary>{{ t('Оформление', 'Appearance') }}</summary><div class="lab-fields"><label>{{ t('Акцент', 'Accent') }}<input v-model="accent" type="color"></label><label>{{ t('Размер текста', 'Text size') }}<input v-model.number="fontSize" type="number" min="12" max="28"></label><label>{{ t('Отступы', 'Padding') }}<input v-model.number="padding" type="number" min="8" max="64"></label><label>{{ t('Скругление', 'Radius') }}<input v-model.number="radius" type="number" min="0" max="28"></label></div><p class="lab-hint">{{ t('Меняет CSS-переменные этого экземпляра. Содержимое документа не меняется.', 'Changes CSS variables for this instance without editing the document.') }}</p></details>
       </aside>
@@ -1020,7 +1042,7 @@ onBeforeUnmount(() => {
         <details open><summary>{{ t('Буфер диапазона · HTML / TSV', 'Range buffer · HTML / TSV') }}</summary><label>{{ t('Формат буфера', 'Buffer format') }}<select :aria-label="t('Формат буфера', 'Buffer format')" v-model="bufferFormat"><option value="text">TSV</option><option value="html">HTML</option></select></label><label>{{ t('Содержимое буфера', 'Buffer contents') }}<textarea :aria-label="t('Содержимое буфера', 'Buffer contents')" v-model="buffer" class="lab-code" rows="5" spellcheck="false"></textarea></label><div class="lab-inline-actions"><button :disabled="!ready" @click="copyRange(false)">{{ t('Копировать диапазон', 'Copy range') }}</button><button :disabled="!ready || readOnly" @click="copyRange(true)">{{ t('Вырезать диапазон', 'Cut range') }}</button><button :disabled="!ready || readOnly" @click="pasteRange">{{ t('Вставить диапазон', 'Paste range') }}</button></div><p class="lab-hint">{{ t('Это буфер стенда без разрешений браузера. Системный буфер тоже работает: Ctrl/Cmd+C/X/V в редакторе. TSV разделяет столбцы табами.', 'This in-page buffer needs no browser permissions. Native Ctrl/Cmd+C/X/V also works in the editor. TSV uses tabs between columns.') }}</p></details>
         <details open><summary>{{ t('Документ · HTML / JSON', 'Document · HTML / JSON') }}</summary><label>{{ t('Формат документа', 'Document format') }}<select :aria-label="t('Формат документа', 'Document format')" v-model="outputFormat"><option value="html">HTML</option><option value="json">JSON v1</option></select></label><label>{{ t('Исходник документа', 'Document source') }}<textarea :aria-label="t('Исходник документа', 'Document source')" v-model="output" class="lab-code" rows="5" spellcheck="false"></textarea></label><div class="lab-inline-actions"><button :disabled="!ready" @click="snapshot(outputFormat)">{{ t('Получить снимок', 'Get snapshot') }}</button><button :disabled="!ready || readOnly" @click="applySource">{{ t('Применить документ', 'Apply document') }}</button></div><p class="lab-hint">{{ t('Снимок обновляется по кнопке. Применение заменяет документ и сбрасывает историю. Данные остаются в памяти вкладки.', 'Snapshots update on request. Applying replaces the document and resets history. Data stays in this browser tab.') }}</p></details>
       </div>
-      <p class="lab-limits">{{ t('Пока нет: совместного редактирования, комментариев, track changes, пагинации, DOCX/PDF и resize изображений мышью. Адаптеры Vue/React/Svelte и примеры подключения — в документации.', 'Not implemented: collaboration, comments, track changes, pagination, DOCX/PDF and image drag resizing. Vue/React/Svelte adapters and integration examples are in the docs.') }}</p>
+      <p class="lab-limits">{{ t('Пока нет: совместного редактирования, комментариев, track changes, пагинации, DOCX/PDF и обрезки изображений. Адаптеры Vue/React/Svelte и примеры подключения — в документации.', 'Not implemented: collaboration, comments, track changes, pagination, DOCX/PDF and image cropping. Vue/React/Svelte adapters and integration examples are in the docs.') }}</p>
     </template>
     <pre v-else-if="output" class="demo-output">{{ output }}</pre>
     <p v-if="full" class="lab-hint demo-input-hint">{{ t('Таблица в панели: быстрая сетка 8 × 8, поля — до 100 × 100. Вставьте или перетащите один PNG/JPEG/GIF/WebP/AVIF в обычный текст. Локальное демо возвращает логотип: файл не отправляется и не сохраняется.', 'Table toolbar: an 8 × 8 quick picker; numeric fields support up to 100 × 100. Paste or drop one PNG/JPEG/GIF/WebP/AVIF into ordinary text. This local demo returns the logo: files are not uploaded or stored.') }}</p>
@@ -1028,5 +1050,8 @@ onBeforeUnmount(() => {
     <div v-if="full" ref="contextualLinkHost" class="demo-contextual-link-host"></div>
     <div v-if="full" ref="contextualTableHost" class="demo-contextual-table-host"></div>
     <div v-if="full" ref="contextualImageHost" class="demo-contextual-image-host"></div>
+    <Teleport to="body">
+      <div v-if="full" ref="imageResizeHost" class="demo-image-resize-host" :style="themeStyle"></div>
+    </Teleport>
   </section>
 </template>

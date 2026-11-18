@@ -1,6 +1,6 @@
 # Proportional image dimensions
 
-Status: accepted implementation scope; browser tests are authored but not run locally at the user's request. This stage adds numeric/keyboard resizing, not pointer handles or cropping. Core, schema v1, URL rules, preset installation and runtime dependencies remain unchanged.
+Status: numeric/keyboard resizing implemented locally; browser tests are authored but not run locally at the user's request. The following pointer-handle stage is independently specified in [image-resize-handles.md](image-resize-handles.md), without changing this command/form contract. Cropping remains unsupported. Core, schema v1, URL rules, preset installation and runtime dependencies remain unchanged.
 
 ## Commands
 
@@ -18,7 +18,11 @@ When checked, user input in width/height calculates the other draft from the ins
 
 Author representative Chromium/Firefox/WebKit regressions for width/height resizing, rounding, stored/natural/missing proportions without extra requests, native selection and exact Undo/Redo, rich caption/node and merged-cell preservation, malformed inputs/extreme aspect ratios, semantic/complex/foreign targets, no-op history, read-only/IME/disposal and focus-time replacement. Form cases cover linked drafts and one-step Apply, opting out/reset, unknown/load state, invalid/stale programmatic drafts, external replacement, rich captions, constructor validation, locale and detached controls. Extend existing RU/EN homepage/playground examples and installed-consumer/type coverage without repeating the entire matrix. Preserve selective imports and current gzip/CSS budgets. Record unexecuted tests and unmeasured sizes explicitly; do not claim a passing run from source review.
 
-## Local evidence — 2026-11-18
+## Independent pointer-handle extension
+
+The separate `/ui/image-resize` module under image-resize-handles.md uses the same numeric command/ratio limits, but has its own external-host, exact native IMG, gesture-preview, pointer-capture, keyboard and cancellation lifecycle. It is not installed by forms, contextual properties or presets automatically. Pointer movement previews only external UI; pointerup commits once through resize. The existing form remains useful for numeric metadata and unsupported handle geometries. No historical measurements below validate the later handle implementation; its authored acceptance and actual non-test measurements are recorded separately.
+
+## Numeric-stage local evidence — 2026-11-18
 
 Final `pnpm run build`, `pnpm run typecheck` (including authored test compilation, Svelte and docs Vue types), and `pnpm run docs:build:site` passed. The project source-contract guard also passed during implementation. pnpm 11.0.7 refreshed the already-frozen dependency installation without a lockfile change; there are no new dependencies. Sandbox IPC failures were environmental and the affected non-test commands succeeded outside that boundary. No editor, documentation, release or installed-consumer tests were executed, and there was no browser/manual rendering verification. Eight command definitions, six form definitions, two bilingual demo definitions and extended installed-consumer sequences remain unexecuted acceptance coverage. The user authorized local commits only, with no push or publication.
 

@@ -1,0 +1,12 @@
+.mw-image-resize { position: fixed; inset: 0; z-index: var(--mw-image-resize-z-index, 1001); pointer-events: none; overflow: clip; color: var(--mw-text, #263043); font: var(--mw-ui-font-size, 14px) var(--mw-font, system-ui, sans-serif); }
+.mw-image-resize, .mw-image-resize * { box-sizing: border-box; }
+.mw-image-resize[hidden], .mw-image-resize [hidden] { display: none; }
+.mw-image-resize-frame { position: fixed; border: 1px solid var(--mw-image-resize-color, var(--mw-accent, #6658e8)); background: var(--mw-image-resize-preview, transparent); }
+.mw-image-resize[data-dragging=true] .mw-image-resize-frame { background: var(--mw-image-resize-preview, #6658e810); border-style: dashed; }
+.mw-image-resize button { position: fixed; width: var(--mw-image-resize-handle-size, 24px); height: var(--mw-image-resize-handle-size, 24px); padding: 5px; transform: translate(-50%, -50%); border: 0; background: transparent; touch-action: none; pointer-events: auto; user-select: none; -webkit-user-select: none; }
+.mw-image-resize button::after { content: ''; display: block; width: 100%; height: 100%; border: 1px solid var(--mw-image-resize-color, var(--mw-accent, #6658e8)); border-radius: var(--mw-image-resize-radius, 3px); background: var(--mw-surface, #fff); box-shadow: 0 1px 4px #172b4d26; }
+.mw-image-resize [data-mw-resize-corner=nw], .mw-image-resize [data-mw-resize-corner=se] { cursor: nwse-resize; }
+.mw-image-resize [data-mw-resize-corner=ne], .mw-image-resize [data-mw-resize-corner=sw] { cursor: nesw-resize; }
+.mw-image-resize button:focus-visible { outline: 2px solid var(--mw-focus, var(--mw-accent, #6658e8)); outline-offset: 1px; border-radius: var(--mw-image-resize-radius, 3px); }
+.mw-image-resize-status { position: fixed; padding: 2px 6px; max-width: calc(100vw - 16px); border-radius: var(--mw-image-resize-radius, 3px); background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); white-space: nowrap; }
+@media (forced-colors: active) { .mw-image-resize-frame, .mw-image-resize button::after { border-color: Highlight; } .mw-image-resize button::after { background: Canvas; } }

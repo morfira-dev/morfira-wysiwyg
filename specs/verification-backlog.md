@@ -1,5 +1,13 @@
 # Verification record
 
+## Image resize handles — 2026-11-18
+
+Local implementation after 54163c9 follows [image-resize-handles.md](image-resize-handles.md). The independent `/ui/image-resize` and explicit CSS provide four pointer-captured corner controls, fixed-ratio external preview, one proportional update at pointerup, keyboard sizing and cancellation/identity/revision/focus/lifecycle guards. Core/schema/preset defaults and runtime dependencies stay unchanged. The full demo has an owned viewport-layer toggle and RU/EN instructions; package exports, installed-consumer definitions and selected-profile measurement include the new entry.
+
+Final build/declarations/budgets, TS/Svelte/Vue, selective imports/tree-shaking, eight package archive/export guards and the RU/EN site build passed. The project source-contract guard passed during implementation. **No browser or other behavioral tests ran**, including eleven new editor definitions, two localized demo definitions and extended installed-consumer sequences; no manual browser/device checks or push/CI/publication occurred. Keep these unexecuted definitions separate from previous stage passes.
+
+The new closure is 10245 gzip JS bytes, plus 1963 raw/690 gzip/554 Brotli CSS bytes. Standard ready+handles is 65518 gzip JS/13467 raw CSS; default standard-ready stays 61205 gzip JS/11504 raw CSS. Core remains 27690 gzip JS bytes. The largest standard variant is 66277 gzip JS bytes under 80000; all build guards passed. Separate raw/Brotli/selected-profile figures and limitations are recorded in the feature spec and size-report.json.
+
 ## Proportional image dimensions — 2026-11-18
 
 Local implementation after f802a83 follows [image-resize.md](image-resize.md): one-axis `ImageResize`/`resize`, fixed-ratio width/height drafts in both image-form modes, opt-in default-off checkbox and constructor option, atomic existing update/history, stale ownership/readonly/composition guards, and RU/EN live-demo instructions. Pointer handles/cropping remain future work. No new dependencies or CSS were added; the unchanged-source `src` guard avoids re-requesting an image solely for metadata/size updates.

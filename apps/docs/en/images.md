@@ -54,7 +54,32 @@ if (image) {
 
 One ordinary inline image or an image directly inside a simple single-image figure is supported, including list and merged-cell placement. Complex figures, foreign nodes and protected semantic ownership are rejected. Dimensions and pixel styles persist in HTML/JSON; rich caption children, the IMG and neighboring nodes survive. One change is one Undo step with restored selection. Identical dimensions add no history; read-only and active IME composition leave the document unchanged. Commands are unavailable after editor disposal.
 
-In the [ready form](/en/ui#preserving-proportions), enable **Keep aspect ratio**, edit width or height, and choose **Update image**. The linked field changes only in the draft until Apply. The checkbox defaults to off for compatibility; applications can pass `keepAspectRatio: true` when creating the form. This stage provides numeric/keyboard sizing; drag handles and cropping remain later work.
+In the [ready form](/en/ui#preserving-proportions), enable **Keep aspect ratio**, edit width or height, and choose **Update image**. The linked field changes only in the draft until Apply. The checkbox defaults to off for compatibility; applications can pass `keepAspectRatio: true` when creating the form. Dragging uses the separate UI below; cropping remains unsupported.
+
+## Drag resize handles
+
+`createImageResizeUI` adds four aspect-locked corner handles. It is independent of forms and contextual properties and is not installed automatically by presets:
+
+```ts
+import { createImageResizeUI } from '@morfira-dev/wysiwyg/ui/image-resize';
+import '@morfira-dev/wysiwyg/ui/image-resize.css';
+
+const resizeHost = document.createElement('div');
+document.body.append(resizeHost); // empty connected viewport overlay host
+const resizeUI = createImageResizeUI(resizeHost, editor);
+
+const disposeResize = () => {
+  resizeUI.destroy();
+  resizeHost.remove();
+};
+// Call disposeResize when your application unmounts.
+```
+
+Click the IMG itself, then drag a visible corner with a mouse or pointer. Only the external outline and dimension text change during the gesture: HTML, selection, history and document-change callbacks stay untouched. Releasing the pointer applies both dimensions through one command and one Undo/Redo step. Dimensions stay within an allowed integer pair of 1–1000; the ratio is fixed at gesture start. The image, figure, rich caption and neighboring nodes survive, with no extra fetch or IMG clone.
+
+**Escape**, pointer cancellation/lost capture, window blur, scrolling or a viewport change during the gesture cancels the preview. External document edits, a new selection, read-only, IME or UI disposal also cancel the old gesture; it cannot transfer to a different IMG. On a focused handle, arrow keys change the size by 1 px; Shift+arrow uses 10 px. Each keyboard step is a separate history operation; Enter/Space do not apply an unfinished drag.
+
+An exact node Range selecting one ordinary IMG is required, as after `api.select(image)` or clicking it. Caption carets, whole figures, multiple images, protected/foreign ownership and complex figures are ineligible. Unknown proportions hide handles without an extra request. Corners outside the visible clipped region are hidden. Use a normal viewport-overlay host without transformed/paint-containing/clipping ancestors; transformed images/editors and materially distorted CSS aspect ratios are unsupported. Responsive CSS may constrain actual display after stored pixel dimensions are applied. [UI contract and appearance](/en/ui#image-resize-handles).
 
 ## Upload callback
 
@@ -111,7 +136,7 @@ This signal cancels only its associated upload. Aborting an old signal cannot in
 
 ## Demo and appearance
 
-On the [homepage](/en/#editor) and [playground](/en/playground), choose “Images”. Select the image, enable Keep aspect ratio and edit one side: its counterpart updates before Apply. Alt/dimension/caption fields populate on image selection; commands preserve selection through form focus. The demo upload returns a local logo instead of the selected file. **Files are not uploaded or stored**: this demonstrates the callback and cancellation rather than previewing file contents.
+On the [homepage](/en/#editor) and [playground](/en/playground), choose “Images”. For numeric input, enable Keep aspect ratio and edit one side: its counterpart updates before Apply. For dragging, leave **Image resize handles** enabled, click the image and drag a corner; Escape cancels, releasing applies, and Undo restores the size. Turning off the demo toggle destroys only this UI. Alt/dimension/caption fields populate on image selection; commands preserve selection through form focus. The demo upload returns a local logo instead of the selected file. **Files are not uploaded or stored**: this demonstrates the callback and cancellation rather than previewing file contents.
 
 ```css
 .my-editor {
@@ -122,7 +147,7 @@ On the [homepage](/en/#editor) and [playground](/en/playground), choose “Image
 }
 ```
 
-Schema v1 adds figure/figcaption: older readers may discard wrapper semantics during import. Existing HTML is not upgraded automatically. Cropping, drag resizing and storage management are not implemented. Optional [raster clipboard/drop input](/en/image-input) is available through a separate plugin.
+Schema v1 adds figure/figcaption: older readers may discard wrapper semantics during import. Existing HTML is not upgraded automatically. Cropping and storage management are not implemented. Optional [raster clipboard/drop input](/en/image-input) is available through a separate plugin.
 
 Inserting with an image selected in a simple figure replaces the whole figure and old caption. Figures are never nested. Insertion inside a complex imported figure is rejected.
 

@@ -6,6 +6,7 @@ import type { StandardEditorUIController } from '@morfira-dev/wysiwyg/ui/standar
 import type { TableCommands, TableSelectionState } from '@morfira-dev/wysiwyg/plugins/tables';
 import type { ContextualTableUIController } from '@morfira-dev/wysiwyg/ui/contextual-table';
 import type { ContextualImageUIController } from '@morfira-dev/wysiwyg/ui/contextual-image';
+import type { ImageResizeUIController } from '@morfira-dev/wysiwyg/ui/image-resize';
 import type { ContextualLinkUIController } from '@morfira-dev/wysiwyg/ui/contextual-link';
 import type { ContextualToolbarController } from '@morfira-dev/wysiwyg/ui/contextual';
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
@@ -26,6 +27,7 @@ export interface ConsumerProbe {
   contextual?: ContextualToolbarController;
   contextualLink?: ContextualLinkUIController;
   contextualImage?: ContextualImageUIController;
+  imageResize?: ImageResizeUIController;
   tables?: TableCommands;
   getTableSelection?: () => TableSelectionState | undefined;
   contextualTable?: ContextualTableUIController;
@@ -33,6 +35,8 @@ export interface ConsumerProbe {
   hideContextualTable?: () => void;
   showContextualImage?: () => void;
   hideContextualImage?: () => void;
+  showImageResize?: () => void;
+  hideImageResize?: () => void;
   showContextualLink?: () => void;
   hideContextualLink?: () => void;
   showContextual?: () => void;

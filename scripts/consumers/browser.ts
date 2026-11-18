@@ -227,6 +227,27 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await expect(content.locator('img')).toHaveAttribute('height', '18');
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeImageContext.html, `${adapter}: installed proportional resize undoes once`);
+          const beforeHandles = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
+          await content.locator('img').scrollIntoViewIfNeeded();
+          await page.evaluate(() => window.morfiraConsumer.showImageResize!());
+          const resizeHost = page.locator('[data-consumer-image-resize]');
+          const corner = resizeHost.locator('[data-mw-resize-corner="se"]');
+          await expect(corner).toBeVisible();
+          const cornerBox = (await corner.boundingBox())!;
+          await page.mouse.move(cornerBox.x + cornerBox.width / 2, cornerBox.y + cornerBox.height / 2);
+          await page.mouse.down();
+          await page.mouse.move(cornerBox.x + cornerBox.width / 2 + 16, cornerBox.y + cornerBox.height / 2 + 12, { steps: 3 });
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeHandles.html, `${adapter}: resize preview must not mutate the document`);
+          await page.mouse.up();
+          await expect(content.locator('img')).toHaveAttribute('width', '48');
+          await expect(content.locator('img')).toHaveAttribute('height', '36');
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.changes), beforeHandles.changes + 1, `${adapter}: pointer resize emits one controlled update`);
+          await page.evaluate(() => {
+            window.morfiraConsumer.hideImageResize!();
+            window.morfiraConsumer.editor!.undo();
+          });
+          await expect(resizeHost).toHaveCount(0);
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeHandles.html, `${adapter}: pointer resize undoes once`);
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           await expect(content.locator('img')).toHaveCount(0);
           await expect(content).toHaveText('Initial text');

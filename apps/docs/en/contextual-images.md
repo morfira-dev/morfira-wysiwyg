@@ -43,7 +43,9 @@ Caption carets, whole-figure ranges, mixed text/image or multiple-image ranges, 
 
 The form includes a **Keep aspect ratio** checkbox, off by default. Enable it, edit one side and choose Update image or press Enter: the other side updates in the draft using the stored pair or already-loaded natural dimensions. Unknown proportions disable the checkbox. Invalid/blank locked dimensions are not applied; uncheck for independent sides and dimension reset. Changing the target or src does not transfer old proportions to another image. [Form details](/en/ui#preserving-proportions).
 
-Metadata uses an existing command and one Undo step. Invalid URLs/dimensions leave the document unchanged and retain drafts for correction. Adding a caption to an inline image uses existing promotion to figure. **Remove image** removes a simple figure with its caption, or the selected inline IMG, preserving surrounding content; Undo restores it. Numeric proportional sizing does not add drag handles or cropping.
+Metadata uses an existing command and one Undo step. Invalid URLs/dimensions leave the document unchanged and retain drafts for correction. Adding a caption to an inline image uses existing promotion to figure. **Remove image** removes a simple figure with its caption, or the selected inline IMG, preserving surrounding content; Undo restores it. The numeric form does not create handles: import [`createImageResizeUI`](/en/images#drag-resize-handles) independently for them; cropping remains unsupported.
+
+The demo's separate **Image resize handles** toggle controls dragging. It does not implicitly install the contextual form. Dragging a selected IMG shows only an external outline until release; Escape cancels, and successful completion adds one Undo step. Focused handles support arrows and Shift+arrows. Both modules accept an exact IMG selection, but caption carets and whole-figure ranges remain ineligible contextual targets. Mount each module in its own empty external host; the handle host must belong to a normal viewport-overlay layer.
 
 ## Focus, read-only and disposal
 

@@ -40,6 +40,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/ui/table-picker', symbol: 'createTablePicker', feature: 'ui/table-picker', allowed: ['ui/table-picker', 'ui/shared'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual-table', symbol: 'createContextualTableUI', feature: 'ui/contextual-table', allowed: ['ui/contextual-table', 'ui/contextual', 'ui/shared', 'tables'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual-image', symbol: 'createContextualImageUI', feature: 'ui/contextual-image', allowed: ['ui/contextual-image', 'ui/contextual', 'ui/images', 'ui/shared', 'images'] },
+  { entry: '@morfira-dev/wysiwyg/ui/image-resize', symbol: 'createImageResizeUI', feature: 'ui/image-resize', allowed: ['ui/image-resize', 'ui/contextual', 'ui/contextual-image', 'ui/shared', 'images'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual-link', symbol: 'createContextualLinkUI', feature: 'ui/contextual-link', allowed: ['ui/contextual-link', 'ui/contextual', 'ui/links', 'ui/shared'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual', symbol: 'createContextualToolbar', feature: 'ui/contextual', allowed: ['ui/contextual', 'ui/editor', 'ui/shared'] },
   { entry: '@morfira-dev/wysiwyg/ui/editor', symbol: 'createEditorUI', feature: 'ui/editor', allowed: ['ui/editor', 'ui/shared'] },

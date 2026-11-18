@@ -12,6 +12,8 @@ import { createContextualTableUI } from '@morfira-dev/wysiwyg/ui/contextual-tabl
 import { getTableSelection, tableCommands } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/ui/contextual-table.css';
 import { createContextualImageUI } from '@morfira-dev/wysiwyg/ui/contextual-image';
+import { createImageResizeUI } from '@morfira-dev/wysiwyg/ui/image-resize';
+import '@morfira-dev/wysiwyg/ui/image-resize.css';
 import { imageCommands } from '@morfira-dev/wysiwyg/plugins/images';
 import '@morfira-dev/wysiwyg/ui/contextual-image.css';
 import { createContextualLinkUI } from '@morfira-dev/wysiwyg/ui/contextual-link';
@@ -141,6 +143,26 @@ export const ready = (editor: Editor) => {
   };
   probe.showContextualImage = showContextualImage;
   probe.hideContextualImage = hideContextualImage;
+  let imageResize: ReturnType<typeof createImageResizeUI> | undefined;
+  let imageResizeHost: HTMLElement | undefined;
+  const hideImageResize = () => {
+    imageResize?.destroy();
+    imageResizeHost?.remove();
+    imageResize = undefined;
+    imageResizeHost = undefined;
+    delete probe.imageResize;
+  };
+  const showImageResize = () => {
+    hideImageResize();
+    imageResizeHost = document.createElement('div');
+    imageResizeHost.dataset.consumerImageResize = '';
+    document.body.append(imageResizeHost);
+    imageCommands(editor).select(editor.surface.querySelector('img')!);
+    imageResize = createImageResizeUI(imageResizeHost, editor, { label: 'Consumer image resize' });
+    probe.imageResize = imageResize;
+  };
+  probe.showImageResize = showImageResize;
+  probe.hideImageResize = hideImageResize;
   const tablesAPI = tableCommands(editor);
   probe.images = imageCommands(editor);
   probe.tables = tablesAPI;
@@ -229,6 +251,9 @@ export const ready = (editor: Editor) => {
     if (probe.hideContextualTable === hideContextualTable) delete probe.hideContextualTable;
     if (probe.showContextualImage === showContextualImage) delete probe.showContextualImage;
     if (probe.hideContextualImage === hideContextualImage) delete probe.hideContextualImage;
+    hideImageResize();
+    if (probe.showImageResize === showImageResize) delete probe.showImageResize;
+    if (probe.hideImageResize === hideImageResize) delete probe.hideImageResize;
     if (probe.showContextualLink === showContextualLink) delete probe.showContextualLink;
     if (probe.hideContextualLink === hideContextualLink) delete probe.hideContextualLink;
     if (probe.showContextual === showContextual) delete probe.showContextual;

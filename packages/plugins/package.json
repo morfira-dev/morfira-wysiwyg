@@ -134,6 +134,11 @@
       "import": "./dist/ui/contextual-image.js"
     },
     "./ui/contextual-image.css": "./dist/ui/contextual-image.css",
+    "./ui/image-resize": {
+      "types": "./dist/ui/image-resize/index.d.ts",
+      "import": "./dist/ui/image-resize.js"
+    },
+    "./ui/image-resize.css": "./dist/ui/image-resize.css",
     "./ui/contextual-table": {
       "types": "./dist/ui/contextual-table/index.d.ts",
       "import": "./dist/ui/contextual-table.js"

@@ -1,0 +1,42 @@
+# Optional proportional image resize handles
+
+Status: accepted implementation contract. Follow the existing numeric command in image-resize.md; do not change core, persisted schema or preset defaults. Local tests are authored but not executed at the user's request; only local commits are authorized.
+
+## Entry and geometry
+
+Expose `createImageResizeUI(host, editor, options?)` at `/ui/image-resize`, with explicit `/ui/image-resize.css`, named ImageResizeUIOptions/Controller/MessageKey and imageResizeUIMessages. Options are only an optional text label and onError callback. Controller has readonly element, refresh and idempotent destroy. Require images plugin and an empty connected external HTML host in the editor document, outside persisted content; use an application-owned viewport overlay layer without transformed/paint-containing/clipping ancestors. Keep it independent of contextual property forms and frameworks, zero runtime dependencies and no implicit registration/CSS/preset installation.
+
+Show four corner buttons only for the existing exact native IMG node range, an ordinary inline IMG or direct simple-figure IMG, known proportions and nonzero visible geometry. Reuse existing contextual-image ownership and clipping queries without importing its full UI/form. No whole-figure/caption caret/multi-image/mixed-text/protected/foreign targets. Read-only and composition hide/invalidate handles. Retain the exact native image range through the owned per-editor form-selection helper while a handle has focus; an unrelated selection/focus departure hides it. No global host registry or table-plugin dependency is introduced. Another editor's controls never share state.
+
+Use actual viewport image geometry and a clipped outline; hide corners outside the image's visible clipped bounds. Reject transformed image/editor ancestors and image boxes whose displayed ratio disagrees materially with the stored/natural ratio (allow integer-pixel rounding). The ratio comes from the same stored-pair/loaded-natural helper as resize, never CSS or a new fetch. Responsive CSS can constrain actual display after the requested pixel dimensions are committed. No image clone, preview resource, canvas, decoding, temporary persisted node or inline image-style preview is created.
+
+## Pointer transaction
+
+Accept only primary left-button pointerdown on a visible owned corner, one pointer per instance; prevent native drag/text selection and use pointer capture. Snapshot exact image/range, document revision, src/dimension signature, logical baseline, original viewport box and pointer coordinates. Read dimensions/geometry once at start and perform only bounded local eligibility checks during movement. Project signed motion onto the original diagonal for stable aspect-locked scaling; clamp the requested width to the integer range for which both rounded dimensions stay 1–1000. Keep the ratio fixed for this gesture, without cumulative rounding. Pointer movement updates only an external outline/status preview through one coalesced owned RAF; the document, selection, history and change callbacks stay untouched.
+
+Pointerup for the captured pointer computes the final draft (including a final move not yet painted), releases capture/listeners/RAF, restores the exact node selection with post-focus guards, and calls the existing validated image update command once with the proportional pair. No movement/no changed dimensions is a no-op. The existing command persists HTML/JSON dimensions/styles, retains actual image/caption/unaffected nodes and produces one Undo/Redo step. Refuse stale geometry/signature/range/ownership or document replacement before and after application focus callbacks; never redirect to a newly selected/recreated image.
+
+Escape, pointercancel/lost capture, window blur, scroll/viewport/resize during an active gesture, native selection departure, document changes/replacement, readonly/composition and destroy cancel preview without mutation/history and without overwriting external document changes. API replacement ends the previous composition guard without requiring a possibly missing compositionend; a fresh eligible selection in the new document can resize. Cancellation does not steal unrelated focus. Restore an eligible exact selection for an owned Escape action only. All gesture/global listeners, capture, observers and RAFs have disposal; detached handles and queued callbacks remain inert. Diagnostic callbacks cannot interrupt cleanup.
+
+## Keyboard, appearance and validation
+
+Native localized buttons are focusable; ArrowLeft/Up shrink and Right/Down grow the corresponding width/height by one pixel, Shift uses ten. Reuse the same bounds, identity/focus guards and validated image update command; each key action is one history operation. Keep the original ratio throughout repeated actions in one owned keyboard-focus session, so per-key integer rounding does not accumulate distortion; rebind on an unrelated document/selection/focus change. Ignore Ctrl/Meta/Alt, IME candidate keys and handled events. Escape cancels a drag or dismisses the current handles, preventing immediate reopening until a fresh editor selection. Enter/Space do not commit a pending drag or submit an enclosing application form. Expose localized help and a polite non-persisted dimension status. Appearance uses scoped --mw-* variables, visible focus, adequate handle targets, touch-action:none on handles only and no documentation CSS dependency.
+
+Acceptance definitions cover real Chromium/Firefox/WebKit drags, fixed-ratio preview without changes then one commit/Undo/Redo, all corner directions, bounds, no-op, inline/merged-cell/rich-caption identity, cancel paths, API/readonly/IME/focus races, pointer-ID isolation/lost capture, geometry clipping/repositioning, natural/missing ratio without requests, per-editor ownership, cleanup/SSR and keyboard. RU/EN homepage and playground demonstrate an opt-in toggle, handles and cancellation/history. Add installed-tarball and selective-import coverage. Measure the independent closure and a standard ready+handles profile (shared chunks once): initial guards 12000 gzip JS bytes and 3000 raw extra CSS bytes, existing standard 80000 gzip/20000 raw CSS unchanged. Record actual non-test checks separately from unexecuted browser coverage.
+
+## Local implementation and evidence — 2026-11-18
+
+Implemented after local numeric-resize commit 54163c9. Three subagents contributed the browser definitions, documentation/demo and package boundaries; an independent source review identified stale native selection under a focused handle, corrected before the final build. Post-focus acceptance additionally preserves an application-selected new range instead of restoring and resizing the old image. API replacement clears a previous composition guard; clipped captured buttons stay connected without painting outside the clip. These corrections have source/type evidence, not executed browser proof.
+
+Passed non-test checks: final package/declaration/budget build, TypeScript/Svelte/Vue checking (including authored tests), selective public imports/tree-shaking, eight package archives/export/file/declaration boundaries, and the RU/EN documentation-site build. The project source-contract guard passed during implementation. No browser, documentation, release or installed-consumer tests ran, and no manual device/browser checks were performed. Eleven editor browser definitions, two demo definitions and installed-consumer gesture/undo sequences remain unexecuted. No push, CI or npm publication is part of this stage.
+
+Final decimal-byte measurements, shared chunks counted once:
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core (unchanged) | 89310 | 27690 | 24363 | 3293 |
+| Image resize UI closure | 26621 | 10245 | 9105 | 1963 explicit extra CSS |
+| Standard ready (unchanged) | 205902 | 61205 | 52386 | 11504 |
+| Standard ready + handles | 219961 | 65518 | 56020 | 13467 |
+
+Resize CSS is 690 gzip / 554 Brotli bytes. The selected profile adds 4313 gzip JS bytes and 1963 raw CSS bytes; it remains under 80000 gzip JS and 20000 raw CSS. The largest measured standard variant remains 66277 gzip JS bytes. New entry-specific 12000 gzip JS / 3000 raw CSS guards passed without changing existing guards. Core, runtime dependencies and preset defaults are unchanged. The full exported bundle/closure accounting is in size-report.json; build results are not runtime or accessibility certification.

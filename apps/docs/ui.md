@@ -120,6 +120,45 @@ const editForm = createImageForm(formHost, editor, { mode });
 
 После восстановления нативного Range заново проверяется тот же фактический IMG. API-замена отменяет старую цель до нового выделения в редакторе; локаль и фокус полей сохраняют черновик. При выключенном сохранении пропорций пустой размер снимается; явный размер — целое число 1–1000, невалидные метаданные отклоняются атомарно. Неизменённая подпись исключается из patch, сохраняя rich-узлы при другом изменении; изменённая подпись остаётся буквальным текстом. См. [контекстные свойства изображения](/contextual-images): это необязательная плавающая обёртка с точным IMG-выделением.
 
+## Маркеры размера изображения
+
+Отдельный `createImageResizeUI` показывает четыре пропорциональных маркера вокруг точно выделенного IMG. Этот модуль не является формой и не подключается пресетами или `createImageForm` автоматически. Нужен установленный `images()`:
+
+```ts
+import { createImageResizeUI } from '@morfira-dev/wysiwyg/ui/image-resize';
+import type { ImageResizeUIController, ImageResizeUIOptions } from '@morfira-dev/wysiwyg/ui/image-resize';
+import '@morfira-dev/wysiwyg/ui/image-resize.css';
+
+const resizeHost = document.createElement('div');
+document.body.append(resizeHost);
+const options: ImageResizeUIOptions = {
+  onError: (error) => console.error('Image resize failed', error),
+};
+const resizeUI: ImageResizeUIController = createImageResizeUI(resizeHost, editor, options);
+const disposeResize = () => {
+  resizeUI.destroy();
+  resizeHost.remove();
+};
+```
+
+Host должен быть пустым подключённым HTML-элементом вне `editor.surface`, в том же документе и на обычном viewport-overlay слое. Не помещайте его в transform/paint/clipping-контейнер. `options` содержит только необязательные `label` и `onError`; контроллер возвращает `element`, `refresh()` и идемпотентный `destroy()`. Уничтожение освобождает capture, слушатели, observer/RAF и владение внешним host, не уничтожая редактор.
+
+Клик по изображению выбирает точный IMG. Перетаскивание угла фиксирует пропорцию и меняет только внешние рамку/статус до отпускания: документ и история остаются прежними. Отпускание применяет одну resize-команду с одним Undo; отсутствие изменения не создаёт историю. Escape и отмена указателя отменяют жест. Прокрутка/resize/blur, смена документа или target, read-only и IME также отменяют незавершённый жест. На сфокусированном маркере стрелки меняют размер на 1 px, Shift+стрелка — на 10 px, отдельной операцией истории для каждого шага. Enter/Space не применяют незавершённое перетаскивание.
+
+Подписи, подсказка и текст размеров локализованы через `imageResizeUIMessages` и `ImageResizeUIMessageKey` из того же entry; оформление использует scoped `--mw-*` переменные и явный CSS. Модуль не зависит от стилей сайта документации, не создаёт thumbnail и не загружает изображение дополнительно. Неизвестная пропорция, скрытая/трансформированная или явно искажённая картинка, курсор подписи, целая figure и защищённые/сложные targets не дают маркеров. Углы за clipped-границами скрыты. [Полный пример, границы и демо](/images#перетаскивание-маркеров).
+
+Переменные задаются на внешнем host или его предке. Например, после `resizeHost.className = 'my-resize-overlay'`:
+
+```css
+.my-resize-overlay {
+  --mw-image-resize-color: #2563eb;
+  --mw-image-resize-handle-size: 28px;
+  --mw-image-resize-radius: 4px;
+  --mw-image-resize-preview: #2563eb12;
+  --mw-image-resize-z-index: 1001;
+}
+```
+
 ## Поиск и замена
 
 Контейнеры: `<div id="search-editor"></div>` и `<div id="search-controls"></div>`.
