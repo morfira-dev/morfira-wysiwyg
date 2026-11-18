@@ -2,7 +2,12 @@ declare module 'multi-semantic-release' {
   import type { Options } from 'semantic-release';
   interface PackageResult {
     name: string;
-    result?: false | { nextRelease: { version: string; type: string }; commits: readonly { hash: string; message: string }[] };
+    dir: string;
+    result?: false | {
+      lastRelease: { gitHead?: string };
+      nextRelease: { version: string; type: string; gitHead: string };
+      commits: readonly { hash: string; message: string }[];
+    };
   }
   const multiRelease: (
     paths: string[],

@@ -39,11 +39,15 @@ export const releasePackages = async (cwd: string, dryRun: boolean, repositoryUr
     sequentialInit: true, ignorePrivatePackages: true,
     deps: { bump: 'override', release: 'inherit', prefix: '^' },
   });
-  return packages.map((pkg) => ({
-    name: pkg.name,
-    release: pkg.result ? pkg.result.nextRelease : null,
-    ...collectPackageChanges(pkg.result ? pkg.result.commits : []),
-  }));
+  return packages.map((pkg) => {
+    if (!pkg.result) return { name: pkg.name, release: null, ...collectPackageChanges([]) };
+    const { lastRelease, nextRelease, commits } = pkg.result;
+    const range = lastRelease.gitHead ? `${lastRelease.gitHead}..${nextRelease.gitHead}` : nextRelease.gitHead;
+    // semantic-release's final result may retain repository-wide commits.
+    // Match its immutable release range against this package's actual paths.
+    const hashes = new Set(execFileSync('git', ['log', '--format=%H', range, '--', pkg.dir], { cwd, encoding: 'utf8' }).trim().split(/\r?\n/));
+    return { name: pkg.name, release: nextRelease, ...collectPackageChanges(commits.filter((commit) => hashes.has(commit.hash))) };
+  });
 };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
