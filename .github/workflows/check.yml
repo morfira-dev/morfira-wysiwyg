@@ -76,6 +76,8 @@ jobs:
         browser: [chromium, firefox, webkit]
         shard: [1, 2, 3, 4]
     steps:
+      - name: Match browser home ownership to the container user
+        run: chown "$(id -u):$(id -g)" "$HOME"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
@@ -108,6 +110,8 @@ jobs:
     env:
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     steps:
+      - name: Match browser home ownership to the container user
+        run: chown "$(id -u):$(id -g)" "$HOME"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
@@ -151,6 +155,8 @@ jobs:
           - profile: angular22
             command: consumers:angular22
     steps:
+      - name: Match browser home ownership to the container user
+        run: chown "$(id -u):$(id -g)" "$HOME"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
