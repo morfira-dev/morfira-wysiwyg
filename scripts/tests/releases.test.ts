@@ -42,6 +42,14 @@ for (const scenario of [
       for (const [index, name] of ['core', 'vue', 'other'].entries()) {
         assert.equal(result.find((pkg) => pkg.name === `@fixture/${name}`)?.release?.version ?? null, scenario.versions[index]);
       }
+      if (scenario.message === 'feat(core): add table clipboard') {
+        const core = result.find((pkg) => pkg.name === '@fixture/core')!;
+        const vue = result.find((pkg) => pkg.name === '@fixture/vue')!;
+        assert.equal(core.changes[0]?.label, 'feat(core)');
+        assert.equal(core.changes[0]?.subject, 'add table clipboard');
+        assert.equal(core.changes[0]?.hash, git('rev-parse', 'HEAD'));
+        assert.equal(vue.changeCount, 0, 'Dependency-only release must not inherit core commit subjects.');
+      }
       assert.equal(git('status', '--porcelain'), before); assert.equal(git('tag'), tags);
       assert.equal(JSON.parse(await readFile(join(directory, 'packages/vue/package.json'), 'utf8')).dependencies['@fixture/core'], '^1.0.0');
     } finally { await rm(directory, { recursive: true, force: true }); }

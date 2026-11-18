@@ -3,10 +3,11 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Context, TGBotConfig } from '@nuykon/semantic-release-tg-bot';
 import type { PublishedPackage, PublishedReleaseReport } from './release-notification.types.js';
+import { notificationMessage, parsePackageChanges } from './release-notification-message.js';
 
 const plainRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value)
   && [Object.prototype, null].includes(Object.getPrototypeOf(value));
-const publishedReport = (value: unknown): PublishedReleaseReport => {
+export const publishedReport = (value: unknown): PublishedReleaseReport => {
   if (!plainRecord(value) || value.version !== 1 || typeof value.sourceSha !== 'string' || !/^[a-f\d]{40}$/i.test(value.sourceSha)
     || typeof value.runId !== 'string' || !/^\d+$/.test(value.runId) || typeof value.runAttempt !== 'string' || !/^\d+$/.test(value.runAttempt)
     || !Array.isArray(value.packages) || value.packages.length > 32)
@@ -16,23 +17,10 @@ const publishedReport = (value: unknown): PublishedReleaseReport => {
       || !/^@morfira-dev\/wysiwyg(?:-[a-z0-9-]+)?$/.test(entry.name) || typeof entry.version !== 'string' || entry.version.length > 64
       || !/^\d+\.\d+\.\d+(?:-[0-9a-z.-]+)?(?:\+[0-9a-z.-]+)?$/i.test(entry.version))
       throw new TypeError('Invalid published package in the notification report.');
-    return { name: entry.name, version: entry.version };
+    return { name: entry.name, version: entry.version, ...parsePackageChanges(entry) };
   });
   if (new Set(packages.map((entry) => entry.name)).size !== packages.length) throw new TypeError('Duplicate published package in the notification report.');
   return { version: 1, sourceSha: value.sourceSha, runId: value.runId, runAttempt: value.runAttempt, packages };
-};
-const escapeHTML = (value: string): string => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
-const notificationMessage = (report: PublishedReleaseReport): string => {
-  const entries = [...report.packages].sort((left, right) => left.name.localeCompare(right.name));
-  const message = [
-    '<b>Morfira WYSIWYG — опубликованы пакеты</b>',
-    '',
-    ...entries.map((entry) => `<code>${escapeHTML(entry.name)}</code> — <code>${escapeHTML(entry.version)}</code>`),
-    '',
-    `<a href="https://github.com/morfira-dev/morfira-wysiwyg/actions/runs/${report.runId}">GitHub Actions</a>`,
-  ].join('\n');
-  if (message.length > 3800) throw new RangeError('Release notification exceeds the bounded summary size.');
-  return message;
 };
 
 export const notifyPublishedRelease = async (directory: string, env: NodeJS.ProcessEnv = process.env): Promise<void> => {
@@ -56,7 +44,7 @@ export const notifyPublishedRelease = async (directory: string, env: NodeJS.Proc
     }
     throw error;
   }
-  if (size > 20000) throw new RangeError('Release notification report is too large.');
+  if (size > 256000) throw new RangeError('Release notification report is too large.');
   const report = publishedReport(JSON.parse(await readFile(path, 'utf8')) as unknown);
   if (report.sourceSha !== env.GITHUB_SHA || report.runId !== env.GITHUB_RUN_ID || report.runAttempt !== env.GITHUB_RUN_ATTEMPT)
     throw new Error('Release notification report does not belong to this workflow execution.');
@@ -76,7 +64,7 @@ export const notifyPublishedRelease = async (directory: string, env: NodeJS.Proc
     notifyOnSuccess: true,
     notifyOnFail: false,
     notifications: [{ chatIds: 'TELEGRAM_CHAT_ID', branch: 'main' }],
-    success: { format: 'html', message: () => message },
+    success: { format: 'html', message: () => message.html },
   };
   const plugin = await import('@nuykon/semantic-release-tg-bot');
   plugin.verifyConditions(options, context);

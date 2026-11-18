@@ -75,6 +75,8 @@ Explicit package integration after build: `pnpm run consumers:check` targets eig
 
 After successful live publication and version persistence, the workflow can send **one aggregate message listing the package names and versions actually released** through `@nuykon/semantic-release-tg-bot`. The plugin is a release-tooling devDependency, outside editor core/plugins and browser bundles. Private tooling requires Node 22.20.0 or newer.
 
+The message groups changes by package: each version lists commit subjects with their labels (`feat(core)`, `fix(plugins)`, `perf`, `break`, and `!` for breaking changes) and links to the exact commits. Each package uses its own directory and release range; a dependent adapter does not inherit the core package's commit list. Releases caused only by internal dependency updates say so explicitly. Commit bodies, authors and generated version-sync commits are excluded. Large releases use shorter previews, omitted-change counts and a link to each package's complete release notes. Space is shared across packages so one long changelog cannot displace the other versions. No additional secrets are required.
+
 In repository Settings → Secrets and variables → Actions, configure:
 
 | Secret | Purpose |

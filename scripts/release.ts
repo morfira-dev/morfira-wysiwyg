@@ -6,6 +6,7 @@ import multiRelease from 'multi-semantic-release';
 import type { Options } from 'semantic-release';
 import { persistReleaseState } from './release-state.js';
 import type { PublishedReleaseReport } from './release-notification.types.js';
+import { collectPackageChanges } from './release-notification-message.js';
 
 export const assertPublishRuntime = (npmVersion: string, env: NodeJS.ProcessEnv): void => {
   const version = npmVersion.trim();
@@ -38,7 +39,11 @@ export const releasePackages = async (cwd: string, dryRun: boolean, repositoryUr
     sequentialInit: true, ignorePrivatePackages: true,
     deps: { bump: 'override', release: 'inherit', prefix: '^' },
   });
-  return packages.map((pkg) => ({ name: pkg.name, release: pkg.result ? pkg.result.nextRelease : null }));
+  return packages.map((pkg) => ({
+    name: pkg.name,
+    release: pkg.result ? pkg.result.nextRelease : null,
+    ...collectPackageChanges(pkg.result ? pkg.result.commits : []),
+  }));
 };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
@@ -49,10 +54,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const sourceHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   const result = await releasePackages(process.cwd(), dryRun);
   if (!dryRun && result.some((pkg) => pkg.release)) await persistReleaseState(process.cwd(), sourceHead);
-  console.log(JSON.stringify(result, null, 2));
-  await writeFile('release-plan.json', `${JSON.stringify(result, null, 2)}\n`);
+  const plan = result.map(({ name, release }) => ({ name, release }));
+  console.log(JSON.stringify(plan, null, 2));
+  await writeFile('release-plan.json', `${JSON.stringify(plan, null, 2)}\n`);
   if (!dryRun) {
-    const packages = result.flatMap(({ name, release }) => release ? [{ name, version: release.version }] : []);
+    const packages = result.flatMap(({ name, release, changes, changeCount }) => release ? [{ name, version: release.version, changes, changeCount }] : []);
     if (packages.length) {
       const report: PublishedReleaseReport = {
         version: 1,
