@@ -27,10 +27,18 @@ different row values yield mixed. Existing safely imported height values outside
 the command's narrower px envelope are reported as stored strings and preserved
 by unrelated property edits. Schema v1 already admits bounded height styles on
 TR; no codec allowlist, persisted format or core dependency graph change needed.
-HTML/JSON full-document roundtrip retains row height without this plugin. Existing
-grid structural operations rebuild row wrappers and therefore do not preserve row
-height; selected-cell rectangle clipboard also does not copy TR height. Document
-these limits rather than silently widening structural/clipboard behavior.
+HTML/JSON full-document roundtrip retains row height without this plugin.
+Structural operations still rebuild row wrappers, but carry the existing inline
+height by logical row: column edits, merge/split and target-table paste/cut keep
+the original row-height sequence. Row insertion shifts surviving heights around
+a new unset row; deletion removes only the deleted row's height. This includes
+insertion/deletion through rowspans and keyboard-appended rows. Expanded paste
+keeps target-row heights and adds unset rows; source clipboard TR heights never
+overwrite target rows. Selected-cell rectangle clipboard still omits TR height.
+Retain safely imported height units too, without clamping or inheriting a
+neighbor's height. No new row-style property, row-wrapper identity guarantee or
+row-section-preservation contract is introduced. Invalid grid edits remain atomic
+under the existing transaction/history boundary.
 
 The existing form adds a localized text input for rowMinHeight with a 1–1000px
 hint; empty resets, mixed uses existing mixed placeholder, string drafts and

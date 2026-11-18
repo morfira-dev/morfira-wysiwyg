@@ -1,5 +1,45 @@
 # Verification record
 
+## Structural row-height retention — 2026-11-18
+
+Local implementation after 6cc8514 extends [table-row-height.md](table-row-height.md)
+to preserve inline row height when the tables plugin rebuilds its grid. Column
+edits/width, merge/split and target paste/cut keep the logical row-height sequence.
+Row insertion/deletion splice a bounded height snapshot around the actual edited
+row, including spanning origin migration. New/appended/grown rows are unset;
+source clipboard heights are not applied to target rows. Rectangle copy still
+omits row metadata, and row-wrapper identity/section preservation is not promised.
+Only existing row height is carried, not arbitrary attributes/styles or computed
+geometry. No properties-plugin dependency, core/schema/public API or CSS change.
+
+Passed: pnpm run build (declarations and all bundle guards), pnpm run typecheck,
+pnpm run check:project, pnpm run check:tree-shaking, pnpm run package:check (eight
+archives), pnpm run docs:build:site and git diff --check. No local behavioral
+tests, installed-consumer execution or live browser checks ran; no GitHub
+pipeline was inspected. Five browser definitions cover column operations, row
+insertion/Tab, deletion through rowspans, merge/split/paste/clipboard and blocked
+or invalid edits, with Undo and retained content. Both existing RU/EN demo
+definitions additionally exercise structural commands; their outcomes remain
+unverified until explicitly executed elsewhere.
+
+Final selected closures, bytes (shared JS chunks counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 89363 | 27704 | 24347 | 3293 |
+| Table properties | 32072 | 11667 | 10438 | — |
+| Table properties form | 46765 | 17027 | 15172 | 1922 shared forms |
+| Standard ready | 213765 | 63381 | 54339 | 12162 |
+| Standard ready + properties/form | 236609 | 69914 | 59368 | 12162 |
+
+Standard-ready grows by 45 gzip JS bytes and the selected properties profile by
+55. Core JS and every CSS profile are unchanged; standard ready and the
+properties profile retain 16619/10086 bytes below their 80000-byte gzip guard.
+Standard CSS is 12162 raw / 3924 gzip / 3207 Brotli bytes; shared forms remains
+1922 / 709 / 578. Measurements exclude framework runtimes, source maps and types.
+This supersedes the earlier recorded structural row-height limitation without
+retroactively changing those historical runtime validation results.
+
 ## CI fixture correction after e3ecdce — 2026-11-18
 
 Inspected completed GitHub run 44386207520 at e3ecdce. Build/static checks,

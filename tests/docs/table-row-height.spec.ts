@@ -35,4 +35,15 @@ for (const english of [false, true]) test(`minimum height across merged table ro
   await undo.click();
   expect(await rows.evaluateAll((elements) => elements.map((row) => (row as HTMLTableRowElement).style.height))).toEqual(['80px', '80px']);
   await expect(page.locator('.lab-tables')).toContainText(t('контент может сделать строку выше', 'content may make a row taller'));
+  await merged.click();
+  await page.locator('.lab-tables').getByRole('button', { name: t('Столбец справа', 'Column right'), exact: true }).click();
+  expect(await table.locator('tr').evaluateAll((elements) => elements.map((row) => row.style.height))).toEqual(['', '80px', '80px']);
+  await expect(table.locator('th[scope="col"]')).toHaveCount(3);
+  await expect(table.locator('caption')).toHaveText(caption);
+  await undo.click();
+  await table.locator('tbody tr').nth(1).locator('td').first().click();
+  await page.locator('.lab-tables').getByRole('button', { name: t('Строка выше', 'Row above'), exact: true }).click();
+  expect(await table.locator('tr').evaluateAll((elements) => elements.map((row) => row.style.height))).toEqual(['', '80px', '', '80px']);
+  await undo.click();
+  expect(await table.locator('tr').evaluateAll((elements) => elements.map((row) => row.style.height))).toEqual(['', '80px', '80px']);
 });

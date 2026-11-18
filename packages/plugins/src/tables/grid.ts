@@ -36,7 +36,10 @@ export const emptyCell = (row: number, column: number, header = false): GridCell
   element.innerHTML = '<p><br></p>';
   return { element, row, column, rowspan: 1, colspan: 1 };
 };
-export const rebuildGrid = (table: HTMLTableElement, cells: GridCell[], rowCount: number, columnCount: number): void => {
+const rowHeights = (table: HTMLTableElement): string[] => [...table.rows]
+  .filter((row) => row.closest('table') === table).map((row) => row.style.height);
+
+export const rebuildGrid = (table: HTMLTableElement, cells: GridCell[], rowCount: number, columnCount: number, heights: readonly string[] = rowHeights(table)): void => {
   if (rowCount < 1 || columnCount < 1) {
     table.remove();
     return;
@@ -67,7 +70,11 @@ export const rebuildGrid = (table: HTMLTableElement, cells: GridCell[], rowCount
     colgroup.append(col);
   }
   const body = document.createElement('tbody');
-  const rows = Array.from({ length: rowCount }, () => body.appendChild(document.createElement('tr')));
+  const rows = Array.from({ length: rowCount }, (_, index) => {
+    const element = document.createElement('tr');
+    if (heights[index]) element.style.height = heights[index];
+    return body.appendChild(element);
+  });
   for (const cell of [...cells].sort((a, b) => a.row - b.row || a.column - b.column)) {
     if (cell.rowspan > 1)
       cell.element.rowSpan = cell.rowspan;
@@ -105,6 +112,8 @@ export const selectionRectangle = (grid: TableGrid, selected: HTMLTableCellEleme
 export const cellsInRectangle = (grid: TableGrid, rectangle: CellRectangle): GridCell[] => grid.cells.filter((cell) => cell.row >= rectangle.top && cell.column >= rectangle.left && cell.row + cell.rowspan - 1 <= rectangle.bottom && cell.column + cell.colspan - 1 <= rectangle.right);
 const insertGridAxis = (table: HTMLTableElement, index: number, row: boolean): void => {
   const grid = readGrid(table);
+  const heights = rowHeights(table);
+  if (row) heights.splice(index, 0, '');
   const position = row ? 'row' : 'column';
   const span = row ? 'rowspan' : 'colspan';
   for (const cell of grid.cells) {
@@ -113,10 +122,12 @@ const insertGridAxis = (table: HTMLTableElement, index: number, row: boolean): v
     else if (cell[position] >= index)
       cell[position]++;
   }
-  rebuildGrid(table, grid.cells, grid.rows + (row ? 1 : 0), grid.columns + (row ? 0 : 1));
+  rebuildGrid(table, grid.cells, grid.rows + (row ? 1 : 0), grid.columns + (row ? 0 : 1), heights);
 };
 const deleteGridAxis = (table: HTMLTableElement, index: number, row: boolean): void => {
   const grid = readGrid(table);
+  const heights = rowHeights(table);
+  if (row) heights.splice(index, 1);
   const position = row ? 'row' : 'column';
   const span = row ? 'rowspan' : 'colspan';
   const cells = grid.cells.filter((cell) => cell[position] !== index || cell[span] > 1);
@@ -126,7 +137,7 @@ const deleteGridAxis = (table: HTMLTableElement, index: number, row: boolean): v
     if (cell[position] > index)
       cell[position]--;
   }
-  rebuildGrid(table, cells, grid.rows - (row ? 1 : 0), grid.columns - (row ? 0 : 1));
+  rebuildGrid(table, cells, grid.rows - (row ? 1 : 0), grid.columns - (row ? 0 : 1), heights);
 };
 export const insertGridRow = (table: HTMLTableElement, index: number): void => insertGridAxis(table, index, true);
 export const insertGridColumn = (table: HTMLTableElement, index: number): void => insertGridAxis(table, index, false);
