@@ -1,7 +1,7 @@
 import type { TablePropertiesPatch } from '../../table-properties/types.js';
 import type { TablePropertiesFormField, TablePropertiesFormValues } from './types.js';
 
-export const propertyFields: readonly TablePropertiesFormField[] = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'headerRow', 'headerColumn', 'caption'];
+export const propertyFields: readonly TablePropertiesFormField[] = ['width', 'rowMinHeight', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'headerRow', 'headerColumn', 'caption'];
 export const checkedFormValues = (input: Partial<TablePropertiesFormValues>): Partial<TablePropertiesFormValues> => {
   if (!input || typeof input !== 'object' || Array.isArray(input) ||
       ![Object.prototype, null].includes(Object.getPrototypeOf(input))) throw new TypeError('Expected table property form values.');

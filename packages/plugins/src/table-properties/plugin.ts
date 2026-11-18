@@ -5,12 +5,14 @@ import type { TableSelectionState } from '../tables/types.js';
 import { sameTablePropertyTarget, tablePropertyTarget } from './target.js';
 import { cellVerticalAlign, checkedTablePropertiesPatch, mixedCellValue, patchMargins, styleChanges, tableAlignment, tableWidth, writeStyle } from './values.js';
 import { applyTableSemantics, planTableSemantics, tableCaption, tableHeaders } from './semantics.js';
+import { rowMinHeightState, selectedPropertyRows } from './rows.js';
 import type { TablePropertiesRequest, TableSemanticsPlan } from './internal-types.js';
 import type { TablePropertiesCommands, TablePropertiesPatch } from './types.js';
 
 const updateCommand = /* @__PURE__ */ createEditorCommand<TablePropertiesRequest>('table-properties.update');
 const changes = (target: TableSelectionState, patch: TablePropertiesPatch, semantics: TableSemanticsPlan): boolean => {
   if (semantics.cells.length || semantics.captionChanged) return true;
+  if (patch.rowMinHeight !== undefined && selectedPropertyRows(target).some((row) => styleChanges(row, 'height', patch.rowMinHeight!))) return true;
   if (patch.width !== undefined && (target.table.hasAttribute('width') || styleChanges(target.table, 'width', patch.width))) return true;
   if (patch.alignment !== undefined) {
     const [left, right] = patchMargins(patch.alignment);
@@ -21,6 +23,8 @@ const changes = (target: TableSelectionState, patch: TablePropertiesPatch, seman
     || (patch.cellVerticalAlign !== undefined && styleChanges(cell, 'vertical-align', patch.cellVerticalAlign)));
 };
 const apply = (editor: Editor, target: TableSelectionState, patch: TablePropertiesPatch, semantics: TableSemanticsPlan): void => {
+  if (patch.rowMinHeight !== undefined)
+    for (const row of selectedPropertyRows(target)) writeStyle(row, 'height', patch.rowMinHeight);
   if (patch.width !== undefined) {
     target.table.removeAttribute('width');
     writeStyle(target.table, 'width', patch.width);
@@ -76,6 +80,7 @@ export const tableProperties = (): EditorPlugin => ({
         const target = tablePropertyTarget(editor);
         return {
           disabled: !target || !editor.commands.getState(updateCommand).enabled,
+          rowMinHeight: target ? rowMinHeightState(target) : false,
           ...(target ? tableHeaders(target.table) : { headerRow: false, headerColumn: false }),
           caption: target ? tableCaption(target.table) : false,
           width: target ? tableWidth(target.table) : false,

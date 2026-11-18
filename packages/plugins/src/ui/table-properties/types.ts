@@ -2,6 +2,7 @@ import type { tablePropertiesFormMessages } from './messages.js';
 
 export interface TablePropertiesFormValues {
   width: string;
+  rowMinHeight: string;
   alignment: string;
   cellBackground: string;
   cellBorder: string;

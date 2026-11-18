@@ -2,6 +2,7 @@ export const tablePropertiesFormMessages = Object.freeze({
   en: Object.freeze({
     'ui.tableProperties.label': 'Table properties',
     'ui.tableProperties.width': 'Table width (40–4000px or 1–100%)',
+    'ui.tableProperties.rowMinHeight': 'Minimum row height (1–1000px)',
     'ui.tableProperties.alignment': 'Table placement',
     'ui.tableProperties.cellBackground': 'Cell background color',
     'ui.tableProperties.cellBorder': 'Cell border color',
@@ -28,6 +29,7 @@ export const tablePropertiesFormMessages = Object.freeze({
   ru: Object.freeze({
     'ui.tableProperties.label': 'Свойства таблицы',
     'ui.tableProperties.width': 'Ширина таблицы (40–4000px или 1–100%)',
+    'ui.tableProperties.rowMinHeight': 'Минимальная высота строк (1–1000px)',
     'ui.tableProperties.alignment': 'Расположение таблицы',
     'ui.tableProperties.cellBackground': 'Цвет фона ячеек',
     'ui.tableProperties.cellBorder': 'Цвет границ ячеек',

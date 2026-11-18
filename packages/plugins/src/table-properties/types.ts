@@ -2,6 +2,7 @@ export type TableAlignment = 'left' | 'center' | 'right';
 export type TableCellVerticalAlign = 'top' | 'middle' | 'bottom';
 
 export interface TablePropertiesPatch {
+  rowMinHeight?: string | false;
   headerRow?: boolean;
   headerColumn?: boolean;
   caption?: string | false;
@@ -13,6 +14,7 @@ export interface TablePropertiesPatch {
 }
 
 export interface TablePropertiesState {
+  readonly rowMinHeight: string | false | 'mixed';
   readonly headerRow: boolean;
   readonly headerColumn: boolean;
   readonly caption: string | false;

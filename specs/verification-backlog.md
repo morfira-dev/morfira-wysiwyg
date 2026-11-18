@@ -1,5 +1,51 @@
 # Verification record
 
+## Minimum table row height — 2026-11-18
+
+Local implementation after d28a78a follows
+[table-row-height.md](table-row-height.md). The opt-in properties patch accepts
+rowMinHeight as a canonical integer 1–1000px string or false; state reports the
+selected actual rows' inline heights or mixed. Native TR height is a minimum,
+not clipping or an exact rendered-height promise. The authoritative rectangle
+includes full rowspans and applies once per actual row, preserving row/cell/child
+identity, existing caption/headers and native/logical selection. Full patch
+validation and SDK focus/revision/readonly/IME gates are reused.
+
+The existing form adds a localized text draft with mixed/reset/dirty-only Apply.
+Main/playground examples explain the merged-row scope and native minimum sizing.
+No codec, schema, CSS, new runtime dependency or preset-installation change.
+The existing structural operations rebuild row wrappers and discard their height;
+cell-rectangle clipboard also omits it. Those explicit limits remain future work.
+
+Passed: `pnpm run build` (declarations and all bundle guards),
+`pnpm run typecheck`, `pnpm run check:project`,
+`pnpm run check:tree-shaking`, `pnpm run package:check` (eight archives),
+`pnpm run docs:build:site`, and `git diff --check`.
+No local behavioral tests, installed-consumer execution or live browser checks
+ran, as requested. Five new API definitions, two form definitions and two RU/EN
+demo definitions plus public type assertions are authored; existing exact-state
+expectations/types include the new field. Native geometry, history, lifecycle and
+browser outcomes remain unverified across all three browsers.
+
+Final selected closures, bytes (shared JS chunks counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 89363 | 27704 | 24347 | 3293 |
+| Table properties | 31877 | 11614 | 10385 | — |
+| Table properties form | 46422 | 16935 | 15069 | 1922 shared forms |
+| Standard ready | 213221 | 63256 | 54228 | 12162 |
+| Standard ready + properties/form | 236062 | 69764 | 59289 | 12162 |
+
+Properties grows by 209 gzip JS bytes, its form by 271 and the selected properties
+profile by 255. Core JS/CSS, standard-ready JS and all CSS measurements are
+unchanged. The properties profile keeps 10236 bytes below the 80000 gzip JS guard;
+headless/form guards stay 15000/20000. Standard-ready CSS remains
+12162 raw / 3924 gzip / 3207 Brotli bytes, shared forms 1922 / 709 / 578 and table
+CSS 2055 / 783 / 622. Full measurements are in size-report.json, excluding
+framework runtimes, declarations and source maps. Static passes are not runtime
+correctness evidence.
+
 ## Table headers and caption — 2026-11-18
 
 Local implementation after 5906743 follows

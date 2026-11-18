@@ -1,4 +1,5 @@
 import type { TableAlignment, TableCellVerticalAlign, TablePropertiesPatch } from './types.js';
+import { checkedRowMinHeight } from './rows.js';
 
 const widthValue = (value: unknown): string | false => {
   if (value === false) return false;
@@ -37,11 +38,12 @@ export const checkedTablePropertiesPatch = (input: unknown, document: Document):
   if (!input || typeof input !== 'object' || Array.isArray(input)
       || ![Object.prototype, null].includes(Object.getPrototypeOf(input)))
     throw new TypeError('Table properties must be a plain patch object.');
-  const fields = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'headerRow', 'headerColumn', 'caption'];
+  const fields = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'headerRow', 'headerColumn', 'caption', 'rowMinHeight'];
   if (Reflect.ownKeys(input).some((key) => typeof key !== 'string' || !fields.includes(key)))
     throw new TypeError('Unknown table property.');
   const patch = input as Record<string, unknown>;
   const result: TablePropertiesPatch = {};
+  if (Object.hasOwn(patch, 'rowMinHeight')) result.rowMinHeight = checkedRowMinHeight(patch.rowMinHeight);
   for (const key of ['headerRow', 'headerColumn'] as const) {
     if (!Object.hasOwn(patch, key)) continue;
     if (typeof patch[key] !== 'boolean') throw new TypeError('Table header axes must be boolean.');

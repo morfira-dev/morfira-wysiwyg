@@ -1,0 +1,38 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`minimum height across merged table rows in ${english ? 'English playground' : 'Russian homepage'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  await page.getByLabel(t('Пример документа', 'Document sample'), { exact: true }).selectOption('tables');
+  await page.getByRole('button', { name: t('Загрузить пример', 'Load sample'), exact: true }).click();
+  const table = content.locator('table[title="Table headers sample"]');
+  const caption = t('Возможности таблиц Morfira', 'Morfira table capabilities');
+  const merged = table.locator('tbody td[rowspan="2"]');
+  await merged.click();
+  const form = page.getByRole('form', { name: t('Свойства таблицы', 'Table properties'), exact: true });
+  const height = form.getByLabel(t('Минимальная высота строк (1–1000px)', 'Minimum row height (1–1000px)'), { exact: true });
+  const apply = form.getByRole('button', { name: t('Применить свойства', 'Apply properties'), exact: true });
+  const rows = table.locator('tbody tr');
+  await height.fill('80px');
+  await apply.click();
+  expect(await rows.evaluateAll((elements) => elements.map((row) => (row as HTMLTableRowElement).style.height))).toEqual(['80px', '80px']);
+  expect(await table.locator('thead tr').evaluate((row) => row.style.height)).toBe('');
+  await expect(table.locator('thead th[scope="col"]')).toHaveCount(3);
+  await expect(merged.locator('strong')).toHaveText(t('Таблицы', 'Tables'));
+  await expect(table.locator('caption')).toHaveText(caption);
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await undo.click();
+  expect(await rows.evaluateAll((elements) => elements.map((row) => (row as HTMLTableRowElement).style.height))).toEqual(['', '']);
+  await expect(undo).toBeDisabled();
+  await merged.click();
+  await height.fill('80px');
+  await apply.click();
+  await height.fill('');
+  await apply.click();
+  expect(await rows.evaluateAll((elements) => elements.map((row) => (row as HTMLTableRowElement).style.height))).toEqual(['', '']);
+  await undo.click();
+  expect(await rows.evaluateAll((elements) => elements.map((row) => (row as HTMLTableRowElement).style.height))).toEqual(['80px', '80px']);
+  await expect(page.locator('.lab-tables')).toContainText(t('контент может сделать строку выше', 'content may make a row taller'));
+});

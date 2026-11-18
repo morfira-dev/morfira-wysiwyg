@@ -1,6 +1,6 @@
 # Table and cell properties
 
-Optional `tableProperties()` adds table width/placement, first-row/column headers, a caption and selected-cell background, border color and vertical alignment. Independent `createTablePropertiesForm()` supplies ready controls. Core, the standard/contextual toolbar and presets do not install these modules automatically.
+Optional `tableProperties()` adds table width/placement, first-row/column headers, a caption, minimum row height and selected-cell background, border color and vertical alignment. Independent `createTablePropertiesForm()` supplies ready controls. Core, the standard/contextual toolbar and presets do not install these modules automatically.
 
 On the [homepage](/en/#editor) and [playground](/en/playground), find the form in the Tables section. Click a cell or select a logical rectangle, edit fields and choose Apply properties. For a rowspan example, open Contextual table, choose Load contextual table sample and Select 2 × 2 region. Styling retains actual cells; header conversion changes only TD/TH wrappers, preserving content and spans. One form submission is one Undo.
 
@@ -48,12 +48,27 @@ With standard/extended, pass `plugins: [tableProperties()]` to the preset factor
 | `headerRow` | `true` / `false` | First logical row of the whole table |
 | `headerColumn` | `true` / `false` | First logical column of the whole table |
 | `caption` | Literal text up to 5000 characters; empty string / `false` removes | Native caption of the whole table |
+| `rowMinHeight` | Canonical integer `1–1000px` string; `false` resets | Every logical row touched by the selected cell rectangle |
 
 Table placement is not text alignment. Left/center/right may look identical at 100% width. Resetting width removes owned CSS width and the legacy TABLE width attribute; any width write also removes that attribute. Resetting placement removes both margins. Color/vertical reset removes only the corresponding own declaration, without clearing computed theme styles.
 
 Colors are limited to 100 characters: hex, supported names, numeric rgb/rgba/hsl/hsla and browser parsing. URLs, var(), arbitrary functions, escapes, extra declarations and `!important` are rejected. Returned colors use browser-canonical explicit values. The entire patch is validated before mutation: unknown keys, explicit `undefined`, arrays and unsupported values throw without a partial result. Empty/idempotent patches do not add history or clear redo.
 
-`getState()` returns `disabled`, `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn` and `caption`. Missing explicit values are `false`; differing selected-cell styles are `mixed`. Header axes are booleans, caption is a string or `false`. These are persisted values, not computed theme CSS. Safe imported width units may lie outside the narrower command choices: state reports the stored string and unrelated updates leave it untouched. CSS width takes precedence over a legacy numeric width attribute.
+`getState()` returns `disabled`, `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn`, `caption` and `rowMinHeight`. Missing explicit values are `false`; differing selected-cell styles or row heights are `mixed`. Header axes are booleans, caption is a string or `false`. These are persisted values, not computed theme CSS. Safe imported width/row-height units may lie outside the narrower command choices: state reports the stored string and unrelated updates leave it untouched. CSS width takes precedence over a legacy numeric width attribute.
+
+## Minimum row height
+
+```ts
+properties.update({ rowMinHeight: '80px' });
+const minimum = properties.getState().rowMinHeight; // string | false | 'mixed'
+properties.update({ rowMinHeight: false }); // remove only TR inline height
+```
+
+The property writes native `TR.style.height`, which acts as a **minimum** in CSS table layout. It does not clip content, insert spacer text or set per-cell heights. Content, cell padding, spanning cells and host/table layout may make the rendered row taller; this is not a promise of an exact pixel height. Resetting leaves cell heights/styles and the table height unchanged.
+
+All actual rows in the selected logical rectangle receive the value, regardless of selected columns. A caret in a cell with `rowspan="2"` affects both covered rows. Other rows, caption, sections, headers and actual content nodes stay unchanged. The whole patch remains one Undo, including when combined with cell/table properties. Only canonical strings from `1px` to `1000px` are accepted: no whitespace, decimals, leading zero, other units, CSS keywords, declaration injection or `!important`.
+
+On the homepage or playground, load **Tables**, click the first body cell spanning two rows and enter `80px` in **Minimum row height (1–1000px)**. Apply changes both body rows; the header row is unaffected. An empty field resets the owned height, while differing row values use the Mixed values placeholder. Imported safe values such as `2em` remain visible and survive unrelated edits, but an explicit height write must use the narrower px syntax. New runtime definitions are authored and have not been executed locally in the current work mode.
 
 ## Headers and caption
 
@@ -90,7 +105,7 @@ Customize the caption on the editor container; styles are scoped to `.mw-content
 
 ## Form drafts and localization
 
-The controller exposes `element`, `refresh()`, `getValues()`, `setValues(partial)`, and idempotent `destroy()`. Value fields are strings: `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn`, `caption`. Header selects use `"true"` for on and an empty string for off; an empty caption removes it. Caption whitespace is retained. `getValues()` now includes the three new fields; update application-owned exact snapshot comparisons. setValues changes only the draft and marks supplied fields dirty, without editing the document.
+The controller exposes `element`, `refresh()`, `getValues()`, `setValues(partial)`, and idempotent `destroy()`. Value fields are strings: `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn`, `caption`, `rowMinHeight`. Header selects use `"true"` for on and an empty string for off; an empty caption removes it and an empty row height resets it. Caption whitespace is retained. `getValues()` includes the new fields; update application-owned exact snapshot comparisons. setValues changes only the draft and marks supplied fields dirty, without editing the document.
 
 Apply sends **only dirty fields**. Mixed colors show an empty control with the Mixed values placeholder; editing width alone preserves differing cell colors. A successful Apply reloads authoritative values. Locale/read-only refresh preserves a draft for the same target; switching tables or replacing the document discards stale drafts and authority.
 
@@ -102,6 +117,6 @@ Targets are one native cell Range or an actual complete logical rectangle, inclu
 
 Schema version stays 1 with a narrow additive codec extension: only TABLE keeps margin-left/right `0px | auto`, and only TD/TH keeps vertical-align `top | middle | bottom`. Full-document HTML/JSON roundtrips retain these properties without the optional plugin installed. Older readers can discard the additions; version 1 does not promise lossless older-reader compatibility.
 
-Rectangle clipboard creates a fresh TABLE: copied cells retain their `th`/scope semantics, colors and vertical alignment, but the caption, table width and placement are not copied, even for an all-cell rectangle. Full-document HTML/JSON already retains `caption` and `th scope` without the properties plugin; schema version is unchanged. Structural commands retain surviving cells’ styles; inserted/split cells keep their existing defaults, and merge retains the origin cell’s style. Row heights, padding, border width/style and Office fidelity are outside this slice.
+Rectangle clipboard creates a fresh TABLE: copied cells retain their `th`/scope semantics, colors and vertical alignment, but the caption, table width/placement and TR height are not copied, even for an all-cell rectangle. Full-document HTML/JSON already retains `caption`, `th scope` and bounded TR height styles without the properties plugin; schema version and the height allowlist are unchanged. Existing structural grid commands rebuild TR wrappers and therefore do not preserve row height. They retain surviving cells’ styles; inserted/split cells keep their existing defaults, and merge retains the origin cell’s style. Row-resize handles, padding, border width/style and Office fidelity are outside this slice.
 
 Modules have independent selective imports and measured JS closures; CSS is separate and shared profile code is counted once. Current raw/gzip/Brotli values are in size-report.json and actual runs in the project verification record. No runtime dependencies, remote resources or new backend trust boundary are added; see [security](/en/security).
