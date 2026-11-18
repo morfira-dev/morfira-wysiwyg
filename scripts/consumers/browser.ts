@@ -227,6 +227,16 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await expect(content.locator('img')).toHaveAttribute('height', '18');
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
           assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeImageContext.html, `${adapter}: installed proportional resize undoes once`);
+          await page.evaluate(() => {
+            const { editor, images } = window.morfiraConsumer;
+            images!.select(editor!.surface.querySelector('img')!);
+            images!.align('right');
+          });
+          await expect(content.locator('img')).toHaveCSS('display', 'block');
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.images!.getSelected()!.alignment), 'right', `${adapter}: installed alignment API reports placement`);
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.surface.querySelector('img')!.style.marginLeft), 'auto', `${adapter}: installed alignment persists margin`);
+          await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          assert.equal(await page.evaluate(() => window.morfiraConsumer.editor!.getHTML()), beforeImageContext.html, `${adapter}: installed alignment undoes once`);
           const beforeHandles = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
           await content.locator('img').scrollIntoViewIfNeeded();
           await page.evaluate(() => window.morfiraConsumer.showImageResize!());

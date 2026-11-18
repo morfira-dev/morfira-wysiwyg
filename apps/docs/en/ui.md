@@ -106,6 +106,12 @@ const form = createImageForm(formHost, editor, {
 
 Invalid, blank or oversized locked dimensions are not applied; drafts remain available for correction. Uncheck to edit independent sides or remove dimensions. `setValues` preserves supplied string drafts without automatically recalculating; Apply validates that the final pair matches the fixed ratio. Changing src, switching images or external API replacement cannot apply the old ratio to a new target. Dimensions and other metadata use one Undo step; unchanged rich caption nodes survive. Locale changes translate the checkbox via `ui.images.keepAspectRatio` without resetting drafts. See the [resize command](/en/images#proportional-dimensions).
 
+### Image alignment
+
+The **Image alignment** group is available in both form modes and contextual properties. **Align image left**, **Center image**, **Align image right** and **Reset image alignment** apply a command to the selected image immediately. Other fields remain drafts and are not submitted. `aria-pressed` reflects explicit placement; reset is pressed when no placement is recognized. `ImageFormValues`, `getValues` and `setValues` keep their existing shape: alignment is not a draft field.
+
+Buttons are unavailable without an eligible image, during read-only, IME composition or upload. Replacing the document/target while restoring focus cancels the action. Each placement change is one Undo step; repeating the same value adds no history. Dimensions and caption survive; placement belongs to the IMG rather than caption text. [Stored format and boundaries](/en/images#image-alignment).
+
 ### Edit-only image form
 
 ```ts

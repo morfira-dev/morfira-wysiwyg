@@ -1,6 +1,8 @@
 import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { imageCommands } from '../../images/index.js';
+import { readImageAlignment } from '../../images/alignment.js';
+import { ordinaryResizableImage } from '../../images/resize.js';
 import type { ImagePatch, ImageValue } from '../../images/types.js';
 import { createFormSelection } from '../shared/selection.js';
 import { createFormInput, createUIButton, createUIElement, createUIStatus } from '../shared/elements.js';
@@ -64,7 +66,17 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   file.accept = 'image/png,image/jpeg,image/gif,image/webp,image/avif';
   const cancel = createUIButton(document);
   const status = createUIStatus(document, 'mw-form-status');
-  form.append(fieldset, actions);
+  const alignment = createUIElement(document, 'div', 'mw-form-actions mw-image-alignment');
+  alignment.setAttribute('role', 'group');
+  const alignmentChoices = ['left', 'center', 'right', 'reset'] as const;
+  const alignmentButtons = alignmentChoices.map((choice) => {
+    const button = createUIButton(document);
+    button.dataset.mwImageAlignment = choice;
+    button.setAttribute('aria-pressed', 'false');
+    alignment.append(button);
+    return button;
+  });
+  form.append(fieldset, alignment, actions);
   if (mode === 'all') form.append(uploadLabel, cancel);
   form.append(status);
 
@@ -72,6 +84,8 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
   let composing = false;
   let restoring = false;
   let apiRevision = 0;
+  let documentRevision = 0;
+  let alignmentTarget: HTMLImageElement | undefined;
   let editTarget: HTMLImageElement | undefined;
   let inspectedCaption = '';
   let selected = false;
@@ -96,6 +110,17 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     return false;
   };
   const getValues = (): ImageFormValues => ({ src: inputs.src.value, alt: inputs.alt.value, width: inputs.width.value, height: inputs.height.value, caption: inputs.caption.value });
+  const updateAlignment = () => {
+    const image = alignmentTarget;
+    const eligible = image && ordinaryResizableImage(editor.surface, image)
+      && selectedImage(editor, selection.peek()) === image;
+    const current = eligible ? readImageAlignment(image) : undefined;
+    for (const [index, button] of alignmentButtons.entries()) {
+      const choice = alignmentChoices[index];
+      button.disabled = !eligible || editor.isReadOnly() || composing || Boolean(upload);
+      button.setAttribute('aria-pressed', String(Boolean(eligible) && (choice === 'reset' ? !current : current === choice)));
+    }
+  };
   const updateControls = () => {
     if (disposed) return;
     const blocked = editor.isReadOnly() || (mode === 'edit' && composing);
@@ -107,6 +132,7 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     file.disabled = mode === 'edit' || blocked || Boolean(upload);
     cancel.disabled = !upload;
     sizeLock.render(blocked || composing || !selected || Boolean(upload));
+    updateAlignment();
   };
   const renderLocale = () => {
     if (disposed) return;
@@ -117,6 +143,8 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     remove.textContent = text('ui.images.remove');
     uploadText.textContent = text('ui.images.uploadFile');
     cancel.textContent = text('ui.images.cancelUpload');
+    alignment.setAttribute('aria-label', text('ui.images.alignment'));
+    for (const [index, button] of alignmentButtons.entries()) button.textContent = text(`ui.images.align.${alignmentChoices[index]}`);
     status.textContent = statusKey ? text(statusKey) : '';
     sizeLock.render(editor.isReadOnly() || composing || !selected || Boolean(upload));
   };
@@ -150,6 +178,8 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
         signature = '';
       }
     }
+    if (!focused) alignmentTarget = image && ordinaryResizableImage(editor.surface, image) ? image : undefined;
+    else if (image !== alignmentTarget) alignmentTarget = undefined;
     selected = Boolean(image);
     sizeLock.inspect(image, !focused);
     const figure = image?.parentElement?.localName === 'figure' && image.parentElement.querySelectorAll('img').length === 1 ? image.parentElement : undefined;
@@ -211,6 +241,40 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     catch (error) { if (!disposed) report(error); }
   };
   const insertImage = () => act('insert');
+  const alignImage = (index: number) => {
+    const target = alignmentTarget;
+    if (disposed || editor.isReadOnly() || composing || upload || !target
+      || !ordinaryResizableImage(editor.surface, target)
+      || selectedImage(editor, selection.peek()) !== target) return;
+    const revision = documentRevision;
+    const stillOwnsTarget = () => {
+      const native = document.getSelection();
+      return !disposed && !editor.isReadOnly() && !composing && !upload
+        && documentRevision === revision && ordinaryResizableImage(editor.surface, target)
+        && selectedImage(editor, native?.rangeCount ? native.getRangeAt(0) : undefined) === target;
+    };
+    restoring = true;
+    try {
+      if (!selection.restore(stillOwnsTarget)) {
+        setStatus('ui.images.selection', true);
+        return;
+      }
+      const choice = alignmentChoices[index];
+      api.align(choice === 'reset' ? false : choice);
+      if (disposed) return;
+      selection.capture();
+      // Alignment applies independently of the metadata drafts in this form.
+      const figure = target.closest('figure');
+      signature = figure?.outerHTML ?? target.outerHTML;
+      setStatus('ui.images.saved');
+      alignmentButtons[index].focus({ preventScroll: true });
+    }
+    catch (error) { if (!disposed) report(error); }
+    finally {
+      restoring = false;
+      if (!disposed) updateControls();
+    }
+  };
   const keyboard = (event: KeyboardEvent) => {
     if (event.defaultPrevented || event.key !== 'Enter' || event.isComposing || event.keyCode === 229 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
     if (!(event.target instanceof HTMLInputElement) || event.target.type === 'file') return;
@@ -258,15 +322,18 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     listenToUI(file, 'change', uploadFile),
   ];
   cleanups.push(...stopDOM);
+  for (const [index, button] of alignmentButtons.entries()) cleanups.push(listenToUI(button, 'click', () => alignImage(index)));
   cleanups.push(editor.onSelectionChange(refresh));
   // Inspect synchronously before an application moves focus into a field.
   cleanups.push(listenToUI(editor.surface, 'click', refresh));
   cleanups.push(listenToUI(editor.surface, 'load', refresh, true));
   cleanups.push(editor.subscribe((change) => {
+    documentRevision++;
     if (change.source === 'api') {
       apiRevision++;
       composing = false;
       editTarget = undefined;
+      alignmentTarget = undefined;
       selected = false;
       signature = '';
       sizeLock.reset();
@@ -290,6 +357,7 @@ export const createImageForm = (host: HTMLElement, editor: Editor, options: Imag
     if (disposed) return;
     disposed = true;
     editTarget = undefined;
+    alignmentTarget = undefined;
     upload?.abort();
     upload = undefined;
     for (const cleanup of cleanups) cleanup();

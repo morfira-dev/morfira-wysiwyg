@@ -1,9 +1,11 @@
+export type ImageAlignment = 'left' | 'center' | 'right';
 export interface ImageValue {
   src: string;
   alt?: string;
   width?: number;
   height?: number;
   caption?: string;
+  alignment?: ImageAlignment | false;
 }
 export type ImagePatch = Partial<Omit<ImageValue, 'width' | 'height'>> & {
   width?: number | null;
@@ -25,6 +27,7 @@ export interface ImageCommands {
   getSelected(): ImageValue | undefined;
   update(value: ImagePatch): void;
   resize(size: ImageResize): void;
+  align(alignment: ImageAlignment | false): void;
   remove(): void;
   upload(file: File, options?: ImageUploadOptions): Promise<boolean>;
   cancelUpload(): void;

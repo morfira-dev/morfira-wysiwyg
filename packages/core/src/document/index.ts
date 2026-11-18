@@ -34,7 +34,8 @@ const safeStyle = (tag: DocumentTag, value: string): string => {
     const valid = ['color', 'background-color', 'border-color'].includes(property) ? color.test(content)
       : ['width', 'height', 'font-size'].includes(property) ? length.test(content)
         : property === 'vertical-align' ? ['td', 'th'].includes(tag) && ['top', 'middle', 'bottom'].includes(content)
-          : property === 'margin-left' || property === 'margin-right' ? tag === 'table' && ['0px', 'auto'].includes(content)
+          : property === 'margin-left' || property === 'margin-right' ? ['table', 'img'].includes(tag) && ['0px', 'auto'].includes(content)
+            : property === 'display' ? tag === 'img' && content === 'block'
             : property === 'text-align' ? ['left', 'center', 'right', 'justify'].includes(content)
               : property === 'font-weight' ? /^(bold|normal|[1-9]00)$/.test(content)
                 : property === 'font-style' ? ['italic', 'normal'].includes(content)

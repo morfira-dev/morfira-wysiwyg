@@ -30,9 +30,39 @@ api.update({ caption: '' }); // remove caption
 api.remove();
 ```
 
-`ImageValue` contains `src: string` and optional `alt`, `caption`, `width`, `height`. `ImagePatch` accepts partial metadata and `null` to remove dimensions. Dimensions are integers from 1 to 1000; captions are literal text up to 5000 characters; alt accepts up to 20000. URLs use http/https or relative references; data/blob/script URLs are rejected. Invalid options throw before document mutation.
+`ImageValue` contains `src: string` and optional `alt`, `caption`, `width`, `height`, `alignment`. `ImagePatch` accepts partial metadata and `null` to remove dimensions. Dimensions are integers from 1 to 1000; captions are literal text up to 5000 characters; alt accepts up to 20000. URLs use http/https or relative references; data/blob/script URLs are rejected. Invalid options throw before document mutation.
 
 Update/remove require one selected image or a caret in its caption. Adding a caption to a legacy inline image promotes it to a figure while preserving surrounding text. Removing a simple image figure removes the image and caption; other content in a complex imported figure is retained. Captions can be edited in the document. Each command participates in undo/redo and respects read-only. With aspect-ratio locking disabled, empty dimensions restore natural sizing.
+
+## Image alignment
+
+`ImageAlignment` is `'left' | 'center' | 'right'`. The command acts on the selected image; `false` resets explicit alignment:
+
+```ts
+import type { ImageAlignment } from '@morfira-dev/wysiwyg/plugins/images';
+
+const image = editor.surface.querySelector<HTMLImageElement>('img');
+if (image) {
+  api.select(image);
+  const alignment: ImageAlignment = 'center';
+  api.align(alignment);
+  api.align('right');
+  api.align('left');
+  api.align(false); // remove explicit placement
+}
+// During insertion or metadata updates:
+api.insert({ src: '/photo.jpg', width: 320, height: 240, alignment: 'center' });
+```
+
+`api.update({ alignment: 'right' })` changes placement together with other metadata in one operation; omitting the field preserves existing alignment. `getSelected()` includes `alignment` for recognized explicit placement and omits it otherwise. Repeating `align` with the same canonical value adds no Undo entry.
+
+The IMG receives `display: block` and a validated `margin-left`/`margin-right` pair: left `0px/auto`, center `auto/auto`, right `auto/0px`. Reset removes these three inline properties. HTML/JSON persists placement without the plugin installed; older readers may discard the new styles. Other display values, arbitrary margins, shorthand and executable CSS are not allowed by this extension.
+
+Only the image moves: dimensions, URL, figure, rich caption and neighboring nodes survive. Caption text has independent alignment and does not move with this command. A legacy inline image stays in its paragraph but renders as a block; neighboring nodes are not moved into new wrappers. Left/right are physical positions even in RTL. Placement may be visually neutral for a full-width image. Text wrapping, floats and cropping are not included.
+
+One ordinary image is supported, including lists and merged table cells; complex figures, protected semantic nodes and foreign targets reject atomically. Each successful change is one Undo step with image selection retained. Read-only and active IME composition block changes; document or selection replacement during focus cannot redirect the operation to another image.
+
+The ready form and its contextual edit mode expose separate left/center/right/reset buttons: they apply placement immediately without submitting other draft fields. Try the **Images** sample on the homepage or in the [playground](/en/playground): click the image and open **Links and images**. New browser scenarios have been authored; they have not been executed locally under the current work mode.
 
 ## Proportional dimensions
 

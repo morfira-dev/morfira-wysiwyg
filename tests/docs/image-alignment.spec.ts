@@ -1,0 +1,37 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`image placement controls and Undo in ${english ? 'English playground' : 'Russian homepage'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  await page.getByLabel(t('Пример документа', 'Document sample'), { exact: true }).selectOption('images');
+  await page.getByRole('button', { name: t('Загрузить пример', 'Load sample'), exact: true }).click();
+  const image = content.locator('figure img');
+  await image.click();
+  const panel = page.locator('details').filter({ has: page.locator('.mw-image-form') });
+  await panel.locator('summary').click();
+  const group = panel.getByRole('group', { name: t('Выравнивание изображения', 'Image alignment'), exact: true });
+  const center = group.getByRole('button', { name: t('Изображение по центру', 'Center image'), exact: true });
+  const right = group.getByRole('button', { name: t('Изображение справа', 'Align image right'), exact: true });
+  const left = group.getByRole('button', { name: t('Изображение слева', 'Align image left'), exact: true });
+  const reset = group.getByRole('button', { name: t('Сбросить выравнивание изображения', 'Reset image alignment'), exact: true });
+  await center.click();
+  await expect(center).toHaveAttribute('aria-pressed', 'true');
+  expect(await image.evaluate((node) => [node.style.display, node.style.marginLeft, node.style.marginRight])).toEqual(['block', 'auto', 'auto']);
+  await right.click();
+  await expect(right).toHaveAttribute('aria-pressed', 'true');
+  expect(await image.evaluate((node) => [node.style.marginLeft, node.style.marginRight])).toEqual(['auto', '0px']);
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await undo.click();
+  expect(await image.evaluate((node) => [node.style.marginLeft, node.style.marginRight])).toEqual(['auto', 'auto']);
+  await image.click();
+  await left.click();
+  expect(await image.evaluate((node) => [node.style.marginLeft, node.style.marginRight])).toEqual(['0px', 'auto']);
+  await reset.click();
+  expect(await image.evaluate((node) => [node.style.display, node.style.marginLeft, node.style.marginRight])).toEqual(['', '', '']);
+  await expect(image).toHaveAttribute('width', '160');
+  await expect(image).toHaveAttribute('height', '160');
+  await expect(content.locator('figcaption')).toHaveText(t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption'));
+  await expect(panel).toContainText(t('Кнопки сразу меняют размещение', 'These buttons apply placement immediately'));
+});

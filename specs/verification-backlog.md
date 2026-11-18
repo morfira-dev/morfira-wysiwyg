@@ -1,5 +1,43 @@
 # Verification record
 
+## Image alignment — 2026-11-18
+
+Local implementation after 5c0749b follows [image-alignment.md](image-alignment.md).
+It adds left/center/right/reset commands, bounded IMG display/margin persistence
+in the plugin-independent HTML/JSON codec and immediate localized controls in
+the reusable image form (including contextual edit mode). Actual image, rich
+caption, dimensions and container structures are retained. Public form draft
+shape, runtime dependencies and preset installation choices are unchanged.
+
+Passed: `pnpm run build` (including declarations and all bundle budgets),
+`pnpm run typecheck`, `pnpm run check:project`,
+`pnpm run check:tree-shaking`, `pnpm run package:check` (eight archives),
+`pnpm run docs:build:site` and `git diff --check`.
+The sandbox initially blocked tsx IPC; the same build completed with the required
+permission. No behavioral tests or live browser checks ran, as requested.
+Six new editor definitions, three form definitions, two RU/EN demo definitions,
+public type assertions and an installed-consumer alignment/Undo definition are
+authored; their runtime outcomes remain unverified across all browsers/adapters.
+
+Measured selected dependency closures from this build (bytes, shared JS chunks
+counted once; framework runtimes excluded):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 89363 | 27704 | 24347 | 3293 |
+| Images | 12357 | 4257 | 3802 | — |
+| Image form | 29636 | 10224 | 9158 | 1787 shared forms |
+| Contextual image | 42131 | 15257 | 13566 | 1662 + 1787 shared forms |
+| Standard ready | 209800 | 62222 | 53213 | 11785 |
+| Standard ready + resize handles | 223843 | 66414 | 56766 | 13748 |
+
+Core grows by 14 gzip bytes; images by 398; standard ready by 1017.
+Standard ready retains 17778 gzip bytes below its 80000-byte guard.
+Shared forms CSS is 1787 raw / 682 gzip / 559 Brotli bytes; core CSS is
+3293 / 1164 / 962. Profile CSS is measured separately in size-report.json:
+standard ready 11785 / 3830 / 3109, ready + handles 13748 / 4520 / 3663.
+These are build measurements, not browser correctness evidence.
+
 ## Image resize handles — 2026-11-18
 
 Local implementation after 54163c9 follows [image-resize-handles.md](image-resize-handles.md). The independent `/ui/image-resize` and explicit CSS provide four pointer-captured corner controls, fixed-ratio external preview, one proportional update at pointerup, keyboard sizing and cancellation/identity/revision/focus/lifecycle guards. Core/schema/preset defaults and runtime dependencies stay unchanged. The full demo has an owned viewport-layer toggle and RU/EN instructions; package exports, installed-consumer definitions and selected-profile measurement include the new entry.

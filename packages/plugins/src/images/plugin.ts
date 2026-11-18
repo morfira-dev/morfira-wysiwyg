@@ -1,5 +1,6 @@
 import type { ImageValue, ImagePatch, ImageOptions, ImageCommands } from './types.js';
 import { imageAspectRatio, imageSizeSignature, ordinaryResizableImage, proportionalDimensions } from './resize.js';
+import { checkImageAlignment, readImageAlignment, writeImageAlignment } from './alignment.js';
 
 import { sanitizeHTML } from '@morfira-dev/wysiwyg-core';
 import type { Editor, EditorPlugin, SelectionBookmark } from '@morfira-dev/wysiwyg-core';
@@ -7,6 +8,7 @@ const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&q
 const checked = (input: ImageValue): ImageValue => {
   if (!input || typeof input !== 'object' || typeof input.src !== 'string')
     throw new TypeError('Image src must be a URL.');
+  if (input.alignment !== undefined) checkImageAlignment(input.alignment);
   for (const key of ['alt', 'caption'] as const)
     if (input[key] !== undefined && (typeof input[key] !== 'string' || input[key]!.length > (key === 'caption' ? 5000 : 20000)))
       throw new TypeError(`Invalid image ${key}.`);
@@ -71,6 +73,7 @@ const readImage = (image: HTMLImageElement): ImageValue => ({
   ...(image.hasAttribute('width') ? { width: Number(image.getAttribute('width')) } : {}),
   ...(image.hasAttribute('height') ? { height: Number(image.getAttribute('height')) } : {}),
   caption: imageFigure(image)?.querySelector('figcaption')?.textContent ?? '',
+  ...(readImageAlignment(image) ? { alignment: readImageAlignment(image) } : {}),
 });
 const selectNode = (editor: Editor, image: HTMLImageElement) => {
   const range = document.createRange();
@@ -83,6 +86,7 @@ const selectNode = (editor: Editor, image: HTMLImageElement) => {
 const writeImage = (image: HTMLImageElement, value: ImageValue) => {
   if (image.getAttribute('src') !== value.src) image.setAttribute('src', value.src);
   image.setAttribute('alt', value.alt ?? '');
+  if (value.alignment !== undefined) writeImageAlignment(image, value.alignment);
   for (const key of ['width', 'height'] as const) {
     if (value[key] === undefined) {
       if (image.hasAttribute(key))
@@ -170,8 +174,21 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
       const cancel = () => { const controller = pending; pending = undefined; controller?.abort(); };
       const api: ImageCommands = {
         insert: (input) => {
-          active(); if (editor.isReadOnly())
-            return; const value = checked(input); const range = insertionRange(editor); editor.transact(() => { const image = document.createElement('img'); writeImage(image, value); insertFigure(editor, range, figureFor(image, value.caption)); });
+          active();
+          if (editor.isReadOnly() || (composing && input?.alignment !== undefined)) return;
+          const value = checked(input);
+          const range = insertionRange(editor);
+          if (value.alignment !== undefined) {
+            const start = parentElement(range.startContainer);
+            const end = parentElement(range.endContainer);
+            if (start?.closest('[data-mw-node]') || end?.closest('[data-mw-node]'))
+              throw new RangeError('Insert aligned images outside semantic nodes.');
+          }
+          editor.transact(() => {
+            const image = document.createElement('img');
+            writeImage(image, value);
+            insertFigure(editor, range, figureFor(image, value.caption));
+          });
         },
         select: (image) => {
           active(); if (!(image instanceof HTMLImageElement) || !editor.surface.contains(image))
@@ -187,6 +204,11 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
             throw new Error('Select one image first.');
           if (!patch || typeof patch !== 'object')
             throw new TypeError('Expected image metadata.');
+          if (patch.alignment !== undefined) {
+            if (composing) return;
+            checkImageAlignment(patch.alignment);
+            if (!ordinaryResizableImage(editor.surface, image)) throw new RangeError('Select one ordinary image to align.');
+          }
           const defined = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
           const merged: ImagePatch & {
             src: string;
@@ -225,6 +247,23 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
             }
             selectNode(editor, image);
           });
+        },
+        align: (alignment) => {
+          active();
+          if (editor.isReadOnly() || composing) return;
+          checkImageAlignment(alignment);
+          const image = selectedImage(editor);
+          if (!image || !ordinaryResizableImage(editor.surface, image)) throw new RangeError('Select one ordinary image to align.');
+          const style = image.getAttribute('style');
+          if (readImageAlignment(image) === alignment || (alignment === false
+            && !image.style.display && !image.style.marginLeft && !image.style.marginRight)) return;
+          const previousRevision = revision;
+          editor.surface.focus({ preventScroll: true });
+          active();
+          if (editor.isReadOnly() || composing) return;
+          if (revision !== previousRevision || selectedImage(editor) !== image || !ordinaryResizableImage(editor.surface, image)
+            || image.getAttribute('style') !== style) throw new RangeError('Image selection changed before alignment.');
+          api.update({ alignment });
         },
         resize: (size) => {
           active();
