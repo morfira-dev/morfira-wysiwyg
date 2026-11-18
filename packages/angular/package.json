@@ -1,6 +1,6 @@
 {
   "name": "@morfira-dev/wysiwyg-angular",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "type": "module",
   "files": [
     "dist"
@@ -19,7 +19,7 @@
     }
   },
   "peerDependencies": {
-    "@morfira-dev/wysiwyg-core": "^1.10.0",
+    "@morfira-dev/wysiwyg-core": "^1.11.0",
     "@angular/core": "^21.0.0 || ^22.0.0",
     "@angular/common": "^21.0.0 || ^22.0.0",
     "@angular/forms": "^21.0.0 || ^22.0.0"
