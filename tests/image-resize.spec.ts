@@ -187,27 +187,27 @@ test('focus-time external replacement cannot redirect a resize to a new image', 
   await initialize(page);
   expect(await page.evaluate(() => {
     const old = window.editor.surface.querySelector('img')!;
-    const button = document.createElement('button');
-    document.body.append(button);
-    button.focus();
-    const range = document.createRange();
-    range.selectNode(old);
-    const selection = document.getSelection()!;
-    selection.removeAllRanges();
-    selection.addRange(range);
+    window.resizeImageAPI.select(old);
+    const surface = window.editor.surface;
+    const focus = surface.focus.bind(surface);
     let expected = '';
-    window.editor.surface.blur();
-    window.editor.surface.addEventListener('focusin', () => {
+    let called = false;
+    // Trigger a one-shot application replacement without losing WebKit selection.
+    surface.focus = (options) => {
+      surface.focus = focus;
+      focus(options);
+      called = true;
       window.editor.setHTML('<figure><img src="/logo.svg?external" width="200" height="100"><figcaption>External</figcaption></figure><p>Tail</p>');
       expected = window.editor.getHTML();
-    }, { once: true });
+    };
     let rejected = false;
     try { window.resizeImageAPI.resize({ width: 60 }); }
     catch { rejected = true; }
+    finally { surface.focus = focus; }
     const current = window.editor.surface.querySelector('img')!;
-    return { rejected, unchanged: Boolean(expected) && window.editor.getHTML() === expected,
+    return { called, rejected, unchanged: Boolean(expected) && window.editor.getHTML() === expected,
       replaced: current !== old, width: current.getAttribute('width'), undo: window.editor.canUndo() };
-  })).toEqual({ rejected: true, unchanged: true, replaced: true, width: '200', undo: false });
+  })).toEqual({ called: true, rejected: true, unchanged: true, replaced: true, width: '200', undo: false });
 });
 
 test('protected, foreign and complex image owners reject without changing content or history', async ({ page }) => {

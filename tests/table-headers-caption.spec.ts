@@ -166,15 +166,22 @@ test('readonly, composition and focus replacement cannot apply header/caption wr
   });
   expect(await page.evaluate(() => ({ html: window.editor.getHTML(), undo: window.editor.canUndo() }))).toEqual({ html: before, undo: false });
   expect(await page.evaluate(() => {
+    const surface = window.editor.surface;
     const native = document.getSelection()!;
-    const saved = native.getRangeAt(0).cloneRange();
-    const button = document.createElement('button'); document.body.append(button); button.focus();
-    native.removeAllRanges(); native.addRange(saved);
-    window.editor.surface.blur();
-    window.editor.surface.addEventListener('focus', () => window.editor.setHTML('<p>Replacement</p>'), { once: true });
-    window.headerProperties.update({ headerRow: true, caption: 'Stale' });
-    const result = { html: window.editor.getHTML(), undo: window.editor.canUndo() };
-    button.remove();
-    return result;
-  })).toEqual({ html: '<p>Replacement</p>', undo: false });
+    const cell = surface.querySelector('td p')!;
+    surface.focus();
+    native.setBaseAndExtent(cell, 0, cell, 0);
+    const focus = surface.focus.bind(surface);
+    let called = false;
+    // Retain a valid cell selection until the actual command focus boundary.
+    surface.focus = (options) => {
+      surface.focus = focus;
+      focus(options);
+      called = true;
+      window.editor.setHTML('<p>Replacement</p>');
+    };
+    try { window.headerProperties.update({ headerRow: true, caption: 'Stale' }); }
+    finally { surface.focus = focus; }
+    return { called, html: window.editor.getHTML(), undo: window.editor.canUndo() };
+  })).toEqual({ called: true, html: '<p>Replacement</p>', undo: false });
 });

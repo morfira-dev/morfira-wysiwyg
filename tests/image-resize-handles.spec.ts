@@ -197,8 +197,11 @@ test('replacement, read-only, composition and destruction invalidate active drag
     expect(await page.evaluate(() => ({ html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.filter((change) => change.source === 'user').length })))
       .toEqual({ html: after, undo: false, changes: 0 });
     if (reason === 'composition') {
-      // API replacement ends the old composition session even without compositionend.
+      // A same-value controlled acknowledgement must leave composition active.
       await resetSelection(page);
+      await expect(corner(page)).toBeHidden();
+      // A genuinely different external document ends it without compositionend.
+      await resetSelection(page, original.replace('alt="Resizable"', 'alt="After composition"'));
       await expect(corner(page)).toBeVisible();
     }
   }

@@ -1,5 +1,33 @@
 # Verification record
 
+## CI fixture correction after e3ecdce — 2026-11-18
+
+Inspected completed GitHub run 44386207520 at e3ecdce. Build/static checks,
+both documentation shards and both installed-consumer profiles passed. Remaining
+failures are the resize cancellation composition scenario in all three browsers
+and four focus-replacement scenarios in WebKit. Publication was skipped.
+
+The composition fixture incorrectly expected same-value setHTML acknowledgement
+to end an active composition. The existing composition contract deliberately
+leaves it untouched. The scenario now verifies handles remain hidden for the same
+value, then verifies a genuinely different external document ends the session.
+Both assertions remain in the original browser/cancellation coverage.
+
+WebKit blur removed the native image/cell selection before the command was
+eligible, so application replacement never ran. Those four scenarios now retain
+a valid original selection and use an explicit one-shot focus hook that delegates
+to native focus, replaces the document synchronously and restores the focus
+method in finally. Each asserts called=true along with replacement, absence of
+stale edits/history and existing disposal guards. This tests focus-time reentrancy
+without depending on browser blur selection retention; no assertion was dropped,
+timeout raised or browser excluded.
+
+pnpm run typecheck and git diff --check passed. No local behavioral tests ran.
+Only test fixtures and this verification record changed: runtime implementation,
+public API, dependency graph, CSS and measured bundle sizes are unchanged from
+e3ecdce. The user explicitly requested commit/push and no observation of the next
+pipeline. No follow-up outcome is claimed here.
+
 ## CI follow-up for the image/table batch — 2026-11-18
 
 GitHub run 44382814844 at c698849 failed browser editor/docs jobs; build/static

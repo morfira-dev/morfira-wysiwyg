@@ -111,18 +111,26 @@ test('focus replacement cannot redirect row sizing and retained commands fail af
   await initializeRowHeight(page);
   expect(await page.evaluate(() => {
     const original = window.editor.surface.querySelector('table')!;
-    const button = document.createElement('button'); document.body.append(button); button.focus();
+    const surface = window.editor.surface;
     const text = original.querySelector('strong')!.firstChild!;
+    surface.focus();
     document.getSelection()!.setBaseAndExtent(text, 0, text, 0);
-    window.editor.surface.blur();
-    window.editor.surface.addEventListener('focusin', () => window.editor.setHTML('<table><tbody><tr><td><p>External</p></td></tr></tbody></table><p>After</p>'), { once: true });
-    window.headerProperties.update({ rowMinHeight: '72px' });
+    const focus = surface.focus.bind(surface);
+    let called = false;
+    surface.focus = (options) => {
+      surface.focus = focus;
+      focus(options);
+      called = true;
+      window.editor.setHTML('<table><tbody><tr><td><p>External</p></td></tr></tbody></table><p>After</p>');
+    };
+    try { window.headerProperties.update({ rowMinHeight: '72px' }); }
+    finally { surface.focus = focus; }
     const table = window.editor.surface.querySelector('table')!;
     const unchanged = table !== original && table.rows[0].style.height === '' && table.textContent === 'External';
     const undo = window.editor.canUndo();
     window.editor.destroy();
     let disposed = false;
     try { window.headerProperties.update({ rowMinHeight: '72px' }); } catch { disposed = true; }
-    return { unchanged, undo, disposed };
-  })).toEqual({ unchanged: true, undo: false, disposed: true });
+    return { called, unchanged, undo, disposed };
+  })).toEqual({ called: true, unchanged: true, undo: false, disposed: true });
 });

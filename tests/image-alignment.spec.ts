@@ -161,22 +161,23 @@ test('read-only/IME prevent alignment and focus replacement cannot receive an ol
   expect(await page.evaluate(() => {
     window.editor.surface.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
     const old = window.editor.surface.querySelector('img')!;
-    const button = document.createElement('button');
-    document.body.append(button);
-    button.focus();
-    const range = document.createRange();
-    range.selectNode(old);
-    const native = document.getSelection()!;
-    native.removeAllRanges(); native.addRange(range);
-    window.editor.surface.blur();
+    window.alignmentImageAPI.select(old);
+    const surface = window.editor.surface;
+    const focus = surface.focus.bind(surface);
     let expected = '';
-    window.editor.surface.addEventListener('focusin', () => {
+    let called = false;
+    // WebKit blur clears the image selection; inject the race at focus instead.
+    surface.focus = (options) => {
+      surface.focus = focus;
+      focus(options);
+      called = true;
       window.editor.setHTML('<p><img src="/logo.svg?external" width="200" height="100">External</p>');
       expected = window.editor.getHTML();
-    }, { once: true });
+    };
     let rejected = false;
     try { window.alignmentImageAPI.align('right'); }
     catch { rejected = true; }
-    return { rejected, replaced: window.editor.surface.querySelector('img') !== old, unchanged: Boolean(expected) && expected === window.editor.getHTML(), undo: window.editor.canUndo() };
-  })).toEqual({ rejected: true, replaced: true, unchanged: true, undo: false });
+    finally { surface.focus = focus; }
+    return { called, rejected, replaced: surface.querySelector('img') !== old, unchanged: Boolean(expected) && expected === window.editor.getHTML(), undo: window.editor.canUndo() };
+  })).toEqual({ called: true, rejected: true, replaced: true, unchanged: true, undo: false });
 });
