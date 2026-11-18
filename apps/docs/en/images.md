@@ -135,7 +135,7 @@ const upload = async (file: File) => {
     const inserted = await api.upload(file);
     // false means cancelled; true means one completed insertion in history.
   } catch (error) {
-    // Display the error; the document remains unchanged.
+    // Display a generic localized error; keep raw diagnostics outside rendered content.
   }
 };
 api.isUploading();
@@ -147,6 +147,47 @@ The client accepts nonempty PNG/JPEG/GIF/WebP/AVIF files by MIME and enforces a 
 Upload captures the DOM insertion position. Moving the caret does not relocate insertion. A new upload cancels the previous one. Any document edit, external replacement, composition start, read-only transition or editor destruction aborts the request via AbortSignal. Late results after cancellation are ignored; no temporary nodes or blob URLs are persisted. Editing while uploading requires restarting at a new position. Commands become unavailable after disposal; cancelUpload remains safe.
 
 Calling `upload()` during composition returns `false` without starting transport or restoring selection. Starting composition aborts an existing upload; its eventual result cannot restore the saved range. See [security and server responsibilities](/en/security).
+
+### Progress, errors and retry
+
+The callback receives `ImageUploadContext`: `{ signal, reportProgress }`. Existing callbacks using only `signal` still work. Report byte counts from your application's upload transport; for example, inside an `XMLHttpRequest` upload-progress listener:
+
+```ts
+// Install/remove this listener with your own request's transport lifecycle.
+xhr.upload.addEventListener('progress', (event) => {
+  reportProgress({
+    loaded: event.loaded,
+    ...(event.lengthComputable ? { total: event.total } : {}),
+  });
+});
+```
+
+`reportProgress` is the callback context member; `xhr` belongs to your application. The editor does not supply or start this transport. The `fetch` example above supplies no transfer-progress reports, so the ready form displays indeterminate progress. Do not invent percentages from elapsed time in a production integration.
+
+For a custom UI, pass a request-scoped observer:
+
+```ts
+import type { ImageUploadOptions } from '@morfira-dev/wysiwyg/plugins/images';
+
+const options: ImageUploadOptions = {
+  onProgress: ({ loaded, total }) => {
+    if (total === undefined) progressElement.removeAttribute('value');
+    else {
+      progressElement.max = total;
+      progressElement.value = loaded;
+    }
+  },
+};
+const inserted = await api.upload(file, options);
+```
+
+`progressElement` is your native `HTMLProgressElement`. `ImageUploadProgress` contains nonnegative safe-integer `loaded` and optional positive safe-integer `total`, with `loaded <= total`. Invalid reports and decreasing `loaded` are ignored. Accepted values are frozen snapshots. Observer exceptions/rejections do not fail the upload. Reports after cancellation, completion, document changes or disposal cannot revive an old attempt. **100% means reported transfer progress, not successful insertion**: the returned image URL and metadata must still pass validation.
+
+The ready image form shows a labeled native progress bar and generic localized errors. After a failed attempt, **Retry upload** starts a fresh request with the same File and original insertion range. Moving the caret alone does not relocate it. Success inserts once and is one Undo step; failures add no document history. Retry is explicit, never automatic, and every attempt repeats file/result validation. It may be offered after validation failures as well as transport failures; an invalid file or unsafe result still cannot pass validation.
+
+Choosing another file, cancellation, any document edit/Undo/API replacement, read-only activation, composition start or form destruction clears the retained File and retry authority. Start a new upload at a fresh position after such a change. The form only owns its own request and never retries or cancels another form's upload. Progress/retry are absent in edit-only mode; `ImageFormValues` is unchanged. Raw exception messages, server HTML and file paths are not rendered as error markup.
+
+Your backend remains responsible for upload authorization, content/MIME/size checks, safe storage, resource limits and orphan cleanup. Configure CSP for allowed image sources and keep server credentials outside persisted editor data. [Security responsibilities](/en/security).
 
 ### Owner-scoped upload cancellation
 
@@ -166,7 +207,7 @@ This signal cancels only its associated upload. Aborting an old signal cannot in
 
 ## Demo and appearance
 
-On the [homepage](/en/#editor) and [playground](/en/playground), choose “Images”. For numeric input, enable Keep aspect ratio and edit one side: its counterpart updates before Apply. For dragging, leave **Image resize handles** enabled, click the image and drag a corner; Escape cancels, releasing applies, and Undo restores the size. Turning off the demo toggle destroys only this UI. Alt/dimension/caption fields populate on image selection; commands preserve selection through form focus. The demo upload returns a local logo instead of the selected file. **Files are not uploaded or stored**: this demonstrates the callback and cancellation rather than previewing file contents.
+On the [homepage](/en/#editor) and [playground](/en/playground), choose “Images”. For numeric input, enable Keep aspect ratio and edit one side: its counterpart updates before Apply. For dragging, leave **Image resize handles** enabled, click the image and drag a corner; Escape cancels, releasing applies, and Undo restores the size. Turning off the demo toggle destroys only this UI. Alt/dimension/caption fields populate on image selection; commands preserve selection through form focus. To demonstrate upload progress, choose an accepted raster file in **Links and images**. Enable **Fail next upload** before choosing it to produce one simulated error, then use **Retry upload**. The checkbox resets when that attempt starts, allowing the retry to succeed. The demo returns a local logo instead of the chosen file. **Files are never read, uploaded or stored**: progress is simulated locally, not measured network transfer. New browser definitions are authored but not executed locally in the current work mode.
 
 ```css
 .my-editor {

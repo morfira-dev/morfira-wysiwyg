@@ -9,7 +9,7 @@ import type { ListMarker, ListPropertyCommands, ListPropertyState } from '@morfi
 import type { FontCommands, FontState } from '@morfira-dev/wysiwyg/plugins/fonts';
 import type { ChecklistCommands, ChecklistState } from '@morfira-dev/wysiwyg/plugins/checklists';
 import type { StatisticsCommands, StatisticsState } from '@morfira-dev/wysiwyg/plugins/statistics';
-import type { ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
+import type { ImageUploadContext, ImageValue } from '@morfira-dev/wysiwyg/plugins/images';
 import type { ContextualTableUIController } from '@morfira-dev/wysiwyg/ui/contextual-table';
 import type { ContextualImageUIController } from '@morfira-dev/wysiwyg/ui/contextual-image';
 import type { ImageResizeUIController } from '@morfira-dev/wysiwyg/ui/image-resize';
@@ -566,10 +566,39 @@ const preserveLabSelection = (event: PointerEvent) => {
     event.stopPropagation();
   }
 };
-const demoUpload = (_file: File, { signal }: { signal: AbortSignal }): Promise<ImageValue> => new Promise((resolve, reject) => {
-  const abort = () => { window.clearTimeout(timer); signal.removeEventListener('abort', abort); reject(new DOMException('Cancelled', 'AbortError')); };
-  const timer = window.setTimeout(() => { signal.removeEventListener('abort', abort); resolve({ src: '/logo.svg', alt: 'Morfira demo', width: 160, height: 160, caption: t('Демо результата callback загрузки', 'Demo upload callback result') }); }, 1200);
-  if (signal.aborted) abort(); else signal.addEventListener('abort', abort, { once: true });
+const failNextImageUpload = ref(false);
+const demoUpload = (_file: File, { signal, reportProgress }: ImageUploadContext): Promise<ImageValue> => new Promise((resolve, reject) => {
+  const fail = failNextImageUpload.value;
+  failNextImageUpload.value = false;
+  let loaded = 0;
+  const cleanup = () => {
+    window.clearInterval(timer);
+    signal.removeEventListener('abort', abort);
+  };
+  const abort = () => {
+    cleanup();
+    reject(new DOMException('Cancelled', 'AbortError'));
+  };
+  // Simulated callback feedback only: the selected file is never read or sent.
+  const timer = window.setInterval(() => {
+    if (signal.aborted) { abort(); return; }
+    loaded += 20;
+    reportProgress({ loaded, total: 100 });
+    if (signal.aborted) return;
+    if (fail && loaded >= 60) {
+      cleanup();
+      reject(new Error('Simulated image upload failure'));
+    }
+    else if (loaded === 100) {
+      cleanup();
+      resolve({ src: '/logo.svg', alt: 'Morfira demo', width: 160, height: 160, caption: t('Демо результата callback загрузки', 'Demo upload callback result') });
+    }
+  }, 300);
+  if (signal.aborted) abort();
+  else {
+    signal.addEventListener('abort', abort, { once: true });
+    reportProgress({ loaded: 0, total: 100 });
+  }
 });
 const localSuggestions = <T extends SuggestionOption>(items: readonly T[], { query, signal }: SuggestionQuery): Promise<readonly T[]> => new Promise((resolve, reject) => {
   const mode = providerMode.value; const delay = Number(providerDelay.value);
@@ -1030,6 +1059,8 @@ onBeforeUnmount(() => {
           <div ref="linkFormHost"></div>
           <hr>
           <div ref="imageFormHost"></div>
+          <label><input v-model="failNextImageUpload" type="checkbox" :disabled="readOnly" :aria-label="t('Ошибка следующей загрузки', 'Fail next upload')">{{ t('Ошибка следующей загрузки', 'Fail next upload') }}</label>
+          <p class="lab-hint">{{ t('Выбери PNG/JPEG/GIF/WebP/AVIF: форма покажет имитацию прогресса. Для проверки ошибки включи «Ошибка следующей загрузки» перед выбором файла; затем нажми «Повторить загрузку». Повтор использует исходную позицию, пока документ не изменился. Файл не читается, не отправляется и не сохраняется.', 'Choose PNG/JPEG/GIF/WebP/AVIF to see simulated progress. Enable Fail next upload before choosing a file to demonstrate an error, then use Retry upload. Retry keeps the original position while the document is unchanged. The file is never read, uploaded or stored.') }}</p>
           <p class="lab-hint">{{ t('Выбери картинку и нажми «Изображение слева», «Изображение по центру» или «Изображение справа». Кнопки сразу меняют размещение одним Undo, не отправляя остальные поля. Сброс убирает явное размещение; подпись и размеры сохраняются. Обтекания текстом нет.', 'Select an image and choose Align image left, Center image or Align image right. These buttons apply placement immediately in one Undo without submitting other fields. Reset removes explicit placement; caption and dimensions survive. Text wrapping is not included.') }}</p>
           <p class="lab-hint">{{ t('Для размера с сохранением пропорций выбери изображение, включи «Сохранять пропорции» и измени ширину или высоту. Второе поле пересчитается; «Обновить изображение» применит оба размера одним Undo. Для независимых размеров и пустого сброса выключи переключатель.', 'To resize proportionally, select an image, enable Keep aspect ratio and change its width or height. The other field follows; Update image applies both dimensions in one Undo. Turn the switch off for independent dimensions or blank resets.') }}</p>
           <p class="lab-hint">{{ t('Для перетаскивания включи «Маркеры размера изображения» и нажми на саму картинку. Потяни угловой маркер: рамка показывает пропорциональный размер, а отпускание применяет его одним Undo. Escape отменяет жест. На маркере доступны стрелки, Shift меняет шаг с 1 до 10 px.', 'For dragging, enable Image resize handles and click the image itself. Drag a corner: the outline previews proportional dimensions, and releasing applies them in one Undo. Escape cancels the gesture. A focused handle supports arrow keys; Shift changes the step from 1 to 10 px.') }}</p>

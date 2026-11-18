@@ -91,6 +91,14 @@ The form supports URL, alt, caption, dimensions, insertion, selected-image updat
 
 Custom UI can pass a separate signal to `imageCommands(editor).upload(file, { signal })`; its option type is `ImageUploadOptions`. This cancels that specific request. `cancelUpload()` remains the editor-wide current-upload cancellation command. [Image details](/en/images).
 
+### Upload progress and retry
+
+In `all` mode, the form shows a native **Image upload progress** indicator: a percentage when total bytes are known, otherwise indeterminate progress. The application callback supplies values through `ImageUploadContext.reportProgress({ loaded, total? })`; no upload transport is added. Custom UI can use the optional `ImageUploadOptions.onProgress` observer. Reaching 100% transfer does not mean the result has passed validation and been inserted.
+
+Errors use generic localized text, without rendering response HTML or raw exception messages. **Retry upload** starts a fresh attempt with the same File and original insertion position. Other form drafts are not submitted. Moving the caret does not relocate retry; any document edit/Undo/API replacement, read-only, IME, another file, cancellation or form destruction clears retry and releases the file. Every attempt validates again; success is one insertion and one Undo. Retries are never automatic and do not affect another owner's upload. Progress/retry are absent in `edit` mode; `ImageFormValues` stays unchanged.
+
+On the homepage and playground, **Fail next upload** demonstrates one error followed by successful retry. The percentage is simulated with a timer; the file is never read or uploaded. [Progress API and backend responsibilities](/en/images#progress-errors-and-retry).
+
 ### Preserving proportions
 
 The **Keep aspect ratio** checkbox is available for an already selected image. Enable it and edit width or height: the other side is calculated from the inspected image's fixed ratio. Only drafts change until Update image. Enter applies an update in `edit` mode; `all` mode retains its existing Enter-to-insert behavior.

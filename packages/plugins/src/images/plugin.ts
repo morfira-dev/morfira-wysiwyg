@@ -1,6 +1,7 @@
-import type { ImageValue, ImagePatch, ImageOptions, ImageCommands } from './types.js';
+import type { ImageValue, ImagePatch, ImageOptions, ImageCommands, ImageUploadProgress } from './types.js';
 import { imageAspectRatio, imageSizeSignature, ordinaryResizableImage, proportionalDimensions } from './resize.js';
 import { checkImageAlignment, readImageAlignment, writeImageAlignment } from './alignment.js';
+import { normalizeUploadProgress } from './upload-progress.js';
 
 import { sanitizeHTML } from '@morfira-dev/wysiwyg-core';
 import type { Editor, EditorPlugin, SelectionBookmark } from '@morfira-dev/wysiwyg-core';
@@ -166,12 +167,18 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
       let disposed = false;
       let composing = false;
       let revision = 0;
+      let uploadRevision = 0;
       let pending: AbortController | undefined;
       const active = () => {
         if (disposed)
           throw new Error('Images plugin has been disposed.');
       };
-      const cancel = () => { const controller = pending; pending = undefined; controller?.abort(); };
+      const cancel = () => {
+        uploadRevision++;
+        const controller = pending;
+        pending = undefined;
+        controller?.abort();
+      };
       const api: ImageCommands = {
         insert: (input) => {
           active();
@@ -297,31 +304,56 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
           const signal = request.signal;
           if (signal && (typeof signal.aborted !== 'boolean' || typeof signal.addEventListener !== 'function' || typeof signal.removeEventListener !== 'function'))
             throw new TypeError('Upload signal must be an AbortSignal.');
+          if (request.onProgress !== undefined && typeof request.onProgress !== 'function')
+            throw new TypeError('Upload onProgress must be a callback.');
           if (editor.isReadOnly() || composing || signal?.aborted)
             return false;
           if (!options.upload)
             throw new Error('Configure an application upload callback first.');
           if (!(file instanceof File) || !['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif'].includes(file.type) || file.size < 1 || file.size > maxFileSize)
             throw new TypeError('Choose a supported raster image within the configured file-size limit.');
+          const initialRevision = revision;
           const saved = saveRange(editor.surface, insertionRange(editor));
+          active();
+          if (editor.isReadOnly() || composing || signal?.aborted || revision !== initialRevision) return false;
+          const attempt = uploadRevision + 1;
           cancel();
+          // An abort listener may synchronously start another upload or dispose.
+          if (disposed || uploadRevision !== attempt || editor.isReadOnly() || composing || signal?.aborted || revision !== initialRevision) return false;
           const controller = new AbortController();
           pending = controller;
+          let observer = request.onProgress;
+          let settled = false;
+          let loaded = 0;
+          const ownsProgress = () => !settled && !disposed && pending === controller
+            && !controller.signal.aborted && !editor.isReadOnly() && !composing;
+          const reportProgress = (input: ImageUploadProgress) => {
+            if (!ownsProgress()) return;
+            const progress = normalizeUploadProgress(input, loaded);
+            if (!progress || !ownsProgress()) return;
+            loaded = progress.loaded;
+            try { Promise.resolve(observer?.(progress)).catch(() => { /* Observers cannot reject the upload. */ }); }
+            catch { /* Diagnostic progress observers cannot interrupt transport. */ }
+          };
           const abortOwned = () => {
             if (pending === controller)
               pending = undefined;
             controller.abort();
           };
           signal?.addEventListener('abort', abortOwned, { once: true });
+          if (signal?.aborted) abortOwned();
           let abort: () => void = () => { };
           const cancelled = new Promise<undefined>((resolve) => { abort = () => resolve(undefined); controller.signal.addEventListener('abort', abort, { once: true }); });
           try {
-            const result = await Promise.race([Promise.resolve().then(() => controller.signal.aborted ? undefined : options.upload!(file, { signal: controller.signal })), cancelled]);
+            const result = await Promise.race([Promise.resolve().then(() => controller.signal.aborted ? undefined : options.upload!(file, { signal: controller.signal, reportProgress })), cancelled]);
             if (pending !== controller || disposed || controller.signal.aborted || editor.isReadOnly() || composing)
               return false;
             if (!result)
               throw new TypeError('Upload callback must return image metadata.');
             const value = checked(result);
+            editor.surface.focus({ preventScroll: true });
+            if (pending !== controller || disposed || controller.signal.aborted || editor.isReadOnly() || composing || revision !== initialRevision)
+              return false;
             pending = undefined;
             restoreRange(editor.surface, saved);
             api.insert(value);
@@ -333,6 +365,8 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
             throw error;
           }
           finally {
+            settled = true;
+            observer = undefined;
             signal?.removeEventListener('abort', abortOwned);
             controller.signal.removeEventListener('abort', abort);
             if (pending === controller)

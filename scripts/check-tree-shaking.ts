@@ -65,6 +65,8 @@ for (const { entry, symbol, feature, allowed } of cases) {
     for (const source of originalInputs[output]) {
       const sourceOwner = owner(source);
       assert.ok(!sourceOwner || allowed.includes(sourceOwner), `${feature}: loaded unrelated ${sourceOwner} implementation through ${output}`);
+      if (feature === 'ui/contextual-image')
+        assert.ok(!source.replaceAll('\\', '/').endsWith('/ui/images/upload.ts'), `${feature}: edit-only UI loaded upload progress/retry controls`);
     }
   }
   const text = result.outputFiles[0].text;

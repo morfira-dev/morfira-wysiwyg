@@ -1,5 +1,53 @@
 # Verification record
 
+## Image upload feedback — 2026-11-18
+
+Local implementation after d666f51 follows
+[image-upload-feedback.md](image-upload-feedback.md). The application-owned
+transport receives a scoped reportProgress callback; caller options can observe
+validated immutable byte snapshots. The all-mode image form provides native
+determinate/indeterminate progress, generic localized errors and explicit retry
+at the original insertion range. Retry authority and retained File references
+are invalidated by cancellation, document changes, readonly, IME and disposal.
+Core completion checks ownership again after focus, and a reentrant abort
+listener cannot overwrite a newer upload. No runtime dependencies/schema changes.
+
+Passed: final `pnpm run build` with declarations and all size budgets,
+`pnpm run typecheck`, `pnpm run check:project`,
+`pnpm run check:tree-shaking`, `pnpm run package:check` (eight archives),
+`pnpm run docs:build:site`, and `git diff --check`.
+The first build exceeded the unchanged 16000 gzip-byte contextual-image guard.
+Separating the shared form constructor from the full-form upload factory removed
+upload UI from the contextual edit-only graph; the final build and an explicit
+source-ownership tree-shaking guard verify that boundary. No budget was raised.
+
+No local behavioral tests, installed-consumer execution or live browser checks
+ran, as requested. Seven new API definitions, five form definitions and two
+localized demo definitions plus public type assertions are authored. Their
+browser outcomes, including races, native progress/retry controls and one-step
+history, remain unverified. The demo simulates progress and fail-once/retry
+locally without reading or sending the chosen file.
+
+Final measured selected closures (bytes; shared chunks counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 89363 | 27704 | 24347 | 3293 |
+| Images | 13225 | 4535 | 4052 | — |
+| Full image form | 33392 | 11873 | 10623 | 1922 shared forms |
+| Contextual image | 42883 | 15453 | 13746 | 1662 + 1922 shared forms |
+| Standard ready | 213221 | 63256 | 54228 | 11920 |
+| Standard ready + contextual image | 224752 | 66577 | 56772 | 13582 |
+| Standard ready + resize handles | 227282 | 67604 | 57690 | 13883 |
+
+Core JS/CSS is unchanged; images grows by 278 gzip JS bytes, full image form
+by 1649, contextual image by 196, standard ready by 1034. Standard ready keeps
+16744 gzip JS bytes below the 80000-byte guard. Shared forms CSS measures
+1922 raw / 709 gzip / 578 Brotli bytes; standard ready CSS is
+11920 / 3857 / 3128. All raw/gzip/Brotli CSS profiles are in size-report.json.
+Framework runtimes, declarations and source maps are excluded. Passing static
+and size guards is not runtime behavior evidence.
+
 ## Image alignment — 2026-11-18
 
 Local implementation after 5c0749b follows [image-alignment.md](image-alignment.md).

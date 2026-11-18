@@ -1,7 +1,7 @@
 import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { createFormSelection } from '../shared/selection.js';
-import { createImageForm } from '../images/index.js';
+import { createImageFormBase as createImageForm } from '../images/form-base.js';
 import { imageCommands } from '../../images/index.js';
 import type { ImageFormController } from '../images/types.js';
 import { contextualAnchor, placeContextualToolbar } from '../contextual/geometry.js';
