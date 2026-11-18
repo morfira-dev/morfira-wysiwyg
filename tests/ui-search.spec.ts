@@ -58,6 +58,52 @@ test('search form selects rich-text results and replacement is one undoable oper
   await expect(page.locator('.mw-form-status')).toHaveText('Match 1 of 3');
 });
 
+test('query Shift+Enter applies a draft, wraps backwards and navigates read-only without history', async ({ page }) => {
+  await initialize(page);
+  const original = await page.evaluate(() => window.editor.getHTML());
+  const query = page.getByLabel('Find text', { exact: true });
+  await expect(query).toHaveAttribute('aria-keyshortcuts', 'Enter Shift+Enter');
+  await query.fill('one');
+  await query.press('Shift+Enter');
+  await expect(page.locator('.mw-form-status')).toHaveText('Match 3 of 3');
+  expect(await page.evaluate(() => document.getSelection()?.toString())).toBe('ONE');
+  await query.press('Shift+Enter');
+  await expect(page.locator('.mw-form-status')).toHaveText('Match 2 of 3');
+  expect(await page.evaluate(() => document.getSelection()?.toString())).toBe('one');
+  await page.evaluate(() => window.editor.setReadOnly(true));
+  await query.press('Shift+Enter');
+  await expect(page.locator('.mw-form-status')).toHaveText('Match 1 of 3');
+  await query.press('Shift+Enter');
+  await expect(page.locator('.mw-form-status')).toHaveText('Match 3 of 3');
+  await query.press('Enter');
+  await expect(page.locator('.mw-form-status')).toHaveText('Match 1 of 3');
+  expect(await page.evaluate(() => ({ html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.length })))
+    .toEqual({ html: original, undo: false, changes: 0 });
+});
+
+test('backward search guards composition and modifiers, and invalid drafts cannot navigate stale matches', async ({ page }) => {
+  await initialize(page);
+  const query = page.getByLabel('Find text', { exact: true });
+  await query.fill('one');
+  await query.press('Shift+Enter');
+  await query.evaluate((input) => {
+    for (const extra of [{ isComposing: true }, { keyCode: 229 }, { ctrlKey: true }, { metaKey: true }, { altKey: true }])
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true, cancelable: true, ...extra }));
+  });
+  await expect(page.locator('.mw-form-status')).toHaveText('Match 3 of 3');
+  await page.evaluate(() => window.searchForm.setValues({ query: 'x'.repeat(1001) }));
+  await query.press('Shift+Enter');
+  await expect(page.locator('.mw-form-status')).toHaveText('Unable to search. Check the query and try again.');
+  expect(await page.evaluate(() => window.searchCommands(window.editor).getState().current)).toBe(2);
+  await query.fill('missing');
+  await query.press('Shift+Enter');
+  await expect(page.locator('.mw-form-status')).toHaveText('No matches found.');
+  await query.fill('');
+  await query.press('Shift+Enter');
+  await expect(page.locator('.mw-form-status')).toHaveText('Enter a query and press Find.');
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+});
+
 test('case and whole-word controls update the indexed query only when submitted', async ({ page }) => {
   await initialize(page, '<p>cat scatter CAT cat2 cat</p>');
   await find(page, 'cat');
@@ -120,6 +166,7 @@ test('locale and custom overrides preserve field drafts and render only text', a
   await expect(page.getByRole('button', { name: '<b>Find now</b>', exact: true })).toBeVisible();
   await expect(page.locator('.mw-search-form b')).toHaveCount(0);
   await expect(page.getByLabel('Найти текст', { exact: true })).toHaveValue('one');
+  await expect(page.getByLabel('Найти текст', { exact: true })).toHaveAttribute('title', 'Enter: найти. Shift+Enter: предыдущее совпадение.');
   await expect(page.getByLabel('Заменить на', { exact: true })).toHaveValue('draft');
   expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
   expect(await page.evaluate(() => window.changes.length)).toBe(0);
@@ -208,6 +255,9 @@ test('mounting without a plugin fails before DOM writes and query Enter does not
   await page.getByLabel('Find text', { exact: true }).fill('one');
   await page.getByLabel('Find text', { exact: true }).press('Enter');
   await expect(page.locator('.mw-form-status')).toHaveText('Match 1 of 3');
+  await page.getByLabel('Find text', { exact: true }).press('Shift+Enter');
+  await expect(page.locator('.mw-form-status')).toHaveText('Match 3 of 3');
+  await page.getByLabel('Find text', { exact: true }).press('Enter');
   await page.getByLabel('Replace with', { exact: true }).fill('X');
   await page.getByLabel('Replace with', { exact: true }).press('Enter');
   expect(await page.evaluate(() => window.editor.getHTML())).toBe('<p>X <strong>one</strong> ONE</p>');

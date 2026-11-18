@@ -51,6 +51,7 @@ export const createSearchForm = (host: HTMLElement, editor: Editor, options: Sea
   const status = createUIStatus(document, 'mw-form-status');
   const { label: queryLabel, caption: queryText, input: query } = createFormInput(document);
   query.maxLength = 1000;
+  query.setAttribute('aria-keyshortcuts', 'Enter Shift+Enter');
   const { label: replacementLabel, caption: replacementText, input: replacement } = createFormInput(document);
   replacement.maxLength = 20000;
   const { label: caseLabel, caption: caseText, input: caseSensitive } = createFormInput(document, 'checkbox', true);
@@ -99,6 +100,7 @@ export const createSearchForm = (host: HTMLElement, editor: Editor, options: Sea
     if (disposed) return;
     element.setAttribute('aria-label', options.label ?? message('ui.search.label'));
     queryText.textContent = message('ui.search.query');
+    query.title = message('ui.search.queryKeys');
     replacementText.textContent = message('ui.search.replacement');
     caseText.textContent = message('ui.search.caseSensitive');
     wholeText.textContent = message('ui.search.wholeWord');
@@ -193,7 +195,13 @@ export const createSearchForm = (host: HTMLElement, editor: Editor, options: Sea
     event.preventDefault();
     event.stopPropagation();
     if (event.ctrlKey || event.metaKey || event.altKey) return;
-    if (event.target === replacement) replace(false); else submit();
+    if (event.target === replacement) replace(false);
+    else if (event.shiftKey) {
+      readFields();
+      if (!sameQuery()) submit();
+      navigate(false);
+    }
+    else submit();
   };
   const destroy = () => {
     if (disposed) return;

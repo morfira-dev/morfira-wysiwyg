@@ -251,6 +251,9 @@ for (const english of [false, true]) test(`literal search, replacement forms and
   await page.locator('.lab-search summary').click();
   const panel = page.locator('.lab-search');
   await panel.getByLabel(t('Найти текст', 'Find text'), { exact: true }).fill('Morfira');
+  await panel.getByLabel(t('Найти текст', 'Find text'), { exact: true }).press('Shift+Enter');
+  await expect(panel.getByRole('status')).toHaveText(t('Совпадение 8 из 8', 'Match 8 of 8'));
+  await expect(panel.getByLabel(t('Найти текст', 'Find text'), { exact: true })).toHaveAttribute('title', t('Enter: найти. Shift+Enter: предыдущее совпадение.', 'Enter: find. Shift+Enter: previous match.'));
   await panel.getByRole('button', { name: t('Найти', 'Find'), exact: true }).click();
   await expect(panel.getByRole('status')).toHaveText(t('Совпадение 1 из 8', 'Match 1 of 8'));
   expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('Morfira');

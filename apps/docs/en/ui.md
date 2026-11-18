@@ -132,7 +132,7 @@ const dispose = () => {
 };
 ```
 
-Query and options remain drafts until Find. If they differ from the indexed query, navigation/replacement is disabled rather than accidentally acting on old results. Enter in query searches; Enter in replacement performs the available current-match replacement. IME candidate confirmation is not intercepted.
+Query and options remain drafts until Find. If they differ from the indexed query, navigation/replacement buttons are disabled rather than accidentally acting on old results. Enter in the query searches from the first match. **Shift+Enter in the query** moves to the previous match with wrapping; for a new query, it first searches and selects the last match. The field hint is localized through `ui.search.queryKeys`. Enter in replacement performs the available current-match replacement. IME candidate confirmation is not intercepted.
 
 Find/navigation/clear remain available read-only; replacement is blocked. Commands use indexed matches, not selection inside a form field. Replace all is one undo operation. Destroying UI does not clear the application's search state. [Literal-search boundaries](/en/search).
 

@@ -4,6 +4,8 @@ The ready `createSearchForm` interface is imported separately from `@morfira-dev
 
 This optional module performs literal text search without changing persisted HTML for highlighting or adding runtime dependencies. Native Selection/Range selects the active result.
 
+In the ready form, Enter in the query finds the first match, while Shift+Enter moves to the previous match with wrapping. For a query that has not been applied yet, Shift+Enter selects its last match immediately. Try it in the homepage or playground search panel; it also works read-only and creates no Undo entry.
+
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
 import { search, searchCommands } from '@morfira-dev/wysiwyg/plugins/search';

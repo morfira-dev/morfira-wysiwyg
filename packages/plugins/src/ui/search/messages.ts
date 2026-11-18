@@ -2,6 +2,7 @@ export const searchFormMessages = Object.freeze({
   en: Object.freeze({
     'ui.search.label': 'Find and replace',
     'ui.search.query': 'Find text',
+    'ui.search.queryKeys': 'Enter: find. Shift+Enter: previous match.',
     'ui.search.caseSensitive': 'Match case',
     'ui.search.wholeWord': 'Whole word',
     'ui.search.find': 'Find',
@@ -23,6 +24,7 @@ export const searchFormMessages = Object.freeze({
   ru: Object.freeze({
     'ui.search.label': 'Поиск и замена',
     'ui.search.query': 'Найти текст',
+    'ui.search.queryKeys': 'Enter: найти. Shift+Enter: предыдущее совпадение.',
     'ui.search.caseSensitive': 'Учитывать регистр',
     'ui.search.wholeWord': 'Целое слово',
     'ui.search.find': 'Найти',
