@@ -11,6 +11,7 @@ artifacts/
 .idea/
 .svelte-kit/
 release-plan.json
+release-published.json
 *.tgz
 .env
 .env.*

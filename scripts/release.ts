@@ -1,10 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { readdir, readFile, writeFile, realpath } from 'node:fs/promises';
+import { readdir, readFile, writeFile, realpath, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import multiRelease from 'multi-semantic-release';
 import type { Options } from 'semantic-release';
 import { persistReleaseState } from './release-state.js';
+import type { PublishedReleaseReport } from './release-notification.types.js';
 
 export const assertPublishRuntime = (npmVersion: string, env: NodeJS.ProcessEnv): void => {
   const version = npmVersion.trim();
@@ -42,6 +43,7 @@ export const releasePackages = async (cwd: string, dryRun: boolean, repositoryUr
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const dryRun = process.argv.includes('--dry-run');
+  await rm('release-published.json', { force: true });
   if (!dryRun && process.env.GITHUB_ACTIONS !== 'true') throw new Error('Publish through the checked GitHub Actions release workflow. Use --dry-run locally.');
   if (!dryRun) assertPublishRuntime(execFileSync('npm', ['--version'], { encoding: 'utf8' }), process.env);
   const sourceHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -49,4 +51,22 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   if (!dryRun && result.some((pkg) => pkg.release)) await persistReleaseState(process.cwd(), sourceHead);
   console.log(JSON.stringify(result, null, 2));
   await writeFile('release-plan.json', `${JSON.stringify(result, null, 2)}\n`);
+  if (!dryRun) {
+    const packages = result.flatMap(({ name, release }) => release ? [{ name, version: release.version }] : []);
+    if (packages.length) {
+      const report: PublishedReleaseReport = {
+        version: 1,
+        sourceSha: sourceHead,
+        runId: process.env.GITHUB_RUN_ID ?? '',
+        runAttempt: process.env.GITHUB_RUN_ATTEMPT ?? '',
+        packages,
+      };
+      try {
+        await writeFile('release-published.json', `${JSON.stringify(report, null, 2)}\n`);
+      }
+      catch {
+        console.warn('Optional Telegram notification report could not be written; package publication already completed.');
+      }
+    }
+  }
 }

@@ -38,6 +38,9 @@ importers:
       '@morfira-dev/wysiwyg':
         specifier: workspace:*
         version: link:packages/wysiwyg
+      '@nuykon/semantic-release-tg-bot':
+        specifier: 1.0.0
+        version: 1.0.0
       '@playwright/test':
         specifier: ^1.56.0
         version: 1.65.0
@@ -987,6 +990,10 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@nuykon/semantic-release-tg-bot@1.0.0':
+    resolution: {integrity: sha512-u34Zlj7nMMBRhTPduK/w4yvEGDXTaNHKCeXxPFNqpeyfb40VyAzkKZw+id7qX4H1gK5ghsEnzLp+n+1fym1CnQ==}
+    engines: {node: '>=22.20.0'}
 
   '@octokit/auth-token@6.0.0':
     resolution: {integrity: sha512-P4YJBPdPSpWTQ1NU4XYdvHvXJJDxM6YwpS0FZHRgP7YFkdVxsWcpWGy/NVqlAA7PcPCnMacXlRm1y2PFZRWL/w==}
@@ -4141,6 +4148,8 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.3
+
+  '@nuykon/semantic-release-tg-bot@1.0.0': {}
 
   '@octokit/auth-token@6.0.0': {}
 

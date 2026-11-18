@@ -69,3 +69,24 @@ The OIDC publish job explicitly installs npm CLI `11.21.2`. Before creating tags
 `pnpm run check` also runs `check:tree-shaking`: real public consumer imports must not retain unrelated plugins, framework runtimes or mandatory CSS. Source checks enforce feature-owned named types and core dependency direction.
 
 Explicit package integration after build: `pnpm run consumers:check` targets eight tarballs and fifteen baseline scenarios; `pnpm run consumers:angular22` adds three Angular 22 scenarios with its separate TypeScript toolchain. Use a compatible Node 24.15+ or Node 22.22.3+ on the 22 branch for the second profile; obtaining its toolchain may require network access and does not change the root lockfile. These numbers describe tooling coverage; each run's reports record its actual results. Observational [performance/history benchmarks](/en/performance): `pnpm run benchmark`; not part of the normal timing-free correctness gate.
+
+
+## Optional Telegram notification
+
+After successful live publication and version persistence, the workflow can send **one aggregate message listing the package names and versions actually released** through `@nuykon/semantic-release-tg-bot`. The plugin is a release-tooling devDependency, outside editor core/plugins and browser bundles. Private tooling requires Node 22.20.0 or newer.
+
+In repository Settings → Secrets and variables → Actions, configure:
+
+| Secret | Purpose |
+| --- | --- |
+| `TELEGRAM_BOT_TOKEN` | Your bot token |
+| `TELEGRAM_CHAT_ID` | Recipient’s numeric chat ID or a channel’s `@username` |
+| `TELEGRAM_BOT_PROXY` | Optional proxy in the format supported by the plugin |
+
+For a private message, open the bot and send `/start` first: a bot cannot initiate a private conversation. Obtain the numeric ID from an update’s `message.chat.id` in your own Bot API client; a user’s username is not a replacement for that ID. A channel can use its `@username` when the bot has permission to publish. Keep the token, private chat ID and proxy credentials out of source, command arguments and logs; use secrets. Missing required secrets skip notification without blocking npm publication.
+
+The existing `release-plan.json` remains a plan, not proof of publication. The CLI removes separate `release-published.json` before release/planning and writes it only after successful actual publication, the version-persistence service commit and plan write. The report contains the source SHA before that commit, GitHub run ID/attempt and only released package/version pairs. The sender checks this provenance against the current workflow. Dry runs, no-release runs and publication/persistence failures send no success message. A rerun without newly released packages sends nothing either.
+
+The separate `release:notify` step follows release instead of running in per-package semantic-release hooks. Only this step has continue-on-error and a two-minute timeout: a Telegram failure neither undoes published npm packages nor turns publication into a notification error. Failure to write the optional report warns; inability to remove a stale report is detected before publication. Transport-level exactly-once delivery after an ambiguous timeout is not guaranteed; no persistent deduplication service is added. Telegram secrets are scoped to the notification step, not planning.
+
+**Status:** this integration was added without executing tests, checks, builds, dry runs or a live message, as currently requested by the user. Bot credentials, recipient/proxy reachability and posting permissions are unverified. Documentation hosting remains local.
