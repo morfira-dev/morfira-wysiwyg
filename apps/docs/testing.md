@@ -39,7 +39,7 @@ pnpm run release:plan
 
 ## GitHub Actions и npm OIDC
 
-Workflow `release.yml` запускается для main и вручную. Сначала вызывается полный Check: редактор в Chromium/Firefox/WebKit, типы, сборка, бюджеты, сайт и демки. Затем сохраняется артефакт `release-plan`. Публикация включается только переменной репозитория `NPM_PUBLISH_ENABLED=true`; без неё успешно выполняются проверки и план, а publish пропускается. PR не публикует пакеты. Сайт остаётся локальным.
+Workflow `release.yml` запускается для main и вручную. Полный Check проверяет редактор в Chromium/Firefox/WebKit, типы, сборку, бюджеты, сайт и демки; независимый dry-run параллельно сохраняет артефакт `release-plan`. Для браузерных jobs используется официальный контейнер Playwright с версией из frozen lockfile: браузеры и системные библиотеки уже внутри, отдельная установка через apt не нужна. Все 12 шардов, сайт и оба consumer-профиля остаются обязательными. Публикация ждёт успешных Check и плана и использует проверенные сборки того же коммита из текущего workflow без повторной сборки. Цель полного цикла — до семи минут; реальное время зависит также от очереди GitHub и доступности внешних сервисов и фиксируется по фактическому запуску. Публикация включается только переменной репозитория `NPM_PUBLISH_ENABLED=true`; без неё успешно выполняются проверки и план, а publish пропускается. PR не публикует пакеты. Сайт остаётся локальным.
 
 Для **каждого** из восьми имён `@morfira-dev/wysiwyg-core`, `@morfira-dev/wysiwyg-plugins`, `@morfira-dev/wysiwyg-vue`, `@morfira-dev/wysiwyg-react`, `@morfira-dev/wysiwyg-svelte`, `@morfira-dev/wysiwyg-angular`, `@morfira-dev/wysiwyg-web-component`, `@morfira-dev/wysiwyg` в npm → Settings → Trusted publishing добавьте GitHub Actions:
 

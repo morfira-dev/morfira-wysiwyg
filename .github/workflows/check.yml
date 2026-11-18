@@ -13,6 +13,8 @@ jobs:
     name: Build and static checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      playwright-image: ${{ steps.playwright.outputs.image }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -21,6 +23,11 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Select the matching preinstalled Playwright image
+        id: playwright
+        run: |
+          PLAYWRIGHT_VERSION=$(node -p "require('@playwright/test/package.json').version")
+          echo "image=mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble" >> "$GITHUB_OUTPUT"
       - run: pnpm run test:release
       - run: pnpm run check:static
       - name: Archive checked packages and Angular fixtures
@@ -58,6 +65,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    container:
+      image: ${{ needs.build.outputs.playwright-image }}
+      options: --init --ipc=host
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     strategy:
       fail-fast: false
       matrix:
@@ -77,7 +89,6 @@ jobs:
           path: ${{ runner.temp }}/checked-build
       - name: Restore checked packages and Angular fixtures
         run: tar -xzf "$RUNNER_TEMP/checked-build/morfira-build.tar.gz"
-      - run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
       - run: pnpm test --project=${{ matrix.browser }} --shard=${{ matrix.shard }}/4 --workers=2
       - uses: actions/upload-artifact@v7
         if: failure()
@@ -91,6 +102,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    container:
+      image: ${{ needs.build.outputs.playwright-image }}
+      options: --init --ipc=host
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -105,7 +121,6 @@ jobs:
           path: ${{ runner.temp }}/checked-build
       - name: Restore checked packages and Angular fixtures
         run: tar -xzf "$RUNNER_TEMP/checked-build/morfira-build.tar.gz"
-      - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run docs:build:site
       - run: pnpm run test:docs --workers=2
       - uses: actions/upload-artifact@v7
@@ -122,6 +137,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    container:
+      image: ${{ needs.build.outputs.playwright-image }}
+      options: --init --ipc=host
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
     strategy:
       fail-fast: false
       matrix:
@@ -144,7 +164,6 @@ jobs:
           path: ${{ runner.temp }}/checked-build
       - name: Restore checked packages and Angular fixtures
         run: tar -xzf "$RUNNER_TEMP/checked-build/morfira-build.tar.gz"
-      - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm run ${{ matrix.command }}
       - uses: actions/upload-artifact@v7
         if: failure()
