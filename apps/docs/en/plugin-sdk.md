@@ -79,6 +79,15 @@ Every persisted attribute value is a string. A node definition may add at most 6
 
 ## HTML, JSON and a standalone codec
 
+A semantic `SchemaNodeSpec` may constrain content with
+`content: { type: 'text', minLength: 1, maxLength: 201, singleLine: true }`.
+Only text children survive this rule after safe normalization; aggregate length
+is checked before concatenation. Element children and invalid bounds reject
+HTML/JSON before rendering. The rule type is `SchemaTextContentSpec`, without a
+`required` field; default definitions do not constrain child content.
+This validates data rather than automatically enabling atomic behavior or
+accepting arbitrary `contenteditable` markup.
+
 ```ts
 import { createDocumentSchema, sanitizeHTML } from '@morfira-dev/wysiwyg';
 

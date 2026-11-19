@@ -6,11 +6,14 @@ export type SchemaAttributeSpec =
   | { readonly type: 'integer'; readonly min: number; readonly max: number; readonly required?: boolean }
   | { readonly type: 'url'; readonly required?: boolean };
 
+export type SchemaTextContentSpec = Omit<Extract<SchemaAttributeSpec, { type: 'text' }>, 'required'>;
+
 export interface SchemaNodeSpec {
   readonly name: string;
   readonly kind: 'block' | 'inline';
   readonly tag: DocumentTag;
   readonly attributes?: Readonly<Record<string, SchemaAttributeSpec>>;
+  readonly content?: SchemaTextContentSpec;
 }
 
 type OptionalSchemaAttributeSpec = SchemaAttributeSpec & { readonly required?: false };

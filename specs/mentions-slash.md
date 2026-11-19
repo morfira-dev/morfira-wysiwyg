@@ -1,6 +1,6 @@
 # Mentions and slash commands — phases 1/2
 
-Status: **phase 1 implemented; phase 2 structural actions and bounded persistent references implemented locally; atomic phase 3 remains proposed**. Opt-in editable ID references follow [persistent-mentions.md](persistent-mentions.md); they do not implement atom behavior. This follows the Markdown shortcuts milestone. The first slice is an asynchronous suggestion picker that inserts ordinary text. Atomic identity-bearing mentions remain a later slice; structural slash actions follow the phase-2 contract below.
+Status: **phase 1 implemented; phase 2 structural actions and bounded persistent references implemented locally; bounded atomic mention navigation/deletion is implemented locally; generic phase 3 remains proposed**. Opt-in editable ID references follow [persistent-mentions.md](persistent-mentions.md); the separate [atomic profile](atomic-mentions.md) adds bounded mention navigation/deletion without a generic atom engine. This follows the Markdown shortcuts milestone. The first slice is an asynchronous suggestion picker that inserts ordinary text. Generic atomic-node SDK capabilities remain a later slice; structural slash actions follow the phase-2 contract below.
 
 Original strict TypeScript/MIT, no new runtime dependencies. Core must not import these plugins or their UI. Reuse platform Selection/Range and the existing plugin lifecycle. Existing packages can expose new subpaths without adding packages. Each independently loadable entry, including its shared chunks, uses the user-directed optional-module 150000-byte gzip JS envelope; measure raw JS/Brotli and optional CSS separately.
 
@@ -127,7 +127,7 @@ Phase 1 requires Chromium, Firefox and WebKit cases for trigger/email/code bound
 
 Exercise Vue v-model, React controlled value with StrictMode, and Svelte bind:value: same-value feedback preserves the caret/menu session; changed external values cancel; reactive read-only aborts; remount/unmount leaves no popup, listener, timer or unresolved owned request. Menu tests cover Arrow/Enter/Escape/Tab, ordinary list Enter, pointer focus, outside dismissal, scrolling/resize, narrow viewport and host clipping. Validate SSR-safe imports, archive/declaration/public subpaths, runtime graphs, independent entry budgets and CSS separately. Add detailed RU/EN docs and local demo with deferred providers, empty/error/loading states and explicit plain-text mention semantics. Run pnpm run check, docs:build and test:docs; report actual checks/evidence.
 
-Atomic phase 3 remains future work. Editable persisted references and their old-reader policy follow persistent-mentions.md; atom selection/deletion and any model migration require a separate contract. Phase 2 uses the synchronous composition contract below; the verified textbox/listbox relationship remains unchanged.
+Generic atomic phase 3 remains future work; bounded mention behavior follows atomic-mentions.md. Editable persisted references and their old-reader policy follow persistent-mentions.md; atom selection/deletion and any model migration require a separate contract. Phase 2 uses the synchronous composition contract below; the verified textbox/listbox relationship remains unchanged.
 
 ## Concrete implementation decisions for this milestone
 

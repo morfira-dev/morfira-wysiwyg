@@ -1,11 +1,11 @@
 import { documentTags, parseHTML, validateDocument, renderDocument, documentHTML } from '../document/index.js';
 import { safeURL } from '../document/security.js';
-import type { DocumentAttributeResolver } from '../document/internal-types.js';
-import type { CompiledAttribute, CompiledSchemaNode } from './internal-types.js';
+import type { DocumentAttributeResolver, DocumentElementValidator } from '../document/internal-types.js';
+import type { CompiledAttribute, CompiledSchemaNode, CompiledTextContent } from './internal-types.js';
 import type { DocumentTag, EditorDocument } from '../document/types.js';
 import type { DocumentSchema, SchemaContribution } from './types.js';
 
-export type { DocumentSchema, SchemaAttributeSpec, SchemaNodeSpec, SchemaAttributesSpec, SchemaContribution } from './types.js';
+export type { DocumentSchema, SchemaAttributeSpec, SchemaTextContentSpec, SchemaNodeSpec, SchemaAttributesSpec, SchemaContribution } from './types.js';
 
 const inlineTags = ['span', 'strong', 'em', 'u', 's', 'sub', 'sup', 'code'];
 const blockTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'figure', 'figcaption'];
@@ -81,7 +81,7 @@ export const createDocumentSchema = (nodes: readonly SchemaContribution[] = []):
   const splitPolicies = new Map<DocumentTag, Map<string, string>>();
   for (const node of nodes) {
     if (!record(node)) throw new TypeError('Schema contribution must be an object.');
-    keysWithin(node, node.kind === 'attributes' ? ['name', 'kind', 'tag', 'attributes', 'split'] : ['name', 'kind', 'tag', 'attributes']);
+    keysWithin(node, node.kind === 'attributes' ? ['name', 'kind', 'tag', 'attributes', 'split'] : ['name', 'kind', 'tag', 'attributes', 'content']);
     if (typeof node.name !== 'string' || node.name.length > 128 || !/^[a-z][a-z0-9-]*(?::[a-z][a-z0-9-]*)+$/.test(node.name))
       throw new TypeError('Schema names must be bounded namespaced identifiers.');
     if (names.has(node.name)) throw new Error(`Duplicate schema contribution: ${node.name}`);
@@ -101,7 +101,16 @@ export const createDocumentSchema = (nodes: readonly SchemaContribution[] = []):
       attributes.set(name, compiled);
     }
     if (!nonOwning) {
-      registry.set(node.name, Object.freeze({ tag, attributes }));
+      let content: CompiledTextContent | undefined;
+      if (node.content !== undefined) {
+        if (!record(node.content) || node.content.type !== 'text') throw new TypeError('Schema content must be a bounded text rule.');
+        keysWithin(node.content, ['type', 'minLength', 'maxLength', 'singleLine']);
+        const maxLength = node.content.maxLength === undefined ? 256 : node.content.maxLength;
+        if (typeof maxLength !== 'number') throw new TypeError('Schema text content maxLength must be a number.');
+        const rule = compileAttribute(node.content);
+        content = { maxLength, rule };
+      }
+      registry.set(node.name, Object.freeze({ tag, attributes, ...(content ? { content } : {}) }));
       continue;
     }
     const existing = tagAttributes.get(tag) ?? new Map<string, CompiledAttribute>();
@@ -149,8 +158,21 @@ export const createDocumentSchema = (nodes: readonly SchemaContribution[] = []):
     }
     return output;
   };
-  const validate: DocumentSchema['validateDocument'] = (input) => validateDocument(input, resolve);
-  const parse: DocumentSchema['parseHTML'] = (html) => parseHTML(html, resolve);
+  const validateElement: DocumentElementValidator = (node) => {
+    const content = registry.get(node.attributes['data-mw-node'])?.content;
+    if (!content) return;
+    const parts: string[] = [];
+    let length = 0;
+    for (const child of node.children) {
+      if (child.type !== 'text') throw new TypeError('Schema text content cannot contain element nodes.');
+      length += child.text.length;
+      if (length > content.maxLength) throw new RangeError('Schema text content exceeds its maximum length.');
+      parts.push(child.text);
+    }
+    content.rule.read(parts.join(''));
+  };
+  const validate: DocumentSchema['validateDocument'] = (input) => validateDocument(input, resolve, validateElement);
+  const parse: DocumentSchema['parseHTML'] = (html) => parseHTML(html, resolve, validateElement);
   return Object.freeze({
     attributesForSplit: (tag: DocumentTag, input: Readonly<Record<string, string>>) => {
       if (!documentTags.includes(tag) || !record(input)) throw new TypeError('Expected a safe tag and attribute record.');

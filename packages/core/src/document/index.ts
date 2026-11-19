@@ -5,7 +5,7 @@ import { normalizeDirection } from './direction.js';
 import { normalizeCellBoxStyle, normalizeCellBorder } from './cell-box.js';
 import { normalizeOfficeHTML } from './office-paste/index.js';
 import { countText, countElement, maximumHTMLLength, maximumNodes, maximumDepth } from './budget.js';
-import type { DocumentAttributeResolver, DocumentBudget } from './internal-types.js';
+import type { DocumentAttributeResolver, DocumentBudget, DocumentElementValidator } from './internal-types.js';
 import type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
 export type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
 /** Versioned, framework-independent document tree. Only supported HTML semantics are stored. */
@@ -125,7 +125,7 @@ const attributesFor = (tag: DocumentTag, input: Record<string, unknown>, source:
   if (output.style && output.style.length > 20000) throw new RangeError('Normalized style exceeds the attribute length limit.');
   return output;
 };
-const readDOM = (node: Node, depth: number, budget: DocumentBudget, resolve?: DocumentAttributeResolver): DocumentNode[] => {
+const readDOM = (node: Node, depth: number, budget: DocumentBudget, resolve?: DocumentAttributeResolver, validateElement?: DocumentElementValidator): DocumentNode[] => {
   if (++budget.count > maximumNodes || depth > maximumDepth)
     throw new RangeError('Document exceeds structural limits.');
   if (node.nodeType === 3) {
@@ -139,7 +139,7 @@ const readDOM = (node: Node, depth: number, budget: DocumentBudget, resolve?: Do
   const original = element.localName.toLowerCase();
   if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml' || omitted.has(original))
     return [];
-  const children = [...element.childNodes].flatMap((child) => readDOM(child, depth + 1, budget, resolve));
+  const children = [...element.childNodes].flatMap((child) => readDOM(child, depth + 1, budget, resolve, validateElement));
   const tag = aliases[original] ?? original;
   if (!tags.has(tag)) {
     if (resolve && element.hasAttribute('data-mw-node'))
@@ -150,9 +150,11 @@ const readDOM = (node: Node, depth: number, budget: DocumentBudget, resolve?: Do
   if (tag === 'img' && !attributes.src)
     return [];
   countElement(budget, tag, attributes);
-  return [{ type: 'element', tag: tag as DocumentTag, attributes, children }];
+  const output: ElementNode = { type: 'element', tag: tag as DocumentTag, attributes, children };
+  validateElement?.(output);
+  return [output];
 };
-export const parseHTML = (html: string, resolve?: DocumentAttributeResolver): EditorDocument => {
+export const parseHTML = (html: string, resolve?: DocumentAttributeResolver, validateElement?: DocumentElementValidator): EditorDocument => {
   if (html.length > maximumHTMLLength)
     throw new RangeError('HTML exceeds the document size limit.');
   // A template is inert: script execution and active resource loading are never used for import.
@@ -160,9 +162,9 @@ export const parseHTML = (html: string, resolve?: DocumentAttributeResolver): Ed
   template.innerHTML = html;
   if (/mso-list\s*:|docs-internal-guid-/i.test(html)) normalizeOfficeHTML(template.content);
   const budget: DocumentBudget = { count: 0, htmlLength: 0 };
-  return { version: 1, children: [...template.content.childNodes].flatMap((node) => readDOM(node, 0, budget, resolve)) };
+  return { version: 1, children: [...template.content.childNodes].flatMap((node) => readDOM(node, 0, budget, resolve, validateElement)) };
 };
-export const validateDocument = (input: unknown, resolve?: DocumentAttributeResolver): EditorDocument => {
+export const validateDocument = (input: unknown, resolve?: DocumentAttributeResolver, validateElement?: DocumentElementValidator): EditorDocument => {
   if (!input || typeof input !== 'object' || !('version' in input) || input.version !== 1 || !('children' in input) || !Array.isArray(input.children))
     throw new TypeError('Expected a version 1 document.');
   const budget: DocumentBudget = { count: 0, htmlLength: 0 };
@@ -180,7 +182,9 @@ export const validateDocument = (input: unknown, resolve?: DocumentAttributeReso
     const attrs = 'attributes' in value && value.attributes && typeof value.attributes === 'object' && !Array.isArray(value.attributes) ? value.attributes : {};
     const attributes = attributesFor(value.tag as DocumentTag, attrs as Record<string, unknown>, 'json', resolve);
     countElement(budget, value.tag, attributes);
-    return { type: 'element', tag: value.tag as DocumentTag, attributes, children: children(value.children, depth + 1) };
+    const output: ElementNode = { type: 'element', tag: value.tag as DocumentTag, attributes, children: children(value.children, depth + 1) };
+    validateElement?.(output);
+    return output;
   };
   const children = (values: unknown[], depth: number): DocumentNode[] => {
     if (values.length > maximumNodes) throw new RangeError('Document children exceed node limit.');

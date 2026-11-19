@@ -1,5 +1,79 @@
 # Verification record
 
+## Atomic mention navigation/deletion — 2026-11-19
+
+Local implementation follows [atomic-mentions.md](atomic-mentions.md). Explicit
+mentions({persistent:true, atomic:true}) adds mention-specific whole-token user
+navigation/deletion over the same schema-v1 ID span. Plain and editable persistent
+defaults are unchanged. Every atomic reader opts in; createMentionSchema({atomic:
+true}) validates bounded text-only labels without installing runtime behavior.
+Runtime contenteditable=false is an owned derived annotation, never a new allowed
+saved attribute or persisted atomic flag. Old registered editable readers retain
+IDs; rich/empty/long labels reject in the new profile and need deliberate migration
+or editable mode. This is not a generic atom/node-view/mapped-position engine.
+
+The optional runtime handles ordinary-flow LTR/RTL horizontal/Shift boundaries,
+whole-pointer selection, nearest-edge interior caret snapping and expanded partial
+ranges. Backspace/Delete remove a whole token in one transaction, retaining normal
+trailing spaces, unaffected content and an editable empty-block placeholder.
+Selected text replacement is bounded to the supported flow; atom-touching cross-
+block/owner or unsupported structural operations refuse without partial ID edits.
+Readonly/IME/legacy keys, disposal, actual selection and focus-time revisions are
+rechecked. Noncancelable keyboard/beforeinput events never start an extra owned
+transaction. A single-node delete has a fast path without scanning the full flow.
+
+Presentation scans initial content and changed subtrees, flushes on editor changes,
+and restores only owned annotations during cleanup. Readonly/API replacement reset
+local composition guards. getMentions validates actual text-versus-element shape
+so the new nonempty-content rule does not silently discard valid references.
+An intermediate static review found and corrected that empty-probe integration
+edge, noncancelable input handling and the single-token deletion scan cost.
+
+Core adds a declarative semantic text-content rule with copied bounds and no
+execution callback. HTML/JSON normalize safe children, reject element children or
+invalid text, and bound aggregate length before concatenation and output rendering.
+All existing public codec/render paths use that validator; default definitions
+and non-owning attribute contributions preserve their contracts. IDs remain
+untrusted references requiring backend identity/permission checks.
+
+Three subagents implemented behavior, representative tests and RU/EN docs/demo;
+one also reviewed core validator propagation without executing tests. Full demo
+explicitly enables the atomic option and provides before/after/whole-token controls.
+No runtime dependency, new public subpath, schema version or CSS was added.
+
+Passed: pnpm run build (declarations and all size guards), pnpm run typecheck
+(including Vue/Svelte), pnpm run check:project, pnpm run check:tree-shaking,
+pnpm run package:check (eight archives), pnpm run docs:build:site and git diff
+--check. No local behavioral tests, installed-consumer execution, live browser or
+real-device IME checks ran. No GitHub pipeline was inspected.
+
+Nine editor definitions and two localized atomic-demo definitions are authored;
+the existing persistent demo adds a transient-rendering assertion after provider
+choice. Cases cover compatibility, stored/runtime attributes, Arrow/Shift/pointer/
+API selection, adjacent tokens/spaces, whole deletion/history/next typing, ordinary
+lists/merged cells, structural refusal, readonly/IME/noncancelable/focus replacement,
+external reconstruction/reuse/disposal and schema text-content/definition boundaries.
+The installed Node schema smoke is updated to the atomic content profile for later
+execution. These outcomes remain unverified across Chromium/Firefox/WebKit at the
+user's explicit test pause; static checks are not runtime browser evidence.
+
+Final selected dependency closures, bytes (shared JS counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 93957 | 29178 | 25709 | 3293 |
+| Mentions | 21517 | 8630 | 7778 | 1465 optional shared suggestions |
+| Suggestions behavior set | 30858 | 12329 | 10998 | 1465 optional |
+| Standard ready | 221658 | 65767 | 56307 | 12162 |
+| Extended ready | 252739 | 74785 | 63683 | 13627 |
+
+Against baseline core grows 264 gzip bytes, mentions/suggestions-set 3086,
+standard 252 and extended 2763. Product guards all pass; standard retains 14233
+gzip bytes under 80000 and extended 35215 under 110000. The soft raw core target
+remains exceeded. CSS is unchanged: core 3293/1164/962 raw/gzip/Brotli, suggestions
+1465/575/454 and extended 13627/4499/3661. Framework runtimes, maps and declarations
+are excluded. No full every-module or universal browser/IME claim is implied.
+
 ## Native all-result search highlights — 2026-11-19
 
 Local implementation follows [search-highlights.md](search-highlights.md).

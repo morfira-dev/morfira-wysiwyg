@@ -2,7 +2,9 @@
 
 Status: accepted bounded implementation contract; actual runs belong to
 verification-backlog.md. This is an additive identity-reference slice over SDK
-phase-1 semantic spans, not an atomic-node or mapped-selection engine.
+phase-1 semantic spans, not a generic atomic-node or mapped-selection engine.
+The optional atomic navigation/deletion profile follows [atomic-mentions.md](atomic-mentions.md);
+this document describes the compatible editable default.
 
 ## Public API and representation
 

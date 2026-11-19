@@ -1,0 +1,38 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`atomic mention navigation and whole deletion through ${english ? 'English' : 'Russian'} demo controls`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const panel = page.locator('.lab-atomic-mentions');
+  await panel.locator('summary').click();
+  await panel.getByRole('button', { name: t('Загрузить атомарные упоминания', 'Load atomic mentions'), exact: true }).click();
+  const anna = content.locator('[data-mw-node="morfira:mention"][data-mention-id="anna"]');
+  const boris = content.locator('[data-mw-node="morfira:mention"][data-mention-id="boris"]');
+  await expect(anna).toHaveAttribute('contenteditable', 'false');
+  await expect(boris).toHaveText('@Boris');
+  await panel.getByRole('button', { name: t('Курсор перед @Anna', 'Caret before @Anna'), exact: true }).click();
+  await page.keyboard.press('Shift+ArrowRight');
+  await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe('@Anna');
+  await panel.getByRole('button', { name: t('Курсор после @Anna', 'Caret after @Anna'), exact: true }).click();
+  await page.keyboard.press('Backspace');
+  await expect(anna).toHaveCount(0);
+  await expect(content).toHaveText('Before  between @Boris after');
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await undo.click();
+  await expect(anna).toHaveText('@Anna');
+  await expect(anna).toHaveAttribute('contenteditable', 'false');
+  await expect(undo).toBeDisabled();
+  await panel.getByRole('button', { name: t('Курсор перед @Anna', 'Caret before @Anna'), exact: true }).click();
+  await page.keyboard.press('Delete');
+  await expect(anna).toHaveCount(0);
+  await expect(boris).toHaveAttribute('data-mention-id', 'boris');
+  await undo.click();
+  await expect(anna).toHaveAttribute('data-mention-id', 'anna');
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(panel.getByRole('button', { name: t('Загрузить атомарные упоминания', 'Load atomic mentions'), exact: true })).toBeDisabled();
+  await panel.getByRole('link', { name: t('Навигация, удаление и миграция упоминаний', 'Mention navigation, deletion and migration'), exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/atomic-mentions$`));
+  await expect(page.locator('.vp-doc')).toContainText('1–201 UTF-16');
+});

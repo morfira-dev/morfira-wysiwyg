@@ -79,6 +79,15 @@ const editor = createEditor(host, {
 
 ## HTML, JSON и отдельный codec
 
+Семантический `SchemaNodeSpec` может ограничить содержимое через
+`content: { type: 'text', minLength: 1, maxLength: 201, singleLine: true }`.
+Тогда после безопасной нормализации разрешены только текстовые дочерние узлы;
+суммарная длина проверяется до объединения строк. Вложенные элементы и нарушенные
+границы отклоняют HTML/JSON до рендеринга. Тип правила — `SchemaTextContentSpec`,
+без поля `required`; по умолчанию ограничения дочернего содержимого нет.
+Это проверка данных, а не автоматическое включение атомарного поведения или
+разрешение произвольного `contenteditable`.
+
 ```ts
 import { createDocumentSchema, sanitizeHTML } from '@morfira-dev/wysiwyg';
 

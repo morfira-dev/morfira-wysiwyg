@@ -2,6 +2,8 @@
 
 `mentions({ persistent: true })` stores the chosen ID in an ordinary schema-v1 semantic `span`. This is a separate option of the existing plugin: without it, mentions and ready presets continue inserting plain text. The code uses TypeScript with no new runtime dependencies. New browser regressions have not run yet; earlier plain-text mention results do not validate this slice.
 
+An explicit [atomic mode](/en/atomic-mentions) is also available with `atomic: true` alongside `persistent: true`. It adds whole-token navigation/deletion and a stricter text-only label contract. The editable behavior described below remains the compatible default for persistent references.
+
 ## Setup
 
 ```ts
@@ -79,4 +81,4 @@ IDs from providers, HTML, JSON or clipboard are **untrusted identity claims**. A
 
 On the [homepage](/en/#editor) and [playground](/en/playground), expand “Persistent mentions with IDs”. Choose “Choose an @an mention”, select a person in the actual menu, then “Show mention IDs”. HTML/JSON round-trip controls validate and resubmit the current value, displaying retained references. An unchanged normalized value preserves history and selection. Loading a sample replaces the document and clears history; ordinary menu selection remains one Undo operation.
 
-The demo explicitly passes `persistent: true` in its own configuration. Ready preset defaults do not change. ID snapshot inspection remains available read-only; insertion and reloading are blocked. Actual browser outcomes for this stage still require executing the authored regressions.
+The demo explicitly passes `persistent: true` and `atomic: true`; the editable behavior above applies when `atomic` is omitted. Ready preset defaults do not change. ID snapshot inspection remains available read-only; insertion and reloading are blocked. Actual browser outcomes for this stage still require executing the authored regressions.

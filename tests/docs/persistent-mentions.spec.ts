@@ -13,6 +13,7 @@ for (const english of [false, true]) test(`persistent mention controls retain ID
   const mention = content.locator('span[data-mw-node="morfira:mention"]');
   await expect(mention).toHaveAttribute('data-mention-id', 'anna');
   await expect(mention).toHaveText(t('@Анна Смирнова', '@Anna Smith'));
+  await expect(mention).toHaveAttribute('contenteditable', 'false');
   await panel.getByRole('button', { name: t('Показать ID упоминаний', 'Show mention IDs'), exact: true }).click();
   await expect(panel.locator('[data-mention-references]')).toContainText('"id": "anna"');
   const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');

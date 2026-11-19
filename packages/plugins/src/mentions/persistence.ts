@@ -1,6 +1,7 @@
 import type { Editor, SchemaNodeSpec } from '@morfira-dev/wysiwyg-core';
 import type { Candidate } from '../suggestions/engine.types.js';
 import type { MentionOption } from '../suggestions/types.js';
+import type { MentionSchemaOptions } from './types.js';
 
 export const mentionNodeName = 'morfira:mention';
 export const mentionIDAttribute = 'data-mention-id';
@@ -8,14 +9,20 @@ export const validMentionID = (value: unknown): value is string => typeof value 
   && value.length >= 1 && value.length <= 256 && !/[\u0000-\u001f\u007f\u2028\u2029]/.test(value);
 
 /** Fresh definitions let an application validate references without a provider. */
-export const createMentionSchema = (): SchemaNodeSpec => ({
-  name: mentionNodeName,
-  kind: 'inline',
-  tag: 'span',
-  attributes: {
-    [mentionIDAttribute]: { type: 'text', required: true, minLength: 1, maxLength: 256, singleLine: true },
-  },
-});
+export const createMentionSchema = (options: MentionSchemaOptions = {}): SchemaNodeSpec => {
+  if (!options || typeof options !== 'object' || Array.isArray(options)
+    || Object.keys(options).some((key) => key !== 'atomic')
+    || (options.atomic !== undefined && typeof options.atomic !== 'boolean')) throw new TypeError('Expected mention schema options.');
+  return {
+    name: mentionNodeName,
+    kind: 'inline',
+    tag: 'span',
+    attributes: {
+      [mentionIDAttribute]: { type: 'text', required: true, minLength: 1, maxLength: 256, singleLine: true },
+    },
+    ...(options.atomic ? { content: { type: 'text' as const, minLength: 1, maxLength: 201, singleLine: true } } : {}),
+  };
+};
 
 /** Called only inside the suggestion engine's validated choice transaction. */
 export const insertMention = (editor: Editor, candidate: Candidate, item: MentionOption): void => {

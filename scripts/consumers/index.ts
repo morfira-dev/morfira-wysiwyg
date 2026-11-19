@@ -161,7 +161,7 @@ try {
     const value = parseMarkdown('# Installed codec');
     assert.equal(value.version, 1);
     assert.equal(serializeMarkdown(value).trim(), '# Installed codec');
-    const schema = createDocumentSchema([createMentionSchema()]);
+    const schema = createDocumentSchema([createMentionSchema({ atomic: true })]);
     const mention = schema.validateDocument({ version: 1, children: [{
       type: 'element', tag: 'span',
       attributes: { 'data-mw-node': 'morfira:mention', 'data-mention-id': 'installed-id' },

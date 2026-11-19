@@ -128,7 +128,7 @@ The menu anchors to the caret Range without inserting measurement spans, clamps 
 
 Listbox/status semantics and keyboard/browser checks are not accessibility certification. Screen-reader, touch, zoom and real IME evidence still need separate testing. On the [homepage](/en/#editor) and [playground](/en/playground), local asynchronous providers demonstrate ready/loading/empty/error/cancellation without sending document text to a server.
 
-Structural slash actions have their separate contract below; [persistent editable ID references](/en/persistent-mentions) are explicitly enabled. Neither slice adds atomic mention selection or indivisible deletion, which remain future SDK work.
+Structural slash actions have their separate contract below; [persistent editable ID references](/en/persistent-mentions) are explicitly enabled. The separate [atomic mention mode](/en/atomic-mentions) adds bounded whole-token navigation and deletion with `persistent: true, atomic: true`. A universal atom SDK remains future work.
 
 ## Structural slash commands
 

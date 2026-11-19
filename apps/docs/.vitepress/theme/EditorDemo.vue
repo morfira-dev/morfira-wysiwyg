@@ -430,6 +430,21 @@ const loadMentionReferenceSample = () => run((instance) => {
   instance.setHTML(`<p><span data-mw-node="morfira:mention" data-mention-id="anna">@${t('Анна Смирнова', 'Anna Smith')}</span> ${t('готовит макет.', 'is preparing the design.')}</p>`);
   mentionReferences.value = '';
 });
+const atomicMentionSample = () => '<p title="Atomic mention sample">Before <span data-mw-node="morfira:mention" data-mention-id="anna">@Anna</span> between <span data-mw-node="morfira:mention" data-mention-id="boris">@Boris</span> after</p>';
+const loadAtomicMentionSample = () => run((instance) => {
+  instance.setHTML(atomicMentionSample());
+  mentionReferences.value = '';
+});
+const placeAtomicMention = (position: 'before' | 'after' | 'select') => run((instance) => {
+  const mention = instance.surface.querySelector('[title="Atomic mention sample"] span[data-mention-id="anna"]');
+  if (!mention) throw new Error(t('Загрузи пример атомарных упоминаний заново.', 'Reload the atomic mention sample.'));
+  const range = instance.surface.ownerDocument.createRange();
+  range.selectNode(mention);
+  if (position !== 'select') range.collapse(position === 'before');
+  const selection = instance.surface.ownerDocument.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}, false);
 const roundTripMentionReferences = (format: 'html' | 'json') => run((instance) => {
   if (format === 'html') instance.setHTML(instance.getHTML());
   else instance.setJSON(instance.getJSON());
@@ -832,7 +847,7 @@ onMounted(async () => {
       families: fontFamilies.map((option) => ({ id: option.id, label: t(option.ru, option.en), family: option.family })),
       sizes: fontSizes,
     })],
-    mentions: { provide: people, debounceMs: 0, persistent: true },
+    mentions: { provide: people, debounceMs: 0, persistent: true, atomic: true },
     slash: { provide: snippets, debounceMs: 0, actions: { ...createSlashActions(), table: (instance: Editor) => tableCommands(instance).insert(3, 3) } },
     images: { upload: demoUpload },
     statistics: { locale: ru.value ? 'ru' : 'en' },
@@ -1208,9 +1223,20 @@ onBeforeUnmount(() => {
             <button :disabled="readOnly" @click="roundTripMentionReferences('json')">{{ t('Проверить JSON round-trip', 'Check JSON round-trip') }}</button>
           </div>
           <pre v-if="mentionReferences" data-mention-references class="lab-code">{{ mentionReferences }}</pre>
-          <p class="lab-hint">{{ t('Демка явно включает persistent: true; пресеты по умолчанию оставляют обычный текст. Выбери вариант в меню и нажми «Показать ID». Это снимок { id, text }, доступный и в read-only.', 'The demo explicitly enables persistent: true; presets keep plain text by default. Choose a menu result, then Show mention IDs. This { id, text } snapshot also works read-only.') }}</p>
-          <p class="lab-hint">{{ t('Начало примера и загрузка заменяют документ. HTML/JSON round-trip валидирует текущее значение; при неизменном содержимом история сохраняется. Упоминание редактируемое, не атом: изменение подписи сохраняет ID. ID из буфера не подтверждает личность или права и не отправляет уведомления.', 'Starting/loading an example replaces the document. HTML/JSON round-trip validates the current value; unchanged content preserves history. A mention is editable, not atomic: changing its label keeps the ID. Clipboard IDs prove neither identity nor permission and send no notifications.') }}</p>
+          <p class="lab-hint">{{ t('Демка явно включает persistent: true и atomic: true; пресеты по умолчанию оставляют обычный текст. Выбери вариант в меню и нажми «Показать ID». Это снимок { id, text }, доступный и в read-only.', 'The demo explicitly enables persistent: true and atomic: true; presets keep plain text by default. Choose a menu result, then Show mention IDs. This { id, text } snapshot also works read-only.') }}</p>
+          <p class="lab-hint">{{ t('Начало примера и загрузка заменяют документ. HTML/JSON round-trip валидирует текущее значение; при неизменном содержимом история сохраняется. В этой демке подпись атомарна; отдельный persistent-режим без atomic остаётся редактируемым. ID из буфера не подтверждает личность или права и не отправляет уведомления.', 'Starting/loading an example replaces the document. HTML/JSON round-trip validates the current value; unchanged content preserves history. Labels are atomic in this demo; persistent mode without atomic stays editable. Clipboard IDs prove neither identity nor permission and send no notifications.') }}</p>
           <a :href="ru ? '/persistent-mentions' : '/en/persistent-mentions'">{{ t('Хранение ID и границы упоминаний', 'Mention ID storage and boundaries') }}</a>
+        </fieldset></details>
+        <details class="lab-atomic-mentions"><summary>{{ t('Атомарные упоминания: курсор и удаление', 'Atomic mentions: navigation and deletion') }}</summary><fieldset :disabled="!ready">
+          <button :disabled="readOnly" @click="loadAtomicMentionSample">{{ t('Загрузить атомарные упоминания', 'Load atomic mentions') }}</button>
+          <div class="lab-button-grid">
+            <button @click="placeAtomicMention('before')">{{ t('Курсор перед @Anna', 'Caret before @Anna') }}</button>
+            <button @click="placeAtomicMention('after')">{{ t('Курсор после @Anna', 'Caret after @Anna') }}</button>
+            <button @click="placeAtomicMention('select')">{{ t('Выделить @Anna целиком', 'Select the whole @Anna') }}</button>
+          </div>
+          <p class="lab-hint">{{ t('Загрузка заменяет документ. После «Курсор перед @Anna» нажми ArrowRight или Shift+ArrowRight: переход и выделение охватывают весь токен. Delete перед ним или Backspace сразу после удаляет упоминание целиком; Undo возвращает ID и подпись. Пробел после токена остаётся обычным текстом.', 'Loading replaces the document. After Caret before @Anna, press ArrowRight or Shift+ArrowRight to cross or select the entire token. Delete before it or Backspace immediately after it removes the whole mention; Undo restores its ID and label. The trailing space remains ordinary text.') }}</p>
+          <p class="lab-hint">{{ t('atomic: true требует persistent: true. Это ограниченное поведение упоминаний, не универсальный SDK атомов. В сохраняемом HTML/JSON нет contenteditable; после загрузки поведение заново выводится из конфигурации. Read-only блокирует изменения; обработчики атомов не вмешиваются в подтверждение IME.', 'atomic: true requires persistent: true. This is bounded mention behavior, not a universal atom SDK. Stored HTML/JSON has no contenteditable; behavior is rederived from configuration after loading. Read-only blocks edits; atomic handlers do not intercept IME confirmation.') }}</p>
+          <a :href="ru ? '/atomic-mentions' : '/en/atomic-mentions'">{{ t('Навигация, удаление и миграция упоминаний', 'Mention navigation, deletion and migration') }}</a>
         </fieldset></details>
         <details class="lab-markdown-codec"><summary>{{ t('Markdown: импорт и экспорт', 'Markdown: import and export') }}</summary><fieldset :disabled="!ready || markdownCodecBusy">
           <label>{{ t('Markdown-исходник', 'Markdown source') }}<textarea :aria-label="t('Markdown-исходник', 'Markdown source')" v-model="markdownSource" class="lab-code" rows="9" spellcheck="false"></textarea></label>

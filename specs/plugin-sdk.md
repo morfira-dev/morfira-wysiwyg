@@ -26,6 +26,17 @@ No new runtime dependency or package. Public exports are explicit through the ex
 
 ## Non-owning attribute contributions and split policy
 
+Semantic SchemaNodeSpec additionally accepts content?:SchemaTextContentSpec, a
+text rule with type:'text', minLength/maxLength/singleLine and no required field.
+When configured, every normalized child must be a text node; validate aggregate
+length before concatenation, then apply the copied bounded text rule at HTML and
+JSON boundaries before rendering. Empty/long/rich content rejects according to
+the declared bounds. Default semantic nodes and non-owning attribute definitions
+are unchanged; non-owning definitions cannot declare content. This narrow rule
+does not register generic atom navigation/node views or executable callbacks.
+Atomic mentions use it under [atomic-mentions.md](atomic-mentions.md), with runtime
+presentation owned by that optional plugin, not accepted contenteditable markup.
+
 Text attribute rules additionally accept minLength?:number (default 0) and
 singleLine?:boolean (default false). Minimum is an integer from 0 through the
 configured maximum. True singleLine rejects C0/DEL controls and Unicode

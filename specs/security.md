@@ -21,6 +21,19 @@ cannot trigger a document-writing fallback. Range snapshots are observational an
 may become stale; they confer no authority to execute commands. Cleanup releases
 owned ranges/observers/frames without writing selection, history or document data.
 
+## Atomic mention runtime boundaries
+
+The explicit [atomic mention profile](atomic-mentions.md) derives an owned
+contenteditable=false runtime annotation only from registered, validated mention
+references. It never permits arbitrary contenteditable in imported/saved data.
+Trusted schema text-content rules validate text-only children, aggregate bounds
+before concatenation and single-line values at HTML/JSON boundaries before output
+rendering. Read-only/IME/focus/replacement/disposal gates protect edits; partial
+token boundaries expand or an unsupported edit refuses without mutation.
+ID/label bounds and backend authorization requirements remain unchanged. Browser
+navigation/deletion support is scoped separately from a general SDK atom model;
+application-owned direct JavaScript updates are trusted, not sandboxed by it.
+
 ## Persistent mention identities
 
 The optional reference slice follows [persistent-mentions.md](persistent-mentions.md).

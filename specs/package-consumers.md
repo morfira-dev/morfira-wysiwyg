@@ -1,5 +1,10 @@
 # Isolated package consumer verification
 
+The mention schema Node smoke opts into atomic:true and validates bounded
+text-only stored content without a provider or runtime contenteditable markup.
+Runtime navigation/deletion remains in the feature/browser fixtures; authoring
+this installed-package check does not imply a local consumer run occurred.
+
 The optional `/ui/search-highlights` JS/CSS entries resolve from real archives.
 An explicitly mounted native-highlight smoke runs on one representative adapter
 per profile/browser, observing feature detection, owned range state and unchanged

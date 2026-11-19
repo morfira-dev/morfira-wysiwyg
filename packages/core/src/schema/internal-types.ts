@@ -8,4 +8,10 @@ export interface CompiledAttribute {
 export interface CompiledSchemaNode {
   readonly tag: DocumentTag;
   readonly attributes: ReadonlyMap<string, CompiledAttribute>;
+  readonly content?: CompiledTextContent;
+}
+
+export interface CompiledTextContent {
+  readonly maxLength: number;
+  readonly rule: CompiledAttribute;
 }
