@@ -475,6 +475,34 @@ const placeMentionBlockSelection = (destination: 'source' | 'caret' | 'range') =
   selection?.removeAllRanges();
   selection?.addRange(range);
 }, false);
+const loadMentionListSample = () => run((instance) => {
+  instance.setHTML('<ol start="3" title="Mention list source"><li title="Mention list start">Before <strong><span data-mw-node="morfira:mention" data-mention-id="anna">@Anna</span> first</strong></li><li>Shared <em>item</em></li><li title="Mention list end"><p><span data-mw-node="morfira:mention" data-mention-id="boris">@Boris</span> after</p><p title="Mention list retained body">Retained body</p><ul title="Mention list retained branch"><li>Retained branch</li></ul></li></ol><ul title="Mention list destination"><li title="Mention list destination start">Target  tail</li><li title="Mention list destination end"><p>Replace tail</p><p title="Mention list destination body">Destination body</p><ul title="Mention list destination branch"><li>Destination branch</li></ul></li></ul>');
+  mentionReferences.value = '';
+});
+const placeMentionListSelection = (destination: 'source' | 'caret' | 'range') => run((instance) => {
+  const root = instance.surface;
+  const document = root.ownerDocument;
+  const selection = document.getSelection();
+  const range = document.createRange();
+  if (destination === 'source') {
+    const first = root.querySelector('[title="Mention list source"] [data-mention-id="anna"]');
+    const last = root.querySelector('[title="Mention list source"] [data-mention-id="boris"]');
+    if (!first || !last) throw new Error(t('Загрузи пример буфера списка заново.', 'Reload the list clipboard sample.'));
+    range.setStartBefore(first);
+    range.setEndAfter(last);
+    selection?.setBaseAndExtent(range.endContainer, range.endOffset, range.startContainer, range.startOffset);
+    return;
+  }
+  const first = root.querySelector('[title="Mention list destination start"]')?.firstChild;
+  const last = root.querySelector('[title="Mention list destination end"] > p')?.firstChild;
+  if (first?.nodeType !== 3 || (destination === 'range' && last?.nodeType !== 3))
+    throw new Error(t('Загрузи пример буфера списка заново.', 'Reload the list clipboard sample.'));
+  range.setStart(first, 7);
+  if (destination === 'range') range.setEnd(last!, 7);
+  else range.collapse(true);
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}, false);
 const useMentionClipboard = (action: 'copy' | 'cut' | 'paste' | 'text') => {
   if (!editor || !mentionClipboardAPI || (action !== 'copy' && readOnly.value)) return;
   try {
@@ -1303,6 +1331,12 @@ onBeforeUnmount(() => {
             <button @click="placeMentionBlockSelection('caret')">{{ t('Курсор в целевом абзаце', 'Caret in destination paragraph') }}</button>
             <button @click="placeMentionBlockSelection('range')">{{ t('Выделить целевые блоки', 'Select destination blocks') }}</button>
           </div>
+          <button :disabled="readOnly" @click="loadMentionListSample">{{ t('Загрузить буфер между пунктами', 'Load list clipboard sample') }}</button>
+          <div class="lab-button-grid">
+            <button @click="placeMentionListSelection('source')">{{ t('Выделить пункты назад', 'Select list items backward') }}</button>
+            <button @click="placeMentionListSelection('caret')">{{ t('Курсор в целевом пункте', 'Caret in destination item') }}</button>
+            <button @click="placeMentionListSelection('range')">{{ t('Выделить целевые пункты', 'Select destination items') }}</button>
+          </div>
           <div class="lab-button-grid">
             <button @pointerdown.prevent @click="useMentionClipboard('copy')">{{ t('Копировать в память', 'Copy to memory') }}</button>
             <button :disabled="readOnly" @pointerdown.prevent @click="useMentionClipboard('cut')">{{ t('Вырезать в память', 'Cut to memory') }}</button>
@@ -1316,7 +1350,8 @@ onBeforeUnmount(() => {
           <pre v-if="mentionReferences" data-mention-clipboard-references class="lab-code">{{ mentionReferences }}</pre>
           <p class="lab-hint">{{ t('Загрузи пример, выдели @Anna и скопируй. Выбери место после @Anna: вставка с ID создаёт ещё одну ссылку, а вставка текста — только подпись. Вырезание и вставка отменяются одним Undo. Копирование разрешено в read-only.', 'Load the sample, select @Anna and copy. Choose the position after @Anna: pasting with ID creates another reference; plain-text paste inserts only its label. Cut and paste each take one Undo. Copy also works read-only.') }}</p>
           <p class="lab-hint">{{ t('Многоблочный пример: выдели блоки назад и скопируй в память. В буфере сохраняются два ID, абзацы и заголовок; текст разделён переносами LF. Затем выбери курсор или выделение в целевых блоках и вставь с ID. Для вырезания загрузи пример заново, выдели блоки и вырежи: непокрытые Before и after соединяются, Undo возвращает блоки и ссылки.', 'Block example: select blocks backward and copy to memory. The buffer retains two IDs, paragraphs and a heading; text uses LF block separators. Choose a caret or selection in the destination blocks and paste with ID. For cut, reload the sample, select blocks and cut: the untouched Before and after join; Undo restores blocks and references.') }}</p>
-          <p class="lab-hint">{{ t('Кнопки используют память страницы, не системный буфер: разрешения и сеть не нужны. Нативные copy/cut/paste работают через событие браузера. Поддержаны обычные соседние абзацы и заголовки одного родителя, в том числе внутри одной цитаты, ячейки или пункта списка. Разные контейнеры, пункты/ячейки, изображения и чужие семантические узлы остаются барьерами. ID проверяется схемой, но не подтверждает права.', 'Buttons use page memory, not the OS clipboard: no permissions or network. Native copy/cut/paste use browser events. Ordinary sibling paragraphs/headings under one parent are supported, including within one quote, cell or list item. Different containers, items/cells, images and other semantic owners remain barriers. Schema validation of an ID does not authorize it.') }}</p>
+          <p class="lab-hint">{{ t('Пример списка: выдели пункты назад и скопируй. Буфер содержит три LI и два ID внутри OL; выбери курсор или выделение в целевых пунктах UL и вставь с ID — тип целевого списка сохраняется. При вырезании исходные пункты соединяются; непокрытые Retained body и Retained branch остаются. Вложенная ветка первого или промежуточного выбранного пункта — граница отказа, она не отбрасывается.', 'List example: select items backward and copy. The buffer contains three LIs and two IDs inside an OL; choose a caret or selection in the destination UL items and paste with ID — the target list type stays intact. Cut joins the source items; unselected Retained body and Retained branch survive. A nested branch in the first or middle selected item is a refusal boundary, never silently discarded.') }}</p>
+          <p class="lab-hint">{{ t('Кнопки используют память страницы, не системный буфер: разрешения и сеть не нужны. Нативные copy/cut/paste работают через событие браузера. Поддержаны обычные соседние абзацы и заголовки одного родителя, в том числе внутри одной цитаты, ячейки или пункта списка. Соседние пункты одного UL/OL также поддержаны; разные списки/уровни/ячейки, пересечённые ветки, изображения и чужие семантические узлы остаются барьерами. ID проверяется схемой, но не подтверждает права.', 'Buttons use page memory, not the OS clipboard: no permissions or network. Native copy/cut/paste use browser events. Ordinary sibling paragraphs/headings under one parent are supported, including within one quote, cell or list item. Consecutive items in one UL/OL are also supported; different lists/levels/cells, crossed branches, images and other semantic owners remain barriers. Schema validation of an ID does not authorize it.') }}</p>
           <a :href="ru ? '/atomic-mention-clipboard' : '/en/atomic-mention-clipboard'">{{ t('Буфер, безопасность и ограничения', 'Clipboard, safety and boundaries') }}</a>
         </fieldset></details>
         <details class="lab-markdown-codec"><summary>{{ t('Markdown: импорт и экспорт', 'Markdown: import and export') }}</summary><fieldset :disabled="!ready || markdownCodecBusy">

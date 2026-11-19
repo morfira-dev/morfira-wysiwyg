@@ -4,6 +4,9 @@ import type { MentionClipboardCommands, MentionClipboardData, MentionClipboardIn
 import { clipboardHTMLHasMention, parseClipboardData, selectedClipboardData, validateClipboardInput } from './clipboard-data.js';
 import { clipboardLeaves } from './clipboard-source.js';
 import { clipboardBlockPayload, editClipboardSelection } from './clipboard-edit.js';
+import { clipboardListLeaves, clipboardListSelection, sameClipboardList } from './clipboard-list-source.js';
+import { clipboardListPayload } from './clipboard-list-data.js';
+import { editListClipboardSelection } from './clipboard-list-edit.js';
 import { atomicAncestor, atomicBoundary, atomicNativeSelection, atomicOffset, atomsInRange, expandedAtomicRange } from './selection.js';
 import type { AtomicClipboardContext, AtomicClipboardSnapshot } from './types.js';
 
@@ -47,10 +50,11 @@ export const setupAtomicClipboard = (editor: Editor, context: AtomicClipboardCon
         range.collapse(true);
       }
     }
-    const leaves = clipboardLeaves(root, range);
+    const list = clipboardListSelection(root, range);
+    const leaves = clipboardLeaves(root, range) ?? (list && list.items.length > 1 ? clipboardListLeaves(list) : undefined);
     const flow = leaves?.[0];
     if (!flow || !leaves) return;
-    return { flow, leaves, parent: flow.parentElement, range, backward: selected.backward,
+    return { flow, leaves, list, parent: flow.parentElement, range, backward: selected.backward,
       start: { node: original.startContainer, offset: original.startOffset },
       end: { node: original.endContainer, offset: original.endOffset },
       revision: context.revision(), domRevision: drain() };
@@ -58,30 +62,34 @@ export const setupAtomicClipboard = (editor: Editor, context: AtomicClipboardCon
   const current = (plan: AtomicClipboardSnapshot): boolean => {
     if (!ready() || tableOwnsClipboard() || context.revision() !== plan.revision || drain() !== plan.domRevision || !root.contains(plan.flow)) return false;
     const selected = atomicNativeSelection(root);
-    const leaves = clipboardLeaves(root, plan.range);
+    const list = clipboardListSelection(root, plan.range);
+    const leaves = clipboardLeaves(root, plan.range) ?? (list && list.items.length > 1 ? clipboardListLeaves(list) : undefined);
     return !!selected && selected.backward === plan.backward
       && selected.range.startContainer === plan.start.node && selected.range.startOffset === plan.start.offset
       && selected.range.endContainer === plan.end.node && selected.range.endOffset === plan.end.offset
       && root.contains(plan.start.node) && root.contains(plan.end.node) && plan.flow.parentElement === plan.parent
-      && leaves?.length === plan.leaves.length && leaves.every((leaf, index) => leaf === plan.leaves[index]);
+      && leaves?.length === plan.leaves.length && leaves.every((leaf, index) => leaf === plan.leaves[index])
+      && sameClipboardList(plan.list, list);
   };
   const copyPlan = (): { plan: AtomicClipboardSnapshot; data: MentionClipboardData } | undefined => {
     const plan = snapshot();
     if (!plan || plan.range.collapsed || !atomsInRange(root, plan.range).length) return;
     try {
-      const data = selectedClipboardData(editor, plan.range, plan.leaves);
+      const data = selectedClipboardData(editor, plan.range, plan.leaves, plan.list);
       return current(plan) ? { plan, data } : undefined;
     }
     catch { return undefined; }
   };
   const commit = (plan: AtomicClipboardSnapshot, value?: EditorDocument): boolean => {
     if (editor.isReadOnly() || !current(plan)) return false;
-    if (clipboardBlockPayload(value) && !clipboardLeaves(root, plan.range, true)) return false;
+    const listEdit = !!(plan.list && (plan.list.items.length > 1 || clipboardListPayload(value)));
+    if (clipboardListPayload(value) && !plan.list) return false;
+    if (!listEdit && clipboardBlockPayload(value) && !clipboardLeaves(root, plan.range, true)) return false;
     let changed = false;
     try {
       context.transact(() => {
         if (editor.isReadOnly() || !current(plan)) return;
-        changed = editClipboardSelection(editor, plan, value);
+        changed = listEdit ? editListClipboardSelection(editor, plan, value) : editClipboardSelection(editor, plan, value);
       });
     }
     catch (error) {

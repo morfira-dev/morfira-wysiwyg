@@ -24,11 +24,13 @@ The independent Markdown import/export codec follows `specs/markdown-codec.md` t
 Persistent mention references follow `specs/persistent-mentions.md`. They are opt-in editable semantic spans by default; `specs/atomic-mentions.md` adds an explicit mention-specific atomic navigation/deletion profile; preserve IDs through registered HTML/JSON, retain search/suggestion ownership barriers and distinguish display labels from backend-authorized identity.
 
 Atomic reference clipboard follows `specs/atomic-mention-clipboard.md`: bounded
-same-flow and supported ordinary sibling-block HTML preserves IDs, plain text never invents them, copy is observational,
+same-flow, ordinary sibling-block and supported consecutive list-item HTML preserves IDs, plain text never invents them, copy is observational,
 and cut writes both formats before mutation with callback-time target validation.
 Keep file/table clipboard ownership and unsupported structural boundaries intact.
 Cross-block composition preserves source prefixes/suffixes and safe incoming
-paragraph/heading structure; never infer general container/list-item support.
+paragraph/heading structure. The bounded sibling-LI profile preserves actual
+unselected final bodies/branches and refuses crossed branches/different lists;
+never infer general structural selection or nested-list clipboard support.
 
 Search result painting follows `specs/search-highlights.md` through the optional native CSS Highlight UI. Keep document/selection/history unchanged, feature-detect support, preserve other registry owners and avoid a heavy DOM/overlay fallback. Search ranges are observations, not mapped SDK positions or command authority.
 

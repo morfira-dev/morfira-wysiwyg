@@ -172,14 +172,14 @@ test('sibling-block paste stays inside its ordinary quote, list item or merged c
   }
 });
 
-test('protected middle blocks and cross-item endpoints refuse without deleting IDs, nodes or selection', async ({ page }) => {
+test('protected middle blocks and cross-list endpoints refuse without deleting IDs, nodes or selection', async ({ page }) => {
   await page.route('**/atomic-cross-clipboard-test.png', (route) => route.abort());
   const cases = [
     `<p>${atomicMentionHTML}</p><pre>protected</pre><p>${secondAtomicMentionHTML}</p>`,
     `<p>${atomicMentionHTML}</p><p><a href="/protected">link</a></p><p>${secondAtomicMentionHTML}</p>`,
     `<p>${atomicMentionHTML}</p><p><img src="/atomic-cross-clipboard-test.png"></p><p>${secondAtomicMentionHTML}</p>`,
     `<blockquote><p>${atomicMentionHTML}</p>\u00a0<h2>${secondAtomicMentionHTML}</h2></blockquote>`,
-    `<ul><li><p>${atomicMentionHTML}</p></li><li><p>${secondAtomicMentionHTML}</p></li></ul>`,
+    `<ul><li><p>${atomicMentionHTML}</p></li></ul><ol><li><p>${secondAtomicMentionHTML}</p></li></ol>`,
     `<p>${atomicMentionHTML}</p><blockquote><p>${secondAtomicMentionHTML}</p></blockquote>`,
   ];
   for (const html of cases) {

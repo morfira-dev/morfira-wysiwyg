@@ -16,7 +16,7 @@ existing 5,000,000-unit document/resource bounds before mutation. No navigator
 clipboard access, permission request, network or new dependency is implicit.
 
 Copy/cut own a noncollapsed native range touching at least one valid atom, within
-one supported ordinary inline flow or the sibling-block extension below. Expand partial atom endpoints privately to
+one supported ordinary inline flow or the sibling-block/list-item extensions below. Expand partial atom endpoints privately to
 whole references, retaining direction for edit history. Copy is observational:
 do not change document, focus, selection or history. Return undefined for an
 unowned selection; reject unsupported atom-touching source structure explicitly.
@@ -46,7 +46,7 @@ Copy/cut and paste-over-selection additionally accept endpoints inside ordinary
 P/H1–H6 leaves sharing one parent: editor root, ordinary blockquote, one TD/TH,
 or one LI with ordinary P/H leaves. Every crossed sibling must be an eligible
 ordinary P/H leaf (formatting-only whitespace may separate them). Do not cross
-list items, containers, cells, nested branches, quote boundaries, semantic roots,
+unsupported list items, containers, cells, nested branches, quote boundaries, semantic roots,
 images, links/code or other protected structures. Same-flow legacy behavior is
 preserved. Root/container child-index endpoints remain unsupported in this slice.
 Validate complete affected leaves and ancestor ownership before mutation; never
@@ -84,7 +84,8 @@ ownership and concrete range/node/revision checks from the first slice apply to
 all affected leaves and their actual parent after focus/clipboard callbacks.
 Each successful cut/paste is one transaction and one isolated history step,
 including forward/backward selection and next typing. No generic structural
-selection, inter-item list editing or new schema/API is implied.
+selection or new schema/API is implied. Consecutive list items use the separate
+bounded extension below.
 
 Add representative cross-block regressions for rich partial/backward copy,
 cut joining/history, caret and selection multi-block paste, single heading,
@@ -92,6 +93,67 @@ empty edges, merged-cell/list/quote isolation, actual unaffected nodes, refused
 middle structures, receiver/schema/size validation and reentrant callbacks.
 Update the older cross-block refusal cases to the newly supported contract while
 retaining unique unsupported container/structure regressions.
+
+## Consecutive sibling list-item extension
+
+Extend the same API/native ownership to consecutive ordinary LI siblings of one
+actual ordinary UL/OL. Support direct-inline item bodies and item bodies formed
+by ordinary P/H sequences, including mixed endpoint body representations across
+different items. Use only the safe inline set from earlier slices. Endpoints must
+be inside own item bodies, not nested branches; list/item ownership, ancestor
+namespaces, concrete items/body nodes, direction, revisions and range points are
+checked before and after callbacks. Root/list container child-index endpoints,
+different lists/levels/cells, checklist items, quotes/pre/figures/resources,
+foreign or other semantic owners and mixed inline/block item bodies refuse.
+
+This first list transfer profile does not serialize selected nested branches.
+If a branch would be crossed in the first/intermediate item, refuse copy/cut/
+paste atomically rather than flattening or losing its content. The final item's
+unselected later ordinary bodies and trailing ordinary UL/OL branches survive as
+actual nodes, in their original order. Branch contents stay opaque and are never
+cloned or copied merely for preservation. Interleaved blocks after branches stay
+outside this profile. Same-item and ordinary sibling-block behavior is preserved.
+
+Cross-item copy serializes one safe original UL/OL wrapper with selected LI
+fragments and their validated attributes. Preserve selected partial endpoint
+bodies and fully selected middle bodies/items; expand touched atoms privately.
+Keep direct-inline versus P/H item-body structure and formatting. Plain text uses
+LF between own body blocks and between items, without bullets/hidden ID syntax.
+Copy still requires at least one touched valid atom and changes no focus/selection.
+List start/reversed/marker attributes are copied as stored; selection-relative
+numbering is not recalculated.
+
+Cut keeps the actual first LI and original list attributes, first unselected
+preceding bodies/prefix, and joins the final suffix into the retained starting
+body. Remove selected subsequent bodies/items and formatting gaps; append the
+actual final unselected following bodies/branches in order under the first item.
+Promote a direct-inline retained body to an ordinary P only when later block
+bodies require an unambiguous item shape, moving its actual descendants. No LI
+may be nested directly in another LI. Empty joins retain an editable placeholder.
+
+Paste accepts previous inline/one-P/P-H profiles over a supported cross-item range
+and additionally one ordinary flat UL/OL payload containing one or more ordinary
+LI bodies (no nested branches, task metadata, mixed/orphan roots). A list payload
+requires a supported list-item target at a caret or selection; refuse it outside
+an eligible item. Merge first incoming own-body content into the retained first
+item at its prefix; insert following incoming items as actual siblings within
+the existing target list. The final incoming item receives the source suffix,
+unselected subsequent bodies and branches, with the caret before the suffix.
+One incoming item stays within the retained target LI. Preserve incoming later
+item/body attributes and target list attributes; the target list type wins and
+no automatic counter renumbering/coalescing is implied. Insert multiple P/H roots
+as bodies within the retained item rather than as separate items. An ordinary
+single heading retains its standalone body semantics. Direct-inline items may
+be promoted to ordinary P bodies when composition requires block siblings.
+
+Rebuild incoming list data through the receiver schema before active rendering;
+bound nodes/depth/serialized and text sizes before uncontrolled allocation.
+Retain all earlier writer/reader race, no-resource-clone, readonly/IME, disposal,
+table/file ownership and one-transaction/history guarantees. Native cut writes
+both formats before changing items. Plain text never reconstructs an identity.
+Add focused representative tests (not a full factor matrix), migrate obsolete
+cross-item rejection cases to actual cross-list/branch barriers, and extend the
+memory demo and both languages with the exact supported/refused profiles.
 
 ## Data, normalization and safety
 

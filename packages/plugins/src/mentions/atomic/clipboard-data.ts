@@ -2,6 +2,8 @@ import type { DocumentNode, Editor, EditorDocument, ElementNode } from '@morfira
 import { mentionNodeName } from '../persistence.js';
 import type { MentionClipboardData, MentionClipboardInput } from '../types.js';
 import { validAtomicMention } from './selection.js';
+import { normalizeClipboardList } from './clipboard-list-data.js';
+import type { AtomicClipboardListSelection } from './types.js';
 
 const inline = new Set(['span', 'strong', 'em', 'u', 's', 'sub', 'sup', 'br']);
 const maximumLength = 5_000_000;
@@ -10,7 +12,7 @@ const visibleText = (nodes: readonly DocumentNode[]): string => nodes.map((node)
   ? node.text : node.tag === 'br' ? '\n' : visibleText(node.children)).join('');
 
 /** Reconstruct selected data directly: cloning live resource DOM could trigger a fetch. */
-export const selectedClipboardData = (editor: Editor, range: Range, leaves: readonly HTMLElement[]): MentionClipboardData => {
+export const selectedClipboardData = (editor: Editor, range: Range, leaves: readonly HTMLElement[], list?: AtomicClipboardListSelection): MentionClipboardData => {
   let visits = 0;
   let length = 0;
   const read = (node: Node, depth: number): DocumentNode[] => {
@@ -41,6 +43,23 @@ export const selectedClipboardData = (editor: Editor, range: Range, leaves: read
       attributes: Object.fromEntries([...flow.attributes].map((attribute) => [attribute.name, attribute.value])),
       children: children.length ? children : [{ type: 'element', tag: 'br', attributes: {}, children: [] }] };
   });
+  if (list && list.items.length > 1) {
+    const selectedBodies = new Map(leaves.map((body, index) => [body, fragments[index]]));
+    const items: ElementNode[] = list.items.map((profile) => {
+      const selected = profile.bodies.filter((body) => selectedBodies.has(body));
+      const children = profile.direct ? selectedBodies.get(profile.item)!.children
+        : selected.map((body) => selectedBodies.get(body)!);
+      return { type: 'element', tag: 'li', attributes: Object.fromEntries([...profile.item.attributes].map(({ name, value }) => [name, value])), children };
+    });
+    const value = editor.schema.validateDocument({ version: 1, children: [{ type: 'element',
+      tag: list.list.localName as ElementNode['tag'], attributes: Object.fromEntries([...list.list.attributes].map(({ name, value }) => [name, value])), children: items }] });
+    const textFor = (nodes: readonly DocumentNode[]): string => nodes.length === 1 && nodes[0].type === 'element' && nodes[0].tag === 'br'
+      ? '' : visibleText(nodes);
+    const text = items.map((item) => item.children.some((node) => node.type === 'element' && /^(p|h[1-6])$/.test(node.tag))
+      ? item.children.map((body) => body.type === 'element' ? textFor(body.children) : body.text).join('\n')
+      : textFor(item.children)).join('\n');
+    return { html: editor.schema.documentHTML(value), text };
+  }
   const value = editor.schema.validateDocument({ version: 1,
     children: leaves.length === 1 ? fragments[0].children : fragments });
   const text = leaves.length === 1 ? visibleText(value.children) : (value.children as ElementNode[]).map((block) =>
@@ -77,6 +96,7 @@ export const parseClipboardData = (editor: Editor, input: MentionClipboardInput)
       for (const element of template.content.querySelectorAll('*')) {
         if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml'
           || ['img', 'iframe', 'object', 'embed', 'table', 'figure', 'hr'].includes(element.localName)
+          || element.hasAttribute('data-checklist-checked')
           || (element.hasAttribute('data-mw-node') && element.getAttribute('data-mw-node') !== mentionNodeName)) return;
       }
       value = editor.schema.parseHTML(html);
@@ -99,6 +119,10 @@ export const parseClipboardData = (editor: Editor, input: MentionClipboardInput)
         ...(index ? [{ type: 'element' as const, tag: 'br' as const, attributes: {}, children: [] }] : []),
         ...(part ? [{ type: 'text' as const, text: part }] : []),
       ]) };
+    }
+    if (value.children.some((node) => node.type === 'element' && ['ul', 'ol'].includes(node.tag))) {
+      const list = normalizeClipboardList(value);
+      return list && editor.schema.validateDocument(list);
     }
     // Inter-block formatting whitespace is not an additional inline payload.
     let hasBlocks = value.children.some((node) => node.type === 'element' && /^(p|h[1-6])$/.test(node.tag));

@@ -20,14 +20,14 @@
     "brotli": 622
   },
   "suggestions-set.js": {
-    "raw": 40687,
-    "gzip": 15187,
-    "brotli": 13656
+    "raw": 48371,
+    "gzip": 17335,
+    "brotli": 15589
   },
   "all-plugins.js": {
-    "raw": 130789,
-    "gzip": 51202,
-    "brotli": 45616
+    "raw": 138473,
+    "gzip": 53350,
+    "brotli": 47549
   },
   "ui-forms.js": {
     "raw": 61491,
@@ -100,9 +100,9 @@
     "brotli": 23265
   },
   "presets/extended.js": {
-    "raw": 100801,
-    "gzip": 38388,
-    "brotli": 34391
+    "raw": 108485,
+    "gzip": 40538,
+    "brotli": 36350
   },
   "ui/editor.js": {
     "raw": 23204,
@@ -115,9 +115,9 @@
     "brotli": 37428
   },
   "ui/extended.js": {
-    "raw": 158440,
-    "gzip": 57167,
-    "brotli": 51023
+    "raw": 166124,
+    "gzip": 59315,
+    "brotli": 52982
   },
   "ui/contextual.js": {
     "raw": 32408,
@@ -220,9 +220,9 @@
     "brotli": 995
   },
   "mentions.js": {
-    "raw": 31346,
-    "gzip": 11488,
-    "brotli": 10436
+    "raw": 39030,
+    "gzip": 13636,
+    "brotli": 12369
   },
   "slash.js": {
     "raw": 12282,
@@ -485,9 +485,9 @@
     "brotli": 3429
   },
   "profile-extended-headless.js": {
-    "raw": 184067,
-    "gzip": 55950,
-    "brotli": 47996
+    "raw": 191745,
+    "gzip": 58148,
+    "brotli": 49871
   },
   "profile-extended-headless.css": {
     "raw": 5348,
@@ -495,9 +495,9 @@
     "brotli": 1584
   },
   "profile-extended-ready.js": {
-    "raw": 262467,
-    "gzip": 77655,
-    "brotli": 65980
+    "raw": 270132,
+    "gzip": 79855,
+    "brotli": 67785
   },
   "profile-extended-ready.css": {
     "raw": 13627,
@@ -505,9 +505,9 @@
     "brotli": 3661
   },
   "profile-extended-table-properties-ready.js": {
-    "raw": 287970,
-    "gzip": 84825,
-    "brotli": 71427
+    "raw": 295635,
+    "gzip": 86974,
+    "brotli": 73254
   },
   "profile-extended-table-properties-ready.css": {
     "raw": 13627,

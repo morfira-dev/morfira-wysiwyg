@@ -24,9 +24,9 @@ if (cut) clipboard.paste({ text: cut.text }); // label only, no ID
 
 | Command | Contract |
 | --- | --- |
-| `copy()` | Nonempty selection touching a mention within one flow or eligible sibling paragraphs/headings; partial tokens are copied whole. Returns `undefined` when unavailable |
+| `copy()` | Nonempty selection touching a mention within one flow, eligible sibling paragraphs/headings or consecutive items of one list; partial tokens are copied whole. Returns `undefined` when unavailable |
 | `cut()` | Same boundaries; returns data and deletes content in one transaction. Returns `undefined` read-only |
-| `paste(input)` | Inserts inline content, one paragraph/heading or an ordinary sequence at a caret/over a supported selection. Returns `false` on refusal, including read-only |
+| `paste(input)` | Inserts inline content, one paragraph/heading or an ordinary sequence, plus a flat UL/OL at an eligible item target. Returns `false` on refusal, including read-only |
 
 Copy works read-only. Paste replaces selected tokens whole and leaves the caret outside the inserted mention. Following ordinary input does not modify the token label. Each successful cut/paste creates one Undo/Redo revision restoring IDs and selection; refusal creates none.
 
@@ -36,7 +36,7 @@ HTML carries registered `data-mw-node="morfira:mention"` and `data-mention-id`, 
 
 Ordinary paragraph/heading, list, quote and cell-paragraph flows are supported, including a merged cell without grid changes. References can also transfer across sibling `p`/`h1`–`h6` leaves under one parent: the editor surface, an ordinary quote, one cell or one list item. Both selection endpoints must be inside these leaves; offsets of the container itself remain unsupported. Every crossed block must be an eligible ordinary leaf. Only formatting whitespace text nodes may separate the blocks.
 
-Different containers, list items, cells, nested branches or quote boundaries, images, incoming table fragments, links/code and other semantic owners refuse. Preflight checks structure before mutation; refusal never partially deletes a reference. This is a bounded mention contract, not a universal rich clipboard engine. Explicit table selections and file pastes retain their existing owners.
+A single selection crossing different lists/levels, containers, cells, nested branches or quote boundaries, images, incoming table fragments, links/code and other semantic owners refuse. Consecutive items of one list use the separate profile below. Preflight checks structure before mutation; refusal never partially deletes a reference. This is a bounded mention contract, not a universal rich clipboard engine. Explicit table selections and file pastes retain their existing owners.
 
 ## Across paragraphs and headings
 
@@ -50,9 +50,29 @@ Cut keeps the actual first block, its attributes and prefix, moves the last bloc
 | Multiple `p`/`h` blocks | First incoming children join the retained left block; intermediate wrappers survive; the final incoming wrapper receives the suffix. The caret stays before that suffix |
 | One heading | A standalone heading between retained prefix and suffix wrappers, with the caret before the suffix |
 
-The same composition works at a caret inside one block by splitting its prefix/suffix. For multiple incoming blocks, the original first source block's attributes win over the first incoming wrapper. Placeholder BR at joined edges does not create an extra line; real BR and empty middle paragraphs survive. Mixed inline/block and nested structural payloads refuse.
+The same composition works at a caret inside one block by splitting its prefix/suffix. For multiple incoming blocks, the original first source block's attributes win over the first incoming wrapper. Placeholder BR at joined edges does not create an extra line; real BR and empty middle paragraphs survive. Mixed inline/block and nested structural payloads refuse; the separate flat-list profile is described below.
 
 Nonempty HTML takes precedence over text. An invalid registered mention rejects without silently falling back to its plain-text label. The receiver validates the ID and text-only label through the [atomic schema](/en/atomic-mentions). A missing-schema HTML reader may keep text and drop IDs; an editable persistent reader retains IDs without atomic behavior.
+
+## Between list items
+
+Consecutive ordinary `li` siblings of one actual `ul` or `ol` are supported. An item body may be direct inline text or a sequence of ordinary `p`/`h1`–`h6` leaves; endpoint items may use different representations. Selection must start and end inside the items' own bodies. A selection crossing different lists, levels and cells, offsets on the list container itself, checklists, quotes/code and mixed direct/block item bodies refuse.
+
+Copy retains selected item fragments, IDs and marks inside a safe original `ul`/`ol` wrapper. `text/plain` separates bodies and items with LF, without bullets or hidden ID syntax. Stored `start`, `reversed` and marker attributes are copied as-is; selection-relative numbering is not recalculated.
+
+Cut keeps the actual first `li`, its preceding bodies and prefix, joins the last selected body's suffix and removes covered later items. The final item's unselected subsequent bodies and trailing branches move as actual nodes in their original order. A direct-inline retained body receives a `p` wrapper only when needed to avoid mixing inline content with later blocks. No `li` is nested directly in another `li`; an empty join remains editable.
+
+| Incoming data at an item target | Composition |
+| --- | --- |
+| Inline or one `p` | Inserts into the retained first body, then joins the last source suffix |
+| Multiple `p`/`h` leaves or one heading | Ordinary bodies within the retained item; a heading stays a separate body |
+| One flat `ul`/`ol` with ordinary `li` bodies | First incoming body joins the prefix; later items become siblings in the target list. The final item receives the suffix, subsequent bodies and branches, with the caret before the suffix |
+
+A list payload requires an eligible item caret or selection. Target list type and attributes win: an OL pasted into a UL becomes items of that existing UL. One incoming item needs no additional sibling. Supported later incoming item/body attributes survive; no automatic counter recalculation or list coalescing is added. Incoming nested branches, checklist metadata and mixed/orphan roots refuse.
+
+**Selected nested branches are not transferred yet.** A range crossing a branch of the first or middle item refuses atomically instead of dropping it. The final item's unselected trailing branches survive without cloning and do not enter the copied data. Bodies after a branch are outside this profile. This bounded slice does not replace earlier same-item insertion rules.
+
+Actual items, bodies, list, selection and revisions are rechecked after focus and clipboard callbacks. Each successful cut/paste retains one Undo/Redo revision; incoming HTML passes the receiver schema before rendering. Local browser regressions for this profile are authored but have not run.
 
 ## Native events and safety
 
@@ -67,3 +87,5 @@ An ID is an untrusted entity reference. Schema validation proves neither user ex
 On the [homepage](/en/#editor) and [playground](/en/playground), expand “Mention clipboard: IDs and plain text”. Load the sample, select `@Anna`, copy to memory and choose the position after the token. “Paste with ID” creates another `anna` reference; “Paste plain text” inserts only the label. HTML/text and `{id,text}` snapshots expose the difference. Buttons never access the OS clipboard; loading the example replaces the document. Native shortcuts require separate target-browser/OS verification when checks resume.
 
 For a multiblock transfer, choose “Load block clipboard sample” → “Select blocks backward” → “Copy to memory”. HTML contains a paragraph, heading and paragraph with `anna`/`boris`; plain text exposes LF separators. “Caret in destination paragraph” or “Select destination blocks” chooses the target for “Paste with ID”. To try cut, reload the sample, select blocks and choose “Cut to memory”: retained `Before`/`after` join; Undo restores source blocks and IDs. Local browser checks for this extension have not run.
+
+For item transfer, choose “Load list clipboard sample” → “Select list items backward” → “Copy to memory”. HTML exposes an OL with three LIs and two IDs; text shows `@Anna first`, `Shared item` and `@Boris` separated by LF. “Caret in destination item” or “Select destination items” targets the UL: “Paste with ID” keeps its type and unselected subsequent body/branch. To try cut, reload the sample and cut the source items: `Before`/`after` join while `Retained body` and `Retained branch` stay. Undo restores items and IDs. These buttons use page memory, not the OS clipboard.

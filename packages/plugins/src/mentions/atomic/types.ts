@@ -30,4 +30,19 @@ export interface AtomicClipboardSnapshot {
   readonly backward: boolean;
   readonly revision: number;
   readonly domRevision: number;
+  readonly list?: AtomicClipboardListSelection;
+}
+
+export interface AtomicClipboardListItem {
+  readonly item: HTMLLIElement;
+  readonly bodies: readonly HTMLElement[];
+  readonly branches: readonly HTMLElement[];
+  readonly direct: boolean;
+}
+
+export interface AtomicClipboardListSelection {
+  readonly list: HTMLElement;
+  readonly items: readonly AtomicClipboardListItem[];
+  readonly firstBody: HTMLElement;
+  readonly lastBody: HTMLElement;
 }

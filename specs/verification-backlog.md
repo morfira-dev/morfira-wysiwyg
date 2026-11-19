@@ -1,5 +1,89 @@
 # Verification record
 
+## Atomic mention clipboard across consecutive list items — 2026-11-19
+
+Local extension after 361dcd5 follows the consecutive sibling LI section of
+[atomic-mention-clipboard.md](atomic-mention-clipboard.md). Existing API/configuration
+and schema-v1 reference spans remain unchanged. Cross-item selections support
+ordinary consecutive LI siblings of one actual UL/OL, with direct-inline or
+ordinary P/H bodies. Different lists/levels/cells, checklist metadata, crossed
+first/intermediate nested branches and protected/mixed item bodies refuse.
+Unselected final following bodies and trailing branches are preserved as actual
+nodes, without cloning or copying their opaque contents. Same-item clipboard
+retains its earlier inline/block representation.
+
+Cross-item copy emits a safe UL/OL with selected LI/body fragments, inline marks
+and whole IDs; plaintext uses LF without bullet or hidden identity syntax. Cut
+keeps the first item/list, joins edges and moves final following nodes in order.
+Flat UL/OL payloads insert items at a caret or over the eligible item selection:
+the target list type/attributes win, later incoming LI become siblings and the
+last receives the suffix/following bodies/branches. Inline/P/H payloads compose
+within the retained item. Direct bodies are promoted to P only when needed, by
+moving actual descendants. Selected list numbering is not recalculated and
+nested branch payloads are not claimed.
+
+Three subagents implemented source, focused tests and bilingual docs/demo; the
+documentation agent also reviewed the editing helper without executing it.
+The memory-clipboard lab adds three source OL items, backward selection and
+destination UL caret/range controls, including final unselected body/branch
+preservation. No system clipboard transport/permission is implicit. New helpers
+remain inside mentions; no core source, runtime dependency, CSS or public subpath
+was added. Instructions and roadmap link the bounded profile.
+
+Review fixed descendant caret relocation during direct-body promotion, blank
+retained-first-item placeholders after suffix movement, temporary heading suffix
+placeholder leakage and direct blank-item plaintext separators. Source inline
+inspection is depth/node bounded; list-copy body lookup uses a Map instead of
+quadratic includes/indexOf scans. Raw task attributes reject before schema
+filtering can discard them. Covered body formatting gaps are removed with the
+selected sibling span, preserving gaps outside same-item selections. The final
+source includes that correction and was rebuilt before the checks below.
+
+Plans bind actual list/item/body/branch nodes as well as native endpoints,
+direction and revision/DOM mutation observations. Existing native dual-format
+write-before-cut, reader/writer/focus replacement, readonly/IME/disposal and
+file/table ownership gates remain. Incoming lists are inertly parsed and bounded
+through the receiving schema before active rendering; full-result validation and
+rollback stay inside the existing transaction. IDs remain untrusted references
+requiring backend resolution/authorization.
+
+Passed: pnpm run build (declarations and all size guards), pnpm run typecheck
+(TypeScript, Svelte and Vue), pnpm run docs:build:site, pnpm run check:project,
+pnpm run check:tree-shaking, pnpm run package:check (eight archives) and git diff
+--check. No local behavioral/browser tests, installed-consumer execution, live
+browser/OS clipboard or real-device checks ran; no GitHub CI was inspected.
+Static passes are not runtime acceptance evidence.
+
+Nine new editor definitions and two new localized docs definitions are authored,
+unrun. The old generic cross-item refusal is migrated to a real cross-list barrier.
+New cases cover partial/backward rich OL/LI copy, multi-body fragments and blank
+items, native cut/one-step history/actual preserved nodes, marked descendant caret
+promotion, flat-list caret/range composition and target numbering attributes,
+P/H versus LI structure, empty edges/temporary heading placeholders/next typing,
+plain text without IDs, crossed branches/list levels/task metadata/resources/
+mixed bodies, malformed/oversize inputs, readonly/IME, merged cells and same-HTML
+writer/focus list replacement. Synthetic events do not establish OS clipboard
+behavior. Existing first-slice browser regressions also remain unrun.
+
+Final selected closures, bytes, shared JS counted once:
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 93957 | 29178 | 25709 | 3293 |
+| Mentions | 39030 | 13636 | 12369 | 1465 optional shared suggestions |
+| Suggestions behavior set | 48371 | 17335 | 15589 | 1465 optional |
+| Standard ready | 221658 | 65767 | 56307 | 12162 |
+| Extended ready | 270132 | 79855 | 67785 | 13627 |
+
+Against the captured 361dcd5 baseline, core/standard are unchanged; mentions and
+suggestions-set grow 2148 gzip bytes, extended grows 2200. Standard retains 14233
+gzip bytes under 80000; extended retains 30145 under 110000. Hard budgets pass;
+the soft 80000 raw core target remains exceeded. CSS is unchanged: core
+3293/1164/962 raw/gzip/Brotli, suggestions 1465/575/454, extended
+13627/4499/3661. Framework runtimes, source maps and declarations are excluded.
+The getter-only clipboard probe remains 192 raw bytes with no retained table
+runtime; it is not the cost of installing the atomic mention plugin.
+
 ## Atomic mention clipboard across ordinary sibling blocks — 2026-11-19
 
 Local extension after 40228da follows the ordinary sibling-block section of
