@@ -1,6 +1,6 @@
 {
   "name": "@morfira-dev/wysiwyg-plugins",
-  "version": "1.17.1",
+  "version": "1.18.0",
   "type": "module",
   "files": [
     "dist"
@@ -163,7 +163,7 @@
     "./ui/search-highlights.css": "./dist/ui/search-highlights.css"
   },
   "peerDependencies": {
-    "@morfira-dev/wysiwyg-core": "^1.11.0"
+    "@morfira-dev/wysiwyg-core": "^1.12.0"
   },
   "repository": {
     "type": "git",

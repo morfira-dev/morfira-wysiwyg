@@ -1,6 +1,6 @@
 {
   "name": "@morfira-dev/wysiwyg",
-  "version": "1.17.1",
+  "version": "1.18.0",
   "type": "module",
   "files": [
     "dist"
@@ -185,13 +185,13 @@
     "./ui/search-highlights.css": "./dist/ui/search-highlights.css"
   },
   "dependencies": {
-    "@morfira-dev/wysiwyg-core": "^1.11.0",
-    "@morfira-dev/wysiwyg-plugins": "^1.17.1",
-    "@morfira-dev/wysiwyg-vue": "^1.11.0",
-    "@morfira-dev/wysiwyg-react": "^1.11.0",
-    "@morfira-dev/wysiwyg-svelte": "^1.11.0",
-    "@morfira-dev/wysiwyg-angular": "^1.5.0",
-    "@morfira-dev/wysiwyg-web-component": "^1.5.0"
+    "@morfira-dev/wysiwyg-core": "^1.12.0",
+    "@morfira-dev/wysiwyg-plugins": "^1.18.0",
+    "@morfira-dev/wysiwyg-vue": "^1.12.0",
+    "@morfira-dev/wysiwyg-react": "^1.12.0",
+    "@morfira-dev/wysiwyg-svelte": "^1.12.0",
+    "@morfira-dev/wysiwyg-angular": "^1.6.0",
+    "@morfira-dev/wysiwyg-web-component": "^1.6.0"
   },
   "peerDependencies": {
     "vue": "^3.5.0",
