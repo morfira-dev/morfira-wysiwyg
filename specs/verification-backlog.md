@@ -1,5 +1,57 @@
 # Verification record
 
+## Bounded Office HTML import — 2026-11-19
+
+Local implementation follows [office-paste.md](office-paste.md). The shared HTML
+codec normalizes explicit inline-marked Word lists and unwraps explicitly neutral
+Google Docs B artifacts. Decimal starts, adjacent list identity, bounded nesting
+and numbering discontinuities have defined behavior. Unknown labels/jumps and
+protected application semantics retain their content. Excel semantic HTML and
+quoted TSV continue through the existing table importer; this is not an Office
+file converter, stylesheet evaluator or formula engine. JSON and public APIs are
+unchanged; core/plugins retain zero runtime dependencies.
+
+Three subagents implemented the codec/specification, representative regressions
+and bilingual docs/demo. Review corrected block-invalid Docs wrappers, guarded
+marker descendants and replaced spread-based unwrapping with iterative moves.
+The source tree is bounded before cleanup; safe reconstruction and normalized
+output budgets remain authoritative. Demo controls dispatch synthetic paste and
+explicitly warn that loading a sample replaces content and prior history.
+
+Passed: pnpm run build (declarations and all bundle guards), final pnpm run
+typecheck (including Vue/Svelte), pnpm run check:project, pnpm run
+check:tree-shaking, pnpm run docs:build:site and git diff --check.
+The first sandboxed build stopped on tsx IPC permissions and was rerun outside
+the sandbox. An early type check overlapped the Angular artifact rebuild and
+could not resolve that temporary output; the complete post-build check passed.
+No local behavioral tests, installed-consumer execution or live browser checks
+ran. No GitHub CI status was requested or inspected.
+
+Six editor definitions and two localized demo definitions are authored. They
+cover list structure/numbering, original selection and Undo/Redo, Docs formatting,
+Excel HTML precedence/merged destination range, unsafe markup, pre-cleanup depth
+rejection with retained redo, readonly/composition and protected semantic nodes.
+All Office fixtures are hand-authored representative inputs, not real clipboard
+captures. Browser outcomes and concrete Word/Excel/Google Docs versions remain
+unverified; no universal application compatibility is claimed.
+
+Final selected dependency closures, bytes (shared JS chunks counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 92677 | 28799 | 25393 | 3293 |
+| Standard ready | 217071 | 64482 | 55260 | 12162 |
+| Standard ready + properties/form | 242575 | 71563 | 60796 | 12162 |
+| Extended ready | 238260 | 70548 | 60300 | 13358 |
+
+Compared with the task baseline, core grows 831 gzip JS bytes, standard ready
+835 and the properties profile 855. Standard ready retains 15518 gzip bytes
+under its 80000-byte guard; the properties profile retains 8437. CSS is unchanged:
+standard ready 12162 raw / 3924 gzip / 3207 Brotli bytes, core 3293 / 1164 / 962.
+The soft 80000-byte raw core target remains exceeded; it is not the product gzip
+limit. Framework runtimes, maps and declarations are excluded. These are static
+build measurements, not behavioral browser evidence.
+
 ## Cell padding and border width/style — 2026-11-19
 
 Local implementation follows [table-cell-box.md](table-cell-box.md). The existing

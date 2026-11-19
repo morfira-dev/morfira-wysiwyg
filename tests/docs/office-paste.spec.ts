@@ -1,0 +1,30 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`Office paste samples and support link in ${english ? 'English playground' : 'Russian homepage'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const panel = page.locator('.lab-office-paste');
+  await panel.locator('summary').click();
+  await expect(panel).toContainText(t('Заменяет содержимое демо', 'Replaces demo content'));
+  await expect(panel).toContainText(t('написанные вручную образцы', 'hand-authored markup samples'));
+  await panel.getByRole('button', { name: t('Вставить пример Word', 'Paste Word sample'), exact: true }).click();
+  await expect(content.locator('ol > li').first()).toContainText('First item');
+  await expect(content.locator('ol ul > li')).toHaveText('Nested item');
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await undo.click();
+  await expect(content).toHaveText('');
+  await expect(undo).toBeDisabled();
+  await panel.getByRole('button', { name: t('Вставить пример Google Docs', 'Paste Google Docs sample'), exact: true }).click();
+  await expect(content.getByRole('heading', { name: 'Google Docs sample' })).toBeVisible();
+  await expect(content.locator('strong')).toHaveText('bold text');
+  await panel.getByRole('button', { name: t('Вставить пример Excel', 'Paste Excel sample'), exact: true }).click();
+  await expect(content.locator('td[colspan="2"]')).toHaveText('Excel sample');
+  await expect(content.locator('table')).toContainText('Apples');
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(panel.getByRole('button', { name: t('Вставить пример Word', 'Paste Word sample'), exact: true })).toBeDisabled();
+  await panel.getByRole('link', { name: t('Поддержка и ограничения офисной вставки', 'Office paste support and limitations'), exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/office-paste$`));
+  await expect(page.locator('.vp-doc')).toContainText(t('JSON-контракт не расширяется', 'The JSON contract is unchanged'));
+});

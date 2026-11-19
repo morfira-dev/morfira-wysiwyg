@@ -10,6 +10,17 @@ HTML parsing uses an inert template. String serialization (`sanitizeHTML`, schem
 
 A pre-hardening isolated localhost route-abort probe confirmed unwanted image fetches from sanitizeHTML/documentHTML in Chromium, Firefox and WebKit, with parseHTML alone producing none. Evidence: /tmp/morfira-codec-network-probe.ts and /tmp/morfira-codec-network-probe.log. This was a resource-fetch side effect, not a demonstrated XSS exploit; the permanent security-codec regression covers the repaired property.
 
+## Office HTML normalization
+
+Office HTML preprocessing follows [office-paste.md](office-paste.md), inside the
+same inert template and before safe reconstruction. Only explicit supported
+markers authorize list reconstruction or neutral-wrapper removal. Source node
+and depth bounds apply before this cleanup can remove labels/wrappers; the final
+normalized document keeps the existing output budgets. No stylesheet evaluation,
+Office XML interpretation, formula execution or remote conversion is introduced.
+JSON remains unchanged. Synthetic fixtures are regression inputs, not evidence
+of universal Office compatibility or a security certification.
+
 ## Text direction boundaries
 
 Text direction follows `text-direction.md`: only native ltr/rtl values on the fixed block/container tag set survive import. Explicit JSON rejects wrong tags/types/noncanonical values atomically; HTML filters invalid values. No CSS direction, unicode-bidi, writing-mode, bdi/bdo or arbitrary attributes are enabled. Commands validate payloads before eligibility and respect semantic/structural/cell boundaries. Normal text and Unicode bidi characters are retained; this is not a visual-spoofing defense or a language detector.

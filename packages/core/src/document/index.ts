@@ -3,6 +3,7 @@ import { normalizeFontFamily } from './font-family.js';
 import { normalizeListMarker } from './list-marker.js';
 import { normalizeDirection } from './direction.js';
 import { normalizeCellBoxStyle, normalizeCellBorder } from './cell-box.js';
+import { normalizeOfficeHTML } from './office-paste/index.js';
 import { countText, countElement, maximumHTMLLength, maximumNodes, maximumDepth } from './budget.js';
 import type { DocumentAttributeResolver, DocumentBudget } from './internal-types.js';
 import type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
@@ -157,6 +158,7 @@ export const parseHTML = (html: string, resolve?: DocumentAttributeResolver): Ed
   // A template is inert: script execution and active resource loading are never used for import.
   const template = document.createElement('template');
   template.innerHTML = html;
+  if (/mso-list\s*:|docs-internal-guid-/i.test(html)) normalizeOfficeHTML(template.content);
   const budget: DocumentBudget = { count: 0, htmlLength: 0 };
   return { version: 1, children: [...template.content.childNodes].flatMap((node) => readDOM(node, 0, budget, resolve)) };
 };

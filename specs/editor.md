@@ -26,6 +26,12 @@ Composition event ordering, interim edits, command guards and cancellation follo
 
 HTML/API insertion and clipboard replacement across those ordinary sibling leaves follow `specs/paste-replacement.md`. Incoming data is prepared before the outer live edit; inline, ordinary multi-block and structural payload composition have distinct documented boundaries. This does not establish general structural source selection, nested-table support or Office paste fidelity.
 
+The bounded Office HTML normalization in [office-paste.md](office-paste.md) adds
+explicit inline-marked Word lists and neutral Google Docs wrapper handling to
+the shared HTML boundary; Excel semantic tables/TSV retain their existing paths.
+It does not establish general Office layout fidelity or real-application clipboard
+verification. Unknown source formatting remains subject to normal filtering.
+
 The subsequent bounded list-item replacement contract is `specs/list-selection.md`; collapsed body-boundary deletion and wrapped-body Enter/Shift+Enter follow the addendum in `specs/lists-toolbar.md`. Items may contain direct inline content or a sequence of ordinary paragraphs/headings followed by optional nested lists. Selection replacement preserves blocks before and after the selected body range. Enter splits the item and moves subsequent bodies and branches into the new item. Interior Delete/Backspace joins adjacent bodies. Semantic body wrappers and mixed direct text/block shapes remain outside these bounded operations; interleaved branches have only the structural quote-crossing profile below. Owned list operations must reach guarded beforeinput without being intercepted by legacy list/block keydown handlers. Current list-editing acceptance evidence and remaining coverage limits are recorded in [verification-backlog.md](verification-backlog.md); results for one editing profile do not establish arbitrary structural support.
 
 ## Acceptance scenarios

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useData } from 'vitepress';
+import { officePasteSamples } from './office-paste/index.js';
+import type { OfficeSample } from './office-paste/index.js';
 import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
 import type { MentionOption, SlashOption, SuggestionController, SuggestionState, SuggestionOption, SuggestionQuery } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import type { MarkdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
@@ -478,6 +480,21 @@ const insertPasteExample = (plain: boolean) => run((instance) => {
   holder.textContent = pastePlain.value.replace(/\r\n?/g, '\n');
   instance.insertHTML(holder.innerHTML.replace(/\n/g, '<br>'));
 });
+const pasteOfficeSample = (source: OfficeSample) => run((instance) => {
+  instance.setHTML('<p><br></p>');
+  const range = document.createRange();
+  range.selectNodeContents(instance.surface.firstElementChild!);
+  range.collapse(true);
+  const selection = document.getSelection()!;
+  selection.removeAllRanges();
+  selection.addRange(range);
+  const data = new DataTransfer();
+  data.setData('text/html', officePasteSamples[source]);
+  const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+  Object.defineProperty(event, 'clipboardData', { value: data });
+  instance.surface.dispatchEvent(event);
+  output.value = '';
+});
 const selectListItems = (boundary = false) => run((instance) => {
   const list = instance.surface.querySelector(':scope > ul');
   const first = list?.firstElementChild;
@@ -874,6 +891,16 @@ onBeforeUnmount(() => {
         <p class="lab-hint">{{ t('Свойства: кликните в ячейку или выделите прямоугольник. Меняются только отредактированные поля; один Apply — один Undo. Ширина и положение относятся к таблице, цвета и вертикальное выравнивание — к выбранным ячейкам.', 'Properties: click a cell or select a rectangle. Only edited fields change; one Apply is one Undo. Width and placement belong to the table; colors and vertical alignment belong to selected cells.') }}</p>
         <p class="lab-hint">{{ t('Загрузи пример «Таблицы»: в нём уже есть строка заголовков, подпись и rowspan в первом столбце. В форме включи «Столбец заголовков» и измени «Подпись таблицы». Заголовки относятся к первой строке/столбцу всей таблицы; объединённое содержимое сохраняется. Если объединение пересекает границу заголовка, весь Apply отклоняется без частичных изменений.', 'Load the Tables sample: it has a header row, caption and a first-column rowspan. In the form, enable Header column and edit Table caption. Headers belong to the first row/column of the whole table; merged content is retained. A merge crossing a header boundary rejects the whole Apply without partial changes.') }}</p>
         </details>
+        <details class="lab-office-paste"><summary>{{ t('Вставка из офисных приложений', 'Office application paste') }}</summary><fieldset :disabled="!ready || readOnly">
+          <p class="lab-hint">{{ t('Заменяет содержимое демо и сбрасывает прежнюю историю.', 'Replaces demo content and clears previous history.') }}</p>
+          <div class="lab-inline-actions">
+            <button @click="pasteOfficeSample('word')">{{ t('Вставить пример Word', 'Paste Word sample') }}</button>
+            <button @click="pasteOfficeSample('excel')">{{ t('Вставить пример Excel', 'Paste Excel sample') }}</button>
+            <button @click="pasteOfficeSample('google-docs')">{{ t('Вставить пример Google Docs', 'Paste Google Docs sample') }}</button>
+          </div>
+          <p class="lab-hint">{{ t('Кнопка заменяет документ пустым абзацем и отправляет демонстрационный paste; Undo отменяет вставку. Это написанные вручную образцы разметки, а не реальные снимки буфера Word/Excel/Google Docs. Доступ к системному буферу не нужен. В Word восстанавливаются поддержанные списки, в Docs убирается служебная жирная обёртка, в Excel сохраняются таблица и colspan. Стили из классов и таблиц стилей отбрасываются.', 'Each button replaces the document with an empty paragraph and dispatches a demonstration paste; Undo reverts the paste. These are hand-authored markup samples, not actual Word/Excel/Google Docs clipboard captures. No system clipboard permission is needed. Supported Word lists are reconstructed, the Docs bold wrapper is neutralized, and the Excel table and colspan survive. Classes and stylesheets are discarded.') }}</p>
+          <a :href="ru ? '/office-paste' : '/en/office-paste'">{{ t('Поддержка и ограничения офисной вставки', 'Office paste support and limitations') }}</a>
+        </fieldset></details>
         <details class="lab-paste"><summary>{{ t('Вставка между блоками', 'Paste between blocks') }}</summary><fieldset :disabled="!ready || readOnly">
           <p class="lab-hint">{{ t('Загрузи одноимённый пример в меню «Документ», выбери область и выдели пример. Вставка заменяет выделение; Undo возвращает исходный текст и направление выделения. Также можно использовать обычный Ctrl/Cmd+V в редакторе.', 'Load this sample from the Document menu, choose an area and select the sample. Insertion replaces the selection; Undo restores its original text and direction. You can also use ordinary Ctrl/Cmd+V in the editor.') }}</p>
           <label>{{ t('Область вставки', 'Paste area') }}<select v-model="pasteTarget" :aria-label="t('Область вставки', 'Paste area')"><option value="root">{{ t('Основной текст', 'Main text') }}</option><option value="quote">{{ t('Цитата', 'Quote') }}</option><option value="cell">{{ t('Объединённая ячейка', 'Merged cell') }}</option></select></label>
