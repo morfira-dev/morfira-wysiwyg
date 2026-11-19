@@ -1,5 +1,82 @@
 # Verification record
 
+## Final planned mention slice: different list levels — 2026-11-19
+
+Local extension after bc29a62 follows the different-level structural-interval
+section of [atomic-mention-clipboard.md](atomic-mention-clipboard.md). This closes
+planned mention expansion for this milestone; subsequent work returns to the
+broader roadmap, while concrete mention bugs remain regressions. Implemented
+scope and authored tests do not establish runtime acceptance during the test pause.
+
+Own-body endpoints may span ancestor-to-descendant, descendant-to-later-outer
+item and cousin branches within one ordinary list tree. Existing sibling/same-flow
+profiles keep priority. A new fallback requires different immediate LI parents
+and resolves the closest common actual UL/OL, refusing unrelated trees, container
+offsets, protected owners and unsupported mixed/interleaved source structures.
+Typed selected-tree projection clips endpoint text/marks and retains required
+LI/UL/OL context shells, attributes, hierarchy and IDs without copying unselected
+ancestor text or cloning active DOM. Context-only empty own bodies may gain a BR.
+
+Different-level cut removes exactly the validated interval and leaves partial
+endpoint paths at their original levels; it does not flatten/dedent/join their
+text. Unselected suffix/branch nodes retain identity. Only affected empty own
+bodies/path shells are repaired. Paste performs that deletion and uses the
+existing same-item inline/P-H/recursive-list composer at the retained starting
+caret inside the same transaction. Copied context shells remain structural data,
+not relative-depth instructions. Native dual-format write-before-cut and all
+existing readonly/IME/disposal/table/file gates remain.
+
+Preflight validates intersected paths/subtrees through the existing bounded
+recursive list grammar and receiver schema. Snapshots bind the actual common
+root, endpoint bodies/paths, range/direction and intent/API/DOM revisions; callbacks
+cannot redirect a retained operation to a reconstructed tree. The optional
+fallback remains inside mentions, with no core changes, CSS, runtime dependency
+or public API/schema change.
+
+Three subagents implemented source, focused regressions and RU/EN docs/demo;
+the docs agent also reviewed the helper. The memory lab adds three backward
+selection controls and a separate destination caret. Static review found the
+empty-Text-plus-repaired-BR boundary: empty Text leaves are removed only inside
+the affected first/last own flows before placeholder repair, skipping opaque
+branches, sibling body blocks and atomic labels. The final source includes this
+narrow correction and was rebuilt before the checks below.
+
+Passed on final source: pnpm run build (declarations and all size guards), pnpm run
+typecheck (TypeScript/Svelte/Vue), pnpm run docs:build:site, pnpm run check:project,
+pnpm run check:tree-shaking, pnpm run package:check (eight archives) and git diff
+--check. No local behavioral/browser tests, installed-consumer execution, live
+OS clipboard/device checks or GitHub CI observation ran. These are static passes,
+not evidence that the browser regressions have passed.
+
+Eight editor definitions and two localized docs definitions are authored, unrun.
+The prior generic cross-level refusal is migrated to a protected endpoint case.
+Coverage includes all three level relationships, partial/backward ID copy and
+context shells, source/receiver isolation, native cut without flattening, actual
+surviving suffix/path nodes, one-step history/next typing, inline/P-H/recursive
+payloads, empty own bodies/caret-before-BR, protected paths/resources/tree limits,
+readonly/IME, merged cells and same-HTML writer/focus tree reconstruction. The
+empty-Text repair regression is included within the existing empty-path case,
+without another factor matrix. Synthetic events do not establish OS support.
+
+Final selected closures, bytes, shared JS counted once:
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 93957 | 29178 | 25709 | 3293 |
+| Mentions | 46531 | 15539 | 14148 | 1465 optional shared suggestions |
+| Suggestions behavior set | 55872 | 19238 | 17368 | 1465 optional |
+| Standard ready | 221658 | 65767 | 56307 | 12162 |
+| Extended ready | 277619 | 81886 | 69537 | 13627 |
+
+Against the captured bc29a62 baseline, core/standard are unchanged; mentions and
+suggestions-set grow 1030 gzip bytes, extended grows 1129. Standard retains 14233
+gzip bytes under 80000; extended retains 28114 under 110000. Hard guards pass;
+core's soft 80000 raw target remains exceeded. CSS is unchanged: core
+3293/1164/962 raw/gzip/Brotli, suggestions 1465/575/454, extended
+13627/4499/3661. Framework runtimes, source maps and declarations are excluded.
+The clipboard getter-only probe remains 192 raw bytes and retains no table runtime;
+it is not the cost of installing the complete atomic mention plugin.
+
 ## Atomic mention clipboard through selected nested branches — 2026-11-19
 
 Local extension after e1d4498 follows the recursive trailing-branch section of

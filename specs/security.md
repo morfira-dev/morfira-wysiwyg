@@ -47,7 +47,12 @@ unsupported list branches, cross-cell targets and protected semantic roots remai
 barriers. The consecutive-item extension binds actual same-list LI/body nodes;
 incoming recursive trailing-branch lists and fully selected source branches share
 a bounded safe policy before serialization/rendering. Final unselected branches
-move as opaque actual nodes without cloning their contents. Different-list/level endpoints,
+move as opaque actual nodes without cloning their contents. Different-level
+intervals bind their actual common list and endpoint ancestor paths; selected
+tree projection excludes unselected content and refuses protected owners before
+native writes/mutation. Deletion preserves surviving paths instead of flattening
+them; only affected empty bodies are repaired inside the existing transaction.
+Unrelated list-tree endpoints,
 checklist items and unsupported mixed/structural bodies refuse before mutation.
 No implicit clipboard permission,
 network request, global format clearing or navigator.clipboard access is added.

@@ -31,8 +31,12 @@ Cross-block composition preserves source prefixes/suffixes and safe incoming
 paragraph/heading structure. The bounded sibling-LI profile preserves actual
 unselected final bodies/branches. Its recursive trailing-branch extension transfers
 fully selected ordinary branches with hierarchy and IDs, using one bounded source/
-payload policy. Refuse protected branches, different-list/level endpoints and
-interleaved bodies; never infer general structural selection support.
+payload policy. Different-level own-body endpoints within one ordinary tree use
+the final structural-interval profile: preserve surviving paths at their levels,
+never flatten them to join text. Refuse unrelated trees/protected owners and
+interleaved bodies; never infer general structural selection support. This closes
+planned mention feature expansion; return to the broader roadmap, with concrete
+bugs handled as regressions rather than successive speculative micro-milestones.
 
 Search result painting follows `specs/search-highlights.md` through the optional native CSS Highlight UI. Keep document/selection/history unchanged, feature-detect support, preserve other registry owners and avoid a heavy DOM/overlay fallback. Search ranges are observations, not mapped SDK positions or command authority.
 

@@ -150,7 +150,7 @@ test('protected crossed branches, list levels, task metadata and protected own b
     { html: `<ul><li>${atomicMentionHTML}<ul><li><code>protected branch</code></li></ul></li><li>${secondAtomicMentionHTML}</li></ul>` },
     { html: `<ul><li>${atomicMentionHTML}</li><li><p>middle</p><ul><li><pre>protected middle branch</pre></li></ul></li><li>${secondAtomicMentionHTML}</li></ul>` },
     { html: `<ul><li>${atomicMentionHTML}</li></ul><ol><li>${secondAtomicMentionHTML}</li></ol>` },
-    { html: `<ul><li>${atomicMentionHTML}<ul><li>${secondAtomicMentionHTML}</li></ul></li></ul>` },
+    { html: `<ul><li>${atomicMentionHTML}<ul><li><code>${secondAtomicMentionHTML}</code></li></ul></li></ul>` },
     { html: `<ul><li>${atomicMentionHTML}</li><li>${secondAtomicMentionHTML}</li></ul>`, checklist: true },
     { html: `<ul><li>${atomicMentionHTML}</li><li><p><img src="/atomic-list-clipboard-test.png"></p></li><li>${secondAtomicMentionHTML}</li></ul>` },
     { html: `<ul><li>${atomicMentionHTML}</li><li><p>mixed</p>loose</li><li>${secondAtomicMentionHTML}</li></ul>` },

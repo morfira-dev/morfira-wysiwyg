@@ -43,6 +43,63 @@ for (const english of [false, true]) test(`atomic mention memory clipboard throu
   await expect(page.locator('.vp-doc')).toContainText('mentionClipboardCommands');
 });
 
+for (const english of [false, true]) test(`atomic mention level intervals through ${english ? 'English' : 'Russian'} demo controls`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const panel = page.locator('.lab-mention-clipboard');
+  await panel.locator('summary').click();
+  const button = (ru: string, en: string) => panel.getByRole('button', { name: t(ru, en), exact: true });
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await button('Загрузить буфер между уровнями', 'Load different-level clipboard sample').click();
+  const source = content.locator('[title="Mention level source"]');
+  const destination = content.locator('[title="Mention level destination"]');
+  const controls = [
+    { ru: 'Родитель → вложенный пункт', en: 'Parent → nested item', labels: ['@Anna', '@Elena'] },
+    { ru: 'Вложенный → внешний пункт', en: 'Nested → outer item', labels: ['@Elena', '@Boris'] },
+    { ru: 'Между соседними ветками', en: 'Between cousin branches', labels: ['@Elena', '@Liam'] },
+  ];
+  for (const control of controls) {
+    await button(control.ru, control.en).click();
+    const selected = await page.evaluate(() => document.getSelection()?.toString());
+    for (const label of control.labels) expect(selected).toContain(label);
+  }
+  const selected = await page.evaluate(() => document.getSelection()?.toString());
+  const original = await content.innerHTML();
+  await button('Копировать в память', 'Copy to memory').click();
+  await expect(content).toHaveJSProperty('innerHTML', original);
+  await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe(selected);
+  const html = await panel.locator('[data-mention-clipboard-html]').textContent();
+  expect(html).toContain('data-mention-id="elena"');
+  expect(html).toContain('data-mention-id="liam"');
+  expect(html).toContain('Mention level left');
+  expect(html).toContain('Mention level right');
+  expect(html).toContain('start="4"');
+  expect(html).not.toMatch(/data-mention-id="(?:anna|boris)"|contenteditable|Untouched/);
+  await button('Место вставки дерева', 'Tree paste position').click();
+  await button('Вставить с ID', 'Paste with ID').click();
+  await expect(destination.locator('[data-mention-id]')).toHaveCount(2);
+  await expect(destination.locator('[title="Mention level left"] [data-mention-id="elena"]')).toHaveText('@Elena');
+  await expect(destination.locator('[title="Mention level right"]')).toHaveAttribute('start', '4');
+  await expect(destination.locator('li > li')).toHaveCount(0);
+  await undo.click();
+  await expect(content).toHaveJSProperty('innerHTML', original);
+  const left = await source.locator('[title="Mention level left"]').elementHandle();
+  const right = await source.locator('[title="Mention level right"]').elementHandle();
+  await button('Между соседними ветками', 'Between cousin branches').click();
+  await button('Вырезать в память', 'Cut to memory').click();
+  await expect(source.locator('[title="Mention level left"] > li > p')).toHaveText('Left');
+  await expect(source.locator('[title="Mention level right"] > li > p')).toHaveText('right tail');
+  await expect(source.locator('[data-mention-id]')).toHaveCount(2);
+  await expect(source.locator('[data-mention-id="anna"]')).toHaveText('@Anna');
+  await expect(source.locator('[data-mention-id="boris"]')).toHaveText('@Boris');
+  for (const branch of [left, right]) expect(await branch!.evaluate((node) => node.isConnected && node.parentElement?.getAttribute('title') === 'Mention level parent')).toBe(true);
+  await expect(source.locator(':scope > li')).toHaveCount(3);
+  await undo.click();
+  await expect(content).toHaveJSProperty('innerHTML', original);
+});
+
 for (const english of [false, true]) test(`atomic mention block transfers through ${english ? 'English' : 'Russian'} demo controls`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   await page.goto(english ? '/en/playground' : '/');

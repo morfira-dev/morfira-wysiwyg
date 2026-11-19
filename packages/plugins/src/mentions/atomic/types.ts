@@ -1,4 +1,4 @@
-import type { ElementNode } from '@morfira-dev/wysiwyg-core';
+import type { EditorDocument, ElementNode } from '@morfira-dev/wysiwyg-core';
 
 export interface AtomicClipboardListNode extends ElementNode {
   tag: 'ul' | 'ol';
@@ -37,6 +37,15 @@ export interface AtomicClipboardSnapshot {
   readonly revision: number;
   readonly domRevision: number;
   readonly list?: AtomicClipboardListSelection;
+  readonly level?: AtomicClipboardLevelSelection;
+}
+
+export interface AtomicClipboardLevelSelection {
+  readonly list: HTMLElement;
+  readonly firstBody: HTMLElement;
+  readonly lastBody: HTMLElement;
+  readonly paths: readonly HTMLElement[];
+  readonly document: EditorDocument;
 }
 
 export interface AtomicClipboardListItem {

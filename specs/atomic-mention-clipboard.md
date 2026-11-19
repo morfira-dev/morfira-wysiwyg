@@ -103,7 +103,7 @@ different items. Use only the safe inline set from earlier slices. Endpoints mus
 be inside own item bodies, not nested branches; list/item ownership, ancestor
 namespaces, concrete items/body nodes, direction, revisions and range points are
 checked before and after callbacks. Root/list container child-index endpoints,
-different lists/levels/cells, checklist items, quotes/pre/figures/resources,
+unrelated list trees/cells, checklist items, quotes/pre/figures/resources,
 foreign or other semantic owners and mixed inline/block item bodies refuse.
 
 Selected nested branches additionally follow the recursive extension below.
@@ -160,9 +160,9 @@ memory demo and both languages with the exact supported/refused profiles.
 Support fully covered trailing ordinary UL/OL branches on the first and
 intermediate items of the existing same-list sibling-endpoint profile. Recursively
 accept direct-inline or ordinary P/H own bodies followed by ordinary UL/OL branches
-with the same shape. Endpoints stay inside own bodies of sibling items in one
-actual list; different-level/ancestor-descendant endpoint selections and bodies
-after branches remain unsupported. Preserve nested UL versus OL, list/item/body
+with the same shape. Sibling endpoints use this profile; endpoints at different
+levels additionally follow the structural interval below. Bodies after branches
+remain unsupported. Preserve nested UL versus OL, list/item/body
 attributes and every registered mention ID. Do not flatten, coalesce, retag or
 renumber the branch tree.
 
@@ -206,6 +206,60 @@ order and empty own bodies, deep malformed/resource/task/size rejection and
 callback replacement. Migrate prior blanket crossed-branch/nested-payload refusal
 tests to unsupported protected branch cases. Add RU/EN docs and memory-demo controls
 showing both retained hierarchy and the separate final unselected branch.
+
+## Different-level structural intervals and feature completion
+
+This is the final planned mention clipboard expansion in this milestone; later
+work returns to the broader roadmap. Do not invent successive mention-specific
+micro-milestones for every list permutation. Concrete regressions and verified
+bugs remain eligible fixes. Runtime acceptance is still pending while tests are
+paused; implemented scope must not be described as universal list editing.
+
+Accept own-body endpoints at different levels within one ordinary recursive list
+tree: ancestor-own-body to descendant, descendant to later ancestor-level item,
+and cousin branches. Resolve the closest common actual UL/OL containing both
+endpoints, without crossing unrelated list roots, cells or protected owners.
+Existing sibling/same-flow behavior retains priority and its joining semantics.
+Validate concrete endpoint paths, intersected ordinary LI/body/list wrappers and
+fully selected subtrees through the existing bounded grammar. Endpoints within
+links/code/task/foreign/semantic/mixed/interleaved bodies remain barriers. Root/
+UL child-index endpoints remain unsupported. Partial atom edges expand privately.
+
+Copy reconstructs the selected typed tree under the common list wrapper, clipping
+text/marks at the endpoints while preserving required ancestor LI/UL/OL shells,
+attributes, fully selected branches and IDs. Unselected ancestor body text and
+outside siblings are excluded. Empty context-only own bodies may need a BR to
+retain valid editable list shape. Plain text follows the same LF policy as the
+recursive slice; nesting is represented by HTML. No active DOM clone is used.
+
+For different-level cut/replacement, preserve partial endpoint paths at their
+existing levels rather than joining/flattening across levels. A validated Range
+deletion removes exactly selected text/nodes; fully covered siblings/subtrees are
+removed, surviving endpoint wrappers and unrelated nodes keep identity. Repair
+only affected empty own bodies/leaves with editable placeholders and remove empty
+selected-path list shells if necessary, without rewriting unrelated branches.
+Leave the caret at the original start boundary outside tokens. Unselected endpoint
+suffixes remain in their surviving structural paths; no implicit dedent or level
+reparenting is performed just to join text.
+
+Paste first performs that interval deletion and inserts the existing validated
+inline/P-H/recursive-list payload at its retained starting own-body caret using
+the established same-item composition rules. A list payload adapts its outer list
+type to the target list, preserving its internal hierarchy and IDs; context-only
+ancestor shells in copied HTML are real structural data, not a mapped-position
+instruction or automatic relative-depth rewrite. Unselected target branches move
+only under the existing explicit list-paste composition rules. Do all operations
+inside one transaction/change/Undo with original forward/backward history. Reject
+the complete operation before native clipboard writes/mutation when preflight
+finds an invalid intersected path/subtree. Snapshot actual common root, endpoint
+paths, ranges, intent/API/DOM revisions and revalidate after all callbacks.
+
+Add a compact representative set for all three endpoint relationships and native/
+API copy/cut/paste, actual surviving hierarchy/suffix nodes, branch IDs, next typing
+and history, partial backward atoms, source/receiver isolation, unsafe paths/tree
+limits and callback replacement. Migrate obsolete cross-level refusals to unrelated
+tree/owner/structure barriers. Add RU/EN demo selections with clearly explained
+non-flattening result. Keep optional weight/core boundaries and test pause intact.
 
 ## Data, normalization and safety
 
