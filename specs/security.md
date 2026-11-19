@@ -34,6 +34,16 @@ ID/label bounds and backend authorization requirements remain unchanged. Browser
 navigation/deletion support is scoped separately from a general SDK atom model;
 application-owned direct JavaScript updates are trusted, not sandboxed by it.
 
+The [atomic clipboard slice](atomic-mention-clipboard.md) serializes supported
+selected inline data through the receiving schema, never active resource clones.
+Clipboard HTML retains bounded untrusted IDs; plain text contains visible labels
+only and never reconstructs identity. Native cut writes both formats before source
+deletion and revalidates the actual target after application callbacks. Failed
+writes leave document/history unchanged; no OS clipboard rollback is promised.
+Foreign owners, files, unsupported structural payloads and cross-flow targets keep
+their separate ownership/refusal boundaries. No implicit clipboard permission,
+network request, global format clearing or navigator.clipboard access is added.
+
 ## Persistent mention identities
 
 The optional reference slice follows [persistent-mentions.md](persistent-mentions.md).

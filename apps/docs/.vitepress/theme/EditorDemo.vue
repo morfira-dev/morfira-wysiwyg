@@ -5,7 +5,7 @@ import { officePasteSamples } from './office-paste/index.js';
 import type { OfficeSample } from './office-paste/index.js';
 import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
 import type { MentionOption, SlashOption, SuggestionController, SuggestionState, SuggestionOption, SuggestionQuery } from '@morfira-dev/wysiwyg/plugins/suggestions';
-import type { MentionReference } from '@morfira-dev/wysiwyg/plugins/mentions';
+import type { MentionReference, MentionClipboardCommands, MentionClipboardData } from '@morfira-dev/wysiwyg/plugins/mentions';
 import type { MarkdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
 import type { TextDirection, TextDirectionCommands, TextDirectionState } from '@morfira-dev/wysiwyg/plugins/text-direction';
 import type { ListMarker, ListPropertyCommands, ListPropertyState } from '@morfira-dev/wysiwyg/plugins/list-properties';
@@ -96,6 +96,8 @@ const providerMode = ref<'normal' | 'empty' | 'error'>('normal'); const provider
 const mentionState = ref<SuggestionState<MentionOption>>({ status: 'closed', query: '', items: [], activeIndex: -1 });
 const slashState = ref<SuggestionState<SlashOption>>({ status: 'closed', query: '', items: [], activeIndex: -1 });
 const mentionReferences = ref('');
+const mentionClipboard = ref<MentionClipboardData>();
+let mentionClipboardAPI: MentionClipboardCommands | undefined;
 let readMentionReferences: ((instance: Editor) => MentionReference[]) | undefined;
 let mentionAPI: SuggestionController<MentionOption> | undefined; let slashAPI: SuggestionController<SlashOption> | undefined;
 let unmention: (() => void) | undefined; let unslash: (() => void) | undefined;
@@ -445,6 +447,26 @@ const placeAtomicMention = (position: 'before' | 'after' | 'select') => run((ins
   selection?.removeAllRanges();
   selection?.addRange(range);
 }, false);
+const useMentionClipboard = (action: 'copy' | 'cut' | 'paste' | 'text') => {
+  if (!editor || !mentionClipboardAPI || (action !== 'copy' && readOnly.value)) return;
+  try {
+    if (action === 'copy' || action === 'cut') {
+      const copied = mentionClipboardAPI[action]();
+      if (!copied) throw new Error(t('Выдели упоминание в одном текстовом блоке.', 'Select a mention in one text block.'));
+      mentionClipboard.value = copied;
+    }
+    else {
+      const copied = mentionClipboard.value;
+      if (!copied) return;
+      const input = action === 'text' ? { text: copied.text } : copied;
+      if (!mentionClipboardAPI.paste(input)) throw new Error(t('Вставка в текущем выделении недоступна.', 'Paste is unavailable at the current selection.'));
+    }
+    mentionReferences.value = JSON.stringify(readMentionReferences?.(editor) ?? [], null, 2);
+    refresh();
+    notify('');
+  }
+  catch (error) { notify(error instanceof Error ? error.message : String(error), true); }
+};
 const roundTripMentionReferences = (format: 'html' | 'json') => run((instance) => {
   if (format === 'html') instance.setHTML(instance.getHTML());
   else instance.setJSON(instance.getJSON());
@@ -782,7 +804,7 @@ onMounted(async () => {
     { fonts, fontCommands },
     { listProperties, listPropertyCommands },
     { textDirection, textDirectionCommands },
-    { mentionCommands, getMentions },
+    { mentionCommands, getMentions, mentionClipboardCommands },
     { slashCommands, createSlashActions },
     { createLinkForm },
     { createImageForm },
@@ -860,6 +882,7 @@ onMounted(async () => {
     listPropertyAPI = listPropertyCommands(editor);
     directionAPI = textDirectionCommands(editor);
     readMentionReferences = getMentions;
+    mentionClipboardAPI = mentionClipboardCommands(editor);
     mentionAPI = mentionCommands(editor); slashAPI = slashCommands(editor);
     mentionState.value = mentionAPI.getState(); slashState.value = slashAPI.getState();
     unmention = mentionAPI.subscribe((state) => { mentionState.value = state; }); unslash = slashAPI.subscribe((state) => { slashState.value = state; });
@@ -969,6 +992,8 @@ onBeforeUnmount(() => {
   contextualLinkUI?.destroy();
   contextualUI?.destroy();
   disposeEditorUI?.();
+  mentionClipboardAPI = undefined;
+  mentionClipboard.value = undefined;
   editor?.destroy();
 });
 </script>
@@ -1205,7 +1230,7 @@ onBeforeUnmount(() => {
           <label>{{ t('Задержка, мс', 'Delay, ms') }}<input v-model.number="providerDelay" type="number" min="0" max="1500"></label>
           <div class="lab-button-grid"><button :disabled="readOnly" @click="openSuggestions">{{ t('Открыть подсказки', 'Open suggestions') }}</button><button @click="closeSuggestions">{{ t('Закрыть подсказки', 'Close suggestions') }}</button></div>
           <p class="lab-suggestions-status" role="status" aria-live="polite">{{ suggestionStatus }}</p>
-          <p class="lab-hint">{{ t('ArrowUp/Down — выбор, Enter — вставка, Escape — закрыть. Tab передаётся редактору. В демке упоминание хранит ID в редактируемом span; slash вставляет текст или выполняет структурную команду одним Undo. Введи / для всех вариантов: заголовки, списки, цитата, код и таблица. Данные локальные, сеть не используется. Это редактируемые ссылки с ID, без атомарного поведения.', 'ArrowUp/Down navigate, Enter inserts, Escape dismisses. Tab falls through to the editor. Demo mentions store IDs in editable spans; slash inserts text or runs a structural command with one Undo. Type / for all choices: headings, lists, quote, code and table. Data stays local, with no network. These are editable ID references, without atomic behavior.') }}</p>
+          <p class="lab-hint">{{ t('ArrowUp/Down — выбор, Enter — вставка, Escape — закрыть. Tab передаётся редактору. В демке упоминание хранит ID в атомарном span; slash вставляет текст или выполняет структурную команду одним Undo. Введи / для всех вариантов: заголовки, списки, цитата, код и таблица. Данные локальные, сеть не используется. Атомарный профиль включён явно; отдельные примеры ниже показывают навигацию и буфер.', 'ArrowUp/Down navigate, Enter inserts, Escape dismisses. Tab falls through to the editor. Demo mentions store IDs in atomic spans; slash inserts text or runs a structural command with one Undo. Type / for all choices: headings, lists, quote, code and table. Data stays local, with no network. The atomic profile is explicitly enabled; sections below demonstrate navigation and clipboard behavior.') }}</p>
         </fieldset></details>
         <details class="lab-autolink"><summary>{{ t('Автоматические ссылки', 'Automatic links') }}</summary><fieldset :disabled="!ready || readOnly">
           <button @click="startAutolink(true)">{{ t('Подготовить URL для Enter', 'Prepare URL for Enter') }}</button>
@@ -1237,6 +1262,27 @@ onBeforeUnmount(() => {
           <p class="lab-hint">{{ t('Загрузка заменяет документ. После «Курсор перед @Anna» нажми ArrowRight или Shift+ArrowRight: переход и выделение охватывают весь токен. Delete перед ним или Backspace сразу после удаляет упоминание целиком; Undo возвращает ID и подпись. Пробел после токена остаётся обычным текстом.', 'Loading replaces the document. After Caret before @Anna, press ArrowRight or Shift+ArrowRight to cross or select the entire token. Delete before it or Backspace immediately after it removes the whole mention; Undo restores its ID and label. The trailing space remains ordinary text.') }}</p>
           <p class="lab-hint">{{ t('atomic: true требует persistent: true. Это ограниченное поведение упоминаний, не универсальный SDK атомов. В сохраняемом HTML/JSON нет contenteditable; после загрузки поведение заново выводится из конфигурации. Read-only блокирует изменения; обработчики атомов не вмешиваются в подтверждение IME.', 'atomic: true requires persistent: true. This is bounded mention behavior, not a universal atom SDK. Stored HTML/JSON has no contenteditable; behavior is rederived from configuration after loading. Read-only blocks edits; atomic handlers do not intercept IME confirmation.') }}</p>
           <a :href="ru ? '/atomic-mentions' : '/en/atomic-mentions'">{{ t('Навигация, удаление и миграция упоминаний', 'Mention navigation, deletion and migration') }}</a>
+        </fieldset></details>
+        <details class="lab-mention-clipboard"><summary>{{ t('Буфер упоминаний: ID и обычный текст', 'Mention clipboard: IDs and plain text') }}</summary><fieldset :disabled="!ready">
+          <button :disabled="readOnly" @click="loadAtomicMentionSample">{{ t('Загрузить пример буфера', 'Load clipboard sample') }}</button>
+          <div class="lab-button-grid">
+            <button @click="placeAtomicMention('select')">{{ t('Выделить @Anna для буфера', 'Select @Anna for clipboard') }}</button>
+            <button @click="placeAtomicMention('after')">{{ t('Место вставки после @Anna', 'Paste position after @Anna') }}</button>
+          </div>
+          <div class="lab-button-grid">
+            <button @pointerdown.prevent @click="useMentionClipboard('copy')">{{ t('Копировать в память', 'Copy to memory') }}</button>
+            <button :disabled="readOnly" @pointerdown.prevent @click="useMentionClipboard('cut')">{{ t('Вырезать в память', 'Cut to memory') }}</button>
+            <button :disabled="readOnly || !mentionClipboard" @pointerdown.prevent @click="useMentionClipboard('paste')">{{ t('Вставить с ID', 'Paste with ID') }}</button>
+            <button :disabled="readOnly || !mentionClipboard" @pointerdown.prevent @click="useMentionClipboard('text')">{{ t('Вставить только текст', 'Paste plain text') }}</button>
+          </div>
+          <template v-if="mentionClipboard">
+            <p>{{ t('Снимок внутреннего буфера — HTML:', 'In-memory clipboard snapshot — HTML:') }}</p><pre data-mention-clipboard-html class="lab-code">{{ mentionClipboard.html }}</pre>
+            <p>{{ t('Обычный текст без ID:', 'Plain text without IDs:') }}</p><pre data-mention-clipboard-text class="lab-code">{{ mentionClipboard.text }}</pre>
+          </template>
+          <pre v-if="mentionReferences" data-mention-clipboard-references class="lab-code">{{ mentionReferences }}</pre>
+          <p class="lab-hint">{{ t('Загрузи пример, выдели @Anna и скопируй. Выбери место после @Anna: вставка с ID создаёт ещё одну ссылку, а вставка текста — только подпись. Вырезание и вставка отменяются одним Undo. Копирование разрешено в read-only.', 'Load the sample, select @Anna and copy. Choose the position after @Anna: pasting with ID creates another reference; plain-text paste inserts only its label. Cut and paste each take one Undo. Copy also works read-only.') }}</p>
+          <p class="lab-hint">{{ t('Кнопки используют память страницы, не системный буфер: разрешения и сеть не нужны. Нативные copy/cut/paste работают через событие браузера. Поддержан один обычный текстовый поток; перенос через блоки, изображения и чужие семантические узлы здесь не заявлен. ID проверяется схемой, но не подтверждает права.', 'Buttons use page memory, not the OS clipboard: no permissions or network. Native copy/cut/paste use browser events. This slice supports one ordinary text flow; crossing blocks, images and other semantic owners is not claimed. Schema validation of an ID does not authorize it.') }}</p>
+          <a :href="ru ? '/atomic-mention-clipboard' : '/en/atomic-mention-clipboard'">{{ t('Буфер, безопасность и ограничения', 'Clipboard, safety and boundaries') }}</a>
         </fieldset></details>
         <details class="lab-markdown-codec"><summary>{{ t('Markdown: импорт и экспорт', 'Markdown: import and export') }}</summary><fieldset :disabled="!ready || markdownCodecBusy">
           <label>{{ t('Markdown-исходник', 'Markdown source') }}<textarea :aria-label="t('Markdown-исходник', 'Markdown source')" v-model="markdownSource" class="lab-code" rows="9" spellcheck="false"></textarea></label>

@@ -1,4 +1,5 @@
 import type { Editor } from '@morfira-dev/wysiwyg-core';
+import { setupAtomicClipboard } from './clipboard.js';
 import { createAtomicPresentation } from './presentation.js';
 import { adjacentAtomicMention, atomicAncestor, atomicBoundary, atomicFlow, atomicNativeSelection,
   atomicOffset, atomsInRange, expandedAtomicRange, setAtomicSelection, validAtomicMention } from './selection.js';
@@ -155,7 +156,7 @@ export const setupAtomicMentions = (editor: Editor): (() => void) => {
     if (event.inputType.startsWith('insert') || event.inputType.startsWith('delete')) {
       cancel(event);
       if (event.inputType === 'insertText' && typeof event.data === 'string') mutate(range, expandedAtomicRange(root, range), event.data);
-      else if (event.inputType === 'deleteByCut') mutate(range, expandedAtomicRange(root, range));
+      // Cut belongs to the clipboard transaction; a failed writer must never be followed by a second deletion.
     }
   };
   const clicked = (event: MouseEvent): void => {
@@ -173,8 +174,8 @@ export const setupAtomicMentions = (editor: Editor): (() => void) => {
     const native = document.getSelection();
     if (native) setAtomicSelection(native, range);
   };
-  const startComposition = (): void => { normalize(); composing = true; };
-  const endComposition = (): void => { composing = false; normalize(); };
+  const startComposition = (): void => { normalize(); revision++; composing = true; };
+  const endComposition = (): void => { revision++; composing = false; normalize(); };
   const listen = (target: EventTarget, type: string, callback: EventListener): void => {
     target.addEventListener(type, callback, true);
     cleanups.push(() => target.removeEventListener(type, callback, true));
@@ -197,12 +198,24 @@ export const setupAtomicMentions = (editor: Editor): (() => void) => {
     listen(root, 'compositionend', endComposition);
     listen(document, 'selectionchange', normalize);
     cleanups.push(editor.onSelectionChange(normalize));
-    cleanups.push(editor.events.on('readonlychange', () => { composing = false; normalize(); }));
+    cleanups.push(editor.events.on('readonlychange', () => { revision++; composing = false; normalize(); }));
     cleanups.push(editor.subscribe((change) => {
       revision++;
       if (change.source === 'api') composing = false;
       presentation.flush();
       normalize();
+    }));
+    cleanups.push(setupAtomicClipboard(editor, {
+      ready: () => !disposed && !composing,
+      revision: () => revision,
+      transact: (mutate) => {
+        changing = true;
+        try { editor.transact(mutate); }
+        finally {
+          changing = false;
+          if (!disposed) presentation.flush();
+        }
+      },
     }));
     normalize();
   }

@@ -72,3 +72,7 @@ An ID remains an untrusted entity reference. The application validates existence
 ## Try it
 
 On the [homepage](/en/#editor) and [playground](/en/playground), expand “Atomic mentions: navigation and deletion”. Loading the sample replaces the document. Buttons place the caret before/after `@Anna` or select the whole token without history changes. Try ArrowRight, Shift+ArrowRight, Backspace/Delete and Undo. The adjacent persistent-reference section exposes IDs and HTML/JSON round trips. The full demo explicitly enables both flags; preset defaults are unchanged.
+
+## Copy and paste
+
+[Atomic mention clipboard](/en/atomic-mention-clipboard) retains IDs through HTML within one ordinary text flow. Plain text keeps labels only. The additional `mentionClipboardCommands(editor)` API exposes copy/cut/paste without OS clipboard access. Native events use clipboardData; stored representation and defaults stay unchanged.

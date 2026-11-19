@@ -1,5 +1,74 @@
 # Verification record
 
+## Atomic mention clipboard — 2026-11-19
+
+Local implementation follows [atomic-mention-clipboard.md](atomic-mention-clipboard.md)
+after 54e15d3. Existing explicit persistent+atomic mention configuration adds native
+copy/cut/paste and `mentionClipboardCommands(editor)` for application-owned memory
+buffers. Supported same-flow transfers preserve IDs and inline marks through HTML;
+plain text carries visible labels/BR newlines and never reconstructs an identity.
+Copy privately expands partial endpoints without focusing or changing Selection.
+Cut/paste use one editor transaction; structural/cross-flow/resource/other-semantic
+payloads remain refused. Read-only permits copy, not mutation. No schema version,
+CSS, core behavior or runtime dependency was added.
+
+Three subagents implemented behavior, representative regressions and RU/EN demo/
+documentation. The full demo exposes page-memory copy/cut, paste with ID/plain
+text and HTML/text/reference snapshots on the homepage and playground. No OS
+clipboard transport or permission is implicit in the explicit API.
+
+Static review corrected projected plaintext node allocation before split/flatMap,
+clipboard-reader callback target replacement, backward-direction validation and
+file-event ownership. A MutationObserver is drained synchronously to reject even
+same-HTML DOM reconstruction; concrete native range points and document/intent
+revisions are rechecked after focus and clipboard callbacks. Native cut writes
+both formats before deletion, preserves unrelated formats and refuses a later
+deleteByCut fallback after write failure. Partial OS clipboard writes cannot be
+rolled back transactionally. Source serialization reconstructs typed inline data
+without cloning active resource DOM; receiver schema validation precedes rendering.
+
+Explicit table-grid selection keeps its separate owner irrespective of plugin
+setup order: native copy/cut run after table capture, and the existing table-owned
+per-editor selection observation blocks mention commands/paste. Its import is
+type-only; the selective-import check confirms no retained table runtime in the
+mentions entry. No spoofable selection attribute is used as command authority.
+
+Passed: pnpm run build (all declaration builds and bundle guards), pnpm run
+typecheck (TypeScript, Svelte and Vue), pnpm run docs:build:site, pnpm run
+check:project, pnpm run check:tree-shaking, pnpm run package:check (eight archives)
+and git diff --check. No local behavioral/browser tests, installed-consumer
+execution, live OS clipboard or real-device IME checks ran. No GitHub CI was
+inspected. Static success does not prove browser acceptance.
+
+Nine editor definitions and two localized docs definitions are authored, unrun.
+They cover observational partial/backward copy and surrounding marks, native
+formats/write ordering/unrelated data, second-write failure and deleteByCut,
+same-HTML reconstruction and reader/focus races, caret/selected-token paste,
+following typing and one-step history, plain text/final-token placeholder,
+schema/serialized-size/projected-node limits, merged-cell geometry and explicit
+table ownership, structural refusal, readonly/IME/disposal, files, already handled
+and noncancelable events, plus localized demo controls. Synthetic ClipboardEvents
+are distinct from actual browser/OS clipboard support when testing resumes.
+
+Final selected closures, bytes, shared chunks counted once:
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 93957 | 29178 | 25709 | 3293 |
+| Mentions | 28060 | 10571 | 9566 | 1465 optional shared suggestions |
+| Suggestions behavior set | 37401 | 14270 | 12786 | 1465 optional |
+| Standard ready | 221658 | 65767 | 56307 | 12162 |
+| Extended ready | 259177 | 76728 | 65264 | 13627 |
+
+Against the captured 54e15d3 baseline, core/standard are unchanged; mentions and
+suggestions-set grow 1941 gzip bytes, extended grows 1943. Standard retains 14233
+gzip bytes under 80000 and extended retains 33272 under 110000. Core's soft raw
+80000-byte target remains exceeded; hard product guards pass. CSS is unchanged:
+core 3293/1164/962 raw/gzip/Brotli, suggestions 1465/575/454, extended
+13627/4499/3661. Framework runtimes, source maps and declarations are excluded.
+The dedicated clipboard getter probe retains only 192 minified bytes; that is
+an observation helper's closure, not the cost of installing atomic mentions.
+
 ## Atomic mention navigation/deletion — 2026-11-19
 
 Local implementation follows [atomic-mentions.md](atomic-mentions.md). Explicit

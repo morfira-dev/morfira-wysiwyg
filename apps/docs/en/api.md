@@ -297,6 +297,8 @@ Undo/redo restores pending caret formatting along with its position. This is int
 
 Enable `atomic: true` alongside `persistent: true` for whole-mention navigation and deletion. ID representation stays unchanged; see [atomic mentions](/en/atomic-mentions) for text-label bounds and migration.
 
+`mentionClipboardCommands(editor)` → `copy(): MentionClipboardData | undefined`, `cut(): MentionClipboardData | undefined`, `paste(input: MentionClipboardInput): boolean`. HTML retains IDs, plain text keeps labels only; the API uses application-owned memory. [Atomic mention clipboard](/en/atomic-mention-clipboard) documents same-flow boundaries and invalid-HTML refusal.
+
 See [events, plugin cooperation and composable transactions](/en/events). Structural slash actions are documented [here](/en/suggestions#structural-slash-commands).
 
 For post-input extension observers, see [controlled input commit receipts](/en/events#controlled-input-commit-receipts): `EditorInputCommit` covers only validated controlled Enter/clipboard paths, not arbitrary input or a cancellable transform. Follow-up commands remain separate history operations.

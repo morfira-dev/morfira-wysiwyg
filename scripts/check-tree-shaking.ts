@@ -22,7 +22,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg', symbol: 'createEditorCommand', feature: 'command-token', allowed: [] },
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component', allowed: [] },
   ...['parseMarkdown', 'serializeMarkdown'].map((symbol) => ({ entry: '@morfira-dev/wysiwyg/codecs/markdown', symbol, feature: 'codecs/markdown', allowed: ['codecs/markdown'] })),
-  ...['createMentionSchema', 'getMentions'].map((symbol) => ({ entry: '@morfira-dev/wysiwyg/plugins/mentions', symbol, feature: 'mentions', allowed: ['mentions'] })),
+  ...['createMentionSchema', 'getMentions', 'mentionClipboardCommands'].map((symbol) => ({ entry: '@morfira-dev/wysiwyg/plugins/mentions', symbol, feature: 'mentions', allowed: ['mentions'] })),
   ...features.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/plugins/${feature}`,
     symbol: ({ 'text-direction': 'textDirection', 'list-properties': 'listProperties', fonts: 'fonts', 'horizontal-rule': 'horizontalRule', checklists: 'checklists', 'table-properties': 'tableProperties', tables: 'tables', images: 'images', 'image-input': 'imageInput', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],

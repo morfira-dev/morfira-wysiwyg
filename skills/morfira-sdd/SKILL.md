@@ -23,6 +23,11 @@ The independent Markdown import/export codec follows `specs/markdown-codec.md` t
 
 Persistent mention references follow `specs/persistent-mentions.md`. They are opt-in editable semantic spans by default; `specs/atomic-mentions.md` adds an explicit mention-specific atomic navigation/deletion profile; preserve IDs through registered HTML/JSON, retain search/suggestion ownership barriers and distinguish display labels from backend-authorized identity.
 
+Atomic reference clipboard follows `specs/atomic-mention-clipboard.md`: bounded
+same-flow HTML preserves IDs, plain text never invents them, copy is observational,
+and cut writes both formats before mutation with callback-time target validation.
+Keep file/table clipboard ownership and unsupported structural boundaries intact.
+
 Search result painting follows `specs/search-highlights.md` through the optional native CSS Highlight UI. Keep document/selection/history unchanged, feature-detect support, preserve other registry owners and avoid a heavy DOM/overlay fallback. Search ranges are observations, not mapped SDK positions or command authority.
 
 For plugin SDK work, follow `specs/plugin-sdk.md` before implementation. Its first slice is per-instance typed commands and declarative semantic schema extensions over existing safe schema-v1 wrappers; mapped structural selection, custom node views, generic atoms/decorations and a new editing engine remain later work; mention-specific atomic behavior follows its independent contract. Preserve validation, initial-import ordering, history and plugin cleanup without silently changing stored documents.
