@@ -34,6 +34,12 @@ Accepted HTML input and normalized document output have a maximum serialized HTM
 
 Keep existing limits of 100,000 visited document nodes, depth 100 and individual retained attribute values at 20,000 code units. Explicit JSON child arrays must be dense and cannot exceed the node bound before mapping; repeated references and cycles do not evade traversal/size budgets. Do not stringify arbitrary input or allocate an output-sized DOM/string before enforcing these bounds. Existing unknown-attribute filtering remains intact.
 
+The retained style bound is checked after normalization and image dimension
+mirroring, not only on its source string. Repeated declarations or appended
+validated width/height must not create an over-limit retained attribute. Cell
+border shorthand stays atomic so a CSS-invalid color cannot partially import
+width/style; its bounded grammar does not certify CSS color-name validity.
+
 Oversized input or escaping-heavy normalization throws RangeError before visible editor changes, history updates or change notifications. A successful validated JSON document has a serialized-size bound compatible with the HTML input limit. This tightens prior behavior: attribute-heavy or escaping-heavy documents that previously passed the text-only budget may now reject. Ordinary documents and schema version 1 remain compatible. Runtime-generated cyclic/sparse JavaScript objects are robustness cases, not remote JSON execution exploits.
 
 ## Acceptance

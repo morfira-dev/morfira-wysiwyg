@@ -1,7 +1,11 @@
 export type TableAlignment = 'left' | 'center' | 'right';
 export type TableCellVerticalAlign = 'top' | 'middle' | 'bottom';
+export type TableCellBorderStyle = 'solid' | 'dashed' | 'dotted' | 'double' | 'none';
 
 export interface TablePropertiesPatch {
+  cellPadding?: string | false;
+  cellBorderWidth?: string | false;
+  cellBorderStyle?: TableCellBorderStyle | false;
   rowMinHeight?: string | false;
   headerRow?: boolean;
   headerColumn?: boolean;
@@ -14,6 +18,9 @@ export interface TablePropertiesPatch {
 }
 
 export interface TablePropertiesState {
+  readonly cellPadding: string | false | 'mixed';
+  readonly cellBorderWidth: string | false | 'mixed';
+  readonly cellBorderStyle: TableCellBorderStyle | false | 'mixed';
   readonly rowMinHeight: string | false | 'mixed';
   readonly headerRow: boolean;
   readonly headerColumn: boolean;

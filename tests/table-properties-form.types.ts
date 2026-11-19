@@ -24,7 +24,7 @@ const checkTablePropertiesFormTypes = (factory: typeof createTablePropertiesForm
   const options: TablePropertiesFormOptions = { label: 'Table properties', onError: async () => undefined };
   const form: TablePropertiesFormController = factory(host, editor, options);
   const values: TablePropertiesFormValues = form.getValues();
-  form.setValues({ width: '60%', alignment: 'center', cellBackground: '', cellBorder: '#abc', cellVerticalAlign: 'middle', headerRow: 'true', headerColumn: '', caption: 'Results', rowMinHeight: '72px' });
+  form.setValues({ width: '60%', alignment: 'center', cellBackground: '', cellBorder: '#abc', cellVerticalAlign: 'middle', headerRow: 'true', headerColumn: '', caption: 'Results', rowMinHeight: '72px', cellPadding: '8px', cellBorderWidth: '2px', cellBorderStyle: 'solid' });
   form.refresh();
   void values;
   // @ts-expect-error form values describe editable strings rather than command reset values

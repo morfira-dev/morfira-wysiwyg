@@ -1,4 +1,4 @@
-import type { TableAlignment, TableCellVerticalAlign, TablePropertiesPatch } from './types.js';
+import type { TableAlignment, TableCellVerticalAlign, TableCellBorderStyle, TablePropertiesPatch } from './types.js';
 import { checkedRowMinHeight } from './rows.js';
 
 const widthValue = (value: unknown): string | false => {
@@ -17,6 +17,21 @@ const alignmentValue = (value: unknown): TableAlignment | false => {
 const verticalValue = (value: unknown): TableCellVerticalAlign | false => {
   if (value !== false && value !== 'top' && value !== 'middle' && value !== 'bottom')
     throw new TypeError('Cell vertical alignment must be top, middle, bottom or false.');
+  return value;
+};
+const cellLengthValue = (value: unknown, maximum: number): string | false => {
+  if (value === false) return false;
+  if (typeof value !== 'string' || !/^(?:0|[1-9]\d?)px$/.test(value) || Number(value.slice(0, -2)) > maximum)
+    throw new TypeError(`Cell length must be a canonical integer from 0px to ${maximum}px or false.`);
+  return value;
+};
+export const cellBorderStyle = (cell: HTMLTableCellElement): TableCellBorderStyle | false => {
+  const style = cell.style.borderStyle;
+  return style === 'solid' || style === 'dashed' || style === 'dotted' || style === 'double' || style === 'none' ? style : false;
+};
+const borderStyleValue = (value: unknown): TableCellBorderStyle | false => {
+  if (value !== false && value !== 'solid' && value !== 'dashed' && value !== 'dotted' && value !== 'double' && value !== 'none')
+    throw new TypeError('Unsupported cell border style.');
   return value;
 };
 const colorValue = (value: unknown, document: Document): string | false => {
@@ -38,11 +53,14 @@ export const checkedTablePropertiesPatch = (input: unknown, document: Document):
   if (!input || typeof input !== 'object' || Array.isArray(input)
       || ![Object.prototype, null].includes(Object.getPrototypeOf(input)))
     throw new TypeError('Table properties must be a plain patch object.');
-  const fields = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'headerRow', 'headerColumn', 'caption', 'rowMinHeight'];
+  const fields = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'headerRow', 'headerColumn', 'caption', 'rowMinHeight', 'cellPadding', 'cellBorderWidth', 'cellBorderStyle'];
   if (Reflect.ownKeys(input).some((key) => typeof key !== 'string' || !fields.includes(key)))
     throw new TypeError('Unknown table property.');
   const patch = input as Record<string, unknown>;
   const result: TablePropertiesPatch = {};
+  if (Object.hasOwn(patch, 'cellPadding')) result.cellPadding = cellLengthValue(patch.cellPadding, 48);
+  if (Object.hasOwn(patch, 'cellBorderWidth')) result.cellBorderWidth = cellLengthValue(patch.cellBorderWidth, 12);
+  if (Object.hasOwn(patch, 'cellBorderStyle')) result.cellBorderStyle = borderStyleValue(patch.cellBorderStyle);
   if (Object.hasOwn(patch, 'rowMinHeight')) result.rowMinHeight = checkedRowMinHeight(patch.rowMinHeight);
   for (const key of ['headerRow', 'headerColumn'] as const) {
     if (!Object.hasOwn(patch, key)) continue;

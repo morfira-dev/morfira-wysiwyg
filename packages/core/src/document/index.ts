@@ -2,6 +2,7 @@ import { safeURL } from './security.js';
 import { normalizeFontFamily } from './font-family.js';
 import { normalizeListMarker } from './list-marker.js';
 import { normalizeDirection } from './direction.js';
+import { normalizeCellBoxStyle, normalizeCellBorder } from './cell-box.js';
 import { countText, countElement, maximumHTMLLength, maximumNodes, maximumDepth } from './budget.js';
 import type { DocumentAttributeResolver, DocumentBudget } from './internal-types.js';
 import type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
@@ -29,6 +30,16 @@ const safeStyle = (tag: DocumentTag, value: string): string => {
       continue;
     }
     const content = declaration.slice(separator + 1).trim().toLowerCase();
+    if (property === 'border') {
+      const clean = normalizeCellBorder(tag, content);
+      if (clean) result.push(clean);
+      continue;
+    }
+    if (['padding', 'border-width', 'border-style'].includes(property)) {
+      const clean = normalizeCellBoxStyle(tag, property, content);
+      if (clean) result.push(`${property}: ${clean}`);
+      continue;
+    }
     const color = /^(#[a-f\d]{3,8}|[a-z]{1,24}|(?:rgb|rgba|hsl|hsla)\([\d\s.,%+-]+\))$/;
     const length = /^(?:\d{1,4}(?:\.\d{1,3})?)(?:px|%|em|rem)$/;
     const valid = ['color', 'background-color', 'border-color'].includes(property) ? color.test(content)
@@ -110,6 +121,7 @@ const attributesFor = (tag: DocumentTag, input: Record<string, unknown>, source:
   if (resolve) Object.assign(output, resolve(tag, input, source, originalTag));
   else if (source === 'json' && Object.hasOwn(input, 'data-mw-node'))
     throw new TypeError('Unregistered schema node.');
+  if (output.style && output.style.length > 20000) throw new RangeError('Normalized style exceeds the attribute length limit.');
   return output;
 };
 const readDOM = (node: Node, depth: number, budget: DocumentBudget, resolve?: DocumentAttributeResolver): DocumentNode[] => {

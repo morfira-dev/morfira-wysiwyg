@@ -1,5 +1,57 @@
 # Verification record
 
+## Cell padding and border width/style — 2026-11-19
+
+Local implementation follows [table-cell-box.md](table-cell-box.md). The existing
+optional properties plugin/form adds uniform cellPadding 0–48px, cellBorderWidth
+0–12px and closed-enum cellBorderStyle with independent resets, mixed state and
+one combined transaction. Public TableCellBorderStyle is exported through the
+plugins package and facade; the form gains three string drafts. Commands reuse
+strict merged-grid authority, SDK focus/revision/readonly/IME gates and preserve
+actual cells/content. No new runtime dependency, CSS or preset installation.
+
+Core schema v1 adds only bounded TD/TH padding/border-width/border-style plus a
+canonical bounded border triple needed for CSSOM serialization. It is retained
+as one atomic shorthand so a CSS-invalid color cannot partially import width or
+style; the existing safe color grammar does not certify recognized CSS names.
+The retained style limit is enforced after all normalization, including IMG
+dimension mirroring. Review caught both the prior partial-expansion risk and
+normalized-attribute amplification; both were corrected before the final build.
+
+Passed: final pnpm run build (package declarations and all budgets),
+pnpm run typecheck, pnpm exec tsc --noEmit for the final test additions,
+pnpm run check:project, pnpm run check:tree-shaking, pnpm run package:check
+(eight archives), pnpm run docs:build:site and git diff --check.
+The initial local type command hit stale-module confirmation after prior release
+metadata synchronization; dependency refresh completed without a lockfile change.
+An intermediate type check caught a missing facade type export, which was added
+and regenerated before final checks. No local behavioral tests, installed-consumer
+execution or live browser checks ran; no GitHub pipeline was inspected.
+
+Five API definitions, two form definitions and two localized demo definitions,
+public types and existing exact-state expectations are authored. They cover
+merged/mixed updates, persistence/clipboard, reset/history/ownership, unsafe CSS,
+and pre-render overflow for both HTML/JSON while preserving nonempty undo/redo.
+These runtime outcomes remain unverified at the user's local test pause.
+
+Final selected dependency closures, bytes (shared JS chunks counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 90267 | 27968 | 24599 | 3293 |
+| Table properties | 33331 | 11940 | 10686 | — |
+| Table properties form | 49409 | 17551 | 15649 | 1922 shared forms |
+| Standard ready | 214665 | 63647 | 54490 | 12162 |
+| Standard ready + properties/form | 240169 | 70708 | 60098 | 12162 |
+
+Compared with the task baseline, core grows 264 gzip JS bytes, properties 273,
+the form closure 524, standard ready 266 and standard properties profile 794.
+The latter retains 9292 gzip bytes below the unchanged 80000 guard; headless/form
+remain within 15000/20000. All CSS measurements are unchanged: standard ready
+12162 raw / 3924 gzip / 3207 Brotli bytes, shared forms 1922 / 709 / 578, core
+3293 / 1164 / 962. Framework runtimes, maps and types are excluded. The generated
+size-report.json records every profile; static passes are not browser evidence.
+
 ## Structural row-height retention — 2026-11-18
 
 Local implementation after 6cc8514 extends [table-row-height.md](table-row-height.md)

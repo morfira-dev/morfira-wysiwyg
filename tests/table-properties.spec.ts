@@ -97,7 +97,7 @@ test('mixed cell values reset independently and width writes remove legacy fallb
       legacy: table.hasAttribute('width'),
       ownMargins: [table.style.marginLeft, table.style.marginRight],
     };
-  })).toEqual({ before: { width: '240px', alignment: 'right', background: 'mixed', border: 'mixed', vertical: 'mixed' }, canonicalWidth: { css: '240px', legacy: false }, after: { disabled: false, width: false, alignment: false, cellBackground: false, cellBorder: false, cellVerticalAlign: false, headerRow: false, headerColumn: false, caption: false, rowMinHeight: false }, tableColor: 'purple', firstColor: 'green', legacy: false, ownMargins: ['', ''] });
+  })).toEqual({ before: { width: '240px', alignment: 'right', background: 'mixed', border: 'mixed', vertical: 'mixed' }, canonicalWidth: { css: '240px', legacy: false }, after: { disabled: false, width: false, alignment: false, cellBackground: false, cellBorder: false, cellVerticalAlign: false, headerRow: false, headerColumn: false, caption: false, rowMinHeight: false, cellPadding: false, cellBorderWidth: false, cellBorderStyle: false }, tableColor: 'purple', firstColor: 'green', legacy: false, ownMargins: ['', ''] });
   await page.evaluate(() => window.editor.undo());
   await expect(content(page).locator('table')).toHaveCSS('width', '240px');
   await page.evaluate(() => window.editor.undo());
@@ -179,7 +179,7 @@ test('composition guards mutations and external replacement permits a fresh targ
     document.getSelection()!.addRange(range);
     window.tablePropertiesAPI.update({ width: '55%' });
     return { disabled, unchanged, state: window.tablePropertiesAPI.getState(), text: paragraph.textContent, changes: window.changes.map((change) => change.source), undo: editor.canUndo() };
-  })).toEqual({ disabled: true, unchanged: true, state: { disabled: false, width: '55%', alignment: false, cellBackground: false, cellBorder: false, cellVerticalAlign: false, headerRow: false, headerColumn: false, caption: false, rowMinHeight: false }, text: 'Replacement', changes: ['api', 'user'], undo: true });
+  })).toEqual({ disabled: true, unchanged: true, state: { disabled: false, width: '55%', alignment: false, cellBackground: false, cellBorder: false, cellVerticalAlign: false, headerRow: false, headerColumn: false, caption: false, rowMinHeight: false, cellPadding: false, cellBorderWidth: false, cellBorderStyle: false }, text: 'Replacement', changes: ['api', 'user'], undo: true });
 });
 
 test('protected, semantic, foreign, nested, incomplete and overlapping table targets refuse atomically', async ({ page }) => {

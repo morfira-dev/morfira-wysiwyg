@@ -6,6 +6,9 @@ export interface TablePropertiesFormValues {
   alignment: string;
   cellBackground: string;
   cellBorder: string;
+  cellPadding: string;
+  cellBorderWidth: string;
+  cellBorderStyle: string;
   cellVerticalAlign: string;
   headerRow: string;
   headerColumn: string;
