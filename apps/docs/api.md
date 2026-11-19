@@ -296,7 +296,7 @@ Undo/redo восстанавливает ожидающее оформление
 
 Для навигации и удаления целого упоминания включите `atomic: true` вместе с `persistent: true`. Формат ID остаётся прежним; ограничения текстовой подписи и миграция описаны в [атомарных упоминаниях](/atomic-mentions).
 
-`mentionClipboardCommands(editor)` → `copy(): MentionClipboardData | undefined`, `cut(): MentionClipboardData | undefined`, `paste(input: MentionClipboardInput): boolean`. HTML сохраняет ID, plain text — только подпись; API использует память вызывающего приложения. [Буфер атомарных упоминаний](/atomic-mention-clipboard) описывает однотекстовые границы и отказ при невалидном HTML.
+`mentionClipboardCommands(editor)` → `copy(): MentionClipboardData | undefined`, `cut(): MentionClipboardData | undefined`, `paste(input: MentionClipboardInput): boolean`. HTML сохраняет ID и допустимые абзацы/заголовки, plain text — только подписи с LF между блоками; API использует память вызывающего приложения. [Буфер атомарных упоминаний](/atomic-mention-clipboard) описывает один поток и соседние обычные блоки одного родителя, композицию префикса/суффикса и отказ при невалидном HTML или пересечении контейнеров.
 
 См. [события, взаимодействие плагинов и составные транзакции](/events). Структурные slash-команды описаны [здесь](/suggestions#структурные-slash-команды).
 

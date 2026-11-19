@@ -1,29 +1,16 @@
 import type { DocumentNode, Editor, EditorDocument, ElementNode } from '@morfira-dev/wysiwyg-core';
 import { mentionNodeName } from '../persistence.js';
 import type { MentionClipboardData, MentionClipboardInput } from '../types.js';
-import { atomicFlow, validAtomicMention } from './selection.js';
+import { validAtomicMention } from './selection.js';
 
 const inline = new Set(['span', 'strong', 'em', 'u', 's', 'sub', 'sup', 'br']);
 const maximumLength = 5_000_000;
-
-/** Restrict this clipboard slice to one ordinary inline flow, including cell paragraphs. */
-export const clipboardFlow = (root: HTMLElement, range: Range): HTMLElement | undefined => {
-  const flow = atomicFlow(root, range.startContainer);
-  if (!flow || atomicFlow(root, range.endContainer) !== flow) return;
-  for (const child of flow.querySelectorAll('*')) {
-    if (!range.intersectsNode(child)) continue;
-    if (validAtomicMention(root, child)) continue;
-    if (child.namespaceURI !== 'http://www.w3.org/1999/xhtml'
-      || child.hasAttribute('data-mw-node') || !inline.has(child.localName)) return;
-  }
-  return flow;
-};
 
 const visibleText = (nodes: readonly DocumentNode[]): string => nodes.map((node) => node.type === 'text'
   ? node.text : node.tag === 'br' ? '\n' : visibleText(node.children)).join('');
 
 /** Reconstruct selected data directly: cloning live resource DOM could trigger a fetch. */
-export const selectedClipboardData = (editor: Editor, range: Range, flow: HTMLElement): MentionClipboardData => {
+export const selectedClipboardData = (editor: Editor, range: Range, leaves: readonly HTMLElement[]): MentionClipboardData => {
   let visits = 0;
   let length = 0;
   const read = (node: Node, depth: number): DocumentNode[] => {
@@ -48,9 +35,18 @@ export const selectedClipboardData = (editor: Editor, range: Range, flow: HTMLEl
     return [{ type: 'element', tag: element.localName as ElementNode['tag'],
       attributes: Object.fromEntries([...element.attributes].map((attribute) => [attribute.name, attribute.value])), children }];
   };
+  const fragments = leaves.map((flow): ElementNode => {
+    const children = [...flow.childNodes].flatMap((node) => read(node, 1));
+    return { type: 'element', tag: flow.localName as ElementNode['tag'],
+      attributes: Object.fromEntries([...flow.attributes].map((attribute) => [attribute.name, attribute.value])),
+      children: children.length ? children : [{ type: 'element', tag: 'br', attributes: {}, children: [] }] };
+  });
   const value = editor.schema.validateDocument({ version: 1,
-    children: [...flow.childNodes].flatMap((node) => read(node, 0)) });
-  return { html: editor.schema.documentHTML(value), text: visibleText(value.children) };
+    children: leaves.length === 1 ? fragments[0].children : fragments });
+  const text = leaves.length === 1 ? visibleText(value.children) : (value.children as ElementNode[]).map((block) =>
+    block.children.length === 1 && block.children[0].type === 'element' && block.children[0].tag === 'br'
+      ? '' : visibleText(block.children)).join('\n');
+  return { html: editor.schema.documentHTML(value), text };
 };
 
 export const validateClipboardInput = (input: MentionClipboardInput): void => {
@@ -84,8 +80,6 @@ export const parseClipboardData = (editor: Editor, input: MentionClipboardInput)
           || (element.hasAttribute('data-mw-node') && element.getAttribute('data-mw-node') !== mentionNodeName)) return;
       }
       value = editor.schema.parseHTML(html);
-      if (value.children.length === 1 && value.children[0]?.type === 'element' && value.children[0].tag === 'p')
-        value = { version: 1, children: value.children[0].children };
     }
     else {
       const normalized = text.replace(/\r\n?/g, '\n');
@@ -106,6 +100,13 @@ export const parseClipboardData = (editor: Editor, input: MentionClipboardInput)
         ...(part ? [{ type: 'text' as const, text: part }] : []),
       ]) };
     }
+    // Inter-block formatting whitespace is not an additional inline payload.
+    let hasBlocks = value.children.some((node) => node.type === 'element' && /^(p|h[1-6])$/.test(node.tag));
+    if (hasBlocks) value = { version: 1, children: value.children.filter((node) => node.type !== 'text' || !/^[\t\n\f\r ]*$/.test(node.text)) };
+    if (value.children.length === 1 && value.children[0].type === 'element' && value.children[0].tag === 'p') {
+      value = { version: 1, children: value.children[0].children };
+      hasBlocks = false;
+    }
     let visits = 0;
     const supported = (nodes: readonly DocumentNode[], depth: number): boolean => depth <= 100 && nodes.every((node) => {
       if (++visits > 100_000) return false;
@@ -113,7 +114,12 @@ export const parseClipboardData = (editor: Editor, input: MentionClipboardInput)
       const semantic = node.attributes['data-mw-node'];
       return inline.has(node.tag) && (!semantic || semantic === mentionNodeName) && supported(node.children, depth + 1);
     });
-    if (!value.children.length || !supported(value.children, 0)) return;
+    if (!value.children.length) return;
+    if (hasBlocks) {
+      if (!value.children.every((node) => node.type === 'element' && /^(p|h[1-6])$/.test(node.tag)
+        && !node.attributes['data-mw-node'] && ++visits <= 100_000 && supported(node.children, 1))) return;
+    }
+    else if (!supported(value.children, 0)) return;
     return editor.schema.validateDocument(value);
   }
   catch { return undefined; }

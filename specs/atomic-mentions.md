@@ -62,7 +62,7 @@ stop propagation only when owned. Respect read-only, event.defaultPrevented,
 composition/isComposing/legacy229, disposal and actual range/target changes during
 focus callbacks. Unsupported atom-touching structural/cross-owner edits refuse
 atomically rather than partially deleting IDs; ordinary unrelated input retains
-existing behavior. The bounded same-flow copy/cut/paste extension follows
+existing behavior. The bounded same-flow and ordinary sibling-block copy/cut/paste extension follows
 [atomic-mention-clipboard.md](atomic-mention-clipboard.md), preserving IDs in HTML
 and expanding touched token boundaries. Unsupported structural transfers refuse.
 App-owned direct DOM/value replacement remains

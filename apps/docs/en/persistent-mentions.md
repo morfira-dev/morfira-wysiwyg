@@ -83,4 +83,4 @@ On the [homepage](/en/#editor) and [playground](/en/playground), expand “Persi
 
 The demo explicitly passes `persistent: true` and `atomic: true`; the editable behavior above applies when `atomic` is omitted. Ready preset defaults do not change. ID snapshot inspection remains available read-only; insertion and reloading are blocked. Actual browser outcomes for this stage still require executing the authored regressions.
 
-For an explicitly enabled atomic profile, [copy, cut and paste](/en/atomic-mention-clipboard) retain IDs through HTML within one text flow; plain text carries labels only. The clipboard API does not access the OS.
+For an explicitly enabled atomic profile, [copy, cut and paste](/en/atomic-mention-clipboard) retain IDs through HTML within one flow and across ordinary sibling paragraphs/headings under one parent; plain text carries labels with LF between blocks. Different list items, cells and containers remain boundaries. The clipboard API does not access the OS.

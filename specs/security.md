@@ -35,13 +35,16 @@ navigation/deletion support is scoped separately from a general SDK atom model;
 application-owned direct JavaScript updates are trusted, not sandboxed by it.
 
 The [atomic clipboard slice](atomic-mention-clipboard.md) serializes supported
-selected inline data through the receiving schema, never active resource clones.
+selected inline/supported sibling-block data through the receiving schema, never active resource clones.
 Clipboard HTML retains bounded untrusted IDs; plain text contains visible labels
 only and never reconstructs identity. Native cut writes both formats before source
 deletion and revalidates the actual target after application callbacks. Failed
 writes leave document/history unchanged; no OS clipboard rollback is promised.
 Foreign owners, files, unsupported structural payloads and cross-flow targets keep
-their separate ownership/refusal boundaries. No implicit clipboard permission,
+their separate ownership/refusal boundaries. Sibling-block transfers validate all
+affected ordinary leaves and their actual common parent; unrelated containers,
+list branches, cross-cell targets and protected semantic roots remain barriers.
+No implicit clipboard permission,
 network request, global format clearing or navigator.clipboard access is added.
 
 ## Persistent mention identities

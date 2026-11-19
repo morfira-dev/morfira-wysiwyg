@@ -1,5 +1,80 @@
 # Verification record
 
+## Atomic mention clipboard across ordinary sibling blocks — 2026-11-19
+
+Local extension after 40228da follows the ordinary sibling-block section of
+[atomic-mention-clipboard.md](atomic-mention-clipboard.md). Public clipboard APIs,
+schema-v1 spans and opt-in configuration are unchanged. Copy/cut and paste over
+selection support ordinary P/H leaves under one root, ordinary quote, cell or
+list item. Cross-item/container/cell/branch ranges and protected structures remain
+refused; direct-inline container flows retain their earlier inline-only profile.
+
+Copy retains selected source block wrappers, validated attributes, inline marks
+and complete IDs; text separates blocks with LF and adds no ID syntax. Private
+token-edge expansion remains observational. Cut keeps the actual first wrapper,
+joins its prefix with the last suffix and removes only covered later siblings/
+formatting gaps. Inline/one-P paste joins those edges; multiple ordinary incoming
+leaves retain intermediate/final wrappers, with final suffix/caret composition.
+One heading stays standalone between prefix and suffix. No core source, runtime
+dependency, stylesheet or new public entrypoint was added.
+
+Three subagents implemented behavior, focused regressions and bilingual demo/
+documentation. The existing memory-clipboard lab adds a multi-block sample,
+backward source selection and destination caret/range controls, reusing copy/cut/
+paste and HTML/text/reference snapshots. These controls use page memory and do
+not request system clipboard access.
+
+Source eligibility validates complete affected leaves before safe extraction;
+plans now bind all actual leaves and their common parent as well as concrete
+range points, direction, intent/API and drained DOM revisions. Existing native
+two-format write-before-cut, file/table ownership, readonly/IME/disposal and
+callback replacement checks remain. Source/payload formatting gaps accept only
+ASCII markup whitespace: NBSP is real content, not silently discarded.
+
+Static reviews corrected loss of a real trailing BR, missing editable placeholders
+in empty middle/single-heading blocks, final empty-block caret placement before
+BR, empty source placeholder joining and classification of a single P surrounded
+by formatting newlines. Large child/block moves use fragments/loops rather than
+unbounded argument spreading. Full-result schema/resource validation remains
+inside the core transaction rollback boundary. No universal structural-selection
+engine or cross-browser/OS clipboard guarantee is implied.
+
+Passed: pnpm run build (declarations and all size guards), pnpm run typecheck
+(TypeScript/Vue/Svelte), pnpm run docs:build:site, pnpm run check:project,
+pnpm run check:tree-shaking, pnpm run package:check (eight archives) and git diff
+--check. No local behavioral/browser tests, installed-consumer execution or live
+OS clipboard/device checks ran; no GitHub CI was inspected. These are static
+results, not runtime browser acceptance.
+
+Nine new editor definitions and two new localized docs definitions are authored,
+unrun. Two obsolete prior rejection cases are migrated to unsupported mixed
+payload/container boundaries, retaining their safety value. New cases cover
+rich partial/backward block copy, LF/blank blocks, native cut/one-step history,
+actual unaffected/prefix/suffix nodes, selection/caret multi-block paste, one
+heading and whitespace-wrapped one-P paste, next typing outside IDs, empty edges
+and real BR, quote/LI/merged-cell ownership, protected middle structures/NBSP,
+invalid IDs, readonly/IME and same-HTML focus replacement. Existing first-slice
+native writer/reader races and ownership tests remain in the suite, also unrun.
+
+Final selected closures, bytes, shared JS counted once:
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 93957 | 29178 | 25709 | 3293 |
+| Mentions | 31346 | 11488 | 10436 | 1465 optional shared suggestions |
+| Suggestions behavior set | 40687 | 15187 | 13656 | 1465 optional |
+| Standard ready | 221658 | 65767 | 56307 | 12162 |
+| Extended ready | 262467 | 77655 | 65980 | 13627 |
+
+Against the captured 40228da baseline, core/standard are unchanged; mentions and
+suggestions-set grow 917 gzip bytes, extended grows 927. Standard has 14233 gzip
+bytes remaining under 80000; extended has 32345 under 110000. Hard guards pass;
+core's soft 80000 raw target remains exceeded. CSS is unchanged: core
+3293/1164/962 raw/gzip/Brotli, suggestions 1465/575/454, extended
+13627/4499/3661. Framework runtimes, source maps and declarations are excluded.
+The getter-only clipboard probe remains 192 raw bytes and retains no table runtime;
+it does not represent the cost of installing the full atomic behavior.
+
 ## Atomic mention clipboard — 2026-11-19
 
 Local implementation follows [atomic-mention-clipboard.md](atomic-mention-clipboard.md)

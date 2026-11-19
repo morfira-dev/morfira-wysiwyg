@@ -75,4 +75,4 @@ On the [homepage](/en/#editor) and [playground](/en/playground), expand “Atomi
 
 ## Copy and paste
 
-[Atomic mention clipboard](/en/atomic-mention-clipboard) retains IDs through HTML within one ordinary text flow. Plain text keeps labels only. The additional `mentionClipboardCommands(editor)` API exposes copy/cut/paste without OS clipboard access. Native events use clipboardData; stored representation and defaults stay unchanged.
+[Atomic mention clipboard](/en/atomic-mention-clipboard) retains IDs through HTML within one ordinary flow and across sibling paragraphs/headings sharing a parent. Plain text keeps labels with LF between blocks. The additional `mentionClipboardCommands(editor)` API exposes copy/cut/paste without OS clipboard access. Different list items, cells and containers remain unsupported. Native events use clipboardData; stored representation and defaults stay unchanged.

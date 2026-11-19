@@ -22,6 +22,8 @@ export interface AtomicClipboardContext {
 
 export interface AtomicClipboardSnapshot {
   readonly flow: HTMLElement;
+  readonly leaves: readonly HTMLElement[];
+  readonly parent: HTMLElement | null;
   readonly start: AtomicPoint;
   readonly end: AtomicPoint;
   readonly range: Range;

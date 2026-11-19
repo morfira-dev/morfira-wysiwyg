@@ -161,7 +161,8 @@ test('invalid or structural HTML refuses atomically without falling back to text
     const payloads = [
       { html: '<span data-mw-node="morfira:mention" data-mention-id="">@Anna</span>', text: 'fallback' },
       { html: '<span data-mw-node="morfira:mention" data-mention-id="id"><strong>@Anna</strong></span>', text: 'fallback' },
-      { html: '<p>First</p><p>Second</p>', text: 'fallback' },
+      { html: 'mixed inline<p>Block</p>', text: 'fallback' },
+      { html: '<p>First</p>\u00a0<h2>Second</h2>', text: 'fallback' },
       { html: '<table><tr><td>Cell</td></tr></table>', text: 'fallback' },
       { html: '<img src="https://example.invalid/never-load.png">', text: 'fallback' },
       { text: 'x'.repeat(5_000_001) },
@@ -173,7 +174,7 @@ test('invalid or structural HTML refuses atomically without falling back to text
       catch { return true; }
     });
   });
-  expect(rejected).toEqual(Array(8).fill(true));
+  expect(rejected).toEqual(Array(9).fill(true));
   expect(await atomicHTML(page)).toBe(original);
   expect(await page.evaluate(() => ({ undo: window.editor.canUndo(), changes: window.changes.length }))).toEqual({ undo: false, changes: 0 });
   expect(await page.evaluate(() => window.atomicMentionModule.mentionClipboardCommands(window.editor).paste({ html: '<p><span data-mw-node="morfira:mention" data-mention-id="safe&amp;opaque" contenteditable="true" class="foreign" onclick="alert(1)">@Safe &lt;label&gt;</span></p>', text: 'ignored' }))).toBe(true);
@@ -183,7 +184,7 @@ test('invalid or structural HTML refuses atomically without falling back to text
   expect(await page.evaluate(() => window.atomicMentionModule.getMentions(window.editor)[0])).toEqual({ id: 'safe&opaque', text: '@Safe <label>' });
 });
 
-test('same-flow paste in a merged cell preserves actual cells while cross-block atom selections refuse', async ({ page }) => {
+test('same-flow paste in a merged cell preserves actual cells while cross-container atom selections refuse', async ({ page }) => {
   await initializeAtomicMention(page, `<table><tr><td rowspan="2"><p>${atomicMentionHTML}</p></td><td>A</td></tr><tr><td>B</td></tr></table><p>End</p>`, { tables: true });
   const cell = await atomicContent(page).locator('td').first().elementHandle();
   await selectClipboardAtom(page);
@@ -215,7 +216,7 @@ test('same-flow paste in a merged cell preserves actual cells while cross-block 
   }, atomicMentionHTML);
   expect(gridOwned).toMatchObject({ apiRefused: true, copyPrevented: true, html: expect.stringContaining('<table>'), pastePrevented: true, cells: 3, rowspan: '2' });
   expect(gridOwned.references).toEqual(Array(3).fill({ id: 'person-42', text: '@Anna' }));
-  await page.evaluate(() => window.editor.setHTML('<p><span data-mw-node="morfira:mention" data-mention-id="a">@A</span></p><p><span data-mw-node="morfira:mention" data-mention-id="b">@B</span></p>'));
+  await page.evaluate(() => window.editor.setHTML('<blockquote><p><span data-mw-node="morfira:mention" data-mention-id="a">@A</span></p></blockquote><blockquote><p><span data-mw-node="morfira:mention" data-mention-id="b">@B</span></p></blockquote>'));
   const refused = await page.evaluate(() => {
     const spans = window.editor.surface.querySelectorAll('[data-mention-id]');
     document.getSelection()!.setBaseAndExtent(spans[0].firstChild!, 1, spans[1].firstChild!, 1);

@@ -24,9 +24,9 @@ if (cut) clipboard.paste({ text: cut.text }); // label only, no ID
 
 | Command | Contract |
 | --- | --- |
-| `copy()` | Nonempty selection touching a mention within one ordinary text flow; partial tokens are copied whole. Returns `undefined` when unavailable |
+| `copy()` | Nonempty selection touching a mention within one flow or eligible sibling paragraphs/headings; partial tokens are copied whole. Returns `undefined` when unavailable |
 | `cut()` | Same boundaries; returns data and deletes content in one transaction. Returns `undefined` read-only |
-| `paste(input)` | Inserts allowed inline content or the body of one ordinary paragraph at a caret/over a same-flow selection. Returns `false` on refusal, including read-only |
+| `paste(input)` | Inserts inline content, one paragraph/heading or an ordinary sequence at a caret/over a supported selection. Returns `false` on refusal, including read-only |
 
 Copy works read-only. Paste replaces selected tokens whole and leaves the caret outside the inserted mention. Following ordinary input does not modify the token label. Each successful cut/paste creates one Undo/Redo revision restoring IDs and selection; refusal creates none.
 
@@ -34,7 +34,23 @@ Copy works read-only. Paste replaces selected tokens whole and leaves the caret 
 
 HTML carries registered `data-mw-node="morfira:mention"` and `data-mention-id`, the label and supported surrounding `strong/em/u/s/sub/sup/span/br` formatting. Runtime `contenteditable`, classes and unchecked attributes are not exported. Plain text contains visible labels, ordinary text and BR newlines; a plain `@Anna` never invents an ID reference.
 
-Ordinary paragraph/heading, list, quote and cell-paragraph flows are supported, including a merged cell without grid changes. Multiblock selections, container crossings, images, incoming table fragments, links/code and other semantic owners refuse. This is a bounded mention contract, not a universal rich clipboard engine. Explicit table selections and file pastes retain their existing owners.
+Ordinary paragraph/heading, list, quote and cell-paragraph flows are supported, including a merged cell without grid changes. References can also transfer across sibling `p`/`h1`–`h6` leaves under one parent: the editor surface, an ordinary quote, one cell or one list item. Both selection endpoints must be inside these leaves; offsets of the container itself remain unsupported. Every crossed block must be an eligible ordinary leaf. Only formatting whitespace text nodes may separate the blocks.
+
+Different containers, list items, cells, nested branches or quote boundaries, images, incoming table fragments, links/code and other semantic owners refuse. Preflight checks structure before mutation; refusal never partially deletes a reference. This is a bounded mention contract, not a universal rich clipboard engine. Explicit table selections and file pastes retain their existing owners.
+
+## Across paragraphs and headings
+
+Multiblock copy retains selected fragments inside their original safe `p`/`h` tags with attributes and supported inline marks. Unselected text is excluded, while partial atom endpoints expand to whole references. `text/plain` separates block fragments with LF; BR also adds a newline. Empty selected blocks retain their boundaries. Text never encodes hidden IDs.
+
+Cut keeps the actual first block, its attributes and prefix, moves the last block's surviving suffix into it and removes the selected later blocks. The caret remains at the join, outside a mention. Untouched siblings, list/quote containers and cells retain identity. A fully empty result receives an editable BR.
+
+| Incoming data | Paste composition |
+| --- | --- |
+| Inline content or one ordinary `p` | Inserts in the first block's original inline context, then joins the last source suffix; the incoming `p` is unwrapped |
+| Multiple `p`/`h` blocks | First incoming children join the retained left block; intermediate wrappers survive; the final incoming wrapper receives the suffix. The caret stays before that suffix |
+| One heading | A standalone heading between retained prefix and suffix wrappers, with the caret before the suffix |
+
+The same composition works at a caret inside one block by splitting its prefix/suffix. For multiple incoming blocks, the original first source block's attributes win over the first incoming wrapper. Placeholder BR at joined edges does not create an extra line; real BR and empty middle paragraphs survive. Mixed inline/block and nested structural payloads refuse.
 
 Nonempty HTML takes precedence over text. An invalid registered mention rejects without silently falling back to its plain-text label. The receiver validates the ID and text-only label through the [atomic schema](/en/atomic-mentions). A missing-schema HTML reader may keep text and drop IDs; an editable persistent reader retains IDs without atomic behavior.
 
@@ -49,3 +65,5 @@ An ID is an untrusted entity reference. Schema validation proves neither user ex
 ## Demo
 
 On the [homepage](/en/#editor) and [playground](/en/playground), expand “Mention clipboard: IDs and plain text”. Load the sample, select `@Anna`, copy to memory and choose the position after the token. “Paste with ID” creates another `anna` reference; “Paste plain text” inserts only the label. HTML/text and `{id,text}` snapshots expose the difference. Buttons never access the OS clipboard; loading the example replaces the document. Native shortcuts require separate target-browser/OS verification when checks resume.
+
+For a multiblock transfer, choose “Load block clipboard sample” → “Select blocks backward” → “Copy to memory”. HTML contains a paragraph, heading and paragraph with `anna`/`boris`; plain text exposes LF separators. “Caret in destination paragraph” or “Select destination blocks” chooses the target for “Paste with ID”. To try cut, reload the sample, select blocks and choose “Cut to memory”: retained `Before`/`after` join; Undo restores source blocks and IDs. Local browser checks for this extension have not run.

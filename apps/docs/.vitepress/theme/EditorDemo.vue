@@ -447,12 +447,40 @@ const placeAtomicMention = (position: 'before' | 'after' | 'select') => run((ins
   selection?.removeAllRanges();
   selection?.addRange(range);
 }, false);
+const loadMentionBlockSample = () => run((instance) => {
+  instance.setHTML('<p title="Mention block start">Before <strong><span data-mw-node="morfira:mention" data-mention-id="anna">@Anna</span> first</strong></p><h3 title="Mention block middle">Shared <em>heading</em></h3><p title="Mention block end"><span data-mw-node="morfira:mention" data-mention-id="boris">@Boris</span> after</p><p title="Mention block destination">Target  tail</p><h4 title="Mention block destination end">Replace tail</h4>');
+  mentionReferences.value = '';
+});
+const placeMentionBlockSelection = (destination: 'source' | 'caret' | 'range') => run((instance) => {
+  const root = instance.surface;
+  const document = root.ownerDocument;
+  const selection = document.getSelection();
+  const range = document.createRange();
+  if (destination === 'source') {
+    const first = root.querySelector('[title="Mention block start"] [data-mention-id="anna"]');
+    const last = root.querySelector('[title="Mention block end"] [data-mention-id="boris"]');
+    if (!first || !last) throw new Error(t('Загрузи многоблочный пример заново.', 'Reload the block clipboard sample.'));
+    range.setStartBefore(first);
+    range.setEndAfter(last);
+    selection?.setBaseAndExtent(range.endContainer, range.endOffset, range.startContainer, range.startOffset);
+    return;
+  }
+  const first = root.querySelector('[title="Mention block destination"]')?.firstChild;
+  const last = root.querySelector('[title="Mention block destination end"]')?.firstChild;
+  if (first?.nodeType !== 3 || (destination === 'range' && last?.nodeType !== 3))
+    throw new Error(t('Загрузи многоблочный пример заново.', 'Reload the block clipboard sample.'));
+  range.setStart(first, 7);
+  if (destination === 'range') range.setEnd(last!, 7);
+  else range.collapse(true);
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}, false);
 const useMentionClipboard = (action: 'copy' | 'cut' | 'paste' | 'text') => {
   if (!editor || !mentionClipboardAPI || (action !== 'copy' && readOnly.value)) return;
   try {
     if (action === 'copy' || action === 'cut') {
       const copied = mentionClipboardAPI[action]();
-      if (!copied) throw new Error(t('Выдели упоминание в одном текстовом блоке.', 'Select a mention in one text block.'));
+      if (!copied) throw new Error(t('Выдели упоминание в допустимом текстовом диапазоне.', 'Select a mention in a supported text range.'));
       mentionClipboard.value = copied;
     }
     else {
@@ -1269,6 +1297,12 @@ onBeforeUnmount(() => {
             <button @click="placeAtomicMention('select')">{{ t('Выделить @Anna для буфера', 'Select @Anna for clipboard') }}</button>
             <button @click="placeAtomicMention('after')">{{ t('Место вставки после @Anna', 'Paste position after @Anna') }}</button>
           </div>
+          <button :disabled="readOnly" @click="loadMentionBlockSample">{{ t('Загрузить буфер между блоками', 'Load block clipboard sample') }}</button>
+          <div class="lab-button-grid">
+            <button @click="placeMentionBlockSelection('source')">{{ t('Выделить блоки назад', 'Select blocks backward') }}</button>
+            <button @click="placeMentionBlockSelection('caret')">{{ t('Курсор в целевом абзаце', 'Caret in destination paragraph') }}</button>
+            <button @click="placeMentionBlockSelection('range')">{{ t('Выделить целевые блоки', 'Select destination blocks') }}</button>
+          </div>
           <div class="lab-button-grid">
             <button @pointerdown.prevent @click="useMentionClipboard('copy')">{{ t('Копировать в память', 'Copy to memory') }}</button>
             <button :disabled="readOnly" @pointerdown.prevent @click="useMentionClipboard('cut')">{{ t('Вырезать в память', 'Cut to memory') }}</button>
@@ -1281,7 +1315,8 @@ onBeforeUnmount(() => {
           </template>
           <pre v-if="mentionReferences" data-mention-clipboard-references class="lab-code">{{ mentionReferences }}</pre>
           <p class="lab-hint">{{ t('Загрузи пример, выдели @Anna и скопируй. Выбери место после @Anna: вставка с ID создаёт ещё одну ссылку, а вставка текста — только подпись. Вырезание и вставка отменяются одним Undo. Копирование разрешено в read-only.', 'Load the sample, select @Anna and copy. Choose the position after @Anna: pasting with ID creates another reference; plain-text paste inserts only its label. Cut and paste each take one Undo. Copy also works read-only.') }}</p>
-          <p class="lab-hint">{{ t('Кнопки используют память страницы, не системный буфер: разрешения и сеть не нужны. Нативные copy/cut/paste работают через событие браузера. Поддержан один обычный текстовый поток; перенос через блоки, изображения и чужие семантические узлы здесь не заявлен. ID проверяется схемой, но не подтверждает права.', 'Buttons use page memory, not the OS clipboard: no permissions or network. Native copy/cut/paste use browser events. This slice supports one ordinary text flow; crossing blocks, images and other semantic owners is not claimed. Schema validation of an ID does not authorize it.') }}</p>
+          <p class="lab-hint">{{ t('Многоблочный пример: выдели блоки назад и скопируй в память. В буфере сохраняются два ID, абзацы и заголовок; текст разделён переносами LF. Затем выбери курсор или выделение в целевых блоках и вставь с ID. Для вырезания загрузи пример заново, выдели блоки и вырежи: непокрытые Before и after соединяются, Undo возвращает блоки и ссылки.', 'Block example: select blocks backward and copy to memory. The buffer retains two IDs, paragraphs and a heading; text uses LF block separators. Choose a caret or selection in the destination blocks and paste with ID. For cut, reload the sample, select blocks and cut: the untouched Before and after join; Undo restores blocks and references.') }}</p>
+          <p class="lab-hint">{{ t('Кнопки используют память страницы, не системный буфер: разрешения и сеть не нужны. Нативные copy/cut/paste работают через событие браузера. Поддержаны обычные соседние абзацы и заголовки одного родителя, в том числе внутри одной цитаты, ячейки или пункта списка. Разные контейнеры, пункты/ячейки, изображения и чужие семантические узлы остаются барьерами. ID проверяется схемой, но не подтверждает права.', 'Buttons use page memory, not the OS clipboard: no permissions or network. Native copy/cut/paste use browser events. Ordinary sibling paragraphs/headings under one parent are supported, including within one quote, cell or list item. Different containers, items/cells, images and other semantic owners remain barriers. Schema validation of an ID does not authorize it.') }}</p>
           <a :href="ru ? '/atomic-mention-clipboard' : '/en/atomic-mention-clipboard'">{{ t('Буфер, безопасность и ограничения', 'Clipboard, safety and boundaries') }}</a>
         </fieldset></details>
         <details class="lab-markdown-codec"><summary>{{ t('Markdown: импорт и экспорт', 'Markdown: import and export') }}</summary><fieldset :disabled="!ready || markdownCodecBusy">
