@@ -1,5 +1,85 @@
 # Verification record
 
+## Atomic mention clipboard through selected nested branches — 2026-11-19
+
+Local extension after e1d4498 follows the recursive trailing-branch section of
+[atomic-mention-clipboard.md](atomic-mention-clipboard.md). Same-list sibling own-
+body endpoints may now cross fully selected trailing UL/OL branches of the first
+and intermediate items. Recursive direct-inline/P-H bodies and trailing branches
+retain list types, hierarchy, attributes and registered IDs. Different-level or
+ancestor/descendant endpoints, interleaved bodies after branches, task/foreign/
+resource/quote/code/pre/table/other-owned content remain barriers. This is not a
+general structural-selection engine. API, configuration and schema stay unchanged.
+
+Copy includes selected nested trees once after the corresponding own-body
+fragments, without focus/Selection/history changes or active DOM clones. Plain
+text preserves source order with LF at body/item/branch boundaries, without
+identity syntax or a claim to retain hierarchy. Native cut removes covered trees
+only after both format writes succeed. Final unselected bodies/branches remain
+outside copied data and retain actual node identity when moved. Inline/P-H
+replacement also removes fully selected trees as selected content.
+
+Incoming recursive trees use the same bounded grammar as reconstructed selected
+source branches. First incoming branches remain under the retained first LI;
+final own bodies/suffix/following bodies precede incoming branches, followed by
+actual unselected source branches. Root lists are not merged/retagged/renumbered.
+Empty own bodies receive bounded editable placeholders at every depth. Source
+plans aggregate own-body and selected-branch counts/text, including synthesized
+placeholder counts; final receiver schema enforces serialized/attribute bounds.
+All earlier concrete node/range/direction/revision, readonly/IME/disposal,
+writer/reader/focus replacement and table/file ownership gates remain.
+
+Three subagents implemented source, focused regressions and RU/EN docs/demo; the
+documentation agent also reviewed the helper without execution. The memory lab
+adds a nested sample with five IDs, selected first/middle/deep branches and a
+separate final unselected branch. Existing selection/copy/cut/paste controls show
+the difference. No core source, runtime dependency, CSS or public entrypoint was
+added. Instructions, security contract and roadmap were updated.
+
+Review corrected a source own-BR plus selected branch join so the placeholder
+does not become a real leading newline, and accounted for synthesized placeholders
+across the shared source budget. Initial declaration build failed because a broad
+list type predicate narrowed every non-list element to TextNode. It was corrected
+to an internal UL/OL-specific subtype; the subsequent complete build and all final
+static checks passed. No runtime behavior was changed by that type-only correction.
+
+Passed on final source: pnpm run build (declarations and all size guards), pnpm run
+typecheck (TypeScript/Svelte/Vue), pnpm run docs:build:site, pnpm run check:project,
+pnpm run check:tree-shaking, pnpm run package:check (eight archives) and git diff
+--check. No local behavioral/browser tests, installed-consumer execution, live
+browser/OS clipboard or real-device checks ran. No GitHub CI was inspected.
+Static passes are not runtime acceptance evidence.
+
+Eight new editor definitions and two new localized docs definitions are authored,
+unrun. Three obsolete branch/nested-payload refusal fixtures now use actual
+protected deep branches. New cases cover partial/backward first/middle/deep ID
+copy, plain endpoints with identity only inside a branch, native cut/history,
+actual unselected final nodes, nested caret/range/one-item paste, source/body/
+incoming/unselected branch ordering, own-BR and recursive empty-body placeholders,
+next typing, P-H replacement without duplicated IDs, deep protected/resource/
+namespace/task/malformed/depth/node/serialized limits before writes/no fallback,
+resource-clone side effects, readonly/IME, merged cells and same-HTML branch-only
+writer/focus replacement. Synthetic clipboard events do not establish OS support.
+
+Final selected closures, bytes, shared JS counted once:
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 93957 | 29178 | 25709 | 3293 |
+| Mentions | 42241 | 14509 | 13144 | 1465 optional shared suggestions |
+| Suggestions behavior set | 51582 | 18208 | 16364 | 1465 optional |
+| Standard ready | 221658 | 65767 | 56307 | 12162 |
+| Extended ready | 273325 | 80757 | 68695 | 13627 |
+
+Against the captured e1d4498 baseline, core/standard are unchanged; mentions and
+suggestions-set grow 873 gzip bytes, extended grows 902. Standard retains 14233
+gzip bytes under 80000; extended retains 29243 under 110000. Hard guards pass;
+core's soft 80000 raw target remains exceeded. CSS is unchanged: core
+3293/1164/962 raw/gzip/Brotli, suggestions 1465/575/454, extended
+13627/4499/3661. Framework runtimes, source maps and declarations are excluded.
+The clipboard getter-only probe remains 192 raw bytes and retains no table runtime;
+it is not the cost of installing the full atomic mention plugin.
+
 ## Atomic mention clipboard across consecutive list items — 2026-11-19
 
 Local extension after 361dcd5 follows the consecutive sibling LI section of

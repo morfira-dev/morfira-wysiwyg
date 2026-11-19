@@ -1,6 +1,6 @@
-import type { Editor, EditorDocument, ElementNode } from '@morfira-dev/wysiwyg-core';
+import type { DocumentNode, Editor, EditorDocument, ElementNode } from '@morfira-dev/wysiwyg-core';
 import { clipboardBlockPayload, editClipboardSelection } from './clipboard-edit.js';
-import { clipboardListPayload } from './clipboard-list-data.js';
+import { clipboardListNode, clipboardListPayload } from './clipboard-list-data.js';
 import { atomicFlow, setAtomicSelection } from './selection.js';
 import type { AtomicClipboardSnapshot } from './types.js';
 
@@ -20,8 +20,15 @@ const promote = (item: HTMLLIElement, caret: Range): HTMLElement => {
   return body;
 };
 const firstValue = (item: ElementNode): EditorDocument => {
-  let children = item.children;
+  let children = item.children.filter((node) => !clipboardListNode(node));
   if (children.length === 1 && children[0].type === 'element' && children[0].tag === 'p') children = children[0].children;
+  const hasText = (nodes: readonly DocumentNode[]): boolean => nodes.some((node) => node.type === 'text' ? !!node.text : hasText(node.children));
+  const breaks = (nodes: readonly DocumentNode[]): number => nodes.reduce((total, node) => total + (node.type === 'element' ? Number(node.tag === 'br') + breaks(node.children) : 0), 0);
+  if (!children.some((node) => node.type === 'element' && /^(p|h[1-6])$/.test(node.tag)) && !hasText(children) && breaks(children) === 1) {
+    const strip = (node: DocumentNode): DocumentNode[] => node.type === 'element'
+      ? node.tag === 'br' ? [] : [{ ...node, children: node.children.flatMap(strip) }] : [node];
+    children = children.flatMap(strip);
+  }
   return { version: 1, children };
 };
 
@@ -38,13 +45,19 @@ export const editListClipboardSelection = (editor: Editor, plan: AtomicClipboard
   // Inert parsing validated every incoming item before any live source edits.
   const fragment = payload ? editor.schema.renderDocument(value!) : undefined;
   const incoming = fragment ? [...fragment.firstElementChild!.children] as HTMLLIElement[] : [];
+  const branchesOf = (item: HTMLLIElement | undefined): HTMLElement[] => item ? [...item.children].filter((node) => ['ul', 'ol'].includes(node.localName)) as HTMLElement[] : [];
+  const firstIncomingBranches = branchesOf(incoming[0]);
+  for (const branch of firstIncomingBranches) branch.remove();
+  const finalIncomingBranches = incoming.length > 1 ? branchesOf(incoming.at(-1)) : [];
+  for (const branch of finalIncomingBranches) branch.remove();
   const caret = plan.range.cloneRange();
   caret.collapse(true);
-  const following: HTMLElement[] = [
-    ...last.bodies.slice(last.bodies.indexOf(selected.lastBody) + 1), ...last.branches,
-  ];
+  const followingBodies = last.bodies.slice(last.bodies.indexOf(selected.lastBody) + 1);
+  const following: HTMLElement[] = [...followingBodies, ...last.branches];
   for (const node of following) node.remove();
-  const firstPlaceholder = singleBreak(selected.firstBody);
+  const firstBranches = new Set<Node>(first.branches);
+  const firstOwn = first.direct ? [...first.item.childNodes].filter((node) => !firstBranches.has(node)) : [...selected.firstBody.childNodes];
+  const firstPlaceholder = firstOwn.length === 1 && firstOwn[0].nodeType === 1 && (firstOwn[0] as Element).localName === 'br';
   const lastPlaceholder = singleBreak(selected.lastBody);
   const suffixRange = document.createRange();
   suffixRange.selectNodeContents(selected.lastBody);
@@ -111,6 +124,7 @@ export const editListClipboardSelection = (editor: Editor, plan: AtomicClipboard
       && /^h[1-6]$/.test(firstPayload.children[0].tag);
     if (heading && outgoingBody !== body) outgoingBody.remove();
     else placeholder(outgoingBody);
+    for (const branch of firstIncomingBranches) first.item.append(branch);
     let anchor: HTMLElement = first.item;
     for (const item of incoming.slice(1)) { anchor.after(item); anchor = item; }
     const finalItem = incoming.at(-1)!;
@@ -125,7 +139,9 @@ export const editListClipboardSelection = (editor: Editor, plan: AtomicClipboard
     finalCaret.collapse(false);
     finalBody.append(tail);
     placeholder(finalBody);
-    for (const node of following) finalItem.append(node);
+    for (const node of followingBodies) finalItem.append(node);
+    for (const branch of finalIncomingBranches) finalItem.append(branch);
+    for (const branch of last.branches) finalItem.append(branch);
     for (const item of incoming.slice(1)) {
       const bodies = [...item.children].filter((node) => /^(p|h[1-6])$/.test(node.localName));
       if (bodies.length) for (const leaf of bodies) placeholder(leaf as HTMLElement);
@@ -135,7 +151,9 @@ export const editListClipboardSelection = (editor: Editor, plan: AtomicClipboard
     finalBody.normalize();
   }
   else {
-    for (const node of following) first.item.append(node);
+    for (const node of followingBodies) first.item.append(node);
+    for (const branch of firstIncomingBranches) first.item.append(branch);
+    for (const branch of last.branches) first.item.append(branch);
     if (native) setAtomicSelection(native, position);
   }
   body.normalize();

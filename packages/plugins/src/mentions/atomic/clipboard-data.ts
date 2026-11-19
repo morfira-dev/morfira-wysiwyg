@@ -2,7 +2,8 @@ import type { DocumentNode, Editor, EditorDocument, ElementNode } from '@morfira
 import { mentionNodeName } from '../persistence.js';
 import type { MentionClipboardData, MentionClipboardInput } from '../types.js';
 import { validAtomicMention } from './selection.js';
-import { normalizeClipboardList } from './clipboard-list-data.js';
+import { clipboardListText, normalizeClipboardList } from './clipboard-list-data.js';
+import { readClipboardBranch } from './clipboard-list-tree.js';
 import type { AtomicClipboardListSelection } from './types.js';
 
 const inline = new Set(['span', 'strong', 'em', 'u', 's', 'sub', 'sup', 'br']);
@@ -38,26 +39,24 @@ export const selectedClipboardData = (editor: Editor, range: Range, leaves: read
       attributes: Object.fromEntries([...element.attributes].map((attribute) => [attribute.name, attribute.value])), children }];
   };
   const fragments = leaves.map((flow): ElementNode => {
-    const children = [...flow.childNodes].flatMap((node) => read(node, 1));
+    const children = [...flow.childNodes].flatMap((node) => node.nodeType === 1 && ['ul', 'ol'].includes((node as Element).localName) ? [] : read(node, 1));
     return { type: 'element', tag: flow.localName as ElementNode['tag'],
       attributes: Object.fromEntries([...flow.attributes].map((attribute) => [attribute.name, attribute.value])),
       children: children.length ? children : [{ type: 'element', tag: 'br', attributes: {}, children: [] }] };
   });
   if (list && list.items.length > 1) {
     const selectedBodies = new Map(leaves.map((body, index) => [body, fragments[index]]));
-    const items: ElementNode[] = list.items.map((profile) => {
+    const branchBudget = { count: visits, length };
+    const items: ElementNode[] = list.items.map((profile, index) => {
       const selected = profile.bodies.filter((body) => selectedBodies.has(body));
       const children = profile.direct ? selectedBodies.get(profile.item)!.children
         : selected.map((body) => selectedBodies.get(body)!);
-      return { type: 'element', tag: 'li', attributes: Object.fromEntries([...profile.item.attributes].map(({ name, value }) => [name, value])), children };
+      const branches = index < list.items.length - 1 ? profile.branches.map((branch) => readClipboardBranch(editor.surface, branch, branchBudget)) : [];
+      return { type: 'element', tag: 'li', attributes: Object.fromEntries([...profile.item.attributes].map(({ name, value }) => [name, value])), children: [...children, ...branches] };
     });
     const value = editor.schema.validateDocument({ version: 1, children: [{ type: 'element',
       tag: list.list.localName as ElementNode['tag'], attributes: Object.fromEntries([...list.list.attributes].map(({ name, value }) => [name, value])), children: items }] });
-    const textFor = (nodes: readonly DocumentNode[]): string => nodes.length === 1 && nodes[0].type === 'element' && nodes[0].tag === 'br'
-      ? '' : visibleText(nodes);
-    const text = items.map((item) => item.children.some((node) => node.type === 'element' && /^(p|h[1-6])$/.test(node.tag))
-      ? item.children.map((body) => body.type === 'element' ? textFor(body.children) : body.text).join('\n')
-      : textFor(item.children)).join('\n');
+    const text = clipboardListText(value.children[0] as ElementNode);
     return { html: editor.schema.documentHTML(value), text };
   }
   const value = editor.schema.validateDocument({ version: 1,

@@ -26,7 +26,7 @@ if (cut) clipboard.paste({ text: cut.text }); // label only, no ID
 | --- | --- |
 | `copy()` | Nonempty selection touching a mention within one flow, eligible sibling paragraphs/headings or consecutive items of one list; partial tokens are copied whole. Returns `undefined` when unavailable |
 | `cut()` | Same boundaries; returns data and deletes content in one transaction. Returns `undefined` read-only |
-| `paste(input)` | Inserts inline content, one paragraph/heading or an ordinary sequence, plus a flat UL/OL at an eligible item target. Returns `false` on refusal, including read-only |
+| `paste(input)` | Inserts inline content, one paragraph/heading or an ordinary sequence, plus a supported UL/OL tree at an eligible item target. Returns `false` on refusal, including read-only |
 
 Copy works read-only. Paste replaces selected tokens whole and leaves the caret outside the inserted mention. Following ordinary input does not modify the token label. Each successful cut/paste creates one Undo/Redo revision restoring IDs and selection; refusal creates none.
 
@@ -36,7 +36,7 @@ HTML carries registered `data-mw-node="morfira:mention"` and `data-mention-id`, 
 
 Ordinary paragraph/heading, list, quote and cell-paragraph flows are supported, including a merged cell without grid changes. References can also transfer across sibling `p`/`h1`–`h6` leaves under one parent: the editor surface, an ordinary quote, one cell or one list item. Both selection endpoints must be inside these leaves; offsets of the container itself remain unsupported. Every crossed block must be an eligible ordinary leaf. Only formatting whitespace text nodes may separate the blocks.
 
-A single selection crossing different lists/levels, containers, cells, nested branches or quote boundaries, images, incoming table fragments, links/code and other semantic owners refuse. Consecutive items of one list use the separate profile below. Preflight checks structure before mutation; refusal never partially deletes a reference. This is a bounded mention contract, not a universal rich clipboard engine. Explicit table selections and file pastes retain their existing owners.
+A single selection with endpoints in different lists/levels, containers, cells or quote boundaries, images, incoming table fragments, links/code and other semantic owners refuse. Consecutive items of one list, including fully selected supported trailing branches, use the separate profile below. Preflight checks structure before mutation; refusal never partially deletes a reference. This is a bounded mention contract, not a universal rich clipboard engine. Explicit table selections and file pastes retain their existing owners.
 
 ## Across paragraphs and headings
 
@@ -50,7 +50,7 @@ Cut keeps the actual first block, its attributes and prefix, moves the last bloc
 | Multiple `p`/`h` blocks | First incoming children join the retained left block; intermediate wrappers survive; the final incoming wrapper receives the suffix. The caret stays before that suffix |
 | One heading | A standalone heading between retained prefix and suffix wrappers, with the caret before the suffix |
 
-The same composition works at a caret inside one block by splitting its prefix/suffix. For multiple incoming blocks, the original first source block's attributes win over the first incoming wrapper. Placeholder BR at joined edges does not create an extra line; real BR and empty middle paragraphs survive. Mixed inline/block and nested structural payloads refuse; the separate flat-list profile is described below.
+The same composition works at a caret inside one block by splitting its prefix/suffix. For multiple incoming blocks, the original first source block's attributes win over the first incoming wrapper. Placeholder BR at joined edges does not create an extra line; real BR and empty middle paragraphs survive. Mixed inline/block and unsupported structural payloads refuse; the separate list-tree profile is described below.
 
 Nonempty HTML takes precedence over text. An invalid registered mention rejects without silently falling back to its plain-text label. The receiver validates the ID and text-only label through the [atomic schema](/en/atomic-mentions). A missing-schema HTML reader may keep text and drop IDs; an editable persistent reader retains IDs without atomic behavior.
 
@@ -66,11 +66,19 @@ Cut keeps the actual first `li`, its preceding bodies and prefix, joins the last
 | --- | --- |
 | Inline or one `p` | Inserts into the retained first body, then joins the last source suffix |
 | Multiple `p`/`h` leaves or one heading | Ordinary bodies within the retained item; a heading stays a separate body |
-| One flat `ul`/`ol` with ordinary `li` bodies | First incoming body joins the prefix; later items become siblings in the target list. The final item receives the suffix, subsequent bodies and branches, with the caret before the suffix |
+| One `ul`/`ol` with ordinary `li` bodies and supported trailing nested branches | First incoming body joins the prefix; later items become siblings in the target list. The final item receives the suffix, subsequent bodies and branches, with the caret before the suffix |
 
-A list payload requires an eligible item caret or selection. Target list type and attributes win: an OL pasted into a UL becomes items of that existing UL. One incoming item needs no additional sibling. Supported later incoming item/body attributes survive; no automatic counter recalculation or list coalescing is added. Incoming nested branches, checklist metadata and mixed/orphan roots refuse.
+A list payload requires an eligible item caret or selection. Target outer list type and attributes win: an OL pasted into a UL becomes items of that existing UL. Nested branch kinds and attributes remain their own. One incoming item needs no additional sibling. Supported later incoming item/body attributes survive; no automatic counter recalculation or list coalescing is added. Checklist metadata and mixed/orphan roots refuse.
 
-**Selected nested branches are not transferred yet.** A range crossing a branch of the first or middle item refuses atomically instead of dropping it. The final item's unselected trailing branches survive without cloning and do not enter the copied data. Bodies after a branch are outside this profile. This bounded slice does not replace earlier same-item insertion rules.
+### Through selected trailing branches
+
+Fully covered trailing `ul`/`ol` branches of the first and intermediate items transfer recursively. Each nested item has direct inline content or ordinary P/H bodies followed by branches of the same shape. HTML keeps the hierarchy, order, branch kinds/attributes and IDs without flattening or coalescing. Plain text emits visible labels in source order with LF between bodies, items and branches; it adds no bullets, indentation or hidden IDs.
+
+Cut removes the selected branches from the source after both native clipboard formats are written successfully. Replacing that interval with inline/P/H content also removes those selected branches. The final source item's unselected later bodies and trailing branches remain outside copied data and survive as actual nodes. Undo restores the entire source tree and selection in one step.
+
+On paste, branches belonging to the first incoming item remain under the retained first target item; later incoming outer items become siblings. The final incoming item receives the source suffix and unselected following own bodies **before** trailing branches. Incoming branches then precede unselected source branches. A one-item payload uses the same order within the retained item. No own-body block is put after a branch, and no LI is nested directly in another LI.
+
+Selection endpoints still belong to own bodies of sibling items of one actual list. A selection from a parent body into its child list, endpoints at different levels, bodies after branches and protected structures remain unsupported. Source and incoming selected branches share bounded recursive validation: resource/foreign/task/other-owned content, links/code, quotes/tables and excessive depth/size reject the complete operation before mutation or native clipboard writes. Unselected final branch descendants stay opaque and are not cloned merely to preserve them. This is a bounded tree transfer, not arbitrary structural selection.
 
 Actual items, bodies, list, selection and revisions are rechecked after focus and clipboard callbacks. Each successful cut/paste retains one Undo/Redo revision; incoming HTML passes the receiver schema before rendering. Local browser regressions for this profile are authored but have not run.
 
@@ -89,3 +97,5 @@ On the [homepage](/en/#editor) and [playground](/en/playground), expand “Menti
 For a multiblock transfer, choose “Load block clipboard sample” → “Select blocks backward” → “Copy to memory”. HTML contains a paragraph, heading and paragraph with `anna`/`boris`; plain text exposes LF separators. “Caret in destination paragraph” or “Select destination blocks” chooses the target for “Paste with ID”. To try cut, reload the sample, select blocks and choose “Cut to memory”: retained `Before`/`after` join; Undo restores source blocks and IDs. Local browser checks for this extension have not run.
 
 For item transfer, choose “Load list clipboard sample” → “Select list items backward” → “Copy to memory”. HTML exposes an OL with three LIs and two IDs; text shows `@Anna first`, `Shared item` and `@Boris` separated by LF. “Caret in destination item” or “Select destination items” targets the UL: “Paste with ID” keeps its type and unselected subsequent body/branch. To try cut, reload the sample and cut the source items: `Before`/`after` join while `Retained body` and `Retained branch` stay. Undo restores items and IDs. These buttons use page memory, not the OS clipboard.
+
+For selected branches, choose “Load nested branch clipboard sample” and reuse the item selection/copy/paste buttons. The three outer items include first/middle branches and a deeper OL with five IDs: `anna`, `elena`, `deep`, `liam` and `boris`. HTML shows the hierarchy; text shows labels in traversal order. Paste into the destination UL retains nested UL/OL kinds and the final unselected destination body/branch. Reload and cut to see selected branches removed while `Retained body` and `Retained branch` stay outside the cut. Undo restores them. These localized regression scenarios are authored but have not run under the current test pause.

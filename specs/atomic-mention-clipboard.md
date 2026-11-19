@@ -106,9 +106,9 @@ checked before and after callbacks. Root/list container child-index endpoints,
 different lists/levels/cells, checklist items, quotes/pre/figures/resources,
 foreign or other semantic owners and mixed inline/block item bodies refuse.
 
-This first list transfer profile does not serialize selected nested branches.
-If a branch would be crossed in the first/intermediate item, refuse copy/cut/
-paste atomically rather than flattening or losing its content. The final item's
+Selected nested branches additionally follow the recursive extension below.
+Refuse unsupported selected branch contents atomically rather than flattening
+or losing their content. The final item's
 unselected later ordinary bodies and trailing ordinary UL/OL branches survive as
 actual nodes, in their original order. Branch contents stay opaque and are never
 cloned or copied merely for preservation. Interleaved blocks after branches stay
@@ -132,8 +132,8 @@ bodies require an unambiguous item shape, moving its actual descendants. No LI
 may be nested directly in another LI. Empty joins retain an editable placeholder.
 
 Paste accepts previous inline/one-P/P-H profiles over a supported cross-item range
-and additionally one ordinary flat UL/OL payload containing one or more ordinary
-LI bodies (no nested branches, task metadata, mixed/orphan roots). A list payload
+and additionally one ordinary UL/OL payload containing one or more ordinary
+LI bodies (nested branches follow below; no task metadata or mixed/orphan roots). A list payload
 requires a supported list-item target at a caret or selection; refuse it outside
 an eligible item. Merge first incoming own-body content into the retained first
 item at its prefix; insert following incoming items as actual siblings within
@@ -152,8 +152,60 @@ Retain all earlier writer/reader race, no-resource-clone, readonly/IME, disposal
 table/file ownership and one-transaction/history guarantees. Native cut writes
 both formats before changing items. Plain text never reconstructs an identity.
 Add focused representative tests (not a full factor matrix), migrate obsolete
-cross-item rejection cases to actual cross-list/branch barriers, and extend the
+cross-item rejection cases to actual cross-list/unsupported-branch barriers, and extend the
 memory demo and both languages with the exact supported/refused profiles.
+
+## Transfer through selected trailing nested branches
+
+Support fully covered trailing ordinary UL/OL branches on the first and
+intermediate items of the existing same-list sibling-endpoint profile. Recursively
+accept direct-inline or ordinary P/H own bodies followed by ordinary UL/OL branches
+with the same shape. Endpoints stay inside own bodies of sibling items in one
+actual list; different-level/ancestor-descendant endpoint selections and bodies
+after branches remain unsupported. Preserve nested UL versus OL, list/item/body
+attributes and every registered mention ID. Do not flatten, coalesce, retag or
+renumber the branch tree.
+
+Cross-item copy includes the fully selected branches after each corresponding
+selected own-body fragment, preserving depth-first source order and hierarchy in
+schema-validated HTML. The final item's unselected following bodies/branches
+remain outside the copied fragment. Plain text emits visible text in source
+order with LF at body/item/branch boundaries, without invented bullets, indentation
+or hidden IDs; hierarchical structure is represented by HTML. Copy remains
+observational. Cutting removes covered branches only after both clipboard writes
+succeed, joins source edges as before and retains unselected final nodes by actual
+identity. Inline/P/H replacement over the same selected interval also removes
+fully selected branches as selected content; it must not retain a hidden duplicate.
+
+Incoming list payloads may contain recursively nested trailing branches. Keep
+branches belonging to the first incoming item under the retained first target
+item; insert subsequent outer incoming items as siblings. On the final incoming
+item (or retained item for a one-item payload), append source suffix and unselected
+following own bodies before trailing branches, then preserve incoming branches
+followed by unselected source branches. Move actual incoming/source branch roots
+without merging their internal lists. No own-body block may appear after a branch,
+and no LI may be a direct LI child. Direct-inline bodies receive P promotion only
+when required by following body blocks; branches alone do not force promotion.
+
+Use one shared bounded recursive policy for selected source branches and incoming
+normalized list trees: node/depth/serialized bounds apply before rendering and
+uncontrolled allocation, across the complete selected/pasted tree. Reject selected
+foreign/resource/quote/pre/table/link/code/task/other-owned content at any depth
+before mutation or native clipboard writes. Unselected final branch descendants
+remain opaque; do not clone or serialize them just to preserve them. Serialization
+reconstructs typed data rather than cloning active DOM resources. Concrete selected
+branch root identities, parent/list/item/body shape and DOM/intent revisions are
+revalidated after callbacks. A rejected nested branch invalidates the complete
+operation without plaintext fallback, partial source removal or history revision.
+
+Keep all earlier read-only/IME/disposal, table/file ownership, native writer/reader
+race and single-transaction/history contracts. Add focused regressions for first/
+middle/deep branch ID transfer, native cut/history and following-node identity,
+nested list paste at caret/over selection including one incoming item, branch
+order and empty own bodies, deep malformed/resource/task/size rejection and
+callback replacement. Migrate prior blanket crossed-branch/nested-payload refusal
+tests to unsupported protected branch cases. Add RU/EN docs and memory-demo controls
+showing both retained hierarchy and the separate final unselected branch.
 
 ## Data, normalization and safety
 

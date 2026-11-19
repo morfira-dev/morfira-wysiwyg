@@ -1,3 +1,9 @@
+import type { ElementNode } from '@morfira-dev/wysiwyg-core';
+
+export interface AtomicClipboardListNode extends ElementNode {
+  tag: 'ul' | 'ol';
+}
+
 export interface AtomicPoint {
   readonly node: Node;
   readonly offset: number;
@@ -38,6 +44,8 @@ export interface AtomicClipboardListItem {
   readonly bodies: readonly HTMLElement[];
   readonly branches: readonly HTMLElement[];
   readonly direct: boolean;
+  readonly ownNodeCount: number;
+  readonly ownTextLength: number;
 }
 
 export interface AtomicClipboardListSelection {
@@ -45,4 +53,9 @@ export interface AtomicClipboardListSelection {
   readonly items: readonly AtomicClipboardListItem[];
   readonly firstBody: HTMLElement;
   readonly lastBody: HTMLElement;
+}
+
+export interface AtomicClipboardTreeBudget {
+  count: number;
+  length: number;
 }

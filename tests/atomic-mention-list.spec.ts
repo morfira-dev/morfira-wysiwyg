@@ -144,11 +144,11 @@ test('empty cross-item joins remain editable, plaintext has no IDs and one headi
   expect(await atomicHTML(page)).toBe(`<ul><li><p><br></p><h3>${atomicMentionHTML}</h3></li><li>tail</li></ul>`);
 });
 
-test('crossed branches, list levels, task metadata and protected own bodies refuse without losing references or source nodes', async ({ page }) => {
+test('protected crossed branches, list levels, task metadata and protected own bodies refuse without losing references or source nodes', async ({ page }) => {
   await page.route('**/atomic-list-clipboard-test.png', (route) => route.abort());
   const cases = [
-    { html: `<ul><li>${atomicMentionHTML}<ul><li>crossed branch</li></ul></li><li>${secondAtomicMentionHTML}</li></ul>` },
-    { html: `<ul><li>${atomicMentionHTML}</li><li><p>middle</p><ul><li>crossed middle branch</li></ul></li><li>${secondAtomicMentionHTML}</li></ul>` },
+    { html: `<ul><li>${atomicMentionHTML}<ul><li><code>protected branch</code></li></ul></li><li>${secondAtomicMentionHTML}</li></ul>` },
+    { html: `<ul><li>${atomicMentionHTML}</li><li><p>middle</p><ul><li><pre>protected middle branch</pre></li></ul></li><li>${secondAtomicMentionHTML}</li></ul>` },
     { html: `<ul><li>${atomicMentionHTML}</li></ul><ol><li>${secondAtomicMentionHTML}</li></ol>` },
     { html: `<ul><li>${atomicMentionHTML}<ul><li>${secondAtomicMentionHTML}</li></ul></li></ul>` },
     { html: `<ul><li>${atomicMentionHTML}</li><li>${secondAtomicMentionHTML}</li></ul>`, checklist: true },
@@ -175,7 +175,7 @@ test('crossed branches, list levels, task metadata and protected own bodies refu
   }
 });
 
-test('invalid, nested, mixed or resource list payloads reject before mutation instead of falling back to plain text', async ({ page }) => {
+test('invalid, protected nested, mixed or resource list payloads reject before mutation instead of falling back to plain text', async ({ page }) => {
   const original = `<ul><li>L ${atomicMentionHTML}</li><li>${secondAtomicMentionHTML} R</li></ul>`;
   await initializeAtomicMention(page, original);
   await selectMentionItems(page);
@@ -183,7 +183,7 @@ test('invalid, nested, mixed or resource list payloads reject before mutation in
     const api = window.atomicMentionModule.mentionClipboardCommands(window.editor);
     const payloads = [
       '<ul><li><span data-mw-node="morfira:mention" data-mention-id="">@Invalid</span></li></ul>',
-      '<ul><li>parent<ul><li>nested</li></ul></li></ul>',
+      '<ul><li>parent<ul><li><code>protected nested body</code></li></ul></li></ul>',
       '<li>orphan</li>',
       '<ul><li>item</li></ul><p>mixed roots</p>',
       '<ul><li data-checklist-checked="true">task</li></ul>',

@@ -297,7 +297,7 @@ Undo/redo restores pending caret formatting along with its position. This is int
 
 Enable `atomic: true` alongside `persistent: true` for whole-mention navigation and deletion. ID representation stays unchanged; see [atomic mentions](/en/atomic-mentions) for text-label bounds and migration.
 
-`mentionClipboardCommands(editor)` → `copy(): MentionClipboardData | undefined`, `cut(): MentionClipboardData | undefined`, `paste(input: MentionClipboardInput): boolean`. HTML retains IDs, eligible paragraphs/headings and consecutive items of one list; plain text keeps labels with LF between blocks/items. The API uses application-owned memory. [Atomic mention clipboard](/en/atomic-mention-clipboard) documents same-flow, ordinary sibling-block and sibling-list-item boundaries, prefix/suffix composition, invalid HTML and container-crossing refusal.
+`mentionClipboardCommands(editor)` → `copy(): MentionClipboardData | undefined`, `cut(): MentionClipboardData | undefined`, `paste(input: MentionClipboardInput): boolean`. HTML retains IDs, eligible paragraphs/headings, consecutive items of one list and fully selected supported trailing branches; plain text keeps labels with LF between blocks/items. The API uses application-owned memory. [Atomic mention clipboard](/en/atomic-mention-clipboard) documents same-flow, ordinary sibling-block and sibling-list-item boundaries, prefix/suffix composition, invalid HTML and container-crossing refusal.
 
 See [events, plugin cooperation and composable transactions](/en/events). Structural slash actions are documented [here](/en/suggestions#structural-slash-commands).
 

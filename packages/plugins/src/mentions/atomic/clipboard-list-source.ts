@@ -1,4 +1,5 @@
 import { atomicFlow, validAtomicMention } from './selection.js';
+import { readClipboardBranch } from './clipboard-list-tree.js';
 import type { AtomicClipboardListItem, AtomicClipboardListSelection } from './types.js';
 
 const namespace = 'http://www.w3.org/1999/xhtml';
@@ -28,13 +29,14 @@ export const clipboardListItem = (root: HTMLElement, item: Element): AtomicClipb
     else if (branches.length) { if (!whitespace(node)) return; }
     else own.push(node);
   }
+  const ownTextLength = own.reduce((length, node) => length + (node.textContent?.length ?? 0), 0);
   if (own.every((node) => inlineTree(root, node, 0, budget)))
-    return { item: item as HTMLLIElement, bodies: [item as HTMLElement], branches, direct: true };
+    return { item: item as HTMLLIElement, bodies: [item as HTMLElement], branches, direct: true, ownNodeCount: budget.count + 1, ownTextLength };
   const bodies = own.filter((node) => !whitespace(node));
   budget.count = 0;
   if (!bodies.length || !bodies.every((node) => node.nodeType === 1 && ordinary(node as Element)
     && /^(p|h[1-6])$/.test((node as Element).localName) && [...node.childNodes].every((child) => inlineTree(root, child, 1, budget)))) return;
-  return { item: item as HTMLLIElement, bodies: bodies as HTMLElement[], branches, direct: false };
+  return { item: item as HTMLLIElement, bodies: bodies as HTMLElement[], branches, direct: false, ownNodeCount: budget.count + bodies.length + 1, ownTextLength };
 };
 
 const endpoint = (root: HTMLElement, node: Node, offset: number): { profile: AtomicClipboardListItem; body: HTMLElement } | undefined => {
@@ -58,14 +60,19 @@ export const clipboardListSelection = (root: HTMLElement, range: Range): AtomicC
   if (!first || !last || !list || !ordinary(list) || !['ul', 'ol'].includes(list.localName)
     || last.profile.item.parentElement !== list || !root.contains(list)) return;
   const items: AtomicClipboardListItem[] = [];
+  const budget = { count: 0, length: 0 };
   for (let node: ChildNode | null = first.profile.item; node; node = node.nextSibling) {
     if (whitespace(node)) continue;
     if (node.nodeType !== 1) return;
     const profile = clipboardListItem(root, node as Element);
     if (!profile) return;
     items.push(profile);
+    budget.count += profile.ownNodeCount;
+    budget.length += profile.ownTextLength;
+    if (budget.count > 100_000 || budget.length > 5_000_000) return;
     if (node === last.profile.item) return { list, items, firstBody: first.body, lastBody: last.body };
-    if (profile.branches.length) return;
+    try { for (const branch of profile.branches) readClipboardBranch(root, branch, budget); }
+    catch { return; }
   }
 };
 

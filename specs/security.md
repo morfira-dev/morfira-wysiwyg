@@ -43,10 +43,11 @@ writes leave document/history unchanged; no OS clipboard rollback is promised.
 Foreign owners, files, unsupported structural payloads and cross-flow targets keep
 their separate ownership/refusal boundaries. Sibling-block transfers validate all
 affected ordinary leaves and their actual common parent; unrelated containers,
-crossed list branches, cross-cell targets and protected semantic roots remain
+unsupported list branches, cross-cell targets and protected semantic roots remain
 barriers. The consecutive-item extension binds actual same-list LI/body nodes;
-flat incoming lists are schema-validated, and final unselected branches are moved
-as opaque actual nodes without cloning their contents. Different lists/levels,
+incoming recursive trailing-branch lists and fully selected source branches share
+a bounded safe policy before serialization/rendering. Final unselected branches
+move as opaque actual nodes without cloning their contents. Different-list/level endpoints,
 checklist items and unsupported mixed/structural bodies refuse before mutation.
 No implicit clipboard permission,
 network request, global format clearing or navigator.clipboard access is added.

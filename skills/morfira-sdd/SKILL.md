@@ -29,8 +29,10 @@ and cut writes both formats before mutation with callback-time target validation
 Keep file/table clipboard ownership and unsupported structural boundaries intact.
 Cross-block composition preserves source prefixes/suffixes and safe incoming
 paragraph/heading structure. The bounded sibling-LI profile preserves actual
-unselected final bodies/branches and refuses crossed branches/different lists;
-never infer general structural selection or nested-list clipboard support.
+unselected final bodies/branches. Its recursive trailing-branch extension transfers
+fully selected ordinary branches with hierarchy and IDs, using one bounded source/
+payload policy. Refuse protected branches, different-list/level endpoints and
+interleaved bodies; never infer general structural selection support.
 
 Search result painting follows `specs/search-highlights.md` through the optional native CSS Highlight UI. Keep document/selection/history unchanged, feature-detect support, preserve other registry owners and avoid a heavy DOM/overlay fallback. Search ranges are observations, not mapped SDK positions or command authority.
 
