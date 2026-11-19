@@ -27,7 +27,11 @@ for (const english of [false, true]) test(`Markdown codec controls and explicit 
   });
   await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe('bold');
   await panel.getByRole('button', { name: t('Вставить Markdown', 'Insert Markdown'), exact: true }).click();
-  await expect(content.locator('strong')).toHaveText('New');
+  await expect(content).toContainText('A New word.');
+  // Inline insertion retains the starting mark; equal nested marks need not be
+  // flattened. Verify the inserted leaf and visible text, rather than wrappers.
+  await expect(content.locator('strong:not(:has(strong))')).toHaveText('New');
+  await expect(content.locator('strong').filter({ hasText: /^bold$/ })).toHaveCount(0);
   await undo.click();
   await expect(content.locator('strong')).toHaveText('bold');
   const before = await content.innerHTML();

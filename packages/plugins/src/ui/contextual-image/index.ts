@@ -314,6 +314,15 @@ export const createContextualImageUI = (host: HTMLElement, editor: Editor, optio
   const pointer = (event: PointerEvent): void => {
     selection.capture();
     if (event.target instanceof Element && event.target.closest('button')) event.preventDefault();
+    if (event.button !== 0 || !event.cancelable || !(event.target instanceof view.Element)) return;
+    const target = event.target.closest('input[type="checkbox"],label');
+    const input = target instanceof view.HTMLLabelElement ? target.control : target;
+    if (input instanceof view.HTMLInputElement && input.type === 'checkbox' && !input.disabled) {
+      // WebKit on macOS blurs text inputs without focusing a clicked checkbox.
+      // Keep ownership inside this form; the subsequent native click still toggles it.
+      event.preventDefault();
+      input.focus({ preventScroll: true });
+    }
   };
   const outside = (event: PointerEvent): void => { if (!element.contains(event.target as Node)) dismiss(); };
   const fresh = (): void => { suppressed = undefined; discover(); };

@@ -176,7 +176,15 @@ test('readonly, composition and focus-time replacement cannot delete an old toke
     return { prevented: event.defaultPrevented, html: window.editor.getHTML(), undo: window.editor.canUndo() };
   })).toEqual({ prevented: false, html: original, undo: false });
   await page.evaluate(() => window.editor.setReadOnly(true));
-  await page.keyboard.press('Backspace');
+  // Readonly contenteditable can blur to body; on macOS WebKit Backspace then
+  // means browser history navigation. Target the editor's backward-deletion
+  // intent explicitly and keep a native forward-deletion check as well.
+  await page.evaluate(() => {
+    const surface = window.editor.surface;
+    surface.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }));
+    surface.dispatchEvent(new InputEvent('beforeinput', { inputType: 'deleteContentBackward', bubbles: true, cancelable: true }));
+  });
+  await page.keyboard.press('Delete');
   expect(await atomicHTML(page)).toBe(original);
   await page.evaluate(() => {
     window.editor.setReadOnly(false);

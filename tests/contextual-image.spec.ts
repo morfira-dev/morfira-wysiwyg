@@ -50,6 +50,34 @@ const select = async (page: Page, selector = 'img') => {
   }, selector);
 };
 
+test('proportion checkbox and its label retain contextual form focus and apply one image edit', async ({ page }) => {
+  await initialize(page);
+  const original = await html(page);
+  await select(page);
+  await action(page, 'edit').click();
+  const lock = form(page).getByLabel('Keep aspect ratio', { exact: true });
+  await lock.check();
+  await expect(lock).toBeFocused();
+  await expect(form(page)).toBeVisible();
+  await form(page).getByText('Keep aspect ratio', { exact: true }).click();
+  await expect(lock).not.toBeChecked();
+  await expect(lock).toBeFocused();
+  await lock.check();
+  await form(page).getByLabel('Image width', { exact: true }).fill('180');
+  await expect(form(page).getByLabel('Image height', { exact: true })).toHaveValue('120');
+  await form(page).getByLabel('Image width', { exact: true }).press('Enter');
+  await expect(page.locator('.mw-content img')).toHaveAttribute('width', '180');
+  await expect(page.locator('.mw-content img')).toHaveAttribute('height', '120');
+  expect(await page.evaluate(() => window.changes.filter((change) => change.source === 'user').length)).toBe(1);
+  await page.evaluate(() => window.editor.undo());
+  expect(await html(page)).toBe(original);
+  await select(page);
+  await action(page, 'edit').click();
+  await form(page).getByLabel('Keep aspect ratio', { exact: true }).check();
+  await page.getByLabel('Outside image context', { exact: true }).focus();
+  await expect(panel(page)).toBeHidden();
+});
+
 test('native image context previews literal metadata without taking focus, cloning an image or creating history', async ({ page }) => {
   let requests = 0;
   await page.route('**/context-image.svg', async (route) => {

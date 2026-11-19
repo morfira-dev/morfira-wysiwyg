@@ -96,3 +96,7 @@ Preserve zero runtime dependencies, explicit CSS and public subpaths. Measure co
 mentions and selected extended profiles raw/gzip/Brotli/CSS; preserve existing
 guards. Local behavioral tests/consumers and CI observation are paused by the user.
 Build/static checks may run. Commit locally; do not push.
+
+## Native editing-position regression — 2026-11-19
+
+When deriving contenteditable=false for newly inserted labels, preserve the focused editor native Range and direction and reinstall them after annotation changes. WebKit may otherwise expose a valid DOM Range while rejecting the next native insertion. Do not focus an outside editor or touch selection on batches that do not change annotations. Normalize text before installing a deletion caret. Equivalent text affinity is limited to immediately adjacent mention boundaries; ordinary placeholder and retained mark boundaries stay unchanged. Existing paste/typing/history, readonly and composition scenarios exercise these requirements.

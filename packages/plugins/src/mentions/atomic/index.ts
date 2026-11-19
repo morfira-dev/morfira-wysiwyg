@@ -83,9 +83,9 @@ export const setupAtomicMentions = (editor: Editor): (() => void) => {
           next.setStartBefore(placeholder);
           next.collapse(true);
         }
+        flow.normalize();
         const native = document.getSelection();
         if (native) setAtomicSelection(native, next);
-        flow.normalize();
       });
     }
     catch (error) {

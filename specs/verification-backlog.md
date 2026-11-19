@@ -1,5 +1,70 @@
 # Verification record
 
+## Follow-up CI corrections with resumed local tests — 2026-11-19
+
+Remote [Release #41](https://github.com/morfira-dev/morfira-wysiwyg/actions/runs/44556321819)
+at 2587a67 still failed editor and documentation shards; build/static and both
+installed-consumer profiles passed. Investigation used that completed run only;
+no subsequent GitHub pipeline is monitored for this correction.
+
+The user explicitly resumed local testing before commit/push. A focused local
+WebKit reproduction confirmed lost input after inserting atomic mentions. A
+valid DOM Range survived annotation, while WebKit's native editing position did
+not: reinstalling the same Range after adding contenteditable=false restored
+native input. The presentation owner now preserves range/direction only for its
+focused editor when a batch actually changes annotations. Normalize deletion
+text before setting the caret and restrict equivalent text-affinity adjustment
+to actual adjacent mention boundaries, retaining ordinary placeholder/mark points.
+
+Documentation regressions now select the search form's status independently of
+the search-highlight snapshot status. Markdown checks visible replacement text,
+the formatted leaf and removal of the old word rather than requiring identical
+nested marks to be flattened; exact Undo remains checked. The macOS readonly
+fixture targets backward-deletion intents at the editor and keeps native Delete
+coverage instead of invoking body-level Backspace browser-history navigation.
+No new skips or relaxed timeouts were added.
+
+The full editor/adapter run passed: 4369 passed, 2 pre-existing conditional skips,
+0 failed, 17.3 minutes locally with six workers and a fresh task-owned Vite server.
+This full run preceded the additional contextual-image correction below. The
+first resumed docs run passed 217 and failed its two Markdown wrapper-count
+assertions; after correcting those assertions, all 219 docs cases passed.
+
+Installed consumers subsequently exposed a repeatable macOS WebKit checkbox
+focus issue not reproduced by that GitHub consumer run: clicking the proportion
+checkbox blurred the text field to body and dismissed its image draft. An isolated
+trace confirmed the lost focus and removed form. Contextual image pointer handling
+now focuses enabled checkbox/label targets explicitly while preserving native
+click toggling and real outside dismissal. The final correction passed all 45
+contextual-image and image-form proportion cases in Chromium/Firefox/WebKit,
+including a new checkbox/label/input/Undo/outside-focus regression. This focused
+final run supplements, rather than relabels, the earlier complete editor run.
+An initial new regression expected noncanonical input HTML after Undo; it now
+compares the actual canonical pre-edit HTML, retaining exact Undo verification.
+
+Both final real tarball consumers passed: default 15 production browser scenarios
+(five adapters times three engines), Angular 22 three scenarios. Two earlier
+default runs failed the checkbox scenario before its correction. Angular 22 first
+refused local Node 22.22.2 as unsupported; the unchanged profile passed using the
+already installed Node 24.16.0. No dependency or lockfile changes were needed.
+
+Final static validation passed pnpm run check:static, including consumer-tooling
+unit tests, package build/declarations, packaging, selective imports/tree-shaking,
+TypeScript/Svelte/Vue checks and all enforced bundle guards. docs:build:site also
+passed after the final UI correction; the complete final docs rerun also passed
+all 219 cases (1.7 minutes). Its aggregate demo chunk warning is not a library-
+profile failure and no threshold was raised. No runtime dependencies,
+CSS or core implementation were changed. The 80000 raw-byte soft core target
+remains exceeded, independently of the passing enforced gzip guards.
+
+Measured JS bytes (raw / gzip / Brotli): core 93957 / 29178 / 25709;
+mentions 47560 / 15782 / 14299; contextual-image 43601 / 15745 / 14032;
+standard-ready 221658 / 65767 / 56307; extended-ready 278675 / 82126 / 69716;
+standard-contextual-image-ready 233337 / 69108 / 59038. Core CSS is unchanged at
+3293 / 1164 / 962; standard/extended CSS remains 12162 / 3924 / 3207 and
+13627 / 4499 / 3661. A later successful GitHub result is still user-reported
+follow-up evidence, not established by local validation.
+
 ## CI failure investigation and local corrections — 2026-11-19
 
 Remote [Release #40](https://github.com/morfira-dev/morfira-wysiwyg/actions/runs/44549281069)

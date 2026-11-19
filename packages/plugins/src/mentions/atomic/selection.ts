@@ -40,8 +40,10 @@ export const setAtomicSelection = (native: Selection, range: Range, backward = f
     const parent = range.startContainer;
     const next = parent.childNodes[range.startOffset];
     const previous = parent.childNodes[range.startOffset - 1];
-    if (next?.nodeType === 3) native.setBaseAndExtent(next, 0, next, 0);
-    else if (previous?.nodeType === 3) {
+    const mention = (node: Node | undefined): boolean => node?.nodeType === 1
+      && (node as Element).getAttribute('data-mw-node') === mentionNodeName;
+    if (next?.nodeType === 3 && mention(previous)) native.setBaseAndExtent(next, 0, next, 0);
+    else if (previous?.nodeType === 3 && mention(next)) {
       const offset = previous.textContent?.length ?? 0;
       native.setBaseAndExtent(previous, offset, previous, offset);
     }
