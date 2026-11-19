@@ -18,6 +18,15 @@ EditorUIAction label/enabled/pressed readers gain an optional second Range param
 
 Show automatically for one noncollapsed native Range containing nonempty text wholly within the focused editor surface, with both endpoints and their ancestors ordinary HTML rather than owning semantic nodes/foreign namespaces. The operation changes no document/selection merely by opening, laying out or closing. Geometry must have a finite nonzero visible rectangle. Image-only/BR-only selections, collapsed/outside/root-invalid or nonvisible selections do not show. Core formatting retains its existing selection/atomic barriers; showing a toolbar does not broaden structural replacement/formatting contracts. Merged-cell selections are not reinterpreted as a new cell selection model.
 
+When an independently mounted contextual-link controller owns a supported expanded
+range within one link, the text toolbar yields visibility, activation and Alt+F10
+to that specialized context. An internal per-editor UI preference registry owns
+only observational eligibility callbacks and mount/dispose notifications, never
+commands or document authority. With no link controller mounted, the text toolbar
+retains its existing behavior. Mounting/unmounting a preference refreshes active
+text controls without selection changes; cleanup is instance-local. No cross-entry
+implementation import or implicit installation is introduced.
+
 Keep the toolbar and saved exact range/direction when focus moves into its own controls, even if the native Selection disappears. Pointer control activation reuses shell capture/restore. Editing goes through existing validated synchronous operations/history; one action creates its normal single Undo revision, preserving surrounding text and backward selection where the action preserves it. External value replacement synchronously invalidates and hides controls; retained detached nodes/clicks must not edit the replacement. Read-only and composition hide/suppress mutating context UI while external replacement remains possible.
 
 Escape, outside pointer interaction, focus leaving editor/toolbar, API replacement, read-only and composition dismiss the panel. Escape returns to the editor and restores the saved range once; outside interaction never steals focus or restores an old selection. Closing for dismissal suppresses immediate reopening by queued selectionchange/RAF/refresh of the same range; a fresh eligible range or explicit Alt+F10 can reopen. Restoring editability/compositionend/API replacement alone must not resurrect a stale range. A subsequent genuine editor selection action may capture a new eligible range, including reselecting the same text. A successful formatting action may remain visible on its current valid selection.

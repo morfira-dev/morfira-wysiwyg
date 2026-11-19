@@ -8,6 +8,7 @@ export interface LinkFormValues {
 }
 
 export interface LinkFormOptions {
+  scope?: 'selection' | 'anchor';
   initialValues?: Partial<LinkFormValues>;
   label?: string;
   onError?: (error: unknown) => void;

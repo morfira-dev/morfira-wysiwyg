@@ -12,6 +12,17 @@ Forms are embedded nonmodal UI. Every form host must be outside the persisted ed
 
 Link UI creates/updates/unlinks using existing core link commands, including safe URL, title, new-tab and optional new-label insertion. Image UI inserts/selects/updates/removes via the image plugin, supports alt/dimensions/caption and application-owned upload/cancel; dispose must cancel only the form's own upload and ignore late results. A scoped AbortSignal extension to image upload may be added with its own specification/tests, preserving existing callers. Search UI provides query, case/whole-word, previous/next, replace current/all and clear, using the search plugin's result/error state and single-step replacement history. Destroying a search form does not clear application-owned search state.
 
+LinkFormOptions.scope is an optional 'selection' (compatible default) or 'anchor'.
+The anchor scope is edit-only: one ordinary actual anchor must own both endpoints
+of the saved range; expanded ranges need selected text and cannot include images,
+foreign namespaces or protected semantic descendants. Updates/unlink apply to the
+whole anchor using the existing caret command inside one outer transaction, with
+the original selection and direction restored before commit. Rich children are
+retained. Removed anchor-container endpoints map to equivalent parent boundaries.
+Do not silently retarget an anchor-scoped draft after selection change, replacement,
+read-only/composition or application focus callbacks. The default selection scope
+keeps existing partial-range link formatting and new-link insertion behavior.
+
 All subscriptions, DOM listeners, pending operations and selection state have cleanup, including editor destruction; detached controls become inert. Multiple forms/editors have independent drafts and state. Factories are import-safe without DOM; mounting needs a browser. Styling is scoped to `mw-form` and `--mw-*` variables and must not depend on documentation CSS.
 
 The RU/EN homepage and playground use the same public form factories. Remove their duplicate form logic from EditorDemo.vue; keep only application-owned upload transport and sample controls. Standalone examples document imports, CSS, lifecycle and plugin requirements.

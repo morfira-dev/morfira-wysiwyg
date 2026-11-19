@@ -49,6 +49,8 @@ const dispose = () => {
 
 The form creates/updates links and unlinks them, retaining selection while the user enters fields. Title, new-tab and URL use existing command validation. `text` creates a new link without selection; it does not replace an existing link's text. Core supplies safe `rel` values for `_blank`.
 
+Contextual editing of an existing link has explicit `scope: 'anchor'`. The form accepts only a caret/range inside one ordinary anchor, updates its metadata or unlinks the whole anchor while preserving the original selection. This mode does not create links or replace text. The default is `scope: 'selection'`: ordinary formatting of the chosen range retains its previous behavior.
+
 ## Images and application-owned upload
 
 Containers: `<div id="image-editor"></div>` and `<div id="image-controls"></div>`.
@@ -250,7 +252,7 @@ CSS is scoped to `.mw-form`. It uses common `--mw-text`, `--mw-muted`, `--mw-sur
 
 Nonempty selections can use the separate [contextual UI](/en/contextual-toolbar), rather than a behavior plugin: `/ui/contextual` plus explicit `/ui/contextual.css`. Presets do not install it; it reuses existing commands/history.
 
-A caret inside a text link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open, the existing edit form and Undoable unlinking. Expanded selections remain the text toolbar’s scope; presets do not install this UI.
+A caret or text range wholly inside one link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open and whole-link editing/unlinking with Undo. Plain text without a link, mixed ranges and multiple anchors are excluded; presets do not install this UI.
 
 ## Contextual table actions
 

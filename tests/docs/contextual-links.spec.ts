@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-for (const english of [false, true]) test(`caret link actions edit and unlink rich text in ${english ? 'English dark playground' : 'Russian narrow homepage'}`, async ({ page }) => {
+for (const english of [false, true]) test(`link selection actions edit and unlink rich text in ${english ? 'English dark playground' : 'Russian narrow homepage'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   await page.setViewportSize({ width: english ? 1280 : 390, height: 900 });
   await page.goto(english ? '/en/playground' : '/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
-  const toggle = page.getByRole('checkbox', { name: t('Действия со ссылкой у курсора', 'Link actions at caret'), exact: true });
+  const toggle = page.getByRole('checkbox', { name: t('Действия со ссылкой', 'Link actions'), exact: true });
   await expect(toggle).toBeChecked();
   if (english) await page.getByRole('button', { name: 'Toggle theme', exact: true }).click();
   const lab = page.locator('.lab-contextual-link');
@@ -21,6 +21,10 @@ for (const english of [false, true]) test(`caret link actions edit and unlink ri
   const contextual = page.locator('.mw-contextual-link');
   await expect(contextual).toBeVisible();
   expect(await content.evaluate((node) => document.activeElement === node)).toBe(true);
+  await lab.getByRole('button', { name: t('Выделить часть ссылки', 'Select link text'), exact: true }).click();
+  await expect(contextual).toBeVisible();
+  await expect(page.locator('.mw-contextual-toolbar')).toBeHidden();
+  expect(await content.evaluate(() => document.getSelection()?.toString())).toBe('orfi');
   const open = contextual.getByRole('link', { name: t('Открыть ссылку', 'Open link'), exact: true });
   await expect(open).toHaveAttribute('target', '_blank');
   await expect(open).toHaveAttribute('rel', 'noopener noreferrer');
@@ -37,6 +41,8 @@ for (const english of [false, true]) test(`caret link actions edit and unlink ri
   await expect(link.locator('strong')).toHaveText('Mor');
   await expect(link.locator('em')).toHaveText('fira');
   expect(await content.textContent()).toBe(originalText);
+  await page.keyboard.press('Escape');
+  expect(await content.evaluate(() => document.getSelection()?.toString())).toBe('orfi');
   const toolbar = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true });
   const undo = toolbar.locator('[data-mw-ui-action="undo"]');
   const redo = toolbar.locator('[data-mw-ui-action="redo"]');
@@ -45,7 +51,7 @@ for (const english of [false, true]) test(`caret link actions edit and unlink ri
   await expect(undo).toBeDisabled();
   await redo.click();
   await expect(link).toHaveAttribute('href', 'https://example.com/updated');
-  await link.locator('em').click();
+  await lab.getByRole('button', { name: t('Выделить ссылку назад', 'Select link text backward'), exact: true }).click();
   await page.keyboard.press('Alt+F10');
   await expect(contextual).toBeVisible();
   await expect(open).toBeFocused();
@@ -56,6 +62,9 @@ for (const english of [false, true]) test(`caret link actions edit and unlink ri
   expect(await content.textContent()).toBe(originalText);
   await undo.click();
   await expect(link).toHaveAttribute('href', 'https://example.com/updated');
+  await lab.getByRole('button', { name: t('Выделить текст через границу ссылки', 'Select across the link boundary'), exact: true }).click();
+  await expect(contextual).toBeHidden();
+  await expect(page.locator('.mw-contextual-toolbar')).toBeVisible();
   await link.locator('strong').click();
   await expect(contextual).toBeVisible();
   const box = await contextual.boundingBox();

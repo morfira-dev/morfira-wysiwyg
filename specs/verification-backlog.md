@@ -1,5 +1,67 @@
 # Verification record
 
+## Selected-link contextual actions — 2026-11-19
+
+Local implementation extends [contextual-links.md](contextual-links.md) to
+nonempty text ranges wholly inside one ordinary actual anchor. Open remains
+explicit and URL-validated. Edit/Remove operate on the whole link, keeping rich
+children and the selected interval/direction in one history operation. Mixed,
+cross-link, image-containing selected ranges and protected/foreign target
+descendants (including outside the selected substring) are refused. Core and
+the persisted schema are unchanged; all controllers remain independently opt-in.
+
+The additive LinkFormOptions.scope='anchor' is edit-only and binds a draft to the
+actual range/anchor. The compatible default 'selection' retains partial-range
+formatting and link creation. A shared helper uses existing caret commands inside
+an outer transaction, with temporary comment boundaries removed before commit;
+it avoids another focus call during final selection restoration. Review fixed
+collapsed-state capture before unlink and actual native selection departure while
+owned controls keep focus, retaining the WebKit lost-selection fallback.
+
+A private per-editor UI preference registry makes the ordinary text toolbar yield
+visibility/actions/Alt+F10 to a mounted link controller for supported ranges. Its
+listeners and owner registration are disposed, rollback refresh is best-effort,
+and no command bus, public manager or implicit installation is introduced.
+Three subagents implemented UI, regression definitions and RU/EN examples/docs.
+
+Passed: final pnpm run build (declarations and all size guards), pnpm run
+typecheck (including Vue/Svelte), pnpm run check:tree-shaking, pnpm run
+package:check (eight archives), pnpm run check:project, pnpm run
+docs:build:site and git diff --check. Intermediate source type checking saw stale
+generated LinkFormOptions declarations before build; final checking passed.
+The initial selective-import check caught the link form importing a range helper
+from contextual/selection. Moving that pure helper to ui/shared, preserving the
+internal re-export, repaired the feature boundary; no allowlist was relaxed.
+Final rebuilt artifacts and dependency checks include that repair.
+
+No local behavioral tests, installed-consumer execution or live browser checks
+ran. No GitHub CI run was inspected. Six new representative browser definitions
+cover safe explicit Open, backward whole-link edits/unlink/history/actual rich
+children, selected/protected boundaries, focus/API races, stale drafts,
+readonly/IME and coexistence/disposal across editors. The existing two localized
+demo definitions now exercise forward/backward ranges and toolbar arbitration;
+one old ineligibility assertion now uses a genuinely cross-link range. Public
+scope type assertions are authored. These outcomes remain unverified at runtime;
+historical caret-only passes do not validate this extension.
+
+Final selected dependency closures, bytes (shared JS counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 92677 | 28799 | 25393 | 3293 |
+| Link form | 11924 | 4790 | 4272 | 1922 shared forms |
+| Contextual link UI | 25482 | 10211 | 9083 | 1683 extra |
+| Contextual text UI | 32408 | 12578 | 11022 | 470 extra |
+| Standard ready | 220034 | 65425 | 55986 | 12162 |
+| Standard + contextual link ready | 232522 | 69075 | 58948 | 13845 |
+
+Core is unchanged. Against the task baseline, contextual-link closure grows 1683
+gzip JS bytes, the form 1188, standard ready 943 and selected contextual profile
+1143. The latter retains 10925 bytes under 80000 gzip JS; the optional link entry
+retains 5789 under 16000. CSS is unchanged: contextual-link extra 1683 raw / 678
+gzip / 548 Brotli; selected profile 13845 / 4602 / 3755. Framework runtimes,
+source maps and declarations are excluded; no runtime dependencies were added.
+
 ## Bounded Office HTML import — 2026-11-19
 
 Local implementation follows [office-paste.md](office-paste.md). The shared HTML

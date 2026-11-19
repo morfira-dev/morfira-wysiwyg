@@ -202,7 +202,8 @@ test('ineligible shapes and Escape dismiss the preview without stealing the care
       window.contextualLinkUI.refresh();
       return window.contextualLinkUI.element.hidden;
     };
-    const expanded = inspect(text, 1, 3);
+    // A range covering different anchors remains outside the single-link context.
+    const expanded = inspect(surface.querySelector('p')!, 0, 2);
     const shortcut = new KeyboardEvent('keydown', { key: 'F10', altKey: true, bubbles: true, cancelable: true });
     surface.dispatchEvent(shortcut);
     const boundary = inspect(surface.querySelector('p')!, 1);

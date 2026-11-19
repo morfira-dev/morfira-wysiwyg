@@ -3,6 +3,7 @@ import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { createEditorUI } from '../editor/index.js';
 import { createFormSelection } from '../shared/selection.js';
 import { listenToUI } from '../shared/events.js';
+import { onContextualPreferenceChange, prefersContextualRange } from '../shared/contextual-preference.js';
 import { contextualToolbarMessages } from './messages.js';
 import { contextualAnchor, placeContextualToolbar } from './geometry.js';
 import { nativeContextualRange, sameContextualRange, validContextualRange } from './selection.js';
@@ -82,7 +83,8 @@ export const createContextualToolbar = (host: HTMLElement, editor: Editor, optio
   };
   const layout = (): void => {
     if (disposed || !geometryCleanups.length) return;
-    if (editor.isReadOnly() || composing || !remembered || !validContextualRange(editor, remembered, false)) {
+    if (editor.isReadOnly() || composing || !remembered || !validContextualRange(editor, remembered, false)
+      || prefersContextualRange(editor, remembered)) {
       element.hidden = true;
       stopGeometry();
       remembered = undefined;
@@ -164,6 +166,12 @@ export const createContextualToolbar = (host: HTMLElement, editor: Editor, optio
     const ownFocused = element.contains(document.activeElement);
     const native = editorFocused ? nativeContextualRange(editor) : undefined;
     const range = native ?? (ownFocused && remembered && validContextualRange(editor, remembered) ? remembered : undefined);
+    if (range && prefersContextualRange(editor, range)) {
+      element.hidden = true;
+      stopGeometry();
+      remembered = undefined;
+      return;
+    }
     if (!range) {
       if (!editorFocused && !ownFocused && remembered) dismiss();
       else {
@@ -214,7 +222,9 @@ export const createContextualToolbar = (host: HTMLElement, editor: Editor, optio
       return;
     }
     if (event.altKey && !event.ctrlKey && !event.metaKey && event.key === 'F10' && surface.contains(event.target as Node)
-      && !editor.isReadOnly() && !composing && nativeContextualRange(editor)) {
+      && !editor.isReadOnly() && !composing) {
+      const range = nativeContextualRange(editor);
+      if (!range || prefersContextualRange(editor, range)) return;
       event.preventDefault();
       suppressed = undefined;
       focusRequested = true;
@@ -238,7 +248,8 @@ export const createContextualToolbar = (host: HTMLElement, editor: Editor, optio
       const ownFocused = element.contains(document.activeElement);
       const editorFocused = document.activeElement === surface || surface.contains(document.activeElement);
       const native = editorFocused ? nativeContextualRange(editor) : undefined;
-      if ((ownFocused && remembered && validContextualRange(editor, remembered)) || native) {
+      const range = native ?? (ownFocused && remembered && validContextualRange(editor, remembered) ? remembered : undefined);
+      if (range && !prefersContextualRange(editor, range)) {
         if (native) {
           remembered = native.cloneRange();
           selection.capture();
@@ -292,6 +303,7 @@ export const createContextualToolbar = (host: HTMLElement, editor: Editor, optio
     listen(surface, 'compositionstart', startComposition);
     listen(surface, 'compositionend', endComposition);
     cleanups.push(
+      onContextualPreferenceChange(editor, discover),
       editor.onSelectionChange(discover),
       editor.events.on('localechange', discover),
       editor.events.on('readonlychange', () => {

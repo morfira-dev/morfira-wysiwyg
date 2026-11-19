@@ -1,5 +1,6 @@
 import type { Editor, ElementNode } from '@morfira-dev/wysiwyg-core';
 import type { ContextualLinkTarget, ContextualLinkURL } from './internal-types.js';
+import { linkRangeAnchor } from '../links/anchor.js';
 
 export const contextualLinkURL = (editor: Editor, anchor: HTMLAnchorElement): ContextualLinkURL | undefined => {
   const href = anchor.getAttribute('href');
@@ -31,9 +32,9 @@ export const ordinaryContextualAnchor = (editor: Editor, anchor: HTMLAnchorEleme
 
 export const contextualLinkTarget = (editor: Editor, range: Range): ContextualLinkTarget | undefined => {
   const root = editor.surface;
-  if (!range.collapsed || range.startContainer === root || !root.contains(range.startContainer)) return;
+  if (range.startContainer === root || !root.contains(range.startContainer)) return;
   const element = range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement;
-  const anchor = element?.closest<HTMLAnchorElement>('a');
+  const anchor = linkRangeAnchor(root, range);
   if (!anchor || !ordinaryContextualAnchor(editor, anchor)) return;
   for (let node = element; node && node !== anchor; node = node.parentElement)
     if (node.namespaceURI !== 'http://www.w3.org/1999/xhtml' || node.hasAttribute('data-mw-node')) return;

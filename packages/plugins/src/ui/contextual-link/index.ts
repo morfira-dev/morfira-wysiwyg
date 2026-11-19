@@ -1,7 +1,9 @@
 import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { createFormSelection } from '../shared/selection.js';
+import { registerContextualPreference } from '../shared/contextual-preference.js';
 import { createLinkForm } from '../links/index.js';
+import { editAnchorLink } from '../links/anchor.js';
 import type { LinkFormController } from '../links/types.js';
 import { contextualAnchor, placeContextualToolbar } from '../contextual/geometry.js';
 import { sameContextualRange } from '../contextual/selection.js';
@@ -121,11 +123,20 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     if (failures.length) throw new AggregateError(failures, 'Link dismissal failed.');
   };
   const focusedEditor = (): boolean => document.activeElement === surface || surface.contains(document.activeElement);
+  const observedTarget = (): ContextualLinkTarget | undefined => {
+    if (focusedEditor()) return nativeContextualLink(editor);
+    if (!element.contains(document.activeElement) || !current) return;
+    const native = document.getSelection();
+    if (native?.rangeCount) {
+      const range = native.getRangeAt(0);
+      if (surface.contains(range.startContainer) || surface.contains(range.endContainer)) return nativeContextualLink(editor);
+    }
+    return contextualLinkTarget(editor, current.range);
+  };
   const inspectCurrent = (): ContextualLinkTarget | undefined => {
     if (!current || !ordinaryContextualAnchor(editor, current.anchor)) return;
-    const candidate = focusedEditor() ? nativeContextualLink(editor)
-      : element.contains(document.activeElement) ? contextualLinkTarget(editor, current.range) : undefined;
-    return candidate?.anchor === current.anchor ? candidate : undefined;
+    const candidate = observedTarget();
+    return candidate?.anchor === current.anchor && sameContextualRange(candidate.range, current.range) ? candidate : undefined;
   };
   const layout = (): void => {
     if (disposed || !geometryCleanups.length || !current) return;
@@ -201,8 +212,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     if (disposed) throw new Error('Contextual link UI has been destroyed.');
     if (restoring) return;
     if (composing) { dismiss(); return; }
-    const candidate = focusedEditor() ? nativeContextualLink(editor)
-      : element.contains(document.activeElement) && current ? contextualLinkTarget(editor, current.range) : undefined;
+    const candidate = observedTarget();
     if (!candidate) {
       if (current) dismiss();
       else { element.hidden = true; scrubOpen(); stopGeometry(); }
@@ -216,7 +226,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
       return;
     }
     suppressed = undefined;
-    if (form && current?.anchor !== candidate.anchor) closeForm();
+    if (form && (current?.anchor !== candidate.anchor || !sameContextualRange(current.range, candidate.range))) closeForm();
     current = candidate;
     selection.capture();
     element.setAttribute('aria-label', options.label ?? message('ui.contextualLink.label'));
@@ -245,9 +255,14 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     if (!previous) return;
     restoring++;
     try {
-      if (!selection.restore() || disposed || revision !== apiRevision) return;
+      const acceptsFocus = (): boolean => {
+        const candidate = nativeContextualLink(editor);
+        return !disposed && !composing && revision === apiRevision && candidate?.anchor === previous.anchor
+          && sameContextualRange(candidate.range, previous.range);
+      };
+      if (!selection.restore(acceptsFocus, true) || !acceptsFocus()) return;
       const target = nativeContextualLink(editor);
-      if (target?.anchor !== previous.anchor) return;
+      if (target?.anchor !== previous.anchor || !sameContextualRange(target.range, previous.range)) return;
       current = target;
       return target;
     }
@@ -301,7 +316,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     if (!target) { dismiss(); return; }
     if (disposed || composing || editor.isReadOnly() || revision !== apiRevision) return;
     if (form) return;
-    const created = createLinkForm(formHost, editor, { onError: report });
+    const created = createLinkForm(formHost, editor, { scope: 'anchor', onError: report });
     form = created;
     scrubOpen();
     preview.hidden = true;
@@ -316,9 +331,23 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
   };
   const removed = (): void => {
     if (disposed || composing || editor.isReadOnly()) return;
-    if (!restoreTarget()) { dismiss(); return; }
+    const target = restoreTarget();
+    if (!target) { dismiss(); return; }
     if (disposed || composing || editor.isReadOnly()) return;
-    editor.format('link', false);
+    if (target.range.collapsed) editor.format('link', false);
+    else {
+      const revision = apiRevision;
+      restoring++;
+      try {
+        editAnchorLink(editor, target.range, false, () => {
+          const candidate = nativeContextualLink(editor);
+          return !disposed && !composing && !editor.isReadOnly() && revision === apiRevision
+            && candidate?.anchor === target.anchor && sameContextualRange(candidate.range, target.range);
+        }, () => !disposed && !composing && revision === apiRevision);
+      }
+      catch (error) { report(error); }
+      finally { restoring--; }
+    }
     dismiss();
     current = undefined;
   };
@@ -404,6 +433,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     listen(document, 'pointerdown', outside as EventListener, true);
     listen(surface, 'compositionstart', startComposition);
     listen(surface, 'compositionend', endComposition);
+    cleanups.push(registerContextualPreference(editor, (range) => !range.collapsed && Boolean(contextualLinkTarget(editor, range))));
     cleanups.push(
       editor.onSelectionChange(discover),
       editor.events.on('localechange', discover),

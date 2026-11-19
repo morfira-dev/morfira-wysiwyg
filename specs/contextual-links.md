@@ -10,13 +10,37 @@ The empty connected HTML host is outside the editor surface in its owner documen
 
 ## Eligibility and behavior
 
-Show a plain-text URL preview and Open, Edit, Remove actions automatically for a collapsed native caret inside one actual ordinary HTML anchor with nonempty text, wholly inside the focused editor. Reject foreign namespaces and owning semantic-node ancestors. Root/parent boundary carets, expanded ranges and image-only anchors are outside this first slice. Mixed text/image link children remain untouched. This deliberately complements the noncollapsed contextual text toolbar. Geometry may inspect a separate anchor-content Range without changing native selection, cloning content, focusing or mutating the document.
+Show a plain-text URL preview and Open, Edit, Remove actions automatically for a collapsed native caret inside one actual ordinary HTML anchor with nonempty text, wholly inside the focused editor. Reject foreign namespaces and owning semantic-node ancestors. The original caret profile excludes root/parent boundary carets and image-only anchors; expanded text ranges follow the extension below. Mixed text/image link children remain untouched. This deliberately complements the noncollapsed contextual text toolbar. Geometry may inspect a separate anchor-content Range without changing native selection, cloning content, focusing or mutating the document.
+
+The expanded-selection extension accepts one noncollapsed native range with both
+endpoints wholly inside the same ordinary anchor and at least one selected text
+character. Reject selected images and any foreign/protected/hidden/noneditable descendants
+inside an expanded target anchor, including semantic descendants outside the selected
+substring; also reject outside-to-link, cross-link, plain-text and parent-boundary
+selections. Unselected ordinary images may remain untouched.
+Open uses that anchor's safe URL. Edit and Remove act on the entire existing
+anchor, preserving its rich children and the original expanded selection/direction;
+they do not split a link around a selected substring. The independent text toolbar
+continues to offer selection formatting/new-link actions. When both controllers
+are mounted, a private per-editor ownership registration lets the text toolbar
+yield eligible same-anchor selections and Alt+F10 to the link controller. Disposal
+releases that preference; the text toolbar remains standalone without link UI.
+No implicit module imports or global overlay manager are introduced.
+
+The link form uses explicit scope='anchor' for these actions. Exact native range,
+anchor identity and API revision are revalidated after focus callbacks; a changed
+range in the same anchor invalidates an active draft rather than retargeting it.
+The edit/unlink transaction captures the original range before temporarily using
+the existing whole-anchor caret command and restores the interval before commit.
+Native boundaries follow the existing text normalization; the selected text interval
+and backward direction survive. Anchor-container endpoints removed by unlink become
+equivalent boundaries in the retained children/parent.
 
 Open is an explicit native anchor action, never automatic navigation. Revalidate the actual current href through the editor codec before displaying and immediately before activation; additionally resolve against document.baseURI and allow only http/https/mailto/tel. Relative URLs resolving to unsupported protocols, protocol-relative URLs, control/space-obfuscated values and unsafe schemes are ineligible. The codec normalizes outer whitespace around an otherwise safe URL; internal control/space obfuscation remains rejected. Use target=_blank and rel=noopener noreferrer. Prevent editable unmodified primary clicks on eligible content links from navigating away while allowing native caret placement; preserve modified/auxiliary/context-menu and read-only native navigation.
 
 Edit explicitly restores the saved caret and rechecks the same current anchor, then lazily mounts createLinkForm and focuses its URL input. Reuse existing validated whole-anchor caret commands: metadata edits preserve children/caret and one Undo; Remove unlinks the whole anchor preserving children and its normal single Undo. Never retarget a draft to a different anchor. Read-only may retain preview/Open but blocks Edit/Remove and closes active forms. Composition hides all controls. Ordinary locale updates refresh localized labels without resetting a draft.
 
-Keep the saved exact caret when focus enters owned controls, including WebKit losing native Selection. API replacement invalidates synchronously; stale retained controls/queued callbacks cannot edit or open replacement content. Outside pointer/focus departure dismiss without stealing focus. Escape closes an edit form or preview and returns the saved caret once; queued selectionchange/refresh must not reopen a dismissed session. A genuine new editor selection action or Alt+F10 at an eligible caret can reopen. Alt+F10 focuses the first enabled preview action; it does not consume expanded-selection or other-editor shortcuts. No automatic focus stealing.
+Keep the saved exact caret when focus enters owned controls, including WebKit losing native Selection. API replacement invalidates synchronously; stale retained controls/queued callbacks cannot edit or open replacement content. Outside pointer/focus departure dismiss without stealing focus. Escape closes an edit form or preview and returns the saved caret once; queued selectionchange/refresh must not reopen a dismissed session. A genuine new editor selection action or Alt+F10 at an eligible caret can reopen. Alt+F10 focuses the first enabled preview action; it only consumes supported caret or same-anchor text-range contexts in its own editor. No automatic focus stealing.
 
 ## Geometry, lifecycle and security
 

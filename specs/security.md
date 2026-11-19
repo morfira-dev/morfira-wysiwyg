@@ -35,7 +35,17 @@ Font-family support follows the bounded pure codec in `fonts.md`: at most eight 
 
 ## Contextual link navigation
 
-The optional caret-link UI follows `contextual-links.md`: validate the actual href through the codec and resolve against the current baseURI before showing or activating native Open. Only http/https/mailto/tel survive; reject scheme-relative slash/backslash prefixes and unsafe resolved relative destinations. Outer whitespace normalization follows the codec. Native Open has explicit user activation, target=_blank and rel=noopener noreferrer, without fetch-based previews or cloning linked content. This is a safe-scheme boundary, not same-origin enforcement or destination trust.
+The optional caret/selected-link UI follows `contextual-links.md`: validate the actual href through the codec and resolve against the current baseURI before showing or activating native Open. Only http/https/mailto/tel survive; reject scheme-relative slash/backslash prefixes and unsafe resolved relative destinations. Outer whitespace normalization follows the codec. Native Open has explicit user activation, target=_blank and rel=noopener noreferrer, without fetch-based previews or cloning linked content. This is a safe-scheme boundary, not same-origin enforcement or destination trust.
+
+Expanded contexts require selected text wholly inside one actual ordinary anchor.
+Reject mixed/cross-link ranges and protected or foreign selected descendants.
+Bind the draft to the actual anchor and saved range; focus-time changes cannot
+retarget it, even within the same anchor. Optional link-form anchor scope edits
+metadata or unwraps that entire validated anchor through existing commands in one
+outer transaction, then restores the selected text interval and direction. Core
+selection-scoped formatting and the default form scope remain unchanged.
+Per-editor UI preferences only choose which contextual panel is eligible; they
+confer no execution authority or validation bypass.
 
 Dismissal/API replacement/destruction and hidden edit-preview state scrub the native href. Retained controls and queued callbacks cannot reuse a stale target. Focus restoration rechecks the same anchor/revision/read-only/composition; Enter submission validates the live context before reaching the existing form. Closing a changed form must tolerate synchronous blur/change reentrancy without removing the same DOM twice. These controls remain trusted application UI; backend validation, destination policies and CSP are application responsibilities.
 
