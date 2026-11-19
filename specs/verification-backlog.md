@@ -1,5 +1,76 @@
 # Verification record
 
+## Persistent editable mention references — 2026-11-19
+
+Local implementation follows [persistent-mentions.md](persistent-mentions.md).
+Explicit mentions({ persistent:true }) contributes the schema before initial
+import and inserts a registered morfira:mention span with opaque data-mention-id,
+literal @Label and a separate trailing space in one choice transaction. Default
+mentions/presets retain plain-text insertion. New createMentionSchema returns a
+fresh provider-independent definition; getMentions returns fresh {id,text}
+references in order without running/canceling suggestion state or auto-scanning
+the document on input. HTML/JSON/history/HTML clipboard share registered schema
+metadata; missing-schema HTML drops identity while JSON and Markdown fail closed.
+
+References remain editable semantic spans, not atoms. Display text can change
+without changing ID, and existing formatting may split/duplicate wrappers. No
+immutable label, atomic deletion/caret model or backend authorization is implied.
+IDs and copied references are untrusted claims; no lookup/notification is sent.
+Native input/structural semantic boundaries retain their separately scoped rules.
+
+Core adds compatible text attribute minLength/singleLine rules, default 0/false,
+with copied validated bounds and C0/DEL/U2028/U2029 rejection when enabled. IDs
+require 1–256 units and singleLine true. Suggestion scanning excludes semantic/
+foreign subtrees and choice rechecks generation/disposal after transaction focus.
+Search now excludes semantic/foreign subtrees while advancing global text offsets,
+preventing automatic replacement from rewriting references. Statistics still
+counts visible labels once. Optional suggestions CSS styles the fixed marker with
+four --mw-mention-* variables; core CSS and arbitrary attribute rules are unchanged.
+
+Three subagents implemented plugin/suggestion code, representative regressions
+and RU/EN docs/demo. The full demo explicitly opts in, with actual provider choice,
+ID inspection and HTML/JSON round-trip controls; query inspection works read-only.
+No new runtime dependencies, package, public subpath or document version.
+
+Passed: pnpm run build (declarations and all size guards), pnpm run typecheck
+(including Vue/Svelte), final pnpm exec tsc --noEmit after tooling correction,
+pnpm run check:project, pnpm run check:tree-shaking, pnpm run package:check
+(eight archives), pnpm run docs:build:site and git diff --check.
+The first new helper-import probe counted an ignored side-effect-free bare import
+in esbuild.metafile.inputs as retained code. Ownership checks now use actual
+positive bytesInOutput contributions; no feature allowlist was relaxed. Dedicated
+helper probes pass at 202/667 raw bytes including their probe wrappers, without
+retaining the suggestion engine. Existing core/plugin/preset isolation still passes.
+
+No local behavioral tests, installed-consumer execution or live browser checks
+ran; GitHub CI was not inspected. Eight editor definitions plus two localized
+demo definitions are authored: opt-in/default compatibility, insertion/history/
+caret, initial HTML/JSON, copy/paste in a merged table, unsafe-looking literals,
+invalid identity atomics, editable labels, snapshot isolation, semantic suggestion/
+search barriers and following offsets, visible statistics, deferred readonly/IME/
+disposal and reuse across editors. Focused SDK rule/type boundaries cover the
+additive text constraints and legacy empty/multiline compatibility. The installed
+consumer Node smoke is extended to validate stored IDs without a provider; it is
+authored for later execution. Runtime outcomes remain unverified at the test pause.
+
+Final selected dependency closures, bytes (shared JS counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 93136 | 28914 | 25471 | 3293 |
+| Mentions | 12982 | 5544 | 4941 | — |
+| Suggestions behavior set | 22323 | 9243 | 8161 | 1465 optional |
+| Standard ready | 220620 | 65566 | 56116 | 12162 |
+| Extended ready | 243185 | 72150 | 61381 | 13627 |
+
+Compared with baseline, core grows 115 gzip JS bytes, mentions 955, search 70,
+standard ready 132 and extended ready 498. Core/preset guards all pass; standard
+retains 14434 gzip bytes under 80000. The soft raw core target remains exceeded.
+Core/standard CSS is unchanged. Suggestions CSS grows 269 raw / 83 gzip bytes to
+1465 raw / 575 gzip / 454 Brotli; extended CSS is 13627 / 4499 / 3661. Runtime
+frameworks, source maps and declarations are excluded. These are build/static
+measurements rather than evidence of three-browser runtime behavior.
+
 ## Independent Markdown import/export — 2026-11-19
 
 Local implementation follows [markdown-codec.md](markdown-codec.md). New public

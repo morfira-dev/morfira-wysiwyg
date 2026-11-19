@@ -14,7 +14,14 @@ const ancestor = (root: HTMLElement, node: Node, selector: string): HTMLElement 
     element = element.parentElement;
   }
 };
-const boundary = (node: Node): boolean => node.nodeType === 1 && (blocks.has((node as Element).localName) || barriers.has((node as Element).localName));
+const boundary = (node: Node): boolean => node.nodeType === 1 && (blocks.has((node as Element).localName)
+  || barriers.has((node as Element).localName) || (node as Element).hasAttribute('data-mw-node')
+  || (node as Element).namespaceURI !== 'http://www.w3.org/1999/xhtml');
+const protectedAncestor = (root: HTMLElement, node: Node): boolean => {
+  for (let element = parent(node); element && element !== root; element = element.parentElement)
+    if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml' || element.hasAttribute('data-mw-node')) return true;
+  return false;
+};
 const deepest = (node: Node, last: boolean): Node => {
   let visits = 0;
   while (!boundary(node) && (last ? node.lastChild : node.firstChild) && visits++ < 1024)
@@ -66,7 +73,7 @@ const liveCaret = (editor: Editor): Range | undefined => {
   if (active !== editor.surface && (!active || !editor.surface.contains(active)))
     return;
   const selection = document.getSelection();
-  if (!selection?.rangeCount)
+  if (selection?.rangeCount !== 1)
     return;
   const range = selection.getRangeAt(0);
   if (range.collapsed && editor.surface.contains(range.startContainer) && editor.surface.contains(range.endContainer))
@@ -76,7 +83,7 @@ export const detect = (editor: Editor, kind: Kind, minimum: number): Candidate |
   if (editor.isReadOnly())
     return;
   const caret = liveCaret(editor);
-  if (!caret || ancestor(editor.surface, caret.startContainer, 'a,code,pre,figure,figcaption'))
+  if (!caret || protectedAncestor(editor.surface, caret.startContainer) || ancestor(editor.surface, caret.startContainer, 'a,code,pre,figure,figcaption'))
     return;
   const block = ancestor(editor.surface, caret.startContainer, 'p,h1,h2,h3,h4,h5,h6,li,blockquote');
   if (!block)

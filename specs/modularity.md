@@ -12,6 +12,13 @@ Immutable UI dictionaries must remain removable from sanitizer-only imports. The
 
 Events are instance-local typed notifications. Commands and transactions own mutations; event listeners do not form an implicit RPC/command dispatcher. Built-in and third-party plugins cooperate through explicit exported event tokens and public commands. Subscription cleanup follows editor lifecycle.
 
+Plugin ownership checks use inputs contributing bytes to the final consumer
+output, not every parsed file listed by esbuild. Ignored side-effect-free bare
+imports may remain in metafile.inputs while contributing zero bytes. Existing
+feature allowlists remain authoritative for every retained plugin chunk; this
+distinction must not excuse actual unrelated code. Public mention schema/query
+helpers have dedicated selective-import probes alongside the factory probe.
+
 ## Revised product profiles and SDK boundary
 
 The revised roadmap targets a ready everyday-authoring experience close to mature editors in common tasks, with evidence-backed improvements in selected bundle size, extension contracts, UI and documentation. Evaluate actual task/feature profiles; do not infer universal superiority from size alone. Enterprise/office-suite parity and unsolicited heavy processing are outside this target.

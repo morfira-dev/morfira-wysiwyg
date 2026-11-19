@@ -1,2 +1,9 @@
 import type { MentionOption, SuggestionOptions } from '../suggestions/types.js';
-export type MentionOptions = SuggestionOptions<MentionOption>;
+export interface MentionOptions extends SuggestionOptions<MentionOption> {
+  persistent?: boolean;
+}
+
+export interface MentionReference {
+  id: string;
+  text: string;
+}

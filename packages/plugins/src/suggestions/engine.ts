@@ -1,6 +1,6 @@
 import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg-core';
 import type { SlashOption, SuggestionController, SuggestionOption, SuggestionOptions, SuggestionState } from './types.js';
-import type { Candidate, Kind, Request } from './engine.types.js';
+import type { Candidate, Kind, Request, SuggestionIntegration } from './engine.types.js';
 import type { SlashAction } from '../slash/types.js';
 import { anchorFor, detect, insertText, same } from './selection.js';
 const owners = new WeakMap<object, Editor>();
@@ -24,7 +24,7 @@ const results = <T extends SuggestionOption>(input: unknown, kind: Kind, actions
   }
   return items as T[];
 };
-export const createSuggestions = <T extends SuggestionOption>(kind: Kind, options: SuggestionOptions<T>, actions: ReadonlyMap<string, SlashAction> = new Map()): EditorPlugin => {
+export const createSuggestions = <T extends SuggestionOption>(kind: Kind, options: SuggestionOptions<T>, actions: ReadonlyMap<string, SlashAction> = new Map(), integration?: SuggestionIntegration<T>): EditorPlugin => {
   if (!options || typeof options !== 'object' || Array.isArray(options))
     throw new TypeError('Expected suggestion options.');
   const { provide, minQueryLength = kind === 'mentions' ? 1 : 0, maxItems = 20, debounceMs = 120 } = options;
@@ -34,7 +34,9 @@ export const createSuggestions = <T extends SuggestionOption>(kind: Kind, option
     if (!Number.isInteger(value) || value < low || value > high)
       throw new RangeError(`${name} is outside its supported integer range.`);
   return {
-    name: kind, setup: (editor) => {
+    name: kind,
+    ...(integration ? { schema: integration.schema } : {}),
+    setup: (editor) => {
       let disposed = false;
       let composing = false;
       let mutating = false;
@@ -217,8 +219,11 @@ export const createSuggestions = <T extends SuggestionOption>(kind: Kind, option
           mutating = true;
           try {
             editor.transact(() => {
-              if (composing || editor.isReadOnly() || !same(selected, detect(editor, kind, minQueryLength)))
-                return; insertText(editor, selected, text); if (action) {
+              if (disposed || choosing !== generation || composing || editor.isReadOnly() || !same(selected, detect(editor, kind, minQueryLength)))
+                return;
+              if (integration) integration.insert(editor, selected, item);
+              else insertText(editor, selected, text);
+              if (action) {
                   const result: unknown = action(editor);
                   if (result && (typeof result === 'object' || typeof result === 'function') && typeof (result as {
                     then?: unknown;

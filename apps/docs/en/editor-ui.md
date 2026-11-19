@@ -142,7 +142,7 @@ const editor = createEditor(editorHost, createExtendedPreset({
 const ui = createExtendedEditorUI(toolbarHost, editor, { density: 'compact' });
 ```
 
-The application defines these providers. If `slash.actions` is absent, the preset supplies the current structural `createSlashActions()` set. Extended UI owns two suggestion menus and the standard toolbar, but installs no behavior or provider. Do not mount a second menu for the same suggestion controller. Current mentions remain editable text without durable IDs or atomic selection. [Suggestions and limits](/en/suggestions).
+The application defines these providers. If `slash.actions` is absent, the preset supplies the current structural `createSlashActions()` set. Extended UI owns two suggestion menus and the standard toolbar, but installs no behavior or provider. Do not mount a second menu for the same suggestion controller. Mentions retain plain text by default; explicit `mentions.persistent: true` in extended preset configuration enables [editable ID references](/en/persistent-mentions). Atomic selection is not added. [Suggestions and limits](/en/suggestions).
 
 ## Selection, keyboard and state
 

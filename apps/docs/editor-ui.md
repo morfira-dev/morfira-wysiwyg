@@ -142,7 +142,7 @@ const editor = createEditor(editorHost, createExtendedPreset({
 const ui = createExtendedEditorUI(toolbarHost, editor, { density: 'compact' });
 ```
 
-Провайдеры в примере определяет приложение. При отсутствии `slash.actions` preset подключает текущие структурные действия `createSlashActions()`. Extended UI владеет двумя меню подсказок и стандартной панелью, но не добавляет новые плагины или провайдеры. Не создавайте второе меню для того же suggestion controller. Текущие mentions остаются редактируемым текстом без постоянных ID/атомарного выделения. [Подсказки и ограничения](/suggestions).
+Провайдеры в примере определяет приложение. При отсутствии `slash.actions` preset подключает текущие структурные действия `createSlashActions()`. Extended UI владеет двумя меню подсказок и стандартной панелью, но не добавляет новые плагины или провайдеры. Не создавайте второе меню для того же suggestion controller. Mentions по умолчанию остаются обычным текстом; явное `mentions.persistent: true` в конфигурации extended preset включает [редактируемые ссылки с ID](/persistent-mentions). Атомарное выделение не добавлено. [Подсказки и ограничения](/suggestions).
 
 ## Выделение, клавиатура и состояние
 

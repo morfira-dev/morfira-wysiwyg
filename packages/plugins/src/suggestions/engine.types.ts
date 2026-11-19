@@ -1,4 +1,11 @@
+import type { Editor, SchemaContribution } from '@morfira-dev/wysiwyg-core';
+import type { SuggestionOption } from './types.js';
+
 export type Kind = 'mentions' | 'slash';
+export interface SuggestionIntegration<T extends SuggestionOption> {
+  readonly schema: readonly SchemaContribution[];
+  readonly insert: (editor: Editor, candidate: Candidate, item: T) => void;
+}
 export interface Point {
   node: Text;
   offset: number;

@@ -10,6 +10,20 @@ HTML parsing uses an inert template. String serialization (`sanitizeHTML`, schem
 
 A pre-hardening isolated localhost route-abort probe confirmed unwanted image fetches from sanitizeHTML/documentHTML in Chromium, Firefox and WebKit, with parseHTML alone producing none. Evidence: /tmp/morfira-codec-network-probe.ts and /tmp/morfira-codec-network-probe.log. This was a resource-fetch side effect, not a demonstrated XSS exploit; the permanent security-codec regression covers the repaired property.
 
+## Persistent mention identities
+
+The optional reference slice follows [persistent-mentions.md](persistent-mentions.md).
+Only a registered span with required bounded opaque ID preserves identity; use
+SDK text minLength/maxLength/singleLine rules at both normalized HTML and JSON
+boundaries. IDs never become URLs, CSS selectors, DOM IDs, callbacks or automatic
+network/notification requests. Provider labels are literal text and imported
+references remain untrusted claims requiring backend resolution and authorization.
+Display labels are editable and do not prove identity. No atom deletion/caret or
+immutable-label guarantees are introduced. Search excludes semantic subtrees
+without losing following text offsets; suggestions do not collect triggers from
+inside/across them. Missing-schema JSON fails closed while HTML retains text
+without identity; the Markdown codec rejects registered mention documents.
+
 ## Markdown codec boundaries
 
 The independent [Markdown codec](markdown-codec.md) consumes and produces typed

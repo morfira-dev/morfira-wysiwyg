@@ -5,6 +5,7 @@ import { officePasteSamples } from './office-paste/index.js';
 import type { OfficeSample } from './office-paste/index.js';
 import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
 import type { MentionOption, SlashOption, SuggestionController, SuggestionState, SuggestionOption, SuggestionQuery } from '@morfira-dev/wysiwyg/plugins/suggestions';
+import type { MentionReference } from '@morfira-dev/wysiwyg/plugins/mentions';
 import type { MarkdownCommands } from '@morfira-dev/wysiwyg/plugins/markdown';
 import type { TextDirection, TextDirectionCommands, TextDirectionState } from '@morfira-dev/wysiwyg/plugins/text-direction';
 import type { ListMarker, ListPropertyCommands, ListPropertyState } from '@morfira-dev/wysiwyg/plugins/list-properties';
@@ -79,6 +80,8 @@ const undoAvailable = ref(false); const redoAvailable = ref(false); const source
 const providerMode = ref<'normal' | 'empty' | 'error'>('normal'); const providerDelay = ref(250);
 const mentionState = ref<SuggestionState<MentionOption>>({ status: 'closed', query: '', items: [], activeIndex: -1 });
 const slashState = ref<SuggestionState<SlashOption>>({ status: 'closed', query: '', items: [], activeIndex: -1 });
+const mentionReferences = ref('');
+let readMentionReferences: ((instance: Editor) => MentionReference[]) | undefined;
 let mentionAPI: SuggestionController<MentionOption> | undefined; let slashAPI: SuggestionController<SlashOption> | undefined;
 let unmention: (() => void) | undefined; let unslash: (() => void) | undefined;
 const suggestionStatus = computed(() => { const state = mentionState.value.status !== 'closed' ? mentionState.value : slashState.value; return state.status === 'closed' ? t('Подсказки закрыты', 'Suggestions closed') : state.status === 'loading' ? t('Загрузка вариантов…', 'Loading choices…') : state.status === 'error' ? t('Ошибка: попробуйте открыть подсказки снова.', 'Error: try opening suggestions again.') : t(`Найдено вариантов: ${state.items.length}`, `Choices found: ${state.items.length}`); });
@@ -372,6 +375,20 @@ const useMarkdownCodec = async (action: 'replace' | 'insert' | 'export') => {
   finally { if (request === markdownCodecRequest) markdownCodecBusy.value = false; }
 };
 
+const inspectMentionReferences = () => {
+  if (!editor || !readMentionReferences) return;
+  try { mentionReferences.value = JSON.stringify(readMentionReferences(editor), null, 2); notify(''); }
+  catch (error) { notify(error instanceof Error ? error.message : String(error), true); }
+};
+const loadMentionReferenceSample = () => run((instance) => {
+  instance.setHTML(`<p><span data-mw-node="morfira:mention" data-mention-id="anna">@${t('Анна Смирнова', 'Anna Smith')}</span> ${t('готовит макет.', 'is preparing the design.')}</p>`);
+  mentionReferences.value = '';
+});
+const roundTripMentionReferences = (format: 'html' | 'json') => run((instance) => {
+  if (format === 'html') instance.setHTML(instance.getHTML());
+  else instance.setJSON(instance.getJSON());
+  mentionReferences.value = JSON.stringify(readMentionReferences?.(instance) ?? [], null, 2);
+});
 const closeSuggestions = () => { mentionAPI?.close(); slashAPI?.close(); };
 const openSuggestions = () => run(() => { closeSuggestions(); if (!mentionAPI?.open()) slashAPI?.open(); }, false);
 const startStructuralSlash = (command: string) => run((instance) => { const text = `/${command}`; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); slashAPI?.open(); });
@@ -704,7 +721,7 @@ onMounted(async () => {
     { fonts, fontCommands },
     { listProperties, listPropertyCommands },
     { textDirection, textDirectionCommands },
-    { mentionCommands },
+    { mentionCommands, getMentions },
     { slashCommands, createSlashActions },
     { createLinkForm },
     { createImageForm },
@@ -757,7 +774,7 @@ onMounted(async () => {
     locale: editorLocale.value,
     label: t('Попробуйте Morfira', 'Try Morfira'),
     value: props.full ? showcase() : article(),
-    onChange: (change: EditorChange) => { markdownCodecRevision++; source.value = change.source; refresh(); },
+    onChange: (change: EditorChange) => { mentionReferences.value = ''; markdownCodecRevision++; source.value = change.source; refresh(); },
   };
   const preset = props.full ? createExtendedPreset({
     ...common,
@@ -765,7 +782,7 @@ onMounted(async () => {
       families: fontFamilies.map((option) => ({ id: option.id, label: t(option.ru, option.en), family: option.family })),
       sizes: fontSizes,
     })],
-    mentions: { provide: people, debounceMs: 0 },
+    mentions: { provide: people, debounceMs: 0, persistent: true },
     slash: { provide: snippets, debounceMs: 0, actions: { ...createSlashActions(), table: (instance: Editor) => tableCommands(instance).insert(3, 3) } },
     images: { upload: demoUpload },
     statistics: { locale: ru.value ? 'ru' : 'en' },
@@ -777,6 +794,7 @@ onMounted(async () => {
     fontAPI = fontCommands(editor);
     listPropertyAPI = listPropertyCommands(editor);
     directionAPI = textDirectionCommands(editor);
+    readMentionReferences = getMentions;
     mentionAPI = mentionCommands(editor); slashAPI = slashCommands(editor);
     mentionState.value = mentionAPI.getState(); slashState.value = slashAPI.getState();
     unmention = mentionAPI.subscribe((state) => { mentionState.value = state; }); unslash = slashAPI.subscribe((state) => { slashState.value = state; });
@@ -1112,12 +1130,27 @@ onBeforeUnmount(() => {
           <label>{{ t('Задержка, мс', 'Delay, ms') }}<input v-model.number="providerDelay" type="number" min="0" max="1500"></label>
           <div class="lab-button-grid"><button :disabled="readOnly" @click="openSuggestions">{{ t('Открыть подсказки', 'Open suggestions') }}</button><button @click="closeSuggestions">{{ t('Закрыть подсказки', 'Close suggestions') }}</button></div>
           <p class="lab-suggestions-status" role="status" aria-live="polite">{{ suggestionStatus }}</p>
-          <p class="lab-hint">{{ t('ArrowUp/Down — выбор, Enter — вставка, Escape — закрыть. Tab передаётся редактору. Упоминание — обычный редактируемый @текст без сохранённого ID; slash вставляет текст или выполняет структурную команду одним Undo. Введи / для всех вариантов: заголовки, списки, цитата, код и таблица. Данные локальные, сеть не используется. Постоянные упоминания — следующий этап.', 'ArrowUp/Down navigate, Enter inserts, Escape dismisses. Tab falls through to the editor. A mention is editable @text without a stored ID; slash inserts text or runs a structural command with one Undo. Type / for all choices: headings, lists, quote, code and table. Data stays local, with no network. Persistent mentions remain a later phase.') }}</p>
+          <p class="lab-hint">{{ t('ArrowUp/Down — выбор, Enter — вставка, Escape — закрыть. Tab передаётся редактору. В демке упоминание хранит ID в редактируемом span; slash вставляет текст или выполняет структурную команду одним Undo. Введи / для всех вариантов: заголовки, списки, цитата, код и таблица. Данные локальные, сеть не используется. Это редактируемые ссылки с ID, без атомарного поведения.', 'ArrowUp/Down navigate, Enter inserts, Escape dismisses. Tab falls through to the editor. Demo mentions store IDs in editable spans; slash inserts text or runs a structural command with one Undo. Type / for all choices: headings, lists, quote, code and table. Data stays local, with no network. These are editable ID references, without atomic behavior.') }}</p>
         </fieldset></details>
         <details class="lab-autolink"><summary>{{ t('Автоматические ссылки', 'Automatic links') }}</summary><fieldset :disabled="!ready || readOnly">
           <button @click="startAutolink(true)">{{ t('Подготовить URL для Enter', 'Prepare URL for Enter') }}</button>
           <button @click="startAutolink(false)">{{ t('Подготовить plain-text вставку', 'Prepare plain-text paste') }}</button>
           <p class="lab-hint">{{ t('Нажми Enter после подготовленного URL или вставь один URL как обычный текст без HTML, пробелов и переносов. Space тоже работает. Первый Undo убирает ссылку, второй — исходный Enter или вставку. Дальнейший текст идёт вне ссылки. Shift+Enter, HTML и замена выделения не преобразуются. Превью и сетевых запросов нет.', 'Press Enter after the prepared URL or paste one URL as plain text without HTML, whitespace or line breaks. Space also works. First Undo removes the link; second removes Enter or paste. Further typing stays outside the link. Shift+Enter, HTML and selected replacement are not converted. No previews or network requests.') }}</p>
+        </fieldset></details>
+        <details class="lab-persistent-mentions"><summary>{{ t('Сохраняемые упоминания с ID', 'Persistent mentions with IDs') }}</summary><fieldset :disabled="!ready">
+          <div class="lab-button-grid">
+            <button :disabled="readOnly" @click="startSuggestions('mentions')">{{ t('Выбрать упоминание @an', 'Choose an @an mention') }}</button>
+            <button :disabled="readOnly" @click="loadMentionReferenceSample">{{ t('Загрузить сохранённое упоминание', 'Load a saved mention') }}</button>
+          </div>
+          <div class="lab-button-grid">
+            <button @click="inspectMentionReferences">{{ t('Показать ID упоминаний', 'Show mention IDs') }}</button>
+            <button :disabled="readOnly" @click="roundTripMentionReferences('html')">{{ t('Проверить HTML round-trip', 'Check HTML round-trip') }}</button>
+            <button :disabled="readOnly" @click="roundTripMentionReferences('json')">{{ t('Проверить JSON round-trip', 'Check JSON round-trip') }}</button>
+          </div>
+          <pre v-if="mentionReferences" data-mention-references class="lab-code">{{ mentionReferences }}</pre>
+          <p class="lab-hint">{{ t('Демка явно включает persistent: true; пресеты по умолчанию оставляют обычный текст. Выбери вариант в меню и нажми «Показать ID». Это снимок { id, text }, доступный и в read-only.', 'The demo explicitly enables persistent: true; presets keep plain text by default. Choose a menu result, then Show mention IDs. This { id, text } snapshot also works read-only.') }}</p>
+          <p class="lab-hint">{{ t('Начало примера и загрузка заменяют документ. HTML/JSON round-trip валидирует текущее значение; при неизменном содержимом история сохраняется. Упоминание редактируемое, не атом: изменение подписи сохраняет ID. ID из буфера не подтверждает личность или права и не отправляет уведомления.', 'Starting/loading an example replaces the document. HTML/JSON round-trip validates the current value; unchanged content preserves history. A mention is editable, not atomic: changing its label keeps the ID. Clipboard IDs prove neither identity nor permission and send no notifications.') }}</p>
+          <a :href="ru ? '/persistent-mentions' : '/en/persistent-mentions'">{{ t('Хранение ID и границы упоминаний', 'Mention ID storage and boundaries') }}</a>
         </fieldset></details>
         <details class="lab-markdown-codec"><summary>{{ t('Markdown: импорт и экспорт', 'Markdown: import and export') }}</summary><fieldset :disabled="!ready || markdownCodecBusy">
           <label>{{ t('Markdown-исходник', 'Markdown source') }}<textarea :aria-label="t('Markdown-исходник', 'Markdown source')" v-model="markdownSource" class="lab-code" rows="9" spellcheck="false"></textarea></label>

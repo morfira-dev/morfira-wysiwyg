@@ -1,6 +1,6 @@
 # Mentions and slash commands — phases 1/2
 
-Status: **phase 1 implemented; phase 2 structural actions implemented locally; phase 3 remains proposed**. This follows the Markdown shortcuts milestone. The first slice is an asynchronous suggestion picker that inserts ordinary text. Persistent, atomic identity-bearing mentions remain a later slice; structural slash actions follow the phase-2 contract below.
+Status: **phase 1 implemented; phase 2 structural actions and bounded persistent references implemented locally; atomic phase 3 remains proposed**. Opt-in editable ID references follow [persistent-mentions.md](persistent-mentions.md); they do not implement atom behavior. This follows the Markdown shortcuts milestone. The first slice is an asynchronous suggestion picker that inserts ordinary text. Atomic identity-bearing mentions remain a later slice; structural slash actions follow the phase-2 contract below.
 
 Original strict TypeScript/MIT, no new runtime dependencies. Core must not import these plugins or their UI. Reuse platform Selection/Range and the existing plugin lifecycle. Existing packages can expose new subpaths without adding packages. Each independently loadable entry, including its shared chunks, uses the user-directed optional-module 150000-byte gzip JS envelope; measure raw JS/Brotli and optional CSS separately.
 
@@ -8,7 +8,7 @@ Original strict TypeScript/MIT, no new runtime dependencies. Core must not impor
 
 - `EditorDocument.version` is 1. `DocumentNode` currently contains only text and allowlisted semantic elements. Generic span `data-*`, class and contenteditable attributes are not persisted by the schema validator. A plugin cannot create a durable mention by attaching an arbitrary data attribute or keeping an ID only in a WeakMap.
 - History captures validated HTML and SelectionBookmark; HTML and JSON import/export must preserve any future semantic node identically. Plain text already participates in history, selection, search, statistics and adapters.
-- `editor.transact` exposes a DOM mutation callback. Calling `editor.format` or `insertHTML` from inside it starts another transaction; nested command composition is not a documented atomic operation. Structural slash actions must not assume nested calls produce one history step.
+- `editor.transact` exposes a DOM mutation callback. Synchronous nested commands join the outer atomic transaction under the phase-2 contract below; asynchronous actions remain rejected.
 - Core owns native input/list/keyboard/history handling. Capture handlers must respect defaultPrevented and suppress propagation only for an action they actually handle. No `document.execCommand`.
 
 ## Phases and recommended first slice
@@ -19,7 +19,7 @@ Original strict TypeScript/MIT, no new runtime dependencies. Core must not impor
 | 2 | Structural slash actions such as heading/list/table/image commands | Existing schema where possible; first define an atomic command-composition contract or safe declarative executor |
 | 3 | Identity-bearing atomic mentions | Explicit document-model extension/migration, deletion/selection/clipboard rules, cross-plugin changes and adapter/browser evidence |
 
-Phase 1 is small enough to implement and review independently. A selected mention is **editable text**, for example `@Anna Smith `; the provider's ID is used to choose a result but is not stored. A selected slash snippet replaces `/query` with literal text. No HTML, links, Markdown parsing, notifications or storage transport are implicit. A snippet beginning `# ` stays literal because programmatic insertion is not a Markdown typing trigger.
+Phase 1 is small enough to implement and review independently. A default-mode selected mention is **editable text**, for example `@Anna Smith `; the provider's ID is used to choose a result but is not stored. A selected slash snippet replaces `/query` with literal text. No HTML, links, Markdown parsing, notifications or storage transport are implicit. A snippet beginning `# ` stays literal because programmatic insertion is not a Markdown typing trigger.
 
 ## Accepted phase-1 API
 
@@ -127,7 +127,7 @@ Phase 1 requires Chromium, Firefox and WebKit cases for trigger/email/code bound
 
 Exercise Vue v-model, React controlled value with StrictMode, and Svelte bind:value: same-value feedback preserves the caret/menu session; changed external values cancel; reactive read-only aborts; remount/unmount leaves no popup, listener, timer or unresolved owned request. Menu tests cover Arrow/Enter/Escape/Tab, ordinary list Enter, pointer focus, outside dismissal, scrolling/resize, narrow viewport and host clipping. Validate SSR-safe imports, archive/declaration/public subpaths, runtime graphs, independent entry budgets and CSS separately. Add detailed RU/EN docs and local demo with deferred providers, empty/error/loading states and explicit plain-text mention semantics. Run pnpm run check, docs:build and test:docs; report actual checks/evidence.
 
-Phase 3 remains future work. Before implementing durable identity-bearing mentions, settle the schema migration and old-reader policy. Phase 2 uses the synchronous composition contract below; the verified textbox/listbox relationship remains unchanged.
+Atomic phase 3 remains future work. Editable persisted references and their old-reader policy follow persistent-mentions.md; atom selection/deletion and any model migration require a separate contract. Phase 2 uses the synchronous composition contract below; the verified textbox/listbox relationship remains unchanged.
 
 ## Concrete implementation decisions for this milestone
 

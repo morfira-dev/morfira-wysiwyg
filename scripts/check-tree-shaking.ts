@@ -22,6 +22,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg', symbol: 'createEditorCommand', feature: 'command-token', allowed: [] },
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component', allowed: [] },
   ...['parseMarkdown', 'serializeMarkdown'].map((symbol) => ({ entry: '@morfira-dev/wysiwyg/codecs/markdown', symbol, feature: 'codecs/markdown', allowed: ['codecs/markdown'] })),
+  ...['createMentionSchema', 'getMentions'].map((symbol) => ({ entry: '@morfira-dev/wysiwyg/plugins/mentions', symbol, feature: 'mentions', allowed: ['mentions'] })),
   ...features.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/plugins/${feature}`,
     symbol: ({ 'text-direction': 'textDirection', 'list-properties': 'listProperties', fonts: 'fonts', 'horizontal-rule': 'horizontalRule', checklists: 'checklists', 'table-properties': 'tableProperties', tables: 'tables', images: 'images', 'image-input': 'imageInput', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],
@@ -56,11 +57,15 @@ for (const { entry, symbol, feature, allowed } of cases) {
     format: 'esm', platform: 'browser', target: 'es2022', logLevel: 'silent',
   });
   const inputs = Object.keys(result.metafile!.inputs).map((path) => path.replaceAll('\\', '/'));
+  // Parsed side-effect-free bare imports can remain in metafile.inputs even
+  // when omitted entirely from the consumer output. Check retained chunks.
+  const retainedInputs = new Set(Object.values(result.metafile!.outputs).flatMap((output) => Object.entries(output.inputs)
+    .filter(([, input]) => input.bytesInOutput > 0).map(([path]) => path.replaceAll('\\', '/'))));
   assert.ok(!inputs.some((path) => /^packages\/[^/]+\/src\//.test(path)), `${feature}: consumer must use built public artifacts, not source aliases`);
   assert.ok(!inputs.some((path) => /node_modules\/(?:\.pnpm\/)?(?:react|vue|svelte)(?:@|\/)/.test(path)), `${feature}: framework runtime leaked`);
   assert.ok(!inputs.some((path) => path.includes('/@angular/') || /\/@angular\+/.test(path)), `${feature}: Angular runtime leaked`);
   assert.ok(!inputs.some((path) => path.endsWith('.css')), `${feature}: CSS must remain opt-in`);
-  for (const input of inputs.filter((path) => path.startsWith('packages/plugins/dist/'))) {
+  for (const input of inputs.filter((path) => path.startsWith('packages/plugins/dist/') && retainedInputs.has(path))) {
     const output = input.slice('packages/plugins/dist/'.length);
     assert.ok(Object.hasOwn(originalInputs, output), `${feature}: missing original input ownership for ${output}`);
     for (const source of originalInputs[output]) {

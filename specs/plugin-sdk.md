@@ -26,6 +26,15 @@ No new runtime dependency or package. Public exports are explicit through the ex
 
 ## Non-owning attribute contributions and split policy
 
+Text attribute rules additionally accept minLength?:number (default 0) and
+singleLine?:boolean (default false). Minimum is an integer from 0 through the
+configured maximum. True singleLine rejects C0/DEL controls and Unicode
+line/paragraph separators in stored HTML/JSON values, without trimming or
+normalizing opaque strings. Definition validation and copied rule closures retain
+the existing compatibility/security boundaries. The persistent mention reference
+profile uses these bounds under [persistent-mentions.md](persistent-mentions.md);
+this does not add atom/node-view behavior or arbitrary validator callbacks.
+
 `SchemaContribution = SchemaNodeSpec | SchemaAttributesSpec` preserves existing semantic definitions. An attribute contribution has `name`, `kind: 'attributes'`, a safe existing `tag`, required `attributes` rule record, and optional `split` record of attribute names to reset strings. It registers optional safe non-reserved lowercase data-* attributes directly on that tag, without injecting data-mw-node or claiming ownership of the element. Required attributes are forbidden; duplicate tag/attribute contributions and ambiguous collisions with semantic definitions reject compilation. Names share the existing unique namespaced contribution registry. Existing schema definition/rule bounds apply across the per-tag attribute closure.
 
 Registered values use the existing text/enum/integer/URL validators at HTML/JSON boundaries. Attribute extensions cannot add executable attributes, tags, arbitrary styles or namespace changes. The codec preserves non-owning metadata alongside built-in attributes and owning semantic metadata where there is no collision. Default/missing-plugin readers strip non-owning metadata from both HTML and JSON, so applications must retain the corresponding plugin/schema to retain its semantics; this is not the fail-closed identity behavior of data-mw-node.

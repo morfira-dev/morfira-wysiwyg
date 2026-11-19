@@ -1,7 +1,7 @@
 import type { DocumentTag, EditorDocument } from '../document/types.js';
 
 export type SchemaAttributeSpec =
-  | { readonly type: 'text'; readonly maxLength?: number; readonly required?: boolean }
+  | { readonly type: 'text'; readonly minLength?: number; readonly maxLength?: number; readonly singleLine?: boolean; readonly required?: boolean }
   | { readonly type: 'enum'; readonly values: readonly string[]; readonly required?: boolean }
   | { readonly type: 'integer'; readonly min: number; readonly max: number; readonly required?: boolean }
   | { readonly type: 'url'; readonly required?: boolean };

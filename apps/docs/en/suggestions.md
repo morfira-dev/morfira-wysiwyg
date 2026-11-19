@@ -6,7 +6,9 @@ Asynchronous suggestions support keyboard/menu selection and optional structural
 - `/plugins/slash` replaces `/query` with a text snippet or runs a registered structural command.
 - `/plugins/suggestions` exports shared types and an optional menu; its CSS is opt-in.
 
-**Result IDs are not persisted in the document.** These mentions can be edited and deleted character by character. They are not atomic nodes and send no notifications. Slash snippets do not execute formatting: `# Heading` remains text even with Markdown shortcuts installed. Document schema v1 stays unchanged.
+**By default, result IDs are not persisted in the document.** These mentions can be edited and deleted character by character. They are not atomic nodes and send no notifications. Slash snippets do not execute formatting: `# Heading` remains text even with Markdown shortcuts installed. Document schema v1 stays unchanged.
+
+Persistent editable references are enabled separately with `mentions({ persistent: true })`; see [mention ID storage and boundaries](/en/persistent-mentions) for IDs, HTML/JSON and limits. Ready presets keep their current default.
 
 ## Installation
 
@@ -126,7 +128,7 @@ The menu anchors to the caret Range without inserting measurement spans, clamps 
 
 Listbox/status semantics and keyboard/browser checks are not accessibility certification. Screen-reader, touch, zoom and real IME evidence still need separate testing. On the [homepage](/en/#editor) and [playground](/en/playground), local asynchronous providers demonstrate ready/loading/empty/error/cancellation without sending document text to a server.
 
-Structural slash actions and identity-bearing atomic mentions require separate model/transaction contracts. They are not implemented by this plain-text first slice.
+Structural slash actions have their separate contract below; [persistent editable ID references](/en/persistent-mentions) are explicitly enabled. Neither slice adds atomic mention selection or indivisible deletion, which remain future SDK work.
 
 ## Structural slash commands
 

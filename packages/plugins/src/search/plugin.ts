@@ -41,6 +41,11 @@ const textRuns = (root: HTMLElement): Run[] => {
     if (node.nodeType !== 1)
       return;
     const element = node as Element;
+    if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml' || element.hasAttribute('data-mw-node')) {
+      flush();
+      offset += element.textContent?.length ?? 0;
+      return;
+    }
     const boundary = blocks.has(element.localName) || barriers.has(element.localName);
     if (boundary)
       flush();

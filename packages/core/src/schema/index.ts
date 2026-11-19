@@ -20,11 +20,16 @@ const compileAttribute = (input: unknown): CompiledAttribute => {
   const required = input.required === true;
   let read: (value: string) => string;
   if (input.type === 'text') {
-    keysWithin(input, ['type', 'required', 'maxLength']);
+    keysWithin(input, ['type', 'required', 'minLength', 'maxLength', 'singleLine']);
     const limit = input.maxLength ?? 256;
+    const minimum = input.minLength === undefined ? 0 : input.minLength;
+    const singleLine = input.singleLine === undefined ? false : input.singleLine;
     if (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 0 || limit > 20000) throw new RangeError('Schema text maxLength must be from 0 to 20000.');
+    if (typeof minimum !== 'number' || !Number.isInteger(minimum) || minimum < 0 || minimum > limit) throw new RangeError('Schema text minLength must be from 0 through maxLength.');
+    if (typeof singleLine !== 'boolean') throw new TypeError('Schema text singleLine must be boolean.');
     read = (value) => {
-      if (value.length > limit) throw new RangeError('Schema text exceeds its maximum length.');
+      if (value.length < minimum || value.length > limit) throw new RangeError('Schema text is outside its length bounds.');
+      if (singleLine && /[\u0000-\u001f\u007f\u2028\u2029]/.test(value)) throw new TypeError('Schema text must be single-line without controls.');
       return value;
     };
   }

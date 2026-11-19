@@ -70,12 +70,12 @@ Every persisted attribute value is a string. A node definition may add at most 6
 
 | Rule | Contract |
 | --- | --- |
-| `{ type: 'text', maxLength?, required? }` | Bounded string; default 256 characters, `maxLength` from 0 to 20000 |
+| `{ type: 'text', minLength?, maxLength?, singleLine?, required? }` | String: minimum defaults to 0, maximum to 256 (up to 20000). `singleLine: true` rejects C0/DEL and Unicode line/paragraph separators |
 | `{ type: 'enum', values, required? }` | One of 1–64 declared string values |
 | `{ type: 'integer', min, max, required? }` | An integer string within safe-integer bounds, normalized to its canonical representation |
 | `{ type: 'url', required? }` | A safe URL using core link rules: `http`, `https`, `mailto`, `tel` or a permitted relative reference |
 
-`required` checks attribute presence. Add explicit command validation when a label/ID must be nonempty, as the example does. Undeclared extra attributes are not retained. Every string is bounded to 20000 characters. Definitions with unknown fields, incompatible tag/kind or unsafe names fail.
+`required` checks attribute presence. Use `minLength: 1` for nonempty strings; the minimum must be an integer from 0 through `maxLength`. Application commands may additionally validate formats and permissions. Undeclared extra attributes are not retained. Every string is bounded to 20000 characters. Definitions with unknown fields, incompatible tag/kind or unsafe names fail.
 
 ## HTML, JSON and a standalone codec
 

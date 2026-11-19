@@ -292,7 +292,7 @@ const dispose = createToolbar(host, editor, [
 
 Undo/redo восстанавливает ожидающее оформление у курсора вместе с его позицией. Это внутренняя история: в HTML/JSON дополнительные метаданные не сохраняются. Замена документа и перемещение выделения сбрасывают ожидающее оформление.
 
-[Упоминания и slash-шаблоны](/suggestions): `/plugins/mentions`, `/plugins/slash`, необязательные `/plugins/suggestions` и `/plugins/suggestions.css`. Первый этап вставляет обычный текст и не сохраняет ID.
+[Упоминания и slash-шаблоны](/suggestions): `/plugins/mentions`, `/plugins/slash`, необязательные `/plugins/suggestions` и `/plugins/suggestions.css`. Обычный текст остаётся значением по умолчанию; `mentions({ persistent: true })` включает [сохраняемые редактируемые ссылки с ID](/persistent-mentions).
 
 См. [события, взаимодействие плагинов и составные транзакции](/events). Структурные slash-команды описаны [здесь](/suggestions#структурные-slash-команды).
 

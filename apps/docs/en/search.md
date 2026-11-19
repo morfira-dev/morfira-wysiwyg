@@ -60,3 +60,5 @@ State is an independent snapshot. index/length are UTF-16 textContent offsets, m
 The [homepage](/en/#editor) and [playground](/en/playground) include a “Find and replace” sample and matching panel. The sample contains eight case-insensitive literal Morfira matches; Whole word excludes MorfiraPlus, leaving seven. Replacement fields and option flags remain drafts until an explicit action. Results update while the document changes, and navigation remains available in read-only mode.
 
 DOM reconstruction by identical-HTML formatting also refreshes search ranges. The observer belongs to the instance and disconnects on destroy. Projected replacement text is checked before large strings are allocated, using the shared 5000000 UTF-16 document limit.
+
+Semantic wrappers with `data-mw-node`, including [persistent mentions](/en/persistent-mentions), are excluded from search and replacement entirely. Matches cannot cross their boundaries; offsets for later ordinary text still include their visible length. This preserves identity metadata and keeps automatic replacement from rewriting mention labels.

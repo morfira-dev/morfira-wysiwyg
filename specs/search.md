@@ -10,6 +10,14 @@ Status: implemented locally; full check passes 405 browser tests across Chromium
 
 Matches are non-overlapping. Search may cross adjacent inline text nodes/marks/links, but never paragraphs/headings, list item boundaries/nested lists, cells, captions, pre/blockquote block boundaries, or br/img/hr. Captions are searchable text; image alt/title/attributes and other editor instances are excluded. Whole words use Unicode Letter/Number/Mark/Connector_Punctuation boundaries; emoji/punctuation are separators. A query may include spaces/punctuation; only its outside boundaries are checked. More than 10000 matches rejects setQuery atomically. If a passive native/API document update exceeds the limit, preserve query/options, publish error='match-limit' with empty matches/current=-1 and do not throw from the editor subscription or roll back the edit; recover automatically under the limit. Replacement while overflow is active rejects clearly. Otherwise never truncate; never silently replace a truncated result set. Avoid quadratic per-match scans; collect text runs/leaves once and map matches using offsets/binary search.
 
+Registered semantic wrappers (`data-mw-node`) and foreign namespaces are opaque
+search barriers: do not index their descendants or match across them. Advance
+global UTF-16 offsets by their visible text so following ordinary matches still
+select correctly. This preserves persistent mention identities under automatic
+replacement; explicit native editing retains that feature's separate contract.
+The rule covers any owning semantic node, without importing the mentions module.
+Actual new validation results belong to verification-backlog.md.
+
 ## Navigation and replacement
 
 select validates a match index, focuses the editor, selects the exact DOM text range and scrolls that range into view. next/previous wrap around; no results are no-ops. Native Selection marks the active result; no persistent marks/wrappers or claim of highlighting all matches. Find/navigation do not create history. Searching works in read-only; replace returns false/0 in read-only or during IME composition.

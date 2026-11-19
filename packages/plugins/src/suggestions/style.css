@@ -6,3 +6,9 @@
 .mw-suggestion-label { font-weight: 550; }
 .mw-suggestion-description { margin-top: 2px; color: var(--mw-suggestion-muted, var(--mw-muted, #8490a1)); font-size: .85em; }
 .mw-suggestions-status { padding: 7px 12px; border-top: 1px solid var(--mw-suggestion-border, var(--mw-border, #e4e8ef)); color: var(--mw-suggestion-muted, var(--mw-muted, #8490a1)); font-size: .85em; overflow-wrap: anywhere; }
+.mw-content [data-mw-node="morfira:mention"] {
+  color: var(--mw-mention-color, var(--mw-accent, #6658e8));
+  background: var(--mw-mention-background, var(--mw-accent-soft, #eeebff));
+  border-radius: var(--mw-mention-radius, .25em);
+  padding-inline: var(--mw-mention-padding, .125em);
+}

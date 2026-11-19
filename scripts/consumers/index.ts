@@ -155,10 +155,19 @@ try {
   execFileSync(process.execPath, ['--input-type=module', '--eval', `
     import assert from 'node:assert/strict';
     import { parseMarkdown, serializeMarkdown } from '@morfira-dev/wysiwyg/codecs/markdown';
+    import { createDocumentSchema } from '@morfira-dev/wysiwyg';
+    import { createMentionSchema } from '@morfira-dev/wysiwyg/plugins/mentions';
     assert.equal(typeof globalThis.document, 'undefined');
     const value = parseMarkdown('# Installed codec');
     assert.equal(value.version, 1);
     assert.equal(serializeMarkdown(value).trim(), '# Installed codec');
+    const schema = createDocumentSchema([createMentionSchema()]);
+    const mention = schema.validateDocument({ version: 1, children: [{
+      type: 'element', tag: 'span',
+      attributes: { 'data-mw-node': 'morfira:mention', 'data-mention-id': 'installed-id' },
+      children: [{ type: 'text', text: '@Installed' }],
+    }] });
+    assert.equal(mention.children[0].attributes['data-mention-id'], 'installed-id');
   `], { cwd: consumer, encoding: 'utf8' });
   if (profile === 'default') {
     run(['exec', 'tsc', '--noEmit'], consumer);

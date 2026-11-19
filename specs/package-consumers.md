@@ -1,5 +1,10 @@
 # Isolated package consumer verification
 
+The DOM-free Node smoke also imports createMentionSchema from installed packages
+and validates a stored ID using createDocumentSchema. This checks the additive
+text constraints and schema export without a provider or browser setup. Detailed
+choice/copy/history cases remain in the feature suite; no adapter matrix is added.
+
 The independent `/codecs/markdown` entry must resolve from installed archives.
 Its consumer smoke imports and calls parseMarkdown/serializeMarkdown in a fresh
 Node process without document/window, checking a basic heading round trip.
