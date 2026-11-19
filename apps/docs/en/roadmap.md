@@ -129,3 +129,6 @@ Historical caret-link baseline: **78/78** affected executions across Chromium/Fi
 ## Contextual tables — implemented stage
 
 The separate [table panel](/en/contextual-tables) provides eight row/column/merge/split actions, merged-grid examples, selection-state notifications and owned external controls. It does not change preset defaults or add property/caption/resize UI. Validation for this stage is recorded above; earlier results describe their respective historical slices. Detailed raw/gzip/Brotli/CSS measurements and limitations are in `specs/verification-backlog.md`.
+
+
+A separate [Markdown import/export codec](/en/markdown-codec) is implemented locally with bounded syntax, safe JSON and explicit formatting loss. New behavior scenarios are authored but not yet executed; this is not a claim of full CommonMark/GFM compatibility.

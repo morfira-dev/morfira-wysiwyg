@@ -173,6 +173,10 @@
     "./ui/table-properties": {
       "types": "./dist/ui/table-properties.d.ts",
       "import": "./dist/ui/table-properties.js"
+    },
+    "./codecs/markdown": {
+      "types": "./dist/codecs/markdown.d.ts",
+      "import": "./dist/codecs/markdown.js"
     }
   },
   "dependencies": {

@@ -106,6 +106,10 @@ const fontFamilyChoice = ref('serif');
 const fontSizeChoice = ref(24);
 const fontState = ref<FontState>({ disabled: true, family: false, size: false, familyMixed: false, sizeMixed: false });
 let fontAPI: FontCommands | undefined;
+const markdownSource = ref('# Markdown codec\n\nA **bold** word and [a link](https://example.com).\n\n- First item\n  - Nested item\n\n> A quote\n\n```ts\nconst value = 1;\n```\n\n| Item | Count |\n| --- | --- |\n| Apples | 2 |');
+const markdownCodecBusy = ref(false);
+let markdownCodecRequest = 0;
+let markdownCodecRevision = 0;
 const sample = ref('showcase'); const markdownEnabled = ref(true); let markdownAPI: MarkdownCommands | undefined;
 const statisticsState = ref<StatisticsState>({ document: { characters: 0, charactersWithoutWhitespace: 0, words: 0 }, selection: { characters: 0, charactersWithoutWhitespace: 0, words: 0 } });
 let statisticsAPI: StatisticsCommands | undefined; let unstatistics: (() => void) | undefined;
@@ -336,6 +340,38 @@ const startAutolink = (enter: boolean) => run((instance) => {
   output.value = '';
 });
 const startMarkdown = () => run((instance) => { instance.setHTML('<p><br></p>'); instance.setSelection(0); });
+const useMarkdownCodec = async (action: 'replace' | 'insert' | 'export') => {
+  const instance = editor;
+  if (cancelled || !instance || (action !== 'export' && readOnly.value)) return;
+  const request = ++markdownCodecRequest;
+  const before = instance.getHTML();
+  const revision = markdownCodecRevision;
+  const selection = instance.getSelection();
+  const input = markdownSource.value;
+  markdownCodecBusy.value = true;
+  try {
+    const { parseMarkdown, serializeMarkdown } = await import('@morfira-dev/wysiwyg/codecs/markdown');
+    if (cancelled || editor !== instance || request !== markdownCodecRequest) return;
+    if (markdownCodecRevision !== revision || instance.getHTML() !== before || JSON.stringify(instance.getSelection()) !== JSON.stringify(selection))
+      throw new Error(t('Документ или выделение изменились. Повтори действие.', 'The document or selection changed. Try the action again.'));
+    if (action === 'export') {
+      markdownSource.value = serializeMarkdown(instance.getJSON());
+      notify('');
+      return;
+    }
+    if (readOnly.value) return;
+    const parsed = parseMarkdown(input);
+    run((current) => {
+      if (current !== instance) return;
+      if (action === 'replace') current.setJSON(parsed);
+      else current.insertHTML(current.schema.documentHTML(parsed));
+      output.value = '';
+    });
+  }
+  catch (error) { if (!cancelled && editor === instance && request === markdownCodecRequest) notify(error instanceof Error ? error.message : String(error), true); }
+  finally { if (request === markdownCodecRequest) markdownCodecBusy.value = false; }
+};
+
 const closeSuggestions = () => { mentionAPI?.close(); slashAPI?.close(); };
 const openSuggestions = () => run(() => { closeSuggestions(); if (!mentionAPI?.open()) slashAPI?.open(); }, false);
 const startStructuralSlash = (command: string) => run((instance) => { const text = `/${command}`; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); slashAPI?.open(); });
@@ -721,7 +757,7 @@ onMounted(async () => {
     locale: editorLocale.value,
     label: t('Попробуйте Morfira', 'Try Morfira'),
     value: props.full ? showcase() : article(),
-    onChange: (change: EditorChange) => { source.value = change.source; refresh(); },
+    onChange: (change: EditorChange) => { markdownCodecRevision++; source.value = change.source; refresh(); },
   };
   const preset = props.full ? createExtendedPreset({
     ...common,
@@ -824,6 +860,7 @@ onMounted(async () => {
 });
 onBeforeUnmount(() => {
   cancelled = true;
+  markdownCodecRequest++;
   linkForm?.destroy();
   imageForm?.destroy();
   tablePropertiesForm?.destroy();
@@ -1081,6 +1118,17 @@ onBeforeUnmount(() => {
           <button @click="startAutolink(true)">{{ t('Подготовить URL для Enter', 'Prepare URL for Enter') }}</button>
           <button @click="startAutolink(false)">{{ t('Подготовить plain-text вставку', 'Prepare plain-text paste') }}</button>
           <p class="lab-hint">{{ t('Нажми Enter после подготовленного URL или вставь один URL как обычный текст без HTML, пробелов и переносов. Space тоже работает. Первый Undo убирает ссылку, второй — исходный Enter или вставку. Дальнейший текст идёт вне ссылки. Shift+Enter, HTML и замена выделения не преобразуются. Превью и сетевых запросов нет.', 'Press Enter after the prepared URL or paste one URL as plain text without HTML, whitespace or line breaks. Space also works. First Undo removes the link; second removes Enter or paste. Further typing stays outside the link. Shift+Enter, HTML and selected replacement are not converted. No previews or network requests.') }}</p>
+        </fieldset></details>
+        <details class="lab-markdown-codec"><summary>{{ t('Markdown: импорт и экспорт', 'Markdown: import and export') }}</summary><fieldset :disabled="!ready || markdownCodecBusy">
+          <label>{{ t('Markdown-исходник', 'Markdown source') }}<textarea :aria-label="t('Markdown-исходник', 'Markdown source')" v-model="markdownSource" class="lab-code" rows="9" spellcheck="false"></textarea></label>
+          <div class="lab-inline-actions">
+            <button :disabled="readOnly" @click="useMarkdownCodec('replace')">{{ t('Импортировать Markdown', 'Import Markdown') }}</button>
+            <button :disabled="readOnly" @click="useMarkdownCodec('insert')">{{ t('Вставить Markdown', 'Insert Markdown') }}</button>
+            <button @click="useMarkdownCodec('export')">{{ t('Экспортировать Markdown', 'Export Markdown') }}</button>
+          </div>
+          <p class="lab-hint">{{ t('Импорт заменяет документ и сбрасывает историю. Вставка использует сохранённое выделение и одну операцию Undo. Экспорт не меняет документ и доступен в read-only. Кодек загружается отдельно по действию, без автоматической обработки буфера.', 'Import replaces the document and clears history. Insert uses the saved selection and one Undo operation. Export does not change the document and works read-only. The codec loads separately on demand, without automatic clipboard conversion.') }}</p>
+          <p class="lab-hint">{{ t('Поддерживается ограниченный синтаксис: текст, заголовки, списки, цитаты, код, ссылки, изображения и простые таблицы. HTML остаётся текстом; визуальные стили теряются, объединённые таблицы отклоняются.', 'The bounded syntax includes text, headings, lists, quotes, code, links, images and simple tables. HTML stays literal; visual styles are lost, and merged tables are rejected.') }}</p>
+          <a :href="ru ? '/markdown-codec' : '/en/markdown-codec'">{{ t('Синтаксис и ограничения Markdown-кодека', 'Markdown codec syntax and limitations') }}</a>
         </fieldset></details>
         <details class="lab-markdown"><summary>Markdown shortcuts</summary><fieldset :disabled="!ready">
           <label class="lab-checkbox"><input v-model="markdownEnabled" type="checkbox" @change="toggleMarkdown">{{ t('Markdown при вводе', 'Markdown while typing') }}</label>

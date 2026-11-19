@@ -64,3 +64,6 @@ Redo restores the converted result. Text typed afterwards follows normal history
 Read-only, IME composition, noncollapsed selections, multi-character insertText, paste/drop and programmatic replacement are skipped. compositionend does not retroactively convert text. Unmatched events stay native; list keyboard behavior and table Tab navigation continue to work.
 
 On the [homepage](/en/#editor) and [playground](/en/playground), choose Markdown shortcuts and use the enable switch. Sample loading remains literal: place the caret after a marker and type Space/the final delimiter to try conversion. Full Markdown import/export, language fences, regex settings, paste conversion and arbitrary custom rules are not implemented in this version. Core never requires this module; it adds no runtime dependencies.
+
+
+For explicit document conversion, use the separate [Markdown codec](/en/markdown-codec). It does not change typing shortcuts or install alongside them.

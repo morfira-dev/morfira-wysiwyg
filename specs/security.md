@@ -10,6 +10,18 @@ HTML parsing uses an inert template. String serialization (`sanitizeHTML`, schem
 
 A pre-hardening isolated localhost route-abort probe confirmed unwanted image fetches from sanitizeHTML/documentHTML in Chromium, Firefox and WebKit, with parseHTML alone producing none. Evidence: /tmp/morfira-codec-network-probe.ts and /tmp/morfira-codec-network-probe.log. This was a resource-fetch side effect, not a demonstrated XSS exploit; the permanent security-codec regression covers the repaired property.
 
+## Markdown codec boundaries
+
+The independent [Markdown codec](markdown-codec.md) consumes and produces typed
+document data without DOM or resource requests. Raw HTML is literal text, not an
+HTML escape hatch. Validate document nodes and link/image URLs through the same
+safe schema; unsafe destinations become label/alt text on import. Export escapes
+literal Markdown/HTML syntax and uses safe code delimiters; unsupported merged
+or nested tables and unregistered semantics fail explicitly. Source/output,
+node, depth and parser-work bounds apply before uncontrolled construction or
+delimiter rescans. Exported Markdown is intended for the documented syntax;
+applications must still validate any separate Markdown renderer they use.
+
 ## Office HTML normalization
 
 Office HTML preprocessing follows [office-paste.md](office-paste.md), inside the

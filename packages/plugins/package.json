@@ -151,6 +151,10 @@
     "./ui/table-properties": {
       "types": "./dist/ui/table-properties/index.d.ts",
       "import": "./dist/ui/table-properties.js"
+    },
+    "./codecs/markdown": {
+      "types": "./dist/codecs/markdown/index.d.ts",
+      "import": "./dist/codecs/markdown.js"
     }
   },
   "peerDependencies": {

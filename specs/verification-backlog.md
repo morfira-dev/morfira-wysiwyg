@@ -1,5 +1,69 @@
 # Verification record
 
+## Independent Markdown import/export — 2026-11-19
+
+Local implementation follows [markdown-codec.md](markdown-codec.md). New public
+`@morfira-dev/wysiwyg/codecs/markdown` exports parseMarkdown and serializeMarkdown
+over schema-v1 JSON. It is separate from typing shortcuts, optional editor
+plugins and preset installation. Core source and persisted schema are unchanged;
+there are no third-party runtime dependencies, DOM calls or network operations
+in either codec. The facade and plugins package export the independently built
+entry, and the behavior-only all-plugins size aggregate explicitly excludes it.
+
+The bounded grammar covers paragraphs/ATX headings, fences, ordinary lists with
+two-space nesting, explicit quotes, thematic breaks, inline marks/code, safe
+links/images and simple rectangular pipe tables. Raw HTML stays text; unsafe
+destinations degrade to label/alt. Export escapes literal syntax, selects safe
+code fences/padding and emits explicit backslash-newline hard breaks. Balanced
+labels preserve code containing a closing bracket and linked images. Unsupported
+merged/nested/multiline tables, multiline headings/inline code, negative or
+ten-digit ordered starts, nested actual links and unregistered semantics reject;
+visual styles and documented unrepresentable empty/metadata structures are lost.
+This is an explicit subset, not CommonMark/GFM conformance certification.
+
+Limits are 1,000,000 UTF-16 source/output units, 10,000 nodes, depth 32 and
+32,000,000 parser scan-work units; final core schema validation still applies.
+Export preflight and output construction enforce limits without changing input.
+Three subagents implemented import, export, regression definitions and bilingual
+docs/demo. Review corrected code delimiter/backslash boundaries, nested label
+scanning and physical-newline tracking for consecutive/trailing hard breaks.
+The demo lazily loads the codec on user action, guards stale async requests and
+distinguishes replacement/history clearing from insertion/history participation.
+
+Passed: pnpm run build (all declarations and bundle guards), pnpm run typecheck
+(including Vue/Svelte), pnpm run check:project, pnpm run check:tree-shaking
+(each codec export and unchanged preset isolation), pnpm run package:check
+(eight archives), pnpm run docs:build:site and git diff --check. An intermediate
+source type check caught optional-title inference errors, corrected before build;
+the new public declarations were generated before final type checking.
+
+No local behavioral tests, installed-consumer execution or live browser checks
+ran. No GitHub pipeline was inspected. Six editor definitions and two localized
+demo definitions are authored, including supported round trips, literal HTML,
+unsafe URLs, escaping/fences/hard breaks, linked code/images, table refusals,
+source/output/node/depth limits, nonmutation and actual selection/history.
+One of the six definitions authors a DOM-free Node execution once (Chromium
+project only), with a fetch guard. A separate installed-tarball resolution
+and Node codec smoke is authored for later consumer runs. Runtime outcomes and
+broader syntax interoperability remain unverified at the user's local test pause.
+
+Final selected dependency closures, bytes (shared JS counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Codec package chunks | 13392 | 4857 | 4440 | 0 |
+| Standalone codec consumer incl. selected core validation | 29926 | 10269 | 9272 | 0 |
+| Core | 92677 | 28799 | 25393 | 3293 |
+| Standard ready, without codec | 220034 | 65434 | 56008 | 12162 |
+| Extended ready, without codec | 241217 | 71652 | 61051 | 13358 |
+
+Standalone codec retains 4731 gzip bytes under its 15000-byte guard. Core and
+CSS are unchanged; no codec owner appears in core or preset selective-import
+closures. Standard/extended raw JS is unchanged; compressed generated profiles
+vary by +9/+158 gzip bytes with the new build/chunk layout. Standard retains
+14566 gzip bytes under 80000. Framework runtimes, maps and declarations are
+excluded. No combined every-module profile is implied by these measurements.
+
 ## Selected-link contextual actions — 2026-11-19
 
 Local implementation extends [contextual-links.md](contextual-links.md) to

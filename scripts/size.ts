@@ -23,7 +23,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
   }
   if (name === 'plugins') {
     const entries = JSON.parse(await readFile(`${path}/entries.json`, 'utf8')) as Record<string, string[]>;
-    for (const [group, selectedEntries] of [['suggestions-set', ['mentions', 'slash', 'suggestions']], ['all-plugins', Object.keys(entries).filter((entry) => !entry.startsWith('ui/') && !entry.startsWith('presets/'))], ['ui-forms', ['ui/links', 'ui/images', 'ui/search']]] as const) {
+    for (const [group, selectedEntries] of [['suggestions-set', ['mentions', 'slash', 'suggestions']], ['all-plugins', Object.keys(entries).filter((entry) => !entry.startsWith('ui/') && !entry.startsWith('presets/') && !entry.startsWith('codecs/'))], ['ui-forms', ['ui/links', 'ui/images', 'ui/search']]] as const) {
       const selected = [...new Set(selectedEntries.flatMap((entry) => entries[entry]))];
       const buffers = await Promise.all(selected.map((file) => readFile(`${path}/${file}`)));
       report[`${group}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
@@ -52,10 +52,11 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     report['ui-contextual.css'] = { raw: contextualCSS.length, gzip: gzipSync(contextualCSS).length, brotli: brotliCompressSync(contextualCSS).length };
     if (contextualCSS.length > 2000) { console.error('contextual: exceeds 2000 raw CSS byte budget'); failed = true; }
     const editorCSS = await readFile(`${path}/ui/editor.css`); report['ui-editor.css'] = { raw: editorCSS.length, gzip: gzipSync(editorCSS).length, brotli: brotliCompressSync(editorCSS).length };
-    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
+    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].gzip > 150_000) { console.error(`${entry}: exceeds 150000 byte gzip JS budget`); failed = true; }
+      if (entry === 'codecs/markdown' && report[`${entry}.js`].gzip > 15000) { console.error('markdown codec: exceeds 15000 gzip JS byte budget'); failed = true; }
       if (entry === 'checklists' && report[`${entry}.js`].raw > 8000) { console.error('checklists: exceeds 8000 byte JS budget'); failed = true; }
       if (entry === 'horizontal-rule' && report[`${entry}.js`].raw > 5000) { console.error('horizontal-rule: exceeds 5000 byte JS budget'); failed = true; }
       if (entry === 'ui/table-picker' && report[`${entry}.js`].gzip > 4000) { console.error('table-picker: exceeds 4000 gzip JS byte budget'); failed = true; }
@@ -75,6 +76,18 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
   const budget = name === 'core' ? 200_000 : name === 'plugins' ? 150_000 : 10_000;
   const metric = name === 'core' || name === 'plugins' ? 'gzip' : 'raw';
   if (report[`${name}.js`][metric] > budget) { console.error(`${name}: exceeds ${budget} byte ${metric} JS budget`); failed = true; }
+}
+// A standalone codec consumer also includes its selected core validation helpers.
+const markdownCodec = await build({
+  stdin: { contents: "import { parseMarkdown, serializeMarkdown } from '@morfira-dev/wysiwyg/codecs/markdown'; globalThis.__morfiraMarkdownCodec = { parseMarkdown, serializeMarkdown };", resolveDir: process.cwd(), loader: 'ts' },
+  bundle: true, minify: true, write: false, format: 'esm', platform: 'browser',
+  target: 'es2022', tsconfigRaw: { compilerOptions: {} }, logLevel: 'silent',
+});
+const markdownBuffer = markdownCodec.outputFiles[0].contents;
+report['markdown-codec-standalone.js'] = { raw: markdownBuffer.length, gzip: gzipSync(markdownBuffer).length, brotli: brotliCompressSync(markdownBuffer).length };
+if (report['markdown-codec-standalone.js'].gzip > 15000) {
+  console.error('standalone Markdown codec: exceeds 15000 gzip JS byte budget');
+  failed = true;
 }
 // Consumer profiles retain the actual public factories and bundle their shared JS once.
 // Runtime feature flags are deliberately not used as a tree-shaking claim.

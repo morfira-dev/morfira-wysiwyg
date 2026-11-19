@@ -1,5 +1,9 @@
 # Markdown typing shortcuts — optional module
 
+Document import/export is independently available through `/codecs/markdown`
+under [markdown-codec.md](markdown-codec.md). It does not extend this module's
+typing rules or introduce automatic paste conversion.
+
 Status: implemented locally; full check passes 474 editor/module browser tests across Chromium/Firefox/WebKit and 27 bilingual site tests pass. Public `@morfira-dev/wysiwyg/plugins/markdown` exports `markdownShortcuts(options?: MarkdownShortcutOptions)` and `markdownCommands(editor)`. Original strict TypeScript/MIT, no runtime dependencies, core must not import it. Schema v1 unchanged. Independent JS entry plus shared chunks guarded at the user-directed optional-module envelope of 150000 gzip JS bytes.
 
 ## API and scope

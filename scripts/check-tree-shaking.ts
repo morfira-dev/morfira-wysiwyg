@@ -10,7 +10,7 @@ const originalInputs = JSON.parse(await readFile('packages/plugins/dist/bundled-
 const owner = (path: string): string | undefined => {
   const relative = path.replaceAll('\\', '/').split('packages/plugins/src/')[1];
   if (!relative) return;
-  if (relative.startsWith('ui/') || relative.startsWith('presets/')) return relative.split('/').slice(0, 2).join('/');
+  if (relative.startsWith('ui/') || relative.startsWith('presets/') || relative.startsWith('codecs/')) return relative.split('/').slice(0, 2).join('/');
   if (relative.startsWith('suggestions/')) return /\/menu\.ts$|\/index\.ts$/.test(relative) ? 'suggestions-menu' : 'suggestions-core';
   return relative.split('/')[0];
 };
@@ -21,6 +21,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg', symbol: 'createDocumentSchema', feature: 'schema', allowed: [] },
   { entry: '@morfira-dev/wysiwyg', symbol: 'createEditorCommand', feature: 'command-token', allowed: [] },
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component', allowed: [] },
+  ...['parseMarkdown', 'serializeMarkdown'].map((symbol) => ({ entry: '@morfira-dev/wysiwyg/codecs/markdown', symbol, feature: 'codecs/markdown', allowed: ['codecs/markdown'] })),
   ...features.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/plugins/${feature}`,
     symbol: ({ 'text-direction': 'textDirection', 'list-properties': 'listProperties', fonts: 'fonts', 'horizontal-rule': 'horizontalRule', checklists: 'checklists', 'table-properties': 'tableProperties', tables: 'tables', images: 'images', 'image-input': 'imageInput', search: 'search', statistics: 'statistics', markdown: 'markdownShortcuts', autolink: 'autolink', mentions: 'mentions', slash: 'slash', suggestions: 'createSuggestionMenu' } as Record<string, string>)[feature],

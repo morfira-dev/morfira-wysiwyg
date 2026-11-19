@@ -1,0 +1,44 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`Markdown codec controls and explicit import/export boundaries in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const panel = page.locator('.lab-markdown-codec');
+  await panel.locator('summary').click();
+  await expect(panel).toContainText(t('Импорт заменяет документ и сбрасывает историю', 'Import replaces the document and clears history'));
+  const source = panel.getByRole('textbox', { name: t('Markdown-исходник', 'Markdown source'), exact: true });
+  await source.fill('# From Markdown\n\nA **bold** word.');
+  await panel.getByRole('button', { name: t('Импортировать Markdown', 'Import Markdown'), exact: true }).click();
+  await expect(content.locator('h1')).toHaveText('From Markdown');
+  await expect(content.locator('strong')).toHaveText('bold');
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await expect(undo).toBeDisabled();
+  await source.fill('**New**');
+  await content.locator('strong').evaluate((strong) => {
+    const surface = strong.closest<HTMLElement>('.mw-content')!;
+    surface.focus();
+    const range = document.createRange();
+    range.selectNodeContents(strong);
+    const selection = document.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe('bold');
+  await panel.getByRole('button', { name: t('Вставить Markdown', 'Insert Markdown'), exact: true }).click();
+  await expect(content.locator('strong')).toHaveText('New');
+  await undo.click();
+  await expect(content.locator('strong')).toHaveText('bold');
+  const before = await content.innerHTML();
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(panel.getByRole('button', { name: t('Импортировать Markdown', 'Import Markdown'), exact: true })).toBeDisabled();
+  await expect(panel.getByRole('button', { name: t('Вставить Markdown', 'Insert Markdown'), exact: true })).toBeDisabled();
+  await panel.getByRole('button', { name: t('Экспортировать Markdown', 'Export Markdown'), exact: true }).click();
+  await expect(source).toHaveValue(/# From Markdown/);
+  await expect(source).toHaveValue(/\*\*bold\*\*/);
+  expect(await content.innerHTML()).toBe(before);
+  await panel.getByRole('link', { name: t('Синтаксис и ограничения Markdown-кодека', 'Markdown codec syntax and limitations'), exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/markdown-codec$`));
+  await expect(page.locator('.vp-doc')).toContainText(t('Объединённые', 'Merged'));
+});
