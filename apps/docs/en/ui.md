@@ -264,3 +264,7 @@ The same form exposes **Cell padding (0–48px)**, **Border width (0–12px)** a
 The Minimum row height (1–1000px) field uses a string `rowMinHeight` draft: `80px` applies a minimum to every row in the selected logical rectangle, including a full rowspan; an empty string resets it. Different row values use the mixed placeholder. Content can make the rendered row taller. Full HTML/JSON retains TR height, but existing structural commands rebuild rows and rectangle clipboard does not copy their height.
 
 The explicit [contextual table toolbar](/en/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions and independent gzip budgets.
+
+## Search highlights without document changes
+
+`createSearchHighlights(editor)` from `/ui/search-highlights` complements the search form and requires separate `/ui/search-highlights.css`. It paints native CSS Highlight API ranges instead of document markup. Without the API, search remains usable without all-result painting. [Setup, state and cleanup](/en/search-highlights).

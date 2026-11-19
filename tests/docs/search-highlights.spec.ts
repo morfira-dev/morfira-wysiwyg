@@ -1,0 +1,45 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`all-result search highlight controls are observational in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const search = page.locator('.lab-search');
+  await search.locator('summary').click();
+  const panel = search.locator('.lab-search-highlights');
+  const enabled = panel.getByRole('checkbox', { name: t('Подсветка всех результатов', 'Highlight all results'), exact: true });
+  await expect(enabled).toBeChecked();
+  await panel.getByRole('button', { name: t('Загрузить пример подсветки', 'Load highlight sample'), exact: true }).click();
+  const original = await content.innerHTML();
+  const state = panel.locator('[data-search-highlights-state]');
+  const supported = await page.evaluate(() => typeof CSS !== 'undefined' && 'highlights' in CSS && 'Highlight' in window);
+  const expectCount = async (count: number) => {
+    if (supported) await expect(state).toContainText(t(`диапазонов ${count}`, `${count} ranges`));
+    else await expect(state).toContainText(t('API недоступен', 'API is unavailable'));
+  };
+  await expectCount(0);
+  await panel.getByRole('button', { name: t('Подсветить все Morfira', 'Highlight every Morfira'), exact: true }).click();
+  await expectCount(7);
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await expect(undo).toBeDisabled();
+  expect(await content.innerHTML()).toBe(original);
+  await expect(content.locator('mark,[data-search-highlight]')).toHaveCount(0);
+  await enabled.uncheck();
+  await expect(state).toContainText(t('выключена', 'disabled'));
+  expect(await content.innerHTML()).toBe(original);
+  await enabled.check();
+  await expectCount(7);
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(panel.getByRole('button', { name: t('Загрузить пример подсветки', 'Load highlight sample'), exact: true })).toBeDisabled();
+  await panel.getByRole('button', { name: t('Обновить сведения о подсветке', 'Refresh highlight details'), exact: true }).click();
+  await expectCount(7);
+  await panel.getByRole('button', { name: t('Очистить подсветку и поиск', 'Clear highlights and search'), exact: true }).click();
+  await expectCount(0);
+  expect(await content.innerHTML()).toBe(original);
+  await expect(undo).toBeDisabled();
+  await panel.getByRole('link', { name: t('Подключение и ограничения подсветки', 'Highlight setup and limitations'), exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/search-highlights$`));
+  await expect(page.locator('.vp-doc')).toContainText('morfira-search-results');
+  await expect(page.locator('.vp-doc')).toContainText(t('не вставляются', 'without inserting'));
+});

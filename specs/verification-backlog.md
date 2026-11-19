@@ -1,5 +1,74 @@
 # Verification record
 
+## Native all-result search highlights — 2026-11-19
+
+Local implementation follows [search-highlights.md](search-highlights.md).
+Independent /ui/search-highlights and CSS expose createSearchHighlights with
+getState/refresh/destroy and ready/unsupported/conflict status. It paints bounded
+search matches and the current result through native CSS Custom Highlights,
+without document wrappers, attributes, dynamic stylesheets, selection writes,
+layout reads or scroll/resize polling. The stylesheet is explicitly imported and
+uses four --mw-search-* color variables. Core and default presets do not install
+the UI. Older/unsupported platforms keep ordinary search/navigation usable.
+
+Search adds getSearchRanges: fresh observational Range clones plus current index
+from its actual index, draining pending mutations and respecting semantic/foreign
+barriers. Ownership marker attribute changes now invalidate search as well.
+Snapshots do not authorize commands or introduce mapped SDK positions. Search
+and schema persisted formats remain unchanged; no runtime dependencies added.
+
+Two fixed native keys are privately shared per owner Document. Owner-specific
+range deletion preserves other editors; current ranges have higher priority.
+Collisions/external replacement never overwrite foreign entries or call registry/
+shared Highlight clear. Disposal releases only owned ranges, listeners, observer,
+animation frames and exact native objects. Explicit refresh is synchronous;
+automatic content/query updates coalesce in RAF and current-only navigation
+reuses existing ranges. API replacement/composition clears the owned paint state.
+The W3C platform model is referenced in the feature spec; it is not browser-run
+evidence for this implementation.
+
+Three subagents implemented renderer/registry, representative tests and RU/EN
+docs/demo. Full demo explicitly mounts it with a checkbox, sample, whole-word
+query, manual state snapshot and clear controls. Count is registered owned ranges,
+not confirmation of visible pixel paint. No local manual browser check occurred.
+
+Passed: pnpm run build (declarations and every size/profile guard), pnpm run
+typecheck (including Vue/Svelte), pnpm run check:project, pnpm run
+check:tree-shaking (range helper/UI isolation and all existing graphs),
+pnpm run package:check (eight archives), pnpm run docs:build:site and git diff
+--check. No local behavioral tests or installed-consumer execution ran; no GitHub
+pipeline was inspected. No passing runtime outcome is inferred from these checks.
+
+Seven editor definitions and two localized demo definitions are authored for
+actual all/current ranges, clone isolation, cross-mark/cell/semantic boundaries,
+content/selection/history nonmutation, options/replace/history/API/identical-DOM
+refresh, ownership attributes, match-limit cleanup, readonly/IME, unsupported
+platforms, malformed/duplicate setup, foreign collisions and two-editor cleanup/
+stale frames. Native-only definitions check real API availability first; fallback
+has its own scenario. An installed-tarball smoke is authored on one representative
+adapter per browser/profile without expanding the complete adapter matrix. It
+checks native capability/state and unchanged controlled feedback before disposal.
+These runtime scenarios remain unverified during the user's explicit test pause.
+
+Final selected dependency closures, bytes (shared JS counted once):
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 93136 | 28914 | 25471 | 3293 |
+| Search | 7954 | 3478 | 3080 | — |
+| Search highlight UI package closure | 12747 | 5431 | 4808 | 411 extra |
+| Standard ready without highlight UI | 220837 | 65515 | 56161 | 12162 |
+| Standard ready + highlight UI | 225817 | 67184 | 57494 | 12573 |
+
+Core is unchanged; search grows 139 gzip bytes for observational range access.
+The optional entry retains 2569 gzip bytes under 8000. Selected standard retains
+12816 gzip bytes under 80000. Extra CSS is 411 raw / 162 gzip / 126 Brotli bytes;
+selected profile CSS is 12573 / 4086 / 3333. Core and existing profile CSS do not
+grow. Standard raw JS grows 217 bytes while compressed output varies by -51 gzip
+bytes against baseline. Framework runtimes, maps and declarations are excluded.
+These are selected static artifact measurements, not a claim that every optional
+module combination or every browser paint implementation has been verified.
+
 ## Persistent editable mention references — 2026-11-19
 
 Local implementation follows [persistent-mentions.md](persistent-mentions.md).

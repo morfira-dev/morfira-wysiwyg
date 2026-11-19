@@ -1,6 +1,7 @@
 import type { SearchOptions, SearchMatch, SearchState, SearchCommands, Leaf, Run, LocatedMatch, Index } from './types.js';
 
 import type { Editor, EditorPlugin } from '@morfira-dev/wysiwyg-core';
+import { registerSearchRanges } from './ranges.js';
 const blocks = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'figure', 'figcaption']);
 const barriers = new Set(['br', 'img', 'hr']);
 const word = /[\p{L}\p{N}\p{M}\p{Pc}]/u;
@@ -329,6 +330,12 @@ export const search = (): EditorPlugin => ({
       },
     };
     const unprovide = editor.providePlugin('search', api);
+    const unregisterRanges = registerSearchRanges(editor, () => {
+      active();
+      ensureFresh();
+      active();
+      return { ranges: index.matches.map((match) => matchRange(editor.surface, index, match)), current: state.current };
+    });
     const unsubscribe = editor.subscribe(() => {
       if (!mutating)
         refresh();
@@ -337,7 +344,7 @@ export const search = (): EditorPlugin => ({
       if (records.length && !disposed && !mutating)
         refresh();
     });
-    observer.observe(editor.surface, { subtree: true, childList: true, characterData: true });
+    observer.observe(editor.surface, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['data-mw-node'] });
     const compositionStart = () => { composing = true; };
     const compositionEnd = () => {
       composing = false; if (!mutating)
@@ -345,7 +352,18 @@ export const search = (): EditorPlugin => ({
     };
     editor.surface.addEventListener('compositionstart', compositionStart);
     editor.surface.addEventListener('compositionend', compositionEnd);
-    return () => { disposed = true; observer?.disconnect(); unsubscribe(); unprovide(); listeners.clear(); editor.surface.removeEventListener('compositionstart', compositionStart); editor.surface.removeEventListener('compositionend', compositionEnd); index = { runs: [], matches: [] }; state = { query: '', options: { caseSensitive: false, wholeWord: false }, matches: [], current: -1 }; };
+    return () => {
+      disposed = true;
+      observer?.disconnect();
+      unsubscribe();
+      unregisterRanges();
+      unprovide();
+      listeners.clear();
+      editor.surface.removeEventListener('compositionstart', compositionStart);
+      editor.surface.removeEventListener('compositionend', compositionEnd);
+      index = { runs: [], matches: [] };
+      state = { query: '', options: { caseSensitive: false, wholeWord: false }, matches: [], current: -1 };
+    };
   }
 });
 export const searchCommands = (editor: Editor): SearchCommands => {

@@ -40,6 +40,8 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/presets/extended', symbol: 'createExtendedPreset', feature: 'presets/extended', allowed: ['presets/extended', 'presets/standard', 'presets/shared', ...standardFeatures, 'mentions', 'slash', 'suggestions-core'] },
   { entry: '@morfira-dev/wysiwyg/ui/table-properties', symbol: 'createTablePropertiesForm', feature: 'ui/table-properties', allowed: ['ui/table-properties', 'ui/shared', 'table-properties', 'tables'] },
   { entry: '@morfira-dev/wysiwyg/ui/table-picker', symbol: 'createTablePicker', feature: 'ui/table-picker', allowed: ['ui/table-picker', 'ui/shared'] },
+  { entry: '@morfira-dev/wysiwyg/plugins/search', symbol: 'getSearchRanges', feature: 'search', allowed: ['search'] },
+  { entry: '@morfira-dev/wysiwyg/ui/search-highlights', symbol: 'createSearchHighlights', feature: 'ui/search-highlights', allowed: ['ui/search-highlights', 'search'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual-table', symbol: 'createContextualTableUI', feature: 'ui/contextual-table', allowed: ['ui/contextual-table', 'ui/contextual', 'ui/shared', 'tables'] },
   { entry: '@morfira-dev/wysiwyg/ui/contextual-image', symbol: 'createContextualImageUI', feature: 'ui/contextual-image', allowed: ['ui/contextual-image', 'ui/contextual', 'ui/images', 'ui/shared', 'images'] },
   { entry: '@morfira-dev/wysiwyg/ui/image-resize', symbol: 'createImageResizeUI', feature: 'ui/image-resize', allowed: ['ui/image-resize', 'ui/contextual', 'ui/contextual-image', 'ui/shared', 'images'] },

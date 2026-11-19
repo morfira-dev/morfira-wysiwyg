@@ -324,3 +324,7 @@ Optional [table size picker](/en/table-picker) uses an explicit factory and CSS 
 
 
 [Table and cell properties](/en/table-properties) use independent `/plugins/table-properties` and `/ui/table-properties` entries: table width/placement and selected-cell background/border color/vertical alignment. The form applies only dirty fields in one Undo, uses existing `/ui/forms.css`, and is outside preset defaults.
+
+## Observing search ranges
+
+`getSearchRanges(editor)` from `/plugins/search` returns `{ ranges, current }`: fresh native ranges built from the current search index. It changes no focus/selection/history; modifying a returned range cannot modify the private index and confers no command authority. Snapshots can become stale after edits. An [independent optional UI](/en/search-highlights) paints every match.

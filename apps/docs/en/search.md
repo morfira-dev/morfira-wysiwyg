@@ -55,10 +55,14 @@ State is an independent snapshot. index/length are UTF-16 textContent offsets, m
 - Case matching uses standard JavaScript Unicode case folding, without locale-specific rules or Unicode normalization. Whole-word boundaries treat letters, numbers, combining marks and connector punctuation (including `_`) as word characters; emoji and ordinary punctuation are separators.
 - Queries accept up to 1000 UTF-16 units, replacement up to 20000. CR/LF are rejected: creating/removing block breaks is outside text replacement.
 - At most 10000 results. setQuery above the limit throws and retains previous state. If normal editing exceeds the limit, query is retained with `error: 'match-limit'` and empty matches; editing is not rolled back. Narrow the query or reduce the document. State recovers automatically under the limit. Replacement while overflowing rejects; no truncated partial replacement is performed.
-- The active result is selected. Highlighting all matches simultaneously is not implemented in this version.
+- Basic search selects the active result; an [independent optional module](/en/search-highlights) paints every match.
 
 The [homepage](/en/#editor) and [playground](/en/playground) include a “Find and replace” sample and matching panel. The sample contains eight case-insensitive literal Morfira matches; Whole word excludes MorfiraPlus, leaving seven. Replacement fields and option flags remain drafts until an explicit action. Results update while the document changes, and navigation remains available in read-only mode.
 
 DOM reconstruction by identical-HTML formatting also refreshes search ranges. The observer belongs to the instance and disconnects on destroy. Projected replacement text is checked before large strings are allocated, using the shared 5000000 UTF-16 document limit.
 
 Semantic wrappers with `data-mw-node`, including [persistent mentions](/en/persistent-mentions), are excluded from search and replacement entirely. Matches cannot cross their boundaries; offsets for later ordinary text still include their visible length. This preserves identity metadata and keeps automatic replacement from rewriting mention labels.
+
+## Highlighting every match
+
+The optional [highlight module](/en/search-highlights) paints all results through CSS Custom Highlight API, without DOM wrappers, HTML/JSON changes or history. Ordinary `search()` does not install it. Import its separate JS and CSS where native support is available; search/navigation remain usable without the API. `getSearchRanges(editor)` returns independent observational ranges and the current index without changing selection; snapshots can become stale after document edits.

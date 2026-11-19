@@ -20,6 +20,18 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await expect(content).toHaveText('Initial text');
           const readyUI = page.locator('[data-consumer-ready-ui]');
           await expect(readyUI.getByRole('toolbar', { name: 'Consumer ready tools', exact: true })).toBeVisible();
+          if (adapter === adapters[0]) {
+            const beforeHighlights = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), selection: window.morfiraConsumer.editor!.getSelection(), changes: window.morfiraConsumer.changes }));
+            await page.evaluate(() => {
+              window.morfiraConsumer.search!.setQuery('text');
+              window.morfiraConsumer.showSearchHighlights!();
+              window.morfiraConsumer.searchHighlights!.refresh();
+            });
+            const nativeHighlights = await page.evaluate(() => typeof Highlight === 'function' && typeof CSS !== 'undefined' && Boolean(CSS.highlights));
+            await expect.poll(() => page.evaluate(() => window.morfiraConsumer.searchHighlights!.getState())).toMatchObject({ count: nativeHighlights ? 1 : 0, current: nativeHighlights ? 0 : -1, status: nativeHighlights ? 'ready' : 'unsupported' });
+            assert.deepEqual(await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), selection: window.morfiraConsumer.editor!.getSelection(), changes: window.morfiraConsumer.changes })), beforeHighlights, 'Installed highlight UI preserves content, selection and adapter feedback');
+            await page.evaluate(() => { window.morfiraConsumer.hideSearchHighlights!(); window.morfiraConsumer.search!.clear(); });
+          }
           const beforeInput = await page.evaluate(() => ({ html: window.morfiraConsumer.editor!.getHTML(), changes: window.morfiraConsumer.changes }));
           await readyUI.locator('[data-mw-ui-action="table"]').click();
           await readyUI.getByRole('button', { name: 'Insert table: 2 × 3', exact: true }).click();

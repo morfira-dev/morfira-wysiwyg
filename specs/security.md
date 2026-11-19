@@ -10,6 +10,17 @@ HTML parsing uses an inert template. String serialization (`sanitizeHTML`, schem
 
 A pre-hardening isolated localhost route-abort probe confirmed unwanted image fetches from sanitizeHTML/documentHTML in Chromium, Firefox and WebKit, with parseHTML alone producing none. Evidence: /tmp/morfira-codec-network-probe.ts and /tmp/morfira-codec-network-probe.log. This was a resource-fetch side effect, not a demonstrated XSS exploit; the permanent security-codec regression covers the repaired property.
 
+## Search highlight boundaries
+
+The optional [search highlights](search-highlights.md) view uses actual bounded
+search ranges and a native document highlight registry, not persisted markup,
+content clones, dynamic stylesheets or untrusted CSS names. Its fixed registry
+keys and exact native object identities are owned; update/removal must preserve
+other editors and foreign application entries. Unsupported API or lost ownership
+cannot trigger a document-writing fallback. Range snapshots are observational and
+may become stale; they confer no authority to execute commands. Cleanup releases
+owned ranges/observers/frames without writing selection, history or document data.
+
 ## Persistent mention identities
 
 The optional reference slice follows [persistent-mentions.md](persistent-mentions.md).

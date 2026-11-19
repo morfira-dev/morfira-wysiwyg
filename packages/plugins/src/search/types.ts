@@ -7,6 +7,10 @@ export interface SearchMatch {
   length: number;
   text: string;
 }
+export interface SearchRangeSnapshot {
+  readonly ranges: readonly Range[];
+  readonly current: number;
+}
 export interface SearchState {
   query: string;
   options: {

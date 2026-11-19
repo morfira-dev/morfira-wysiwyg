@@ -1,5 +1,13 @@
 # Isolated package consumer verification
 
+The optional `/ui/search-highlights` JS/CSS entries resolve from real archives.
+An explicitly mounted native-highlight smoke runs on one representative adapter
+per profile/browser, observing feature detection, owned range state and unchanged
+document/selection/adapter feedback. Disposal clears only its owner and leaves the
+existing scenario usable. Detailed ownership/IME/range behavior stays in feature
+tests; no complete new adapter matrix is required. Actual consumer executions are
+reported separately and remain paused locally for this stage.
+
 The DOM-free Node smoke also imports createMentionSchema from installed packages
 and validates a stored ID using createDocumentSchema. This checks the additive
 text constraints and schema export without a provider or browser setup. Detailed

@@ -24,6 +24,9 @@ import { createSuggestionMenu } from '@morfira-dev/wysiwyg/plugins/suggestions';
 import { createLinkForm } from '@morfira-dev/wysiwyg/ui/links';
 import { createImageForm } from '@morfira-dev/wysiwyg/ui/images';
 import { createSearchForm } from '@morfira-dev/wysiwyg/ui/search';
+import { searchCommands } from '@morfira-dev/wysiwyg/plugins/search';
+import { createSearchHighlights } from '@morfira-dev/wysiwyg/ui/search-highlights';
+import '@morfira-dev/wysiwyg/ui/search-highlights.css';
 import { checklists } from '@morfira-dev/wysiwyg/plugins/checklists';
 import { fonts, fontCommands } from '@morfira-dev/wysiwyg/plugins/fonts';
 import { listProperties, listPropertyCommands } from '@morfira-dev/wysiwyg/plugins/list-properties';
@@ -74,6 +77,21 @@ export const plugins: EditorPlugin[] = createExtendedPreset({
 }).plugins!;
 export const ready = (editor: Editor) => {
   probe.editor = editor;
+  const searchAPI = searchCommands(editor);
+  probe.search = searchAPI;
+  let highlights: ReturnType<typeof createSearchHighlights> | undefined;
+  const hideSearchHighlights = () => {
+    highlights?.destroy();
+    highlights = undefined;
+    delete probe.searchHighlights;
+  };
+  const showSearchHighlights = () => {
+    hideSearchHighlights();
+    highlights = createSearchHighlights(editor);
+    probe.searchHighlights = highlights;
+  };
+  probe.showSearchHighlights = showSearchHighlights;
+  probe.hideSearchHighlights = hideSearchHighlights;
   const fontAPI = fontCommands(editor);
   probe.fonts = fontAPI;
   const listAPI = listPropertyCommands(editor);
@@ -236,6 +254,10 @@ export const ready = (editor: Editor) => {
   };
   probe.forms = forms;
   editor.events.on('destroy', () => {
+    hideSearchHighlights();
+    if (probe.search === searchAPI) delete probe.search;
+    if (probe.showSearchHighlights === showSearchHighlights) delete probe.showSearchHighlights;
+    if (probe.hideSearchHighlights === hideSearchHighlights) delete probe.hideSearchHighlights;
     hideOverflow();
     hideContextual();
     hideContextualLink();

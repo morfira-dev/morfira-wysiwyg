@@ -155,7 +155,12 @@
     "./codecs/markdown": {
       "types": "./dist/codecs/markdown/index.d.ts",
       "import": "./dist/codecs/markdown.js"
-    }
+    },
+    "./ui/search-highlights": {
+      "types": "./dist/ui/search-highlights/index.d.ts",
+      "import": "./dist/ui/search-highlights.js"
+    },
+    "./ui/search-highlights.css": "./dist/ui/search-highlights.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.11.0"

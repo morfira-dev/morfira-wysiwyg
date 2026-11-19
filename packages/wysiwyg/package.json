@@ -177,7 +177,12 @@
     "./codecs/markdown": {
       "types": "./dist/codecs/markdown.d.ts",
       "import": "./dist/codecs/markdown.js"
-    }
+    },
+    "./ui/search-highlights": {
+      "types": "./dist/ui/search-highlights.d.ts",
+      "import": "./dist/ui/search-highlights.js"
+    },
+    "./ui/search-highlights.css": "./dist/ui/search-highlights.css"
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.11.0",

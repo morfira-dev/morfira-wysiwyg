@@ -22,9 +22,12 @@ import type { LinkFormController } from '@morfira-dev/wysiwyg/ui/links';
 import type { ImageFormController } from '@morfira-dev/wysiwyg/ui/images';
 import type { TablePropertiesFormController } from '@morfira-dev/wysiwyg/ui/table-properties';
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
+import type { SearchCommands } from '@morfira-dev/wysiwyg/plugins/search';
+import type { SearchHighlightsController, SearchHighlightsState } from '@morfira-dev/wysiwyg/ui/search-highlights';
 import type { TableCommands, TableClipboardData } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
+import '@morfira-dev/wysiwyg/ui/search-highlights.css';
 import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/ui/contextual.css';
 import '@morfira-dev/wysiwyg/ui/contextual-link.css';
@@ -73,6 +76,18 @@ let linkForm: LinkFormController | undefined;
 let imageForm: ImageFormController | undefined;
 let tablePropertiesForm: TablePropertiesFormController | undefined;
 let searchForm: SearchFormController | undefined;
+let searchAPI: SearchCommands | undefined;
+const searchHighlightsEnabled = ref(true);
+const searchHighlightsSnapshot = ref<SearchHighlightsState>();
+let searchHighlights: SearchHighlightsController | undefined;
+let mountSearchHighlights: (() => void) | undefined;
+const searchHighlightsSummary = computed(() => {
+  const state = searchHighlightsSnapshot.value;
+  if (!state) return t('Подсветка выключена.', 'Highlights are disabled.');
+  if (state.status === 'unsupported') return t('CSS Highlight API недоступен; поиск и переходы работают.', 'CSS Highlight API is unavailable; search and navigation still work.');
+  if (state.status === 'conflict') return t('Имена подсветки заняты; чужие записи не изменены.', 'Highlight names are occupied; foreign entries are unchanged.');
+  return t(`Снимок: диапазонов ${state.count}, текущий ${state.current < 0 ? '—' : state.current + 1}.`, `Snapshot: ${state.count} ranges, current ${state.current < 0 ? '—' : state.current + 1}.`);
+});
 const dark = ref(false); const readOnly = ref(false); const ready = ref(false);
 const output = ref(''); const outputFormat = ref<'html' | 'json'>('html');
 const message = ref(''); const failed = ref(false); const count = ref(0); const words = ref(0);
@@ -330,6 +345,37 @@ const loadHorizontalRuleSample = () => run((instance) => {
 const loadChecklistSample = () => {
   sample.value = 'checklists';
   loadSample();
+};
+const inspectSearchHighlights = () => {
+  if (!searchHighlights) { searchHighlightsSnapshot.value = undefined; return; }
+  try {
+    searchHighlights.refresh();
+    searchHighlightsSnapshot.value = searchHighlights.getState();
+    notify('');
+  }
+  catch (error) { notify(error instanceof Error ? error.message : String(error), true); }
+};
+const updateSearchHighlights = () => { mountSearchHighlights?.(); inspectSearchHighlights(); };
+const loadSearchHighlightsSample = () => run((instance) => {
+  sample.value = 'search';
+  instance.setHTML(searchSample());
+  searchAPI?.clear();
+  searchForm?.setValues({ query: 'Morfira', caseSensitive: false, wholeWord: true });
+  inspectSearchHighlights();
+});
+const findSearchHighlights = () => {
+  if (!searchAPI) return;
+  try {
+    searchAPI.setQuery('Morfira', { caseSensitive: false, wholeWord: true });
+    searchForm?.setValues({ query: 'Morfira', caseSensitive: false, wholeWord: true });
+    inspectSearchHighlights();
+  }
+  catch (error) { notify(error instanceof Error ? error.message : String(error), true); }
+};
+const clearSearchHighlights = () => {
+  if (!searchAPI) return;
+  try { searchAPI.clear(); inspectSearchHighlights(); }
+  catch (error) { notify(error instanceof Error ? error.message : String(error), true); }
 };
 const toggleMarkdown = () => { markdownAPI?.setEnabled(markdownEnabled.value); };
 const updateToolbarOverflow = () => run(() => { mountEditorUI?.(); }, false);
@@ -726,6 +772,8 @@ onMounted(async () => {
     { createLinkForm },
     { createImageForm },
     { createSearchForm },
+    { searchCommands },
+    { createSearchHighlights },
     { createMinimalPreset },
     { createExtendedPreset },
     { createEditorUI },
@@ -754,6 +802,8 @@ onMounted(async () => {
     import('@morfira-dev/wysiwyg/ui/links'),
     import('@morfira-dev/wysiwyg/ui/images'),
     import('@morfira-dev/wysiwyg/ui/search'),
+    import('@morfira-dev/wysiwyg/plugins/search'),
+    import('@morfira-dev/wysiwyg/ui/search-highlights'),
     import('@morfira-dev/wysiwyg/presets/minimal'),
     import('@morfira-dev/wysiwyg/presets/extended'),
     import('@morfira-dev/wysiwyg/ui/editor'),
@@ -810,10 +860,19 @@ onMounted(async () => {
     tablePropertiesForm = createTablePropertiesForm(tablePropertiesFormHost.value!, editor, {
       onError: (error) => notify(error instanceof Error ? error.message : String(error), true),
     });
+    searchAPI = searchCommands(editor);
     searchForm = createSearchForm(searchFormHost.value!, editor, {
       initialValues: { query: 'Morfira', replacement: 'Morfira Studio', caseSensitive: false, wholeWord: false },
     });
   }
+  mountSearchHighlights = () => {
+    searchHighlights?.destroy();
+    searchHighlights = undefined;
+    if (props.full && searchHighlightsEnabled.value)
+      searchHighlights = createSearchHighlights(editor!, { onError: (error) => notify(error instanceof Error ? error.message : String(error), true) });
+  };
+  mountSearchHighlights();
+  inspectSearchHighlights();
   mountEditorUI = () => {
     disposeEditorUI?.();
     const ui = props.full ? createExtendedEditorUI(toolbar.value!, editor!, {
@@ -882,6 +941,7 @@ onBeforeUnmount(() => {
   linkForm?.destroy();
   imageForm?.destroy();
   tablePropertiesForm?.destroy();
+  searchHighlights?.destroy();
   searchForm?.destroy();
   unmention?.();
   unslash?.();
@@ -1172,6 +1232,18 @@ onBeforeUnmount(() => {
         </fieldset></details>
         <details class="lab-search"><summary>{{ t('Поиск и замена', 'Find and replace') }}</summary>
           <div ref="searchFormHost"></div>
+          <div class="lab-search-highlights">
+            <label><input v-model="searchHighlightsEnabled" type="checkbox" :aria-label="t('Подсветка всех результатов', 'Highlight all results')" :disabled="!ready" @change="updateSearchHighlights">{{ t('Подсветка всех результатов', 'Highlight all results') }}</label>
+            <div class="lab-inline-actions">
+              <button :disabled="!ready || readOnly" @click="loadSearchHighlightsSample">{{ t('Загрузить пример подсветки', 'Load highlight sample') }}</button>
+              <button :disabled="!ready" @click="findSearchHighlights">{{ t('Подсветить все Morfira', 'Highlight every Morfira') }}</button>
+              <button :disabled="!ready" @click="inspectSearchHighlights">{{ t('Обновить сведения о подсветке', 'Refresh highlight details') }}</button>
+              <button :disabled="!ready" @click="clearSearchHighlights">{{ t('Очистить подсветку и поиск', 'Clear highlights and search') }}</button>
+            </div>
+            <p data-search-highlights-state role="status">{{ searchHighlightsSummary }}</p>
+            <p class="lab-hint">{{ t('Подсветка использует CSS Highlight API без обёрток в документе. Снимок обновляется по кнопке. Если API недоступен, обычный поиск продолжает работать. Загрузка примера заменяет документ. Поиск и подсветка доступны в read-only.', 'Highlights use CSS Highlight API without document wrappers. Refresh the snapshot explicitly. Ordinary search still works when the API is unavailable. Loading the sample replaces the document. Search and highlights work read-only.') }}</p>
+            <a :href="ru ? '/search-highlights' : '/en/search-highlights'">{{ t('Подключение и ограничения подсветки', 'Highlight setup and limitations') }}</a>
+          </div>
           <p class="lab-hint">{{ t('Буквальный поиск, без регулярных выражений. Совпадения пересекают стили, но не блоки, ячейки, переносы и изображения. Выделяется активное совпадение; поиск доступен в read-only.', 'Literal search without regular expressions. Matches cross inline styles, but not blocks, cells, line breaks or images. The active match is selected; search works in read-only.') }}</p>
         </details>
         <details class="lab-statistics"><summary>{{ t('Статистика', 'Statistics') }}</summary>

@@ -51,12 +51,16 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     const contextualCSS = await readFile(`${path}/ui/contextual.css`);
     report['ui-contextual.css'] = { raw: contextualCSS.length, gzip: gzipSync(contextualCSS).length, brotli: brotliCompressSync(contextualCSS).length };
     if (contextualCSS.length > 2000) { console.error('contextual: exceeds 2000 raw CSS byte budget'); failed = true; }
+    const searchCSS = await readFile(`${path}/ui/search-highlights.css`);
+    report['ui-search-highlights.css'] = { raw: searchCSS.length, gzip: gzipSync(searchCSS).length, brotli: brotliCompressSync(searchCSS).length };
+    if (searchCSS.length > 1500) { console.error('search highlights: exceeds 1500 raw CSS byte budget'); failed = true; }
     const editorCSS = await readFile(`${path}/ui/editor.css`); report['ui-editor.css'] = { raw: editorCSS.length, gzip: gzipSync(editorCSS).length, brotli: brotliCompressSync(editorCSS).length };
-    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search']) {
+    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/search-highlights']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].gzip > 150_000) { console.error(`${entry}: exceeds 150000 byte gzip JS budget`); failed = true; }
       if (entry === 'codecs/markdown' && report[`${entry}.js`].gzip > 15000) { console.error('markdown codec: exceeds 15000 gzip JS byte budget'); failed = true; }
+      if (entry === 'ui/search-highlights' && report[`${entry}.js`].gzip > 8000) { console.error('search highlights: exceeds 8000 gzip JS byte budget'); failed = true; }
       if (entry === 'checklists' && report[`${entry}.js`].raw > 8000) { console.error('checklists: exceeds 8000 byte JS budget'); failed = true; }
       if (entry === 'horizontal-rule' && report[`${entry}.js`].raw > 5000) { console.error('horizontal-rule: exceeds 5000 byte JS budget'); failed = true; }
       if (entry === 'ui/table-picker' && report[`${entry}.js`].gzip > 4000) { console.error('table-picker: exceeds 4000 gzip JS byte budget'); failed = true; }
@@ -94,8 +98,9 @@ if (report['markdown-codec-standalone.js'].gzip > 15000) {
 for (const profile of ['minimal', 'standard', 'extended']) {
   const preset = ({ minimal: 'createMinimalPreset', standard: 'createStandardPreset', extended: 'createExtendedPreset' } as Record<string, string>)[profile];
   const ui = ({ minimal: 'createEditorUI', standard: 'createStandardEditorUI', extended: 'createExtendedEditorUI' } as Record<string, string>)[profile];
-  for (const variant of ['headless', 'ready', ...(profile !== 'minimal' ? ['table-properties-ready'] : []), ...(profile === 'standard' ? ['table-picker-ready', 'image-input-ready', 'table-picker-image-input-ready', 'fonts-ready', 'list-properties-ready', 'fonts-list-properties-ready', 'text-direction-ready', 'fonts-list-properties-text-direction-ready', 'contextual-ready', 'contextual-link-ready', 'contextual-image-ready', 'image-resize-ready', 'contextual-table-ready', 'fonts-list-properties-text-direction-contextual-ready'] : [])]) {
+  for (const variant of ['headless', 'ready', ...(profile !== 'minimal' ? ['table-properties-ready'] : []), ...(profile === 'standard' ? ['search-highlights-ready', 'table-picker-ready', 'image-input-ready', 'table-picker-image-input-ready', 'fonts-ready', 'list-properties-ready', 'fonts-list-properties-ready', 'text-direction-ready', 'fonts-list-properties-text-direction-ready', 'contextual-ready', 'contextual-link-ready', 'contextual-image-ready', 'image-resize-ready', 'contextual-table-ready', 'fonts-list-properties-text-direction-contextual-ready'] : [])]) {
     const ready = variant !== 'headless';
+    const withSearchHighlights = variant === 'search-highlights-ready';
     const withTableProperties = variant.includes('table-properties');
     const withTablePicker = variant.includes('table-picker');
     const withImageInput = variant.includes('image-input');
@@ -109,6 +114,7 @@ for (const profile of ['minimal', 'standard', 'extended']) {
     const withContextual = variant.includes('contextual') && !withContextualLink && !withContextualImage && !withContextualTable;
     const name = `profile-${profile}-${variant}`;
     let contents = `import { createEditor } from '@morfira-dev/wysiwyg'; import { ${preset} } from '@morfira-dev/wysiwyg/presets/${profile}'; ${ready ? `import { ${ui} } from '@morfira-dev/wysiwyg/ui/${profile === 'minimal' ? 'editor' : profile}';` : ''} ${withFonts ? "import { fonts } from '@morfira-dev/wysiwyg/plugins/fonts';" : ''} ${withListProperties ? "import { listProperties } from '@morfira-dev/wysiwyg/plugins/list-properties';" : ''} ${withTextDirection ? "import { textDirection } from '@morfira-dev/wysiwyg/plugins/text-direction';" : ''} ${withContextual ? "import { createContextualToolbar } from '@morfira-dev/wysiwyg/ui/contextual';" : ''} ${withContextualLink ? "import { createContextualLinkUI } from '@morfira-dev/wysiwyg/ui/contextual-link';" : ''} ${withContextualImage ? "import { createContextualImageUI } from '@morfira-dev/wysiwyg/ui/contextual-image';" : ''} ${withImageResize ? "import { createImageResizeUI } from '@morfira-dev/wysiwyg/ui/image-resize';" : ''} ${withContextualTable ? "import { createContextualTableUI } from '@morfira-dev/wysiwyg/ui/contextual-table';" : ''} globalThis.__morfiraProfile = { createEditor, ${preset}${ready ? `, ${ui}` : ''}${withFonts ? ', fonts' : ''}${withListProperties ? ', listProperties' : ''}${withTextDirection ? ', textDirection' : ''}${withContextual ? ', createContextualToolbar' : ''}${withContextualLink ? ', createContextualLinkUI' : ''}${withContextualImage ? ', createContextualImageUI' : ''}${withImageResize ? ', createImageResizeUI' : ''}${withContextualTable ? ', createContextualTableUI' : ''} };`;
+    if (withSearchHighlights) contents += "import { createSearchHighlights } from '@morfira-dev/wysiwyg/ui/search-highlights'; globalThis.__morfiraSearchHighlights = createSearchHighlights;";
     if (withTablePicker || withImageInput) {
       contents += `${withTablePicker ? "import { createTablePicker } from '@morfira-dev/wysiwyg/ui/table-picker';" : ''} ${withImageInput ? "import { imageInput } from '@morfira-dev/wysiwyg/plugins/image-input';" : ''} globalThis.__morfiraOptionalProfile = (host, toolbarHost, upload) => { const editor = createEditor(host, ${preset}({${withImageInput ? 'images: { upload }, plugins: [imageInput()]' : ''}})); const ui = ${ui}(toolbarHost, editor, {${withTablePicker ? 'table: { picker: createTablePicker }' : ''}}); return { editor, ui }; };`;
     }
@@ -129,6 +135,7 @@ for (const profile of ['minimal', 'standard', 'extended']) {
       '@morfira-dev/wysiwyg/style.css',
       ...(profile !== 'minimal' ? ['@morfira-dev/wysiwyg/plugins/tables.css'] : []),
       ...(ready ? ['@morfira-dev/wysiwyg/ui/editor.css'] : []),
+      ...(withSearchHighlights ? ['@morfira-dev/wysiwyg/ui/search-highlights.css'] : []),
       ...(withTablePicker ? ['@morfira-dev/wysiwyg/ui/table-picker.css'] : []),
       ...(withContextualTable ? ['@morfira-dev/wysiwyg/ui/contextual-table.css'] : []),
       ...(withContextualImage ? ['@morfira-dev/wysiwyg/ui/contextual-image.css'] : []),

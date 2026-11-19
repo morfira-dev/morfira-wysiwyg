@@ -10,6 +10,8 @@ import type { ImageResizeUIController } from '@morfira-dev/wysiwyg/ui/image-resi
 import type { ContextualLinkUIController } from '@morfira-dev/wysiwyg/ui/contextual-link';
 import type { ContextualToolbarController } from '@morfira-dev/wysiwyg/ui/contextual';
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
+import type { SearchCommands } from '@morfira-dev/wysiwyg/plugins/search';
+import type { SearchHighlightsController } from '@morfira-dev/wysiwyg/ui/search-highlights';
 import type { FontCommands } from '@morfira-dev/wysiwyg/plugins/fonts';
 import type { ListPropertyCommands } from '@morfira-dev/wysiwyg/plugins/list-properties';
 import type { TextDirectionCommands } from '@morfira-dev/wysiwyg/plugins/text-direction';
@@ -18,6 +20,10 @@ import type { TablePropertiesCommands } from '@morfira-dev/wysiwyg/plugins/table
 import type { TablePropertiesFormController } from '@morfira-dev/wysiwyg/ui/table-properties';
 
 export interface ConsumerProbe {
+  search?: SearchCommands;
+  searchHighlights?: SearchHighlightsController;
+  showSearchHighlights?: () => void;
+  hideSearchHighlights?: () => void;
   tableProperties?: TablePropertiesCommands;
   tablePropertiesForm?: TablePropertiesFormController;
   editor?: Editor;

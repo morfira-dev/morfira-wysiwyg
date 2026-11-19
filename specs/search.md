@@ -20,6 +20,13 @@ Actual new validation results belong to verification-backlog.md.
 
 ## Navigation and replacement
 
+The optional [search highlights](search-highlights.md) module adds non-persisted
+all-result/current paint through native CSS highlights. The independent
+getSearchRanges(editor) observation returns fresh current Range clones plus the
+active index, after pending index updates; it never changes selection/history.
+Semantic ownership attribute changes invalidate indexing alongside text/children.
+Ranges are ephemeral, not validated mutation targets or mapped SDK positions.
+
 select validates a match index, focuses the editor, selects the exact DOM text range and scrolls that range into view. next/previous wrap around; no results are no-ops. Native Selection marks the active result; no persistent marks/wrappers or claim of highlighting all matches. Find/navigation do not create history. Searching works in read-only; replace returns false/0 in read-only or during IME composition.
 
 Commands replace their indexed current match, independent of form focus/another DOM selection. Replace only text, retaining all block/table/list/figure structure, unaffected marks/links/styles, image nodes and merged-cell spans. Replacement inherits inline formatting/link at the match start, even across multiple text leaves; never inserts executable HTML. Removing matched text may leave empty inline wrappers, which have no visible text. Replacing a whole multi-node match must not delete surrounding tags or unrelated content. A single replace is one transaction; replaceAll snapshots matches and replaces in reverse document order in ONE transaction. It must not replace freshly inserted matching text in the same invocation. No matches, read-only, identical replacement are no-op history operations. After replacement, caret is at the inserted text end (first replacement for replaceAll). After replaceCurrent choose the first remaining match at/after the inserted text end, wrapping if necessary. Query results update after input, formatting, undo/redo and external document replacement without moving selection. Preserve the nearest active match by text position where possible. External replacement emits no user change; core history reset semantics remain intact.

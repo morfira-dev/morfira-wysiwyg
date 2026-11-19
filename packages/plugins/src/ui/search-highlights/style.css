@@ -1,0 +1,10 @@
+.mw-content::highlight(morfira-search-results),
+.mw-content ::highlight(morfira-search-results) {
+  background-color: var(--mw-search-highlight-background, #ffe58f);
+  color: var(--mw-search-highlight-color, #172c39);
+}
+.mw-content::highlight(morfira-search-current),
+.mw-content ::highlight(morfira-search-current) {
+  background-color: var(--mw-search-current-background, #ffb347);
+  color: var(--mw-search-current-color, #172c39);
+}
