@@ -152,3 +152,7 @@ The independent `standard-contextual-table-ready` selection adds only `createCon
 
 
 The 2026-11-16 structural optimization under bundle-optimization.md preserves every profile factory and capability. Largest standard is 64482 gzip JS bytes (previously 64999), leaving 518 bytes under the unchanged 65000 guard; standard ready is 59394 gzip bytes. This is a modest measured reduction, not the original 2000-byte reserve aim. CSS/compression/charset/profile boundaries and tests are unchanged. Actual validation belongs to verification-backlog.md.
+
+## CI regression clarification — 2026-11-19
+
+Extended mention configuration forwards the public `persistent` and `atomic` flags unchanged. Their defaults and validation remain owned by the mentions plugin. The preset and separately imported public mention clipboard API must share the same per-editor registration; the full documentation demo is an integration consumer of this contract.

@@ -11,7 +11,12 @@ const listMarker = (line: string): MarkdownListMarker | undefined => {
   return { kind: match[1] ? 'ul' : 'ol', number: match[2] ? Number(match[2]) : 1, content: match[3] ?? '' };
 };
 const thematic = (line: string): boolean => /^ {0,3}(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})$/.test(line);
-const fence = (line: string): RegExpExecArray | null => /^ {0,3}(`{3,}|~{3,})([^\r\n]*)$/.exec(line);
+const fence = (line: string): RegExpExecArray | null => {
+  const match = /^ {0,3}(`{3,}|~{3,})([^\r\n]*)$/.exec(line);
+  // A backtick fence's info string cannot contain backticks. Otherwise a
+  // paragraph consisting of an inline code span is mistaken for a code block.
+  return match && !(match[1][0] === '`' && match[2].includes('`')) ? match : null;
+};
 const heading = (line: string): RegExpExecArray | null => /^ {0,3}(#{1,6})[ \t]+(.*)$/.exec(line);
 const quote = (line: string): boolean => /^ {0,3}>/.test(line);
 

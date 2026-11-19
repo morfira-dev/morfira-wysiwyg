@@ -34,6 +34,20 @@ export const atomicNativeSelection = (root: HTMLElement): AtomicSelection | unde
   return { range, native, backward: !range.collapsed && native.anchorNode === range.endContainer && native.anchorOffset === range.endOffset };
 };
 export const setAtomicSelection = (native: Selection, range: Range, backward = false): void => {
+  if (range.collapsed && range.startContainer.nodeType === 1) {
+    // Equivalent text boundaries avoid WebKit moving a parent-offset caret
+    // across whitespace or into an adjacent noneditable mention.
+    const parent = range.startContainer;
+    const next = parent.childNodes[range.startOffset];
+    const previous = parent.childNodes[range.startOffset - 1];
+    if (next?.nodeType === 3) native.setBaseAndExtent(next, 0, next, 0);
+    else if (previous?.nodeType === 3) {
+      const offset = previous.textContent?.length ?? 0;
+      native.setBaseAndExtent(previous, offset, previous, offset);
+    }
+    else native.setBaseAndExtent(parent, range.startOffset, parent, range.startOffset);
+    return;
+  }
   native.setBaseAndExtent(backward ? range.endContainer : range.startContainer, backward ? range.endOffset : range.startOffset,
     backward ? range.startContainer : range.endContainer, backward ? range.startOffset : range.endOffset);
 };

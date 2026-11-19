@@ -10,6 +10,7 @@ export interface AtomicMentionSettings {
 
 declare global {
   interface Window {
+    atomicClipboardEvent: (type: string, init: ClipboardEventInit) => ClipboardEvent;
     atomicMentionModule: typeof import('@morfira-dev/wysiwyg/plugins/mentions');
   }
 }

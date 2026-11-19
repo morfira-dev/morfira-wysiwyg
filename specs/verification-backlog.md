@@ -1,5 +1,45 @@
 # Verification record
 
+## CI failure investigation and local corrections — 2026-11-19
+
+Remote [Release #40](https://github.com/morfira-dev/morfira-wysiwyg/actions/runs/44549281069)
+at 1cf5b0c failed. Build/static and both packed-consumer profiles passed;
+both docs shards and several editor shards failed. Publication was skipped by
+the existing aggregate gate. The failed cycle took approximately 8m55s, not a
+successful publication timing.
+
+Confirmed source/fixture causes: extended preset rejected the public persistent/
+atomic mention options used by the full demo; Markdown fence recognition consumed
+standalone inline backtick spans; Firefox synthetic ClipboardEvent construction
+did not expose the fixture's supplied DataTransfer; one evaluate referenced a Node
+constant without passing it; table fixtures omitted canonical tbody or a required
+cell caret; one anchor-scope form fixture attempted to fill its intentionally
+disabled/hidden new-link-text input. Corrected those definitions without dropping
+their assertions or changing timeouts, and added one public preset/clipboard
+integration regression.
+
+Additional local corrections target the observed WebKit clipboard/caret failures:
+retain the composer Range independently of native caret affinity, normalize before
+installing final selection, use equivalent neighboring text endpoints, handle
+ordinary text insertion beside tokens explicitly and prevent default pointer
+focus from disturbing whole-token activation. Contextual links now resolve explicit
+refresh geometry synchronously and can retain a matching readonly preview after
+contenteditable blur to body. Their browser effects remain unverified locally.
+
+Passed locally: pnpm exec tsc --noEmit, pnpm run build, pnpm run typecheck,
+pnpm run docs:build:site, pnpm run check:project, pnpm run check:tree-shaking,
+and git diff --check. Initial sandboxed pnpm auto-sync could not access the
+registry; retry completed dependency synchronization without lockfile changes.
+No local behavioral/browser tests, installed-consumer runs or new remote pipeline
+ran. No commit or push is part of this investigation. The remote failing results
+remain the latest browser evidence; these corrections do not establish a green CI.
+
+Measured JS bytes (raw / gzip / Brotli): core 93957 / 29178 / 25709;
+mentions 47261 / 15697 / 14227; standard-ready 221658 / 65767 / 56307;
+extended-ready 278373 / 82047 / 69746. Standard/extended CSS is unchanged:
+12162 / 3924 / 3207 and 13627 / 4499 / 3661 respectively. All enforced guards
+passed; the existing 80000 raw-byte soft core target remains exceeded.
+
 ## Checklist marker and keyboard interaction — 2026-11-19
 
 Local implementation after b3dd3ff follows [checklists.md](checklists.md). The

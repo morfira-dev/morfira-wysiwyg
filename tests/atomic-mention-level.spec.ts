@@ -192,7 +192,7 @@ test('unrelated trees and protected affected paths reject before clipboard write
       const data = new DataTransfer();
       let writes = 0;
       data.setData = () => { writes++; };
-      const event = new ClipboardEvent('cut', { clipboardData: data, bubbles: true, cancelable: true });
+      const event = window.atomicClipboardEvent('cut', { clipboardData: data, bubbles: true, cancelable: true });
       root.dispatchEvent(event);
       const api = window.atomicMentionModule.mentionClipboardCommands(window.editor);
       return { writes, prevented: event.defaultPrevented, copied: api.copy(), pasted: api.paste({ text: 'blocked' }),
@@ -218,7 +218,7 @@ test('unrelated trees and protected affected paths reject before clipboard write
 
 test('cross-level targets in a merged cell respect readonly, composition and branch reconstruction during writer or focus callbacks', async ({ page }) => {
   const bodies = `<ul><li><p>L ${atomicMentionHTML}</p><ol title="path"><li><h2>${secondAtomicMentionHTML} R</h2></li></ol></li></ul>`;
-  const original = `<table><tr><td rowspan="2">${bodies}</td><td>A</td></tr><tr><td>B</td></tr></table><p>outside</p>`;
+  const original = `<table><tbody><tr><td rowspan="2">${bodies}</td><td>A</td></tr><tr><td>B</td></tr></tbody></table><p>outside</p>`;
   await initializeAtomicMention(page, original, { tables: true });
   await selectMentionLevels(page);
   const cell = await atomicContent(page).locator('td').first().elementHandle();
@@ -241,7 +241,7 @@ test('cross-level targets in a merged cell respect readonly, composition and bra
     const write = data.setData.bind(data);
     let writes = 0;
     data.setData = (type, value) => { write(type, value); if (++writes === 2) { branch.innerHTML = branch.innerHTML; window.editor.setSelection(0); } };
-    root.dispatchEvent(new ClipboardEvent('cut', { clipboardData: data, bubbles: true, cancelable: true }));
+    root.dispatchEvent(window.atomicClipboardEvent('cut', { clipboardData: data, bubbles: true, cancelable: true }));
     return { writes, rebuilt: previous !== branch.firstElementChild, html: window.editor.getHTML(), undo: window.editor.canUndo() };
   })).toEqual({ writes: 2, rebuilt: true, html: original, undo: false });
   await selectMentionLevels(page);

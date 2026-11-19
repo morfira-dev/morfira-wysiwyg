@@ -203,7 +203,7 @@ test('invalid, protected nested, mixed or resource list payloads reject before m
 
 test('list transfers retain merged-cell ownership and reject readonly, composition and writer-time list reconstruction races', async ({ page }) => {
   const list = `<ol start="3"><li>L ${atomicMentionHTML}</li><li>${secondAtomicMentionHTML} R</li></ol>`;
-  const original = `<table><tr><td rowspan="2">${list}</td><td>A</td></tr><tr><td>B</td></tr></table><p>outside</p>`;
+  const original = `<table><tbody><tr><td rowspan="2">${list}</td><td>A</td></tr><tr><td>B</td></tr></tbody></table><p>outside</p>`;
   await initializeAtomicMention(page, original, { tables: true });
   await selectMentionItems(page);
   const cell = await atomicContent(page).locator('td').first().elementHandle();
@@ -229,7 +229,7 @@ test('list transfers retain merged-cell ownership and reject readonly, compositi
       write(type, value);
       if (++calls === 2) { old!.outerHTML = old!.outerHTML; window.editor.setSelection(0); }
     };
-    const event = new ClipboardEvent('cut', { clipboardData: data, bubbles: true, cancelable: true });
+    const event = window.atomicClipboardEvent('cut', { clipboardData: data, bubbles: true, cancelable: true });
     root.dispatchEvent(event);
     return { prevented: event.defaultPrevented, replaced: old !== root.querySelector('ol'), html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.filter((change) => change.source === 'user').length };
   });

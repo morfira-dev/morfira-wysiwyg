@@ -9,6 +9,13 @@ export const initializeAtomicMention = async (page: Page, value = `<p>A ${atomic
   await page.goto('/');
   await expect(page.getByRole('textbox')).toBeVisible();
   await page.evaluate(async ({ value, settings }) => {
+    window.atomicClipboardEvent = (type, init) => {
+      const event = new ClipboardEvent(type, init);
+      // Firefox supplies its own clipboardData for untrusted events; explicitly
+      // bind the in-memory transfer used by this synthetic browser fixture.
+      Object.defineProperty(event, 'clipboardData', { value: init.clipboardData });
+      return event;
+    };
     const path = '/packages/wysiwyg/dist/plugins/mentions.js';
     window.atomicMentionModule = await import(/* @vite-ignore */ path) as typeof import('@morfira-dev/wysiwyg/plugins/mentions');
     window.dispose();

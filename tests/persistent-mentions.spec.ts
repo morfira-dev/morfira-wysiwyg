@@ -58,6 +58,13 @@ test('default mentions remain plain text while opted-in initial HTML and JSON pr
 test('table copy and actual paste retain mention metadata across merged cells and Markdown refuses identity loss', async ({ page }) => {
   await initializePersistentMention(page, `<table><tr><td colspan="2"><p>${mentionHTML}</p></td></tr></table><p>End</p>`, { tables: true });
   const copied = await page.evaluate(() => {
+    const cell = window.editor.surface.querySelector('td')!;
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    range.collapse(true);
+    window.editor.focus();
+    document.getSelection()!.removeAllRanges();
+    document.getSelection()!.addRange(range);
     window.tableCommands(window.editor).select({ row: 0, column: 0 }, { row: 0, column: 1 });
     return window.tableCommands(window.editor).copy();
   });
@@ -65,6 +72,13 @@ test('table copy and actual paste retain mention metadata across merged cells an
   expect(copied.text).toBe('@Anna\t');
   await page.evaluate((copied) => {
     window.editor.setHTML('<table><tr><td>A</td><td>B</td></tr></table><p>End</p>');
+    const cell = window.editor.surface.querySelector('td')!;
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    range.collapse(true);
+    window.editor.focus();
+    document.getSelection()!.removeAllRanges();
+    document.getSelection()!.addRange(range);
     window.tableCommands(window.editor).select({ row: 0, column: 0 }, { row: 0, column: 1 });
     const clipboardData = new DataTransfer();
     clipboardData.setData('text/html', copied.html);

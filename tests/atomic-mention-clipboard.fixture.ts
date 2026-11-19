@@ -18,7 +18,7 @@ export const dispatchMentionClipboard = (page: Page, kind: 'copy' | 'cut' | 'pas
     clipboardData.setData('text/html', data.html);
     clipboardData.setData('text/plain', data.text);
   }
-  const event = new ClipboardEvent(kind, { bubbles: true, cancelable: true, clipboardData });
+  const event = window.atomicClipboardEvent(kind, { bubbles: true, cancelable: true, clipboardData });
   window.editor.surface.dispatchEvent(event);
   return { prevented: event.defaultPrevented, html: clipboardData.getData('text/html'), text: clipboardData.getData('text/plain') };
 }, { kind, data });

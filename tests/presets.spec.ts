@@ -19,6 +19,32 @@ const initialize = async (page: Page, html = '<p><br></p>') => {
 };
 const content = (page: Page) => page.locator('.preset-test .mw-content');
 
+test('extended forwards persistent atomic mentions to the same public clipboard API used by the demo', async ({ page }) => {
+  await initialize(page);
+  const result = await page.evaluate(async () => {
+    const presetPath = '/packages/wysiwyg/dist/presets/extended.js';
+    const mentionPath = '/packages/wysiwyg/dist/plugins/mentions.js';
+    const { createExtendedPreset } = await import(/* @vite-ignore */ presetPath) as typeof import('@morfira-dev/wysiwyg/presets/extended');
+    const { mentionClipboardCommands } = await import(/* @vite-ignore */ mentionPath) as typeof import('@morfira-dev/wysiwyg/plugins/mentions');
+    const host = document.createElement('div');
+    document.body.append(host);
+    const editor = window.createEditor(host, createExtendedPreset({
+      value: '<p><span data-mw-node="morfira:mention" data-mention-id="anna">@Anna</span></p>',
+      mentions: { provide: () => [], persistent: true, atomic: true }, slash: { provide: () => [] },
+    }));
+    try {
+      editor.focus();
+      const range = document.createRange();
+      range.selectNode(editor.surface.querySelector('span')!);
+      document.getSelection()!.removeAllRanges();
+      document.getSelection()!.addRange(range);
+      return { editable: editor.surface.querySelector('span')!.getAttribute('contenteditable'), copied: mentionClipboardCommands(editor).copy()?.text };
+    }
+    finally { editor.destroy(); host.remove(); }
+  });
+  expect(result).toEqual({ editable: 'false', copied: '@Anna' });
+});
+
 test('all preset imports and factory calls are server-safe, fresh and never invoke providers', () => {
   const result = execFileSync(process.execPath, ['--input-type=module', '--eval', `
     Object.defineProperty(globalThis, 'document', { get: () => { throw new Error('DOM accessed'); } });

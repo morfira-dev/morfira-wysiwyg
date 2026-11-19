@@ -152,7 +152,16 @@ export const setupAtomicMentions = (editor: Editor): (() => void) => {
       mutate(range, deletion);
       return;
     }
-    if (range.collapsed || !atomsInRange(root, range).length) return;
+    if (range.collapsed) {
+      if (event.inputType === 'insertText' && typeof event.data === 'string'
+        && (adjacentAtomicMention(root, { node: range.startContainer, offset: range.startOffset }, -1)
+          || adjacentAtomicMention(root, { node: range.startContainer, offset: range.startOffset }, 1))) {
+        cancel(event);
+        mutate(range, range, event.data);
+      }
+      return;
+    }
+    if (!atomsInRange(root, range).length) return;
     if (event.inputType.startsWith('insert') || event.inputType.startsWith('delete')) {
       cancel(event);
       if (event.inputType === 'insertText' && typeof event.data === 'string') mutate(range, expandedAtomicRange(root, range), event.data);
@@ -175,6 +184,13 @@ export const setupAtomicMentions = (editor: Editor): (() => void) => {
     if (native) setAtomicSelection(native, range);
   };
   const startComposition = (): void => { normalize(); revision++; composing = true; };
+  const pointerdown = (event: PointerEvent): void => {
+    if (disposed || composing || event.defaultPrevented || event.button !== 0 || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+    const target = event.target;
+    if (!(target instanceof view.Node)) return;
+    const atom = atomicAncestor(root, target);
+    if (atom && atomicFlow(root, atom)) event.preventDefault();
+  };
   const endComposition = (): void => { revision++; composing = false; normalize(); };
   const listen = (target: EventTarget, type: string, callback: EventListener): void => {
     target.addEventListener(type, callback, true);
@@ -194,6 +210,7 @@ export const setupAtomicMentions = (editor: Editor): (() => void) => {
     listen(root, 'keydown', keydown as EventListener);
     listen(root, 'beforeinput', beforeinput as EventListener);
     listen(root, 'click', clicked as EventListener);
+    listen(root, 'pointerdown', pointerdown as EventListener);
     listen(root, 'compositionstart', startComposition);
     listen(root, 'compositionend', endComposition);
     listen(document, 'selectionchange', normalize);

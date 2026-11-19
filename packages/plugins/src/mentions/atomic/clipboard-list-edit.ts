@@ -101,7 +101,8 @@ export const editListClipboardSelection = (editor: Editor, plan: AtomicClipboard
   if (first.direct && (blockPayload || following.some((node) => /^(p|h[1-6])$/.test(node.localName)))) body = promote(first.item, caret);
   const current: AtomicClipboardSnapshot = { ...plan, flow: body, leaves: [body], parent: body.parentElement, range: caret.cloneRange(), list: undefined };
   let inserted = false;
-  if (firstPayload?.children.length) inserted = editClipboardSelection(editor, current, firstPayload);
+  let position = caret.cloneRange();
+  if (firstPayload?.children.length) inserted = editClipboardSelection(editor, current, firstPayload, (range) => { position = range; });
   else {
     placeholder(body);
     const native = document.getSelection();
@@ -109,7 +110,6 @@ export const editListClipboardSelection = (editor: Editor, plan: AtomicClipboard
   }
   if (firstPayload && firstPayload.children.length && !inserted) throw new TypeError('Unsupported list body clipboard composition.');
   const native = document.getSelection();
-  const position = native?.rangeCount === 1 ? native.getRangeAt(0).cloneRange() : caret;
   if (incoming.length > 1) {
     const outgoingBody = atomicFlow(editor.surface, position.startContainer)!;
     const outgoingPlaceholder = singleBreak(outgoingBody);
@@ -147,8 +147,8 @@ export const editListClipboardSelection = (editor: Editor, plan: AtomicClipboard
       if (bodies.length) for (const leaf of bodies) placeholder(leaf as HTMLElement);
       else if (item !== finalItem) placeholder(item);
     }
-    if (native) setAtomicSelection(native, finalCaret);
     finalBody.normalize();
+    if (native) setAtomicSelection(native, finalCaret);
   }
   else {
     for (const node of followingBodies) first.item.append(node);

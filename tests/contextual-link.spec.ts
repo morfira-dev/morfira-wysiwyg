@@ -257,8 +257,8 @@ test('readonly and composition close editing; a stale action during focus restor
   await caret(page, 'a', 2);
   await action(page, 'edit').click();
   await form(page).getByLabel('Link URL', { exact: true }).fill('/stale');
-  const draftText = form(page).getByLabel('New link text', { exact: true });
-  await draftText.fill('Must not insert');
+  const draftText = form(page).getByLabel('Link URL', { exact: true });
+  await draftText.fill('/must-not-insert');
   const retainedDraft = await draftText.elementHandle();
   expect(await retainedDraft!.evaluate((input) => {
     const editor = window.editor;

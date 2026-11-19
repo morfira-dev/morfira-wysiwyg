@@ -37,7 +37,7 @@ test('native cut writes both formats before deletion, preserves unrelated format
       sourcePresent.push(Boolean(window.editor.surface.querySelector('[data-mention-id]')));
       write(type, value);
     };
-    const event = new ClipboardEvent('cut', { clipboardData, bubbles: true, cancelable: true });
+    const event = window.atomicClipboardEvent('cut', { clipboardData, bubbles: true, cancelable: true });
     window.editor.surface.dispatchEvent(event);
     return { sourcePresent, html: clipboardData.getData('text/html'), text: clipboardData.getData('text/plain'), app: clipboardData.getData('application/x-app-owned'), prevented: event.defaultPrevented, changes: window.changes.filter((change) => change.source === 'user').length };
   });
@@ -64,7 +64,7 @@ test('failed clipboard writes and callback-time replacement never remove current
       if (calls === 2) throw new Error('Clipboard unavailable');
       write(type, value);
     };
-    const event = new ClipboardEvent('cut', { clipboardData, bubbles: true, cancelable: true });
+    const event = window.atomicClipboardEvent('cut', { clipboardData, bubbles: true, cancelable: true });
     window.editor.surface.dispatchEvent(event);
     // A later browser deletion intent must not bypass the failed transport transaction.
     window.editor.surface.dispatchEvent(new InputEvent('beforeinput', { inputType: 'deleteByCut', bubbles: true, cancelable: true }));
@@ -86,7 +86,7 @@ test('failed clipboard writes and callback-time replacement never remove current
         window.editor.setSelection(0);
       }
     };
-    surface.dispatchEvent(new ClipboardEvent('cut', { clipboardData, bubbles: true, cancelable: true }));
+    surface.dispatchEvent(window.atomicClipboardEvent('cut', { clipboardData, bubbles: true, cancelable: true }));
     return { replaced: previous !== surface.querySelector('[data-mention-id]'), html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.length };
   });
   expect(raced).toEqual({ replaced: true, html: original, undo: false, changes: 0 });
@@ -105,7 +105,7 @@ test('failed clipboard writes and callback-time replacement never remove current
       }
       return read(type);
     };
-    window.editor.surface.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true }));
+    window.editor.surface.dispatchEvent(window.atomicClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true }));
     return { called, html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.filter((change) => change.source === 'user').length };
   });
   expect(readRace).toEqual({ called: true, html: '<p>Replacement during clipboard read</p>', undo: false, changes: 0 });
@@ -145,7 +145,7 @@ test('plain text never reconstructs identity and final-token programmatic cut le
   await expect(atomicContent(page).locator('p > br')).toHaveCount(1);
   await page.keyboard.insertText('Ready');
   await expect(atomicContent(page)).toHaveText('Ready');
-  await page.evaluate(() => window.editor.setHTML(`<p>${atomicMentionHTML}</p>`));
+  await page.evaluate((html) => window.editor.setHTML(`<p>${html}</p>`), atomicMentionHTML);
   await selectClipboardAtom(page);
   expect(await page.evaluate(() => window.atomicMentionModule.mentionClipboardCommands(window.editor).paste({ text: '@Anna\nnext <b>literal</b>' }))).toBe(true);
   expect(await page.evaluate(() => window.atomicMentionModule.getMentions(window.editor))).toEqual([]);
@@ -200,12 +200,12 @@ test('same-flow paste in a merged cell preserves actual cells while cross-contai
     const mentionAPI = window.atomicMentionModule.mentionClipboardCommands(window.editor);
     const apiRefused = mentionAPI.copy() === undefined && mentionAPI.paste({ text: 'must not replace inline selection' }) === false;
     const copied = new DataTransfer();
-    const copy = new ClipboardEvent('copy', { clipboardData: copied, bubbles: true, cancelable: true });
+    const copy = window.atomicClipboardEvent('copy', { clipboardData: copied, bubbles: true, cancelable: true });
     window.editor.surface.dispatchEvent(copy);
     const incoming = new DataTransfer();
     incoming.setData('text/html', html);
     incoming.setData('text/plain', '@Anna');
-    const paste = new ClipboardEvent('paste', { clipboardData: incoming, bubbles: true, cancelable: true });
+    const paste = window.atomicClipboardEvent('paste', { clipboardData: incoming, bubbles: true, cancelable: true });
     window.editor.surface.dispatchEvent(paste);
     return {
       apiRefused, copyPrevented: copy.defaultPrevented, html: copied.getData('text/html'),
@@ -309,14 +309,14 @@ test('prehandled and uncancelable events are observational for the mention owner
     for (const kind of ['cut', 'paste'] as const) {
       const clipboardData = new DataTransfer();
       clipboardData.setData('text/html', '<span data-mw-node="morfira:mention" data-mention-id="b">@B</span>');
-      const canceled = new ClipboardEvent(kind, { clipboardData, bubbles: true, cancelable: true });
+      const canceled = window.atomicClipboardEvent(kind, { clipboardData, bubbles: true, cancelable: true });
       canceled.preventDefault();
       window.editor.surface.dispatchEvent(canceled);
       results.push(window.editor.getHTML());
       // Cut has no core paste owner. For paste, prevent propagation to core to isolate the owner contract.
       const stop = (event: Event) => { if (!event.cancelable) event.stopImmediatePropagation(); };
       window.editor.surface.addEventListener(kind, stop, true);
-      try { window.editor.surface.dispatchEvent(new ClipboardEvent(kind, { clipboardData, bubbles: true, cancelable: false })); }
+      try { window.editor.surface.dispatchEvent(window.atomicClipboardEvent(kind, { clipboardData, bubbles: true, cancelable: false })); }
       finally { window.editor.surface.removeEventListener(kind, stop, true); }
       results.push(window.editor.getHTML());
     }
@@ -333,7 +333,7 @@ test('prehandled and uncancelable events are observational for the mention owner
       event.stopImmediatePropagation();
     };
     window.editor.surface.addEventListener('paste', laterOwner, true);
-    try { window.editor.surface.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true })); }
+    try { window.editor.surface.dispatchEvent(window.atomicClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true })); }
     finally { window.editor.surface.removeEventListener('paste', laterOwner, true); }
     return { owned, html: window.editor.getHTML() };
   });

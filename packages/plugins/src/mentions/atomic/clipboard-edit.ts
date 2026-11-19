@@ -21,7 +21,7 @@ const emptyLeaf = (editor: Editor, source: HTMLElement): HTMLElement => {
 };
 
 /** All extracted subtrees are prevalidated ordinary inline nodes, never resources. */
-export const editClipboardSelection = (editor: Editor, plan: AtomicClipboardSnapshot, value?: EditorDocument): boolean => {
+export const editClipboardSelection = (editor: Editor, plan: AtomicClipboardSnapshot, value?: EditorDocument, retainCaret?: (range: Range) => void): boolean => {
   const root = editor.surface;
   const document = root.ownerDocument;
   const first = plan.flow;
@@ -121,9 +121,11 @@ export const editClipboardSelection = (editor: Editor, plan: AtomicClipboardSnap
       }
     }
   }
+  first.normalize();
+  // Keep the model boundary independently of a browser's editable-caret affinity.
+  retainCaret?.(insertion.cloneRange());
   const native = document.getSelection();
   if (native) setAtomicSelection(native, insertion);
-  first.normalize();
   // Core captures/validates the full result within this same rollback boundary.
   return true;
 };

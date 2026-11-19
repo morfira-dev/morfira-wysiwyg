@@ -122,3 +122,7 @@ Report both plugin-package chunks and a standalone public consumer bundle that
 includes selected core validation helpers, with the same 15000 gzip guard for
 the latter. The existing all-plugins behavior aggregate excludes independent
 codecs; its boundaries must not silently expand when the new entry is added.
+
+## Fence regression — 2026-11-19
+
+A backtick fence info string cannot contain backticks. A paragraph consisting of a variable-length inline code span, including embedded backticks or a trailing backslash, must remain inline during export/import; it must not consume subsequent blocks as an opening fence. Existing code-delimiter round-trip coverage is the regression scenario.

@@ -13,7 +13,7 @@ export type { ExtendedPresetOptions } from './types.js';
 export const createExtendedPreset = (options: ExtendedPresetOptions): EditorOptions => {
   checkedPresetOptions(options, ['tables', 'images', 'search', 'statistics', 'markdown', 'autolink', 'horizontalRule', 'mentions', 'slash']);
   if (options.mentions === undefined || options.slash === undefined) throw new TypeError('Extended presets require mention and slash providers.');
-  const mention = featureOptions<MentionOptions>(options.mentions, 'mentions', ['provide', 'minQueryLength', 'maxItems', 'debounceMs']);
+  const mention = featureOptions<MentionOptions>(options.mentions, 'mentions', ['provide', 'minQueryLength', 'maxItems', 'debounceMs', 'persistent', 'atomic']);
   const slashOptions = featureOptions<SlashOptions>(options.slash, 'slash', ['provide', 'minQueryLength', 'maxItems', 'debounceMs', 'actions']);
   if (typeof mention.provide !== 'function' || typeof slashOptions.provide !== 'function') throw new TypeError('Extended presets require mention and slash provider functions.');
   const { mentions: _mentions, slash: _slash, ...standard } = options;

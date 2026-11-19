@@ -318,3 +318,7 @@ Preserve zero runtime dependencies, public subpaths, core/plugin graph and curre
 gzip/CSS guards. Report raw/gzip/Brotli and selected profile closures. Local tests,
 installed-consumer execution and CI observation are paused by the user. Static
 build/type/package/tree-shaking/docs/size checks may run. Commit locally, no push.
+
+## Browser boundary regressions — 2026-11-19
+
+Retain the insertion Range independently of native editable-caret canonicalization when composing subsequent incoming list items. Normalize text before installing the final native caret; equivalent neighboring text boundaries are allowed while retaining the same logical position. Ordinary insertion immediately beside an atom stays outside its label, including WebKit. Pointer activation must retain the whole-token selection after the browser default pointer focus sequence. Synthetic clipboard fixtures explicitly provide their in-memory transfer on all engines; a constructor-created transfer is not evidence that a browser exposes that same object.

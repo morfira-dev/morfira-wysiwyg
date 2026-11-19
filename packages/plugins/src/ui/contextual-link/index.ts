@@ -123,8 +123,13 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     if (failures.length) throw new AggregateError(failures, 'Link dismissal failed.');
   };
   const focusedEditor = (): boolean => document.activeElement === surface || surface.contains(document.activeElement);
+  const retainedReadonlyPreview = (): boolean => {
+    if (!editor.isReadOnly() || document.activeElement !== document.body || !current || element.hidden) return false;
+    const candidate = nativeContextualLink(editor);
+    return candidate?.anchor === current.anchor && sameContextualRange(candidate.range, current.range);
+  };
   const observedTarget = (): ContextualLinkTarget | undefined => {
-    if (focusedEditor()) return nativeContextualLink(editor);
+    if (focusedEditor() || retainedReadonlyPreview()) return nativeContextualLink(editor);
     if (!element.contains(document.activeElement) || !current) return;
     const native = document.getSelection();
     if (native?.rangeCount) {
@@ -141,7 +146,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
   const layout = (): void => {
     if (disposed || !geometryCleanups.length || !current) return;
     if (composing || !ordinaryContextualAnchor(editor, current.anchor)
-      || (!focusedEditor() && !element.contains(document.activeElement))) {
+      || (!focusedEditor() && !retainedReadonlyPreview() && !element.contains(document.activeElement))) {
       dismiss();
       return;
     }
@@ -242,7 +247,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     const nodes: HTMLElement[] = [];
     for (let node: HTMLElement | null = candidate.anchor; node; node = node.parentElement) nodes.push(node);
     geometry(nodes);
-    schedule();
+    layout();
   };
   const discover = (): void => {
     if (disposed || restoring) return;
