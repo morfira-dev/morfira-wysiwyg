@@ -8,8 +8,21 @@
   position: absolute;
   inset-inline-end: calc(100% + var(--mw-checklist-gap, 0.45em));
   color: var(--mw-checklist-color, currentColor);
+  font-size: var(--mw-checklist-size, 1em);
+  inline-size: 1em;
+  block-size: 1em;
+  top: var(--mw-checklist-offset, 0.1em);
+  display: block;
+  box-sizing: border-box;
+  line-height: 1;
+  text-align: center;
   font-weight: 600;
   pointer-events: none;
+}
+
+.mw-content.mw-checklists-interactive[contenteditable="true"] li[data-checklist-checked]::before {
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .mw-content li[data-checklist-checked="true"]::before {

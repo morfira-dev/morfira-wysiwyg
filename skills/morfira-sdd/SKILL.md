@@ -40,6 +40,12 @@ bugs handled as regressions rather than successive speculative micro-milestones.
 
 Search result painting follows `specs/search-highlights.md` through the optional native CSS Highlight UI. Keep document/selection/history unchanged, feature-detect support, preserve other registry owners and avoid a heavy DOM/overlay fallback. Search ranges are observations, not mapped SDK positions or command authority.
 
+Checklist interactions follow `specs/checklists.md`: optional scoped CSS markers
+and Ctrl/Meta+Enter toggle one validated actual task without persisted UI nodes.
+Preserve owned selection/history, refuse stale focus-time targets and keep pointer
+hit testing bound to the visible marker. Command-only opt-out remains available;
+glyphs are not advertised as native focusable checkboxes or complete accessibility.
+
 For plugin SDK work, follow `specs/plugin-sdk.md` before implementation. Its first slice is per-instance typed commands and declarative semantic schema extensions over existing safe schema-v1 wrappers; mapped structural selection, custom node views, generic atoms/decorations and a new editing engine remain later work; mention-specific atomic behavior follows its independent contract. Preserve validation, initial-import ordering, history and plugin cleanup without silently changing stored documents.
 
 The user's original product limits are gzip: core 200000 gzip JS bytes and optional entries/tables 150000 gzip JS bytes. Keep the separate adapter guard of 10000 raw JS bytes, explicit small-feature raw guards, and the soft core optimization target of 80000 minified bytes. Measured headless and ready standard profiles enforce 80000 gzip JS bytes; extended profiles enforce 110000 gzip JS bytes. Their previous raw JS caps are retired; each standard/extended profile still enforces 20000 minified CSS bytes. Minimal is measured without an additional preset guard. See `specs/editor-presets.md` P4 for the user-directed policy reason and selected closures. Count shared chunks once; report raw/gzip/Brotli/CSS independently, optional fonts/locales separately and exclude framework runtimes. Compare competitors only using equivalent feature profiles and compression.

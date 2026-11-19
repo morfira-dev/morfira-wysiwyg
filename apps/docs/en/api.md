@@ -250,7 +250,7 @@ Inside one item, selecting from after `Alpha ` to after `Mid` removes covered bo
 <ul><li><p>Alpha <u>X</u>dle</p><p>After body</p></li></ul>
 ```
 
-Optional [checklists](/en/checklists) use a separate plugin: state belongs to one `li`, and commands/external controls do not extend the core toolbar. Presets do not install the plugin automatically.
+Optional [checklists](/en/checklists) use a separate plugin: state belongs to one `li`. `checklists()` enables CSS-marker clicks and Ctrl/Cmd+Enter; `checklists({ interactive: false })` retains commands only. Presets do not install the plugin automatically, and the core toolbar is unchanged.
 
 ## Formatting
 

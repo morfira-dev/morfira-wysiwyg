@@ -10,6 +10,18 @@ HTML parsing uses an inert template. String serialization (`sanitizeHTML`, schem
 
 A pre-hardening isolated localhost route-abort probe confirmed unwanted image fetches from sanitizeHTML/documentHTML in Chromium, Firefox and WebKit, with parseHTML alone producing none. Evidence: /tmp/morfira-codec-network-probe.ts and /tmp/morfira-codec-network-probe.log. This was a resource-fetch side effect, not a demonstrated XSS exploit; the permanent security-codec regression covers the repaired property.
 
+## Checklist interaction boundaries
+
+Direct task interaction follows [checklists.md](checklists.md). Pointer intent
+binds the actual eligible LI and visible scoped pseudo-marker geometry; plain
+text/padding or spoofed DOM data cannot select a mutation target. Keyboard intent
+uses the supported actual native item selection. Snapshot canonical metadata,
+concrete selection direction/points and DOM/intent revisions before focus, then
+revalidate readonly/IME/lifecycle/target state before the existing transaction.
+No native form controls enter persisted editing data; no content/resource clones,
+global document rewriting or identity/network actions are needed. Cleanup releases
+owned runtime root styling and every observer/listener/pending pointer sequence.
+
 ## Search highlight boundaries
 
 The optional [search highlights](search-highlights.md) view uses actual bounded

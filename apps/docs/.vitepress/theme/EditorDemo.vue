@@ -187,6 +187,7 @@ const listPropertySample = () => '<ol title="List properties sample" start="3" r
 const fontSample = () => `<p title="Font sample">Alpha <strong>one</strong> <a href="https://example.com">linked</a> tail</p><h2 title="Font imported" style="font-family: Arial, sans-serif; font-size: 1.25em">${t('Импортированный шрифт и размер', 'Imported family and size')}</h2>`;
 const horizontalRuleSample = () => `<p title="Horizontal rule sample">Alpha <strong>one</strong> tail</p><h2>${t('Заголовок тоже можно разделить', 'A heading can split too')}</h2><p>${t('Соседние блоки сохраняются.', 'Neighboring blocks remain.')}</p>`;
 const checklistSample = () => `<h2>${t('Задачи без лишнего', 'Tasks without the weight')}</h2><ul title="Checklist sample"><li title="Checklist first" data-checklist-checked="false">${t('Написать', 'Write')} <strong>${t('идею', 'an idea')}</strong></li><li title="Checklist done" data-checklist-checked="true">${t('Сохранить результат', 'Save the result')}</li><li title="Checklist ordinary">${t('Обычный пункт того же списка', 'An ordinary item in the same list')}</li></ul><p title="Checklist outside">${t('Этот абзац можно превратить в задачу.', 'This paragraph can become a task.')}</p>`;
+const checklistInteractionSample = () => '<ul title="Checklist interaction sample"><li title="Checklist pointer parent" data-checklist-checked="false"><p title="Checklist pointer body">Parent <strong>task</strong></p><ul><li title="Checklist pointer child" data-checklist-checked="false"><p>Child <em>task</em></p></li></ul></li><li title="Checklist pointer done" data-checklist-checked="true"><h3>Completed task</h3><p>Kept second paragraph</p></li><li title="Checklist pointer ordinary">Ordinary item</li></ul><ol dir="rtl"><li title="Checklist pointer rtl" data-checklist-checked="false"><p>مهمة RTL</p></li></ol>';
 const statisticsSample = () => `<h2>${t('Unicode и статистика', 'Unicode and statistics')}</h2><p>e<strong>́</strong> · 👨‍👩‍👧‍👦 · 🇷🇺 · ${t('Привет, мир!', 'Hello, world!')}</p><p>${t('Выдели букву с комбинируемым знаком или эмодзи и открой панель статистики: считаются видимые графемы, а не UTF-16 единицы.', 'Select a combining sequence or emoji and open Statistics: the counter measures visible graphemes rather than UTF-16 units.')}</p>`;
 const suggestionSample = () => `<h2>${t('Упоминания и slash-шаблоны', 'Mentions and slash snippets')}</h2><p>${t('Вводи @an для людей или /sig в начале абзаца для текстового шаблона. ArrowUp/Down выбирают, Enter вставляет, Escape закрывает.', 'Type @an for people or /sig at the beginning of a paragraph for a text snippet. ArrowUp/Down navigate, Enter inserts, Escape dismisses.')}</p><p>@an</p><p>/sig</p><p>/h2 · /bullet · /ordered · /quote · /code · /table</p><p>${t('Загруженные примеры буквальны. Кликни в конец токена и открой подсказки кнопкой справа, либо начни новый пример.', 'Loaded examples stay literal. Place the caret at a token end and use Open suggestions on the right, or start a new example.')}</p><p><br></p>`;
 const markdownSample = () => `<h2>Markdown shortcuts</h2><p>${t('Эти примеры загружены как обычный текст. Для преобразования введи маркеры сам и нажми Space; для code fence или разделителя доступен также Enter.', 'These examples are loaded as literal text. Type markers yourself and press Space to transform; code fences and horizontal rules also accept Enter.')}</p><p># ${t('Заголовок', 'Heading')}</p><p>- ${t('Пункт', 'Item')}</p><p>&gt; ${t('Цитата', 'Quote')}</p><p>**${t('полужирный', 'bold')}** · _${t('курсив', 'italic')}_ · ~~${t('зачёркнутый', 'strike')}~~ · \`${t('код', 'code')}\`</p><p>${t('Последняя пустая строка — для твоего ввода. Undo возвращает текст до клавиши-триггера.', 'Use the final empty line for typing. Undo restores text before the trigger key.')}</p><p><br></p>`;
@@ -348,6 +349,32 @@ const loadChecklistSample = () => {
   sample.value = 'checklists';
   loadSample();
 };
+const loadChecklistInteractionSample = () => run((instance) => {
+  instance.setHTML(checklistInteractionSample());
+  const body = instance.surface.querySelector('[title="Checklist pointer body"]')!;
+  const range = instance.surface.ownerDocument.createRange();
+  range.selectNodeContents(body);
+  range.collapse(true);
+  const native = instance.surface.ownerDocument.getSelection();
+  native?.removeAllRanges();
+  native?.addRange(range);
+  output.value = '';
+});
+const selectChecklistInteraction = (nested = false, backward = false) => run((instance) => {
+  const item = instance.surface.querySelector(nested ? '[title="Checklist pointer child"]' : '[title="Checklist pointer parent"]');
+  const body = item?.querySelector(':scope > p');
+  const text = body?.firstChild;
+  if (!body || text?.nodeType !== 3) throw new Error(t('Загрузи пример переключения чек-листа заново.', 'Reload the checklist interaction sample.'));
+  const native = instance.surface.ownerDocument.getSelection();
+  if (backward) native?.setBaseAndExtent(text, text.textContent!.length, text, 0);
+  else {
+    const range = instance.surface.ownerDocument.createRange();
+    range.setStart(text, 0);
+    range.collapse(true);
+    native?.removeAllRanges();
+    native?.addRange(range);
+  }
+}, false);
 const inspectSearchHighlights = () => {
   if (!searchHighlights) { searchHighlightsSnapshot.value = undefined; return; }
   try {
@@ -1298,6 +1325,12 @@ onBeforeUnmount(() => {
         </fieldset></details>
         <details class="lab-checklists"><summary>{{ t('Чек-листы', 'Checklists') }}</summary><fieldset :disabled="!ready || readOnly">
           <button @click="loadChecklistSample">{{ t('Загрузить чек-лист', 'Load checklist') }}</button>
+          <button @click="loadChecklistInteractionSample">{{ t('Загрузить переключение чек-листов', 'Load checklist interactions') }}</button>
+          <div class="lab-button-grid">
+            <button @click="selectChecklistInteraction()">{{ t('Курсор в родительской задаче', 'Caret in parent task') }}</button>
+            <button @click="selectChecklistInteraction(true)">{{ t('Курсор во вложенной задаче', 'Caret in child task') }}</button>
+            <button @click="selectChecklistInteraction(false, true)">{{ t('Выделить текст задачи назад', 'Select task text backward') }}</button>
+          </div>
           <div class="lab-button-grid">
             <button :disabled="checklistState.disabled" @click="runChecklist('insert')">{{ t('Сделать задачей', 'Make a task') }}</button>
             <button :disabled="checklistState.disabled || !checklistState.active" :aria-pressed="checklistState.active ? checklistState.checked : undefined" @click="runChecklist('toggle')">{{ t('Переключить выполнение', 'Toggle completion') }}</button>
@@ -1306,7 +1339,9 @@ onBeforeUnmount(() => {
             <button :disabled="checklistState.disabled || !checklistState.active" @click="runChecklist('remove')">{{ t('Сделать обычным пунктом', 'Make an ordinary item') }}</button>
           </div>
           <p role="status" aria-live="polite">{{ checklistStatus }}</p>
-          <p class="lab-hint">{{ t('Загрузка заменяет документ. Поставь курсор в текст одного пункта и используй внешние кнопки; обычный абзац превращается в маркированный пункт-задачу. Enter сохраняет состояние исходной задачи и создаёт новую невыполненную; Shift+Enter оставляет состояние прежним. Маркер — оформление CSS, а не нативный checkbox: клик по полю маркера и отдельный shortcut не добавлены. Плагин подключён явно только в полной демке; без него метаданные задачи теряются. Команды участвуют в общей истории и соблюдают read-only.', 'Loading replaces the document. Place the caret in one item and use the external buttons; an ordinary paragraph becomes a bullet task item. Enter preserves the original task state and creates a new incomplete item; Shift+Enter keeps the state. The marker is CSS decoration, not a native checkbox: gutter clicks and a custom shortcut are not added. The plugin is explicitly installed in the full demo; without it task metadata is lost. Commands share editor history and respect read-only.') }}</p>
+          <p class="lab-hint" data-checklist-interaction-hint>{{ t('Нажми именно на квадратный маркер задачи: текст рядом не переключает выполнение. Или поставь курсор в задачу и нажми Ctrl+Enter / Cmd+Enter на Mac. Вложенная задача переключается отдельно от родительской. Обратное выделение сохраняется; Undo отменяет одно переключение. В read-only изменения заблокированы.', 'Click the square task marker: clicking nearby text does not toggle completion. Or place the caret in a task and press Ctrl+Enter / Cmd+Enter on Mac. A child task toggles independently of its parent. Backward selection is preserved; Undo reverses one toggle. Read-only blocks changes.') }}</p>
+          <p class="lab-hint">{{ t('Загрузка заменяет документ. Внешние кнопки доступны с клавиатуры через Tab и Enter/Space. Enter в тексте сохраняет состояние исходной задачи и создаёт новую невыполненную; Shift+Enter оставляет состояние прежним. Маркер нарисован CSS и не является нативным checkbox; полная доступность и реальные touch/IME-устройства пока не подтверждены. Плагин подключён явно; без него метаданные теряются. Обработчики и новые RU/EN-сценарии реализованы локально, но браузерные тесты пока не запускались.', 'Loading replaces the document. External buttons are keyboard accessible through Tab and Enter/Space. Enter in text preserves the original task state and creates a new incomplete item; Shift+Enter keeps it. The CSS marker is not a native checkbox; complete accessibility and real touch/IME devices are not verified. The plugin is explicit; without it metadata is lost. Handlers and new RU/EN scenarios are implemented locally, but browser tests have not run yet.') }}</p>
+          <a :href="ru ? '/checklists' : '/en/checklists'">{{ t('Мышь, клавиатура и формат чек-листа', 'Checklist mouse, keyboard and format') }}</a>
         </fieldset></details>
         <details class="lab-suggestions"><summary>{{ t('Упоминания и slash-шаблоны', 'Mentions and slash snippets') }}</summary><fieldset :disabled="!ready">
           <div class="lab-button-grid"><button :disabled="readOnly" @click="startSuggestions('mentions')">{{ t('Новый пример @an', 'New @an example') }}</button><button :disabled="readOnly" @click="startSuggestions('slash')">{{ t('Новый пример /sig', 'New /sig example') }}</button></div>

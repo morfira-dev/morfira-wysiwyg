@@ -1,5 +1,86 @@
 # Verification record
 
+## Checklist marker and keyboard interaction — 2026-11-19
+
+Local implementation after b3dd3ff follows [checklists.md](checklists.md). The
+explicit checklist plugin now enables direct marker interaction by default;
+checklists({interactive:false}) keeps command-only behavior. ChecklistOptions is
+exported through both the plugin and public facade. No preset default, schema
+version, persisted metadata shape, runtime dependency or core source changed.
+
+A primary unmodified press/release/click sequence inside the actual visible CSS
+::before marker toggles its actual marked LI once. Text/padding misses, drag-away,
+cancellation, mismatched/descendant targets and already handled/noncancelable
+events refuse. Geometry uses computed marker dimensions/insets, item bounds,
+border and scale for LTR/RTL/custom size/gap/scroll, without content clones or a
+global layout loop. The private root runtime class enables pointer styling and
+is removed only when owned. Glyphs are not focusable native checkboxes; existing
+external native buttons remain the explicit Enter/Space-accessible alternative.
+
+Ctrl+Enter or Meta+Enter (one modifier, no Alt/Shift) toggles a supported current
+task/range without splitting it. Repeats, IME/legacy229, readonly, unsupported/
+protected/foreign/cross-item selections and disposed instances do not mutate.
+Each actual toggle writes only the canonical boolean metadata in one existing
+transaction/change/history step, preserving actual content nodes and concrete
+selection direction/points. Target checked state, DOM/intent revision and native
+selection are revalidated after focus, including identical-HTML reconstruction.
+All observers/listeners/pending gestures and owned root styling have cleanup.
+
+Three subagents implemented behavior, focused tests and RU/EN demo/documentation;
+the docs agent reviewed pointer geometry/foreign endpoint ownership. Review
+strengthened the existing foreign-namespace selection barrier and required actual
+pseudo-marker events to target their LI, preventing an overlaid descendant owner
+from toggling a parent at matching coordinates. The sample includes nested,
+wrapped and RTL tasks, caret/backward-selection controls, shortcut and guide
+instructions; the original command sample remains compatible.
+
+Passed: pnpm run build (declarations and all size guards), pnpm run typecheck
+(TypeScript/Svelte/Vue), pnpm run docs:build:site, pnpm run check:project,
+pnpm run check:tree-shaking, pnpm run package:check (eight archives) and git diff
+--check. An initial typecheck found a missing facade ChecklistOptions re-export,
+an overly broad DOM KeyboardEventInit passed through Playwright's serialization
+types, and a Node-versus-Element cleanup assertion. These were corrected; facade
+declarations were regenerated with pnpm exec tsc -p packages/wysiwyg. Full
+typecheck then passed, and final added foreign-endpoint coverage passed a repeated
+pnpm exec tsc --noEmit. Final project/package checks also passed. The facade edit
+is type-only; final runtime/style measurements are from the completed build.
+
+The docs build emitted a Vite warning about a minified site/demo chunk over
+500 kB, but exited successfully. This is the aggregate documentation application,
+not a library profile size failure; no chunk-size threshold was raised. No local
+behavioral/browser tests, installed-consumer execution, live browser/device checks
+or GitHub CI observation ran. Static success does not prove pointer/keyboard
+acceptance across browsers or assistive technologies.
+
+Eight editor definitions and two localized docs definitions are authored, unrun.
+They cover real marker mouse activation, backward selection/Undo/Redo, Ctrl/Meta
+shortcut, nested/RTL/custom geometry/wrapped and merged-cell tasks, misses/drag/
+cancel/invalid gestures, readonly/IME/repeat/modifier/handled/noncancelable guards,
+focus-time target/selection changes and same-HTML reconstruction, options/opt-out,
+plugin reuse/disposal/root-class ownership, actual image/semantic node retention,
+no resource clones, descendant pointer ownership and foreign keyboard endpoints,
+HTML/JSON without UI children, external readonly replacement and bilingual public
+controls. No complete accessibility or real-device touch claim is implied.
+
+Final selected closures, bytes, shared JS counted once:
+
+| Entry/profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 93957 | 29178 | 25709 | 3293 |
+| Checklists | 7570 | 3062 | 2681 | 741 optional |
+| Standard ready | 221658 | 65767 | 56307 | 12162 |
+| Extended ready | 277619 | 81886 | 69537 | 13627 |
+
+Against captured b3dd3ff, checklist JS grows 4861 raw / 1903 gzip bytes; its CSS
+grows 305 raw / 114 gzip bytes to 741/354/271 raw/gzip/Brotli. The existing feature
+guards remain 8000 raw JS and 2000 raw CSS, with 430 and 1259 bytes remaining.
+Core and default standard/extended JS/CSS are unchanged because checklists remain
+explicitly selected. These profiles do not imply all demo extras are included.
+Core CSS stays 3293/1164/962 raw/gzip/Brotli; standard CSS 12162/3924/3207 and
+extended 13627/4499/3661. Hard guards pass; the existing soft core raw target stays
+exceeded. Framework runtimes/maps/declarations are excluded. Interactive:false
+is a runtime opt-out, not a measured promise to erase interaction implementation.
+
 ## Final planned mention slice: different list levels — 2026-11-19
 
 Local extension after bc29a62 follows the different-level structural-interval

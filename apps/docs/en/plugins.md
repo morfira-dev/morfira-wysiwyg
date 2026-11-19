@@ -70,7 +70,7 @@ See [events, plugin cooperation and composable transactions](/en/events). Struct
 
 ## Checklists
 
-Install the separate [checklist plugin](/en/checklists) and its CSS through explicit imports. The guide documents single-item commands, checked state and first-slice limits; core-only editors do not load the plugin.
+Install the separate [checklist plugin](/en/checklists) and its CSS through explicit imports. It provides single-item commands, marker clicks and Ctrl/Cmd+Enter; `interactive: false` disables built-in interaction. Core-only editors do not load the plugin.
 
 
 The optional [horizontal-rule command](/en/horizontal-rule) is available through `/plugins/horizontal-rule`: one root paragraph/heading, an editable suffix and one Undo step. Standard/extended install it and its ready toolbar button by default; `horizontalRule: false` omits the instance.

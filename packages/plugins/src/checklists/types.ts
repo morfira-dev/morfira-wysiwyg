@@ -1,3 +1,7 @@
+export interface ChecklistOptions {
+  interactive?: boolean;
+}
+
 export interface ChecklistState {
   disabled: boolean;
   active: boolean;

@@ -28,6 +28,25 @@ const editor = createEditor(host, options);
 
 Import `createStandardPreset` from `@morfira-dev/wysiwyg/presets/standard`; this is explicit composition, not a change to the preset's built-in feature set. CSS is explicit and loads no fonts or icon library.
 
+## Mouse and keyboard
+
+`checklists()` enables direct interaction by default. Complete an unmodified primary click on the square CSS marker to toggle that specific item, including a nested task. Text and nearby list padding are not toggle targets; canceled presses and dragging away create no change. Mouse interaction requires the explicit `checklists.css` import and a visible marker.
+
+Place the caret or a text range inside one task and press **Ctrl+Enter**, or **Cmd+Enter** on Mac. Exactly one Ctrl/Meta modifier is used, without Alt/Shift; key repeat and IME do not toggle state. Ordinary items and cross-task ranges retain their existing Enter behavior. The external demo buttons also support Tab and Enter/Space.
+
+Each actual toggle creates one Undo step and change notification. Text, child tasks and an existing editor selection, including its backward direction, are preserved. Read-only blocks mouse and shortcut mutation while external HTML/JSON synchronization remains available. Undo/Redo and external replacement derive markers from the current stored metadata.
+
+For application-owned interaction, disable the built-in handlers and keep commands:
+
+```ts
+import type { ChecklistOptions } from '@morfira-dev/wysiwyg/plugins/checklists';
+
+const options: ChecklistOptions = { interactive: false };
+const editor = createEditor(host, { plugins: [checklists(options)] });
+```
+
+Open **Load checklist interactions** in the demo: it includes parent/child tasks, a multi-paragraph item and an RTL example. Selection buttons place a caret or create a backward range; then try the marker, shortcut and Undo. New regressions and RU/EN scenarios are authored but have not run locally; build/size results are recorded separately in the project's verification record.
+
 ## Commands and state
 
 Commands use the actual browser selection inside the editor. A caret or range wholly inside **one** ordinary `li` of a `ul`/`ol` is supported. `insert()` also accepts one ordinary paragraph or heading directly under the editor surface.
@@ -54,6 +73,8 @@ State is stored only as `data-checklist-checked="false"` or `"true"` on `li`, wi
 
 ## UI and limits
 
-In this slice, optional CSS draws a visual marker; ordinary external demo buttons perform actions. These buttons preserve selection, have accessible labels and respect read-only. The marker **is not a native checkbox**: gutter clicks, a custom shortcut, atoms and node views are not added; complete checklist accessibility is not claimed. Do not persist `input` elements as a substitute for this contract.
+Separate scoped CSS draws the marker. Size, gap and colors use `--mw-checklist-*` variables; hit testing follows the actual direction and geometry. A hidden or absent marker does not create an assumed fixed gutter hit box. Handlers revalidate the actual item after focus callbacks, read-only/composition and DOM reconstruction, preventing a stale action from toggling a replacement task.
+
+The marker **is not a native checkbox** or a separately focusable control. Keyboard users have the shortcut and ordinary external buttons. Complete accessibility, screen-reader behavior and real touch/IME devices remain unverified. No `input`, `button` or UI node is added to persisted content; HTML/JSON retain only the LI metadata attribute.
 
 Bulk commands spanning multiple items, endpoints inside owning `data-mw-node` elements (including inline nodes), foreign namespaces and cross-block ranges are unsupported. Destroying the editor releases its handlers. New plugin sizes and executed checks are recorded separately from the preceding editor slice in the [roadmap](/en/roadmap#verification-and-limits).

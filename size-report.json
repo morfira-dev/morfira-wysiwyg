@@ -25,9 +25,9 @@
     "brotli": 17368
   },
   "all-plugins.js": {
-    "raw": 145974,
-    "gzip": 55253,
-    "brotli": 49328
+    "raw": 150835,
+    "gzip": 57156,
+    "brotli": 51014
   },
   "ui-forms.js": {
     "raw": 61491,
@@ -35,9 +35,9 @@
     "brotli": 19729
   },
   "checklists.css": {
-    "raw": 436,
-    "gzip": 240,
-    "brotli": 187
+    "raw": 741,
+    "gzip": 354,
+    "brotli": 271
   },
   "suggestions.css": {
     "raw": 1465,
@@ -215,9 +215,9 @@
     "brotli": 1033
   },
   "checklists.js": {
-    "raw": 2709,
-    "gzip": 1159,
-    "brotli": 995
+    "raw": 7570,
+    "gzip": 3062,
+    "brotli": 2681
   },
   "mentions.js": {
     "raw": 46531,
