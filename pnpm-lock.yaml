@@ -234,7 +234,7 @@ importers:
         specifier: ^1.11.0
         version: link:../core
       '@morfira-dev/wysiwyg-plugins':
-        specifier: ^1.17.0
+        specifier: ^1.17.1
         version: link:../plugins
       '@morfira-dev/wysiwyg-react':
         specifier: ^1.11.0
