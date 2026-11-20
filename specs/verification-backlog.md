@@ -1,5 +1,295 @@
 # Verification record
 
+## Optional rich text drag/drop — 2026-11-20
+
+Implemented [text-drop.md](text-drop.md) with three subagents owning runtime,
+risk-oriented browser/type regressions and RU/EN guides/demo. Public imports are
+`/plugins/text-drop`; no core change, persisted schema, new dependency, stylesheet
+or default preset installation. Plain/inline external transfers copy; instance-
+owned valid tokens enable same-editor single-flow move or modifier copy. Source
+deletion/insertion share one transaction, retaining actual surviving structures,
+source selection direction in Undo and destination typing affinity in Redo.
+
+Security/ownership review corrected source resource cloning before refusal,
+stale-token fallback, canceled-drag gesture cleanup and late transfer callbacks.
+Actual selected nodes are inspected before cloneContents. Bounded inert transfer
+parsing rejects structural/resource/semantic/foreign payloads and never falls back
+to plain text after rejected HTML. Files remain with their own handler. Exact
+target point, document revision and HTML are revalidated around transfer/focus
+callbacks. Transfer effects are set before mutation; stale operations cannot
+delete their source. Empty-flow/ancestor cleanup now preserves unselected images,
+empty semantic references and inline owners rather than replacing them with BR.
+
+Actual final local validation:
+
+- pnpm run build passed, including declarations, Angular build and size guards.
+  A preceding build found a DOM type compatibility error: optional
+  caretPositionFromPoint cannot override current Document's required method;
+  the owning type now uses the existing image-input intersection pattern.
+- Facade declarations and pnpm run typecheck passed (TS/Svelte/Vue).
+- check:project, check:tree-shaking and package:check passed on final artifacts.
+  Factory/commands retain only their feature closure; eight archive layouts
+  preserve public exports/declarations/MIT/file boundaries without publication.
+- Final tests/text-drop.spec.ts passed 27/27 across Chromium/Firefox/WebKit in
+  21.6 seconds on a fresh task-owned server at 5189. Nine cases cover rich move,
+  backward selection, no-op/redo, target style affinity, native caret geometry,
+  LI/merged cells, literal multiline and inline payloads, invalid/resource/file
+  refusal, no IMG clone and surviving-node identity, readonly/IME, stale/focus,
+  transfer exceptions, cross-instance/factory reuse, disposal and SSR.
+- The initial affected run passed 25/27 in 46.9 seconds; Chromium/WebKit extended
+  the trailing bold mark after Redo. The plugin now preserves destination pending
+  inline formats inside the same transaction/history, without core changes. The
+  final 27/27 also retains italic destination formatting while avoiding source
+  bold inheritance. Assertions were retained and strengthened.
+- Final docs:build:site passed in 20.05 seconds without rebuilding packages during
+  browser checks; two RU/EN live-example tests passed 2/2 in 4.6 seconds on a fresh
+  task-owned preview server at 4181. Existing preview sessions were preserved.
+- Final consumers:optional-ui passed: three real core/plugins/facade archives,
+  DOM-free public import and actual move/Undo in one installed Chromium scenario,
+  with public artifact resolution and no workspace aliases. An initial archive
+  fixture used a collapsed Element Range with a zero rect; its actual native
+  target geometry now comes from the text endpoint. No runtime bypass was added.
+- git diff --check and git diff --cached --check passed before recording results.
+
+DragEvent/DataTransfer fixtures and native caret-point geometry are real browser
+API evidence, not proof of real OS pointer gestures, cross-application DnD or touch
+behavior. Multi-block/structural/semantic/atomic-node dragging remains unsupported.
+Existing transactions.md governs post-commit observer errors: they do not roll back
+an already committed edit. No full editor/docs/consumer matrices, benchmarks,
+GitHub monitoring, commit, push or publication ran. Site aggregate chunk advisory
+remains unchanged; no warning threshold or budget was raised.
+
+Measured bytes (raw / gzip / Brotli), retained shared chunks counted once:
+
+| Artifact/profile | Raw | gzip | Brotli |
+| --- | ---: | ---: | ---: |
+| Text-drop entry closure | 10432 | 4184 | 3733 |
+| Public standalone factory | 10263 | 4116 | 3673 |
+| Standard + text-drop ready JS | 232844 | 69837 | 59233 |
+| Standard + text-drop ready CSS | 12162 | 3924 | 3207 |
+
+Standalone keeps its 15000 gzip JS guard. Selected standard retains 80000 gzip JS /
+20000 raw CSS, leaving 10163 gzip JS bytes of reserve. No extra CSS is introduced.
+Core remains 94084 / 29191 / 25689 JS bytes, with its 80000 raw-byte soft target
+still exceeded independently of enforced gzip limits. Framework runtimes, source
+maps, declarations and external resources are excluded.
+
+## Optional browser print and document outline — 2026-11-20
+
+Implemented [print.md](print.md) and [outline.md](outline.md) with three subagents
+owning print runtime/regressions, outline runtime/regressions and bilingual guides,
+homepage/playground examples and localized smokes. Public factories, declarations,
+explicit styles and selective-import/profile/archive boundaries were integrated
+without changing core, persisted schema, preset defaults or runtime dependencies.
+
+Print uses a validated detached resource-omitting snapshot in a temporary direct
+body child; images become literal alt placeholders, links cannot navigate and
+source font-family is removed for the system-font print profile. Explicit CSS is
+required and checked before invoking native print. Per-document ownership protects
+the print marker/surface, cleanup and competing instances. Independent review fixed
+a connected surface moved out of its owning editor wrapper and folded its regression
+into the lifecycle case. Native afterprint/media-exit, explicit cancel, disposal,
+ownership loss and synchronous failure release the snapshot without moving editor
+DOM, changing its document/history or claiming control over the OS dialog.
+
+Outline observes bounded ordinary H1–H6 nodes, including supported nesting, and
+uses literal bounded labels/native buttons. It never adds persisted IDs or reads
+full JSON per keystroke. Committed changes invalidate button generations before a
+coalesced frame; navigation revalidates actual heading identity around focus and
+works in readonly. Empty/long labels, Unicode truncation, semantic exclusions,
+selection indication, ownership, callback errors and lifecycle are covered.
+
+Actual local validation on final runtime:
+
+- pnpm run build passed, including declarations, Angular build and all size guards.
+- Facade declarations and pnpm run typecheck passed (TS/Svelte/Vue).
+- check:project, check:tree-shaking and package:check passed; public imports retain
+  only allowed feature closures and eight archive layouts preserve declarations,
+  exports, MIT notices and file boundaries. Neither new factory imports CSS.
+- Targeted print.spec.ts and outline.spec.ts passed 42/42 in Chromium, Firefox and
+  WebKit, 34.0 seconds. The first default-port attempt ran no tests because 5173
+  was already occupied. Its existing session was preserved; a temporary config
+  used a fresh task-owned Vite server at 5187 with a separate result directory.
+- docs:build:site passed in 25.08 seconds, without rebuilding packages during
+  browser checks. Four targeted RU/EN docs scenarios passed 4/4 in 10.6 seconds
+  on the built site.
+- consumers:optional-ui passed: three actual core/plugins/facade archives,
+  DOM-free public print/outline imports, archived JS/CSS without workspace aliases,
+  actual heading navigation, stubbed native print request/completion, no document
+  mutation/history and cleanup in one Chromium scenario. An initial smoke-only
+  assertion incorrectly assumed Selection.anchorNode must be a text node; it now
+  handles the actual heading Element boundary and retains collapsed/offset checks.
+- git diff --check and git diff --cached --check passed before recording results.
+
+Browser tests stub native window.print and emulate print media to inspect the
+actual print DOM/CSS, resource policy and completion cleanup. Product demo calls
+the real browser API. No physical printer, OS dialog, exact page pagination or
+Save-as-PDF workflow is certified. Browser/OS controls those capabilities, and a
+module cancel releases its snapshot rather than dismissing an OS dialog. Trusted
+application global CSS can affect print layout/resources; this is not a sandboxed
+rendering engine. The site still emits its aggregate demo chunk-size advisory;
+no threshold/budget was raised. Full editor/docs/consumer matrices, performance
+benchmarks, GitHub monitoring, publication, commit and push were not run.
+
+Measured bytes (raw / gzip / Brotli), shared chunks counted once:
+
+| Artifact/profile | Raw | gzip | Brotli |
+| --- | ---: | ---: | ---: |
+| Public print standalone JS | 7479 | 3112 | 2709 |
+| Print optional CSS | 2045 | 765 | 605 |
+| Public outline standalone JS | 6434 | 2769 | 2416 |
+| Outline optional CSS | 1197 | 512 | 371 |
+| Standard + print ready JS | 229045 | 68284 | 58277 |
+| Standard + print ready CSS | 14207 | 4689 | 3812 |
+| Standard + outline ready JS | 227990 | 67961 | 58085 |
+| Standard + outline ready CSS | 13359 | 4436 | 3578 |
+| Standard + both reading tools ready JS | 234533 | 69781 | 59457 |
+| Standard + both reading tools ready CSS | 15404 | 5201 | 4183 |
+
+Standalone print/outline keep 12000/10000 gzip JS and 4000/3000 raw CSS guards.
+Combined standard keeps 80000 gzip JS / 20000 raw CSS, with 10219 gzip JS bytes
+of reserve. Core remains 94084 / 29191 / 25689 JS bytes; its 80000 raw-byte soft
+target remains exceeded independently of passing hard gzip limits. Framework
+runtimes, source maps, declarations and external resources are excluded.
+
+## Selected-cell typography, opt-in email and empty inline boundaries — 2026-11-20
+
+Implemented [table-cell-typography.md](table-cell-typography.md) and
+[autolink-email.md](autolink-email.md) with three subagents: table API/form and
+regressions, email recognition and regressions, bilingual demo/guides. Independent
+review fixed the valid `www.alice@example.com` ambiguity without authorizing URL
+userinfo. Email remains explicit opt-in, conservative ASCII and locally processed;
+no headers, address verification, network requests or broader paste routes.
+
+Table properties now support physical left/center/right/justify and explicit
+LTR/RTL/reset over authoritative merged-cell rectangles. Own-value mixed state,
+dirty-only Apply, child overrides, strict patch validation and one-step history
+are retained. HTML/JSON/clipboard already support these values; schema and default
+preset installation did not change. Full form-value objects gain two string keys;
+partial setValues callers remain compatible, as documented in the contract.
+
+Real-archive validation exposed a concrete core defect: the inline transformer
+treated an empty structural owner at a selected text offset as an inline leaf,
+creating an extra empty link around an earlier P. A narrow guard now preserves
+empty structural/semantic owners without new wrappers; ordinary IMG/BR affinity
+is unchanged. The invariant is recorded in editor.md with direct link/color,
+semantic, native cell input and Undo/Redo regressions. No dependency was added.
+
+Actual validation:
+
+- Final pnpm run build passed with declarations, Angular build and size guards;
+  facade declarations and pnpm run typecheck passed (TS/Svelte/Vue).
+- Final check:project, check:tree-shaking and package:check passed. Eight archive
+  layouts retain public declarations, exports and MIT/file boundaries.
+- New feature tests initially passed 33/39: six failures were an invalid test API
+  and missing test-control focus. Corrections retained assertions; 39/39 then
+  passed in 24.6 seconds before the subsequent core correction.
+- On final runtime, four affected files (email, cell typography, empty boundaries,
+  existing colors/links) ran 75 executions: 72 passed in 50.2 seconds and three
+  failed only on a new fixture's hardcoded root-paragraph count. Core legitimately
+  supplies a trailing editable paragraph after a table. The corrected test checks
+  the actual pre-Space count and identified empty prefix, retaining exact one-link,
+  merged-cell, neighbor, history and next-typing assertions. Targeted repeat passed
+  12/12 in 14.9 seconds across all engines (three repaired failures plus nine
+  repeated direct boundary checks). All 75 unique executions are therefore covered
+  by passing staged evidence; no single 75/75 run on the final test text is claimed.
+- Final selected compatibility repeat passed 24/24 in 26.4 seconds across three
+  engines: URL Space/Enter/plain paste and table update/mixed/form/focus scenarios.
+- Final docs:build:site passed in 28.27 seconds; four targeted RU/EN demo scenarios
+  passed 4/4 in 6.5 seconds. The aggregate demo chunk advisory remains unchanged.
+- Final consumers:optional-ui passed: actual core/plugins/facade tarballs, DOM-free
+  public imports and archived JS/CSS without source aliases; one Chromium scenario
+  includes merged-cell typography, native email completion and disposal. This is
+  not the full framework/Angular consumer matrix.
+- git diff --check and git diff --cached --check passed before recording results.
+
+An intermediate partial declaration command omitted regenerated core declarations
+after build.ts cleaned dist; dependent declarations/package checks consequently
+failed. The complete normal build order and final package/type checks above passed;
+no declarations were patched manually. No full local suites, GitHub monitoring,
+publication, commit or push ran. These checks are bounded regression evidence,
+not complete mobile, accessibility, security or external-email compatibility proof.
+
+Measured bytes (raw / gzip / Brotli), retained shared chunks counted once:
+
+| Artifact/profile | Raw | gzip | Brotli |
+| --- | ---: | ---: | ---: |
+| Core JS | 94084 | 29191 | 25689 |
+| Autolink entry closure | 7481 | 3261 | 2925 |
+| Table-properties behavior closure | 34361 | 12155 | 10880 |
+| Table-properties form closure | 51792 | 18068 | 16067 |
+| Standard ready JS | 222495 | 66163 | 56613 |
+| Standard + table properties ready JS | 250302 | 73818 | 62421 |
+| Standard + table properties ready CSS | 12162 | 3924 | 3207 |
+| Standard + preview/save-state ready JS | 234744 | 69652 | 59480 |
+| Extended ready JS | 279512 | 82579 | 70034 |
+| Extended + table properties ready JS | 307326 | 90315 | 75786 |
+
+Core grows 127 raw / 13 gzip JS bytes for the regression guard; its soft 80000
+raw-byte target remains exceeded. The selected standard table profile retains
+6182 gzip JS bytes below its unchanged 80000 guard; CSS is unchanged. Core,
+optional, adapter, extended and feature-specific guards remain unchanged.
+Framework runtimes, declarations, source maps and external resources are excluded.
+
+## Preview and application-owned save state — 2026-11-20
+
+Implemented two optional modules under [preview.md](preview.md) and
+[save-state.md](save-state.md), with three subagents covering runtime, browser
+regressions and bilingual documentation/demo. Independent review covered callback
+reentrancy, prompt cancellation when application promises ignore AbortSignal,
+stale completions, composition recovery and UI/editor disposal ownership.
+
+Preview renders a validated detached document with an explicit DOM builder.
+Default image placeholders create no additional IMG nodes or image requests;
+image loading requires an explicit option. Links are inert. The source document,
+actual nodes, selection and history remain observationally unchanged. The save
+plugin delegates transport to the application and acknowledges only the dispatched
+revision, preserving edits made during an active save. Optional UI provides generic
+localized status and retry, without exposing application error text. Demo saving
+is a local simulation, not network/storage persistence. No runtime dependency,
+core format change or default preset installation was added.
+
+Actual local validation on the final runtime:
+
+- pnpm run build passed, including declarations and enforced size guards.
+- pnpm exec tsc -p packages/wysiwyg and pnpm run typecheck passed (TS/Svelte/Vue).
+- check:project, check:tree-shaking and package:check passed.
+- Targeted preview.spec.ts and save-state.spec.ts passed 45/45 across
+  Chromium/Firefox/WebKit in 28.1 seconds, on a fresh task-owned Vite server.
+- docs:build:site passed in 25.34 seconds. Four targeted RU/EN demo/guide scenarios
+  passed 4/4 in 9.9 seconds on a fresh task-owned preview server.
+- consumers:optional-ui passed: actual core/plugins/facade archives, DOM-free public
+  factory imports, archived JS/CSS without source aliases, one Chromium scenario
+  including preview/save state and the preceding symbol/fullscreen modules.
+- git diff --check and git diff --cached --check passed before recording results.
+
+No full editor/docs/consumer matrices, performance benchmark, GitHub monitoring,
+publication, commit or push were run for this stage. The aggregate documentation
+demo still emits Vite's chunk-size advisory; its threshold was not raised. These
+focused checks do not certify arbitrary browser/mobile behavior or backend safety.
+
+Measured bytes (raw / gzip / Brotli):
+
+| Selected artifact | Raw | gzip | Brotli |
+| --- | ---: | ---: | ---: |
+| Preview standalone public factory | 6514 | 2648 | 2302 |
+| Preview optional CSS | 1715 | 659 | 520 |
+| Save-state behavior entry with retained chunks | 3154 | 1624 | 1448 |
+| Save-state UI standalone public factory | 4486 | 1827 | 1583 |
+| Save-state optional CSS | 620 | 339 | 268 |
+| Standard + preview ready JS | 227245 | 67491 | 57708 |
+| Standard + save-state ready JS | 228328 | 67911 | 57952 |
+| Standard + both modules ready JS | 233911 | 69365 | 59176 |
+| Standard + both modules ready CSS | 14497 | 4922 | 3995 |
+
+Standalone UI measurements retain required helpers; shared chunks are counted once
+per selected profile. UI-only save-state factory size excludes separately installed
+behavior; the combined ready profile includes both. Core stays at 93957 / 29178 /
+25709 JS bytes. Standard keeps 80000 gzip JS / 20000 raw CSS guards, leaving 10635
+gzip JS bytes in the combined profile. The core's 80000 raw-byte soft optimization
+target remains exceeded independently of passing enforced gzip budgets. Framework
+runtimes, source maps, declarations and external image resources are excluded.
+
 ## Optional fullscreen workspace — 2026-11-20
 
 The new `/ui/fullscreen` factory and explicit CSS follow [fullscreen.md](fullscreen.md).

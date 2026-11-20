@@ -1,0 +1,36 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`preview controls preserve the editor and show a resource-free reading view in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  if (!english) await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const original = await content.elementHandle();
+  const panel = page.locator('.lab-preview');
+  await panel.locator('summary').click();
+  await panel.getByRole('button', { name: t('Загрузить пример предпросмотра', 'Load preview sample'), exact: true }).click();
+  const before = await content.innerHTML();
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await expect(undo).toBeDisabled();
+  await panel.getByRole('button', { name: t('Предпросмотр документа', 'Preview document'), exact: true }).click();
+  const region = panel.getByRole('region', { name: t('Предпросмотр документа', 'Document preview'), exact: true });
+  await expect(region).toBeVisible();
+  await expect(region.locator('strong')).toHaveText('42 €');
+  await expect(region).toContainText(t('Изображение примера', 'Sample image'));
+  await expect(region.locator('img,[src],[href],[contenteditable="true"]')).toHaveCount(0);
+  expect(await content.innerHTML()).toBe(before);
+  expect(await original!.evaluate((element) => element === document.querySelector('.mw-content'))).toBe(true);
+  await panel.getByRole('button', { name: t('Обновить предпросмотр', 'Refresh preview'), exact: true }).click();
+  await expect(undo).toBeDisabled();
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(content).toHaveAttribute('contenteditable', 'false');
+  await expect(region).toBeVisible();
+  await region.focus();
+  await page.keyboard.press('Escape');
+  await expect(region).toBeHidden();
+  expect(await content.innerHTML()).toBe(before);
+  await panel.getByRole('link', { name: t('Подключение и политика ресурсов предпросмотра', 'Preview setup and resource policy'), exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/preview$`));
+  await expect(page.locator('.vp-doc')).toContainText('PreviewUIController');
+});

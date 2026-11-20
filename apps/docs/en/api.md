@@ -340,3 +340,28 @@ Optional [table size picker](/en/table-picker) uses an explicit factory and CSS 
 ## Fullscreen workspace
 
 `createFullscreenUI(host, editor, { target, label?, onChange?, onError? })` from `/ui/fullscreen` creates an [independent workspace toggle](/en/fullscreen); import `/ui/fullscreen.css` explicitly. `target` is the existing connected HTML wrapper for editor, toolbar and button host. The controller exposes `element`, `enter()`, `exit()`, `toggle()`, `isActive()`, `refresh()` and `destroy()`. This CSS mode keeps DOM nodes and document/history intact and does not hide browser chrome.
+
+## Read-only preview
+
+`createPreviewUI(host, editor, options?)` from `/ui/preview` exposes `element`, `open/close/toggle`, `isOpen`, `refresh` and `destroy`. Its explicit CSS is `/ui/preview.css`; `live` defaults true and `images` defaults `'omit'`. [The guide](/en/preview) explains inert links, opt-in image requests and lifecycle without editor/history changes.
+
+## Application-owned save state
+
+`saveState({ save, autoSave?, debounceMs?, onError? })` from `/plugins/save-state` tracks local revision acknowledgement through an application callback. `saveStateCommands(editor)` exposes `getState`, `save`, `retry`, `markSaved`, and immediate `subscribe`. [The guide](/en/save-state) covers cancellation, newer edits, external value baselines and server responsibilities. Optional `/ui/save-state` and its CSS provide localized native Save/Retry/status controls.
+
+## Email completion and cell text
+
+`autolink({ email: true })` explicitly enables conservative ASCII email addresses after Space, controlled Enter and one plain-text clipboard token. Default is `email: false`; HTML/multiline completion and network checks are absent. [Contract, history and limits](/en/autolink#email-explicit-opt-in).
+
+`tablePropertyCommands(editor).update({ cellTextAlign: 'right', cellDirection: 'rtl' })` updates selected actual TD/TH in one Undo step. Public types are `TableCellTextAlign` (`left | center | right | justify`) and `TableCellDirection` (`ltr | rtl`); `false` resets an own value, and state also allows `'mixed'`. Explicit descendant formatting is preserved. [Form, inheritance and clipboard](/en/table-properties#cell-text-alignment-and-direction).
+
+
+## Print and outline
+
+`createPrintUI(host, editor, options?)` from `/ui/print` exposes `element`, `print(): boolean`, `cancel()`, `isPrinting()` and `destroy()`. Required `/ui/print.css` separates the print snapshot from the application; printing is refused without CSS. The snapshot loads neither images nor custom font families. A `true` result accepts a request, rather than proving a system-dialog outcome. The [guide](/en/print) explains document-wide session ownership and cleanup.
+
+`createOutlineUI(host, editor, { label?, maxHeadings?, onError? })` from `/ui/outline` exposes `element`, `refresh()` and `destroy()`, with separate `/ui/outline.css`. Ordinary headings appear in document order without persisted IDs; a button changes caret/scroll while preserving content and history. Read-only allows both modules. The [guide](/en/outline) explains the 1–500 limit, excluded owners and stale-navigation checks.
+
+## Text drag and drop
+
+`textDrop({ enabled?, onError? })` and `textDropCommands(editor)` from `/plugins/text-drop` install bounded rich-text drag/drop separately from presets. `getState()` and `setEnabled(boolean)` manage the preference; actual edits remain blocked read-only/during composition. Internal moves/copies retain formatting and one Undo; external inline HTML/plain text always copies. Files and structural/semantic sources are outside this plugin's ownership. No CSS is required. The [contract and example](/en/text-drop) explain the 20,000 UTF-16-unit bound and source/target freshness checks.

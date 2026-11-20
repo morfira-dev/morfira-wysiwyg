@@ -339,3 +339,28 @@ Undo/redo восстанавливает ожидающее оформление
 ## Полноэкранный режим
 
 `createFullscreenUI(host, editor, { target, label?, onChange?, onError? })` из `/ui/fullscreen` создаёт [независимую кнопку разворачивания рабочей области](/fullscreen); `/ui/fullscreen.css` подключается явно. `target` — существующий подключённый HTML-контейнер редактора, панели и host кнопки. Контроллер предоставляет `element`, `enter()`, `exit()`, `toggle()`, `isActive()`, `refresh()` и `destroy()`. CSS-режим не переносит DOM, не меняет документ/историю и не скрывает интерфейс браузера.
+
+## Предпросмотр для чтения
+
+`createPreviewUI(host, editor, options?)` из `/ui/preview` предоставляет `element`, `open/close/toggle`, `isOpen`, `refresh` и `destroy`. CSS подключается через `/ui/preview.css`; `live` по умолчанию true, `images` — `'omit'`. [Руководство](/preview) описывает неактивные ссылки, явное разрешение запросов изображений и lifecycle без изменения редактора/истории.
+
+## Состояние сохранения приложения
+
+`saveState({ save, autoSave?, debounceMs?, onError? })` из `/plugins/save-state` отслеживает подтверждение локальных версий callback'ом приложения. `saveStateCommands(editor)` предоставляет `getState`, `save`, `retry`, `markSaved` и немедленную `subscribe`. [Руководство](/save-state) объясняет отмену, новые правки, базу внешнего value и ответственность сервера. Необязательный `/ui/save-state` и его CSS добавляют локализованные Save/Retry/status-контролы.
+
+## Дополнение email и текст ячеек
+
+`autolink({ email: true })` явно включает консервативные ASCII email-адреса после Space, контролируемого Enter и вставки одного plain-text токена. По умолчанию `email: false`; нет HTML/многострочного дополнения и сетевой проверки. [Контракт, история и ограничения](/autolink#email-явная-опция).
+
+`tablePropertyCommands(editor).update({ cellTextAlign: 'right', cellDirection: 'rtl' })` меняет выбранные фактические TD/TH одним Undo. Экспортируются `TableCellTextAlign` (`left | center | right | justify`) и `TableCellDirection` (`ltr | rtl`); `false` снимает собственное значение, состояние также допускает `'mixed'`. Дочерние явные стили сохраняются. [Форма, наследование и clipboard](/table-properties#выравнивание-и-направление-текста-ячеек).
+
+
+## Печать и оглавление
+
+`createPrintUI(host, editor, options?)` из `/ui/print` предоставляет `element`, `print(): boolean`, `cancel()`, `isPrinting()` и `destroy()`. Обязательный `/ui/print.css` включает безопасное отделение печатного снимка от приложения; без CSS печать отклоняется. Изображения и пользовательские гарнитуры не загружаются снимком. `true` означает принятие запроса, а не результат системного диалога. [Руководство](/print) описывает владение одним сеансом на документ и очистку.
+
+`createOutlineUI(host, editor, { label?, maxHeadings?, onError? })` из `/ui/outline` предоставляет `element`, `refresh()` и `destroy()`. `/ui/outline.css` подключается отдельно. Обычные заголовки показаны в порядке документа, без сохраняемых IDs; кнопка меняет курсор/прокрутку, сохраняя содержимое и историю. Read-only разрешает обе возможности. [Руководство](/outline) описывает лимит 1–500, исключённые узлы и проверку актуальности перехода.
+
+## Перетаскивание текста
+
+`textDrop({ enabled?, onError? })` и `textDropCommands(editor)` из `/plugins/text-drop` подключают ограниченный rich-text drag/drop отдельно от пресетов. Команды `getState()` и `setEnabled(boolean)` управляют предпочтением; фактические изменения запрещены в read-only/composition. Внутренний перенос или копирование сохраняют оформление и один Undo; внешний inline HTML/plain text всегда копируется. Файлы и структурные/semantic-источники не присваиваются этому плагину. CSS не нужен. [Контракт и пример](/text-drop) описывают лимит 20 000 UTF-16 единиц и проверку актуальности источника/цели.

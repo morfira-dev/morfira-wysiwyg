@@ -23,6 +23,11 @@ import type { ImageFormController } from '@morfira-dev/wysiwyg/ui/images';
 import type { TablePropertiesFormController } from '@morfira-dev/wysiwyg/ui/table-properties';
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
 import type { SpecialCharacterUIController } from '@morfira-dev/wysiwyg/ui/special-characters';
+import type { PreviewUIController } from '@morfira-dev/wysiwyg/ui/preview';
+import type { PrintUIController } from '@morfira-dev/wysiwyg/ui/print';
+import type { OutlineUIController } from '@morfira-dev/wysiwyg/ui/outline';
+import type { SaveStateCommands, SaveStateContext, SaveStateSnapshot } from '@morfira-dev/wysiwyg/plugins/save-state';
+import type { SaveStateUIController } from '@morfira-dev/wysiwyg/ui/save-state';
 import type { FullscreenUIController } from '@morfira-dev/wysiwyg/ui/fullscreen';
 import type { SearchCommands } from '@morfira-dev/wysiwyg/plugins/search';
 import type { SearchHighlightsController, SearchHighlightsState } from '@morfira-dev/wysiwyg/ui/search-highlights';
@@ -32,6 +37,10 @@ import '@morfira-dev/wysiwyg/ui/forms.css';
 import '@morfira-dev/wysiwyg/ui/search-highlights.css';
 import '@morfira-dev/wysiwyg/ui/special-characters.css';
 import '@morfira-dev/wysiwyg/ui/fullscreen.css';
+import '@morfira-dev/wysiwyg/ui/preview.css';
+import '@morfira-dev/wysiwyg/ui/print.css';
+import '@morfira-dev/wysiwyg/ui/outline.css';
+import '@morfira-dev/wysiwyg/ui/save-state.css';
 import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/ui/contextual.css';
 import '@morfira-dev/wysiwyg/ui/contextual-link.css';
@@ -80,6 +89,20 @@ const fullscreenWorkspace = ref<HTMLElement>();
 const fullscreenHost = ref<HTMLElement>();
 const fullscreenActive = ref(false);
 let fullscreenUI: FullscreenUIController | undefined;
+const previewHost = ref<HTMLElement>();
+let previewUI: PreviewUIController | undefined;
+const printHost = ref<HTMLElement>();
+let printUI: PrintUIController | undefined;
+const outlineHost = ref<HTMLElement>();
+let outlineUI: OutlineUIController | undefined;
+const saveStateHost = ref<HTMLElement>();
+let saveStateUI: SaveStateUIController | undefined;
+let saveAPI: SaveStateCommands | undefined;
+let unsave: (() => void) | undefined;
+const saveSnapshot = ref<SaveStateSnapshot>({ status: 'saved', dirty: false, revision: 0, savedRevision: 0 });
+const failNextSave = ref(false);
+const demoSaveCalls = ref(0);
+const demoSavedRevision = ref<number>();
 const specialCharacterHost = ref<HTMLElement>();
 let specialCharacterUI: SpecialCharacterUIController | undefined;
 let linkForm: LinkFormController | undefined;
@@ -170,6 +193,7 @@ const article = () => t(
   '<h2>A place for your ideas.</h2><p>A good editor lets you focus on <strong>the content</strong>. Select text, try formatting, or add a table.</p><p>A small core. The plugins you need. Your design.</p>',
 );
 const tableSample = () => `<h2>${t('Таблицы без лишнего', 'Tables, without the weight')}</h2><p>${t('Выделяйте ячейки, меняйте структуру и вставляйте диапазоны.', 'Select cells, change the structure, and paste ranges.')}</p><table title="Table headers sample" style="width:100%"><caption>${t('Возможности таблиц Morfira', 'Morfira table capabilities')}</caption><thead><tr><th scope="col">${t('Раздел', 'Area')}</th><th scope="col">${t('Возможность', 'Feature')}</th><th scope="col">${t('Статус', 'Status')}</th></tr></thead><tbody><tr><td rowspan="2"><p><strong>${t('Таблицы', 'Tables')}</strong></p></td><td><p>${t('Объединение ячеек', 'Merged cells')}</p></td><td><p>✓</p></td></tr><tr><td><p>HTML / TSV</p></td><td><p>✓</p></td></tr></tbody></table><p><br></p>`;
+const cellTypographySample = () => '<table title="Cell typography sample"><tbody><tr><td rowspan="2" dir="ltr" style="text-align: left"><p><strong>Alpha مرحبا</strong></p></td><td dir="rtl" style="text-align: right"><p title="Explicit child" dir="ltr" style="text-align: left"><em>Beta שלום</em></p></td><td><p>Outside A</p></td></tr><tr><td><p><u>Gamma</u></p></td><td><p>Outside B</p></td></tr></tbody></table><p><br></p>';
 const contextualTableSample = () => `<p>${t('До таблицы', 'Before the table')}</p><table title="Contextual table sample"><tbody><tr><td rowspan="2"><p><strong>Alpha</strong></p></td><td><p><em>Beta</em></p></td><td><p>Outside A</p></td></tr><tr><td><p><u>Gamma</u></p></td><td><p>Outside B</p></td></tr><tr><td><p>Delta</p></td><td><p>Epsilon</p></td><td><p>Outside C</p></td></tr></tbody></table><p>${t('После таблицы', 'After the table')}</p>`;
 const listSample = () => t(
   '<h2>Списки, которые слушаются</h2><p>Enter делит пункт, пустой пункт завершает список. Tab и Shift+Tab меняют вложенность вне таблиц; Backspace в начале объединяет пункты.</p><ul><li>Подготовить материал<ol><li>Собрать ссылки</li><li><strong>Проверить факты</strong></li></ol></li><li>Написать черновик</li><li>Опубликовать</li></ul><p>Выдели несколько пунктов и попробуй нумерацию или кнопки отступа.</p>',
@@ -268,6 +292,20 @@ const loadContextualTableSample = () => {
   });
   selectContextualTable();
 };
+const loadCellTypographySample = () => run((instance) => {
+  instance.setHTML(cellTypographySample());
+  const cell = instance.surface.querySelector('td');
+  if (!cell || !commands) return;
+  const range = cell.ownerDocument.createRange();
+  range.selectNodeContents(cell.querySelector('p') ?? cell);
+  range.collapse(true);
+  const selection = cell.ownerDocument.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+  commands.select({ row: 0, column: 0 }, { row: 1, column: 1 });
+  tablePropertiesForm?.refresh();
+  output.value = '';
+});
 const updateContextualImageUI = () => { mountContextualImageUI?.(); };
 const updateImageResizeUI = () => { mountImageResizeUI?.(); };
 const selectContextualImageSample = () => run(() => { selectContextualImage?.(); }, false);
@@ -427,6 +465,12 @@ const startAutolink = (enter: boolean) => run((instance) => {
   instance.setSelection(text.length);
   output.value = '';
 });
+const startEmailAutolink = () => run((instance) => {
+  const address = 'Writer.Name+tag@Example.com';
+  instance.setHTML(`<p>${address}</p>`);
+  instance.setSelection(address.length);
+  output.value = '';
+});
 const loadSpecialCharacterSample = () => run((instance) => {
   const prefix = t('Цена: ', 'Price: ');
   const word = t('сумма', 'amount');
@@ -439,6 +483,64 @@ const loadSpecialCharacterSample = () => run((instance) => {
   selection.addRange(range);
   specialCharacterUI?.refresh();
   output.value = '';
+});
+const selectTextDropRange = (instance: Editor) => {
+  const source = instance.surface.querySelector('[title="Text drop source"] strong');
+  if (!source) throw new Error(t('Загрузи пример перетаскивания заново.', 'Reload the text drag sample.'));
+  const range = instance.surface.ownerDocument.createRange();
+  range.selectNodeContents(source);
+  const selection = instance.surface.ownerDocument.getSelection()!;
+  selection.removeAllRanges();
+  selection.addRange(range);
+};
+const selectTextDropSource = () => run(selectTextDropRange, false);
+const loadTextDropSample = () => run((instance) => {
+  instance.setHTML('<p title="Text drop source">Before <strong>Move <em>this</em></strong> after.</p><p title="Text drop target">Destination:  end.</p><ul><li title="Text drop list">List destination</li></ul><table><tbody><tr><td rowspan="2" title="Text drop merged">Merged destination</td><td>A</td></tr><tr><td>B</td></tr></tbody></table><p><br></p>');
+  selectTextDropRange(instance);
+  output.value = '';
+});
+const loadReadingSample = () => run((instance) => {
+  instance.setHTML(`<h2>${t('План документа', 'Document plan')}</h2><p>${t('Обзор документа', 'Document overview')}: <strong>42 €</strong>. <a href="/reading-destination">${t('Обычная ссылка', 'Ordinary link')}</a></p><h3>${t('Детали', 'Details')}</h3><ul><li>${t('Пункт плана', 'Plan item')}</li></ul><blockquote><h3>${t('Вложенный раздел', 'Nested section')}</h3><p>${t('Заголовок внутри цитаты тоже доступен в оглавлении.', 'A heading inside a quote is also available in the outline.')}</p></blockquote><table><caption>${t('Сводка', 'Summary')}</caption><tbody><tr><th colspan="2">${t('Объединённый заголовок', 'Merged header')}</th></tr><tr><td>A</td><td>B</td></tr></tbody></table><figure><img src="/logo.svg" alt="${t('Изображение примера', 'Sample image')}" width="64" height="64"><figcaption>${t('При печати вместо изображения остаётся текст.', 'Printing retains text in place of the image.')}</figcaption></figure><h2>${t('Следующие шаги', 'Next steps')}</h2><p>${t('Документ остаётся редактируемым.', 'The document remains editable.')}</p>`);
+  instance.setSelection(0);
+  outlineUI?.refresh();
+});
+const loadPreviewSample = () => run((instance) => {
+  instance.setHTML(`<h2>${t('Проверяем перед публикацией', 'Review before publishing')}</h2><p>${t('Цена', 'Price')}: <strong>42 €</strong>. <a href="/preview-destination">${t('Ссылка в предпросмотре не открывается', 'Preview links stay inert')}</a></p><ul><li>${t('Форматирование сохраняется', 'Formatting is retained')}</li></ul><figure><img src="/logo.svg" alt="${t('Изображение примера', 'Sample image')}" width="64" height="64"><figcaption>${t('Подпись остаётся текстом', 'The caption remains text')}</figcaption></figure>`);
+  instance.setSelection(0);
+});
+const prepareSaveSample = () => run((instance) => {
+  const text = t('Черновик', 'Draft');
+  instance.setHTML(`<p>${text}</p>`);
+  saveAPI?.markSaved();
+  failNextSave.value = false;
+  demoSaveCalls.value = 0;
+  demoSavedRevision.value = undefined;
+  instance.setSelection(text.length);
+  instance.insertHTML(t(' + правка', ' + edit'));
+});
+const editDuringSave = () => run((instance) => {
+  instance.setSelection(instance.getText().length);
+  instance.insertHTML(t(' + новая правка', ' + newer edit'));
+});
+const acknowledgeDemoSave = () => { saveAPI?.markSaved(); };
+const simulateSave = (_document: unknown, { signal, revision }: SaveStateContext): Promise<void> => new Promise((resolve, reject) => {
+  demoSaveCalls.value++;
+  const shouldFail = failNextSave.value;
+  failNextSave.value = false;
+  const abort = () => {
+    window.clearTimeout(timer);
+    signal.removeEventListener('abort', abort);
+    reject(new DOMException('Cancelled', 'AbortError'));
+  };
+  const timer = window.setTimeout(() => {
+    signal.removeEventListener('abort', abort);
+    if (signal.aborted) { reject(new DOMException('Cancelled', 'AbortError')); return; }
+    if (shouldFail) { reject(new Error('Simulated save failure')); return; }
+    demoSavedRevision.value = revision;
+    resolve();
+  }, 700);
+  if (signal.aborted) abort();
+  else signal.addEventListener('abort', abort, { once: true });
 });
 const startMarkdown = () => run((instance) => { instance.setHTML('<p><br></p>'); instance.setSelection(0); });
 const useMarkdownCodec = async (action: 'replace' | 'insert' | 'export') => {
@@ -963,6 +1065,12 @@ onMounted(async () => {
     { imageInput },
     { tableProperties },
     { createTablePropertiesForm },
+    { createPreviewUI },
+    { createPrintUI },
+    { createOutlineUI },
+    { textDrop },
+    { saveState, saveStateCommands },
+    { createSaveStateUI },
   ] = await Promise.all([
     import('@morfira-dev/wysiwyg'),
     import('@morfira-dev/wysiwyg/plugins/tables'),
@@ -995,6 +1103,12 @@ onMounted(async () => {
     import('@morfira-dev/wysiwyg/plugins/image-input'),
     import('@morfira-dev/wysiwyg/plugins/table-properties'),
     import('@morfira-dev/wysiwyg/ui/table-properties'),
+    import('@morfira-dev/wysiwyg/ui/preview'),
+    import('@morfira-dev/wysiwyg/ui/print'),
+    import('@morfira-dev/wysiwyg/ui/outline'),
+    import('@morfira-dev/wysiwyg/plugins/text-drop'),
+    import('@morfira-dev/wysiwyg/plugins/save-state'),
+    import('@morfira-dev/wysiwyg/ui/save-state'),
   ]);
   if (cancelled) return;
   const common = {
@@ -1005,18 +1119,33 @@ onMounted(async () => {
   };
   const preset = props.full ? createExtendedPreset({
     ...common,
-    plugins: [tableProperties(), imageInput({ onError: (error) => notify(error instanceof Error ? error.message : String(error), true) }), checklists(), listProperties(), textDirection(), fonts({
+    plugins: [textDrop({ onError: (error) => console.error(error) }), saveState({ save: simulateSave }), tableProperties(), imageInput({ onError: (error) => notify(error instanceof Error ? error.message : String(error), true) }), checklists(), listProperties(), textDirection(), fonts({
       families: fontFamilies.map((option) => ({ id: option.id, label: t(option.ru, option.en), family: option.family })),
       sizes: fontSizes,
     })],
     mentions: { provide: people, debounceMs: 0, persistent: true, atomic: true },
     slash: { provide: snippets, debounceMs: 0, actions: { ...createSlashActions(), table: (instance: Editor) => tableCommands(instance).insert(3, 3) } },
+    autolink: { email: true },
     images: { upload: demoUpload },
     statistics: { locale: ru.value ? 'ru' : 'en' },
     tables: { onClipboardError: (error: Error) => notify(error.message, true) },
   }) : createMinimalPreset(common);
   editor = createEditor(host.value!, preset);
   if (props.full) {
+    saveAPI = saveStateCommands(editor);
+    unsave = saveAPI.subscribe((state) => { saveSnapshot.value = state; });
+    previewUI = createPreviewUI(previewHost.value!, editor, {
+      onError: (error) => console.error(error),
+    });
+    printUI = createPrintUI(printHost.value!, editor, {
+      onError: (error) => console.error(error),
+    });
+    outlineUI = createOutlineUI(outlineHost.value!, editor, {
+      onError: (error) => console.error(error),
+    });
+    saveStateUI = createSaveStateUI(saveStateHost.value!, editor, {
+      onError: (error) => console.error(error),
+    });
     checklistAPI = checklistCommands(editor);
     fontAPI = fontCommands(editor);
     listPropertyAPI = listPropertyCommands(editor);
@@ -1129,6 +1258,11 @@ onBeforeUnmount(() => {
   tablePropertiesForm?.destroy();
   searchHighlights?.destroy();
   searchForm?.destroy();
+  previewUI?.destroy();
+  printUI?.destroy();
+  outlineUI?.destroy();
+  saveStateUI?.destroy();
+  unsave?.();
   fullscreenUI?.destroy();
   specialCharacterUI?.destroy();
   unmention?.();
@@ -1207,6 +1341,8 @@ onBeforeUnmount(() => {
           <div class="lab-fields"><label>{{ t('Номер столбца', 'Column number') }}<input v-model.number="widthColumn" type="number" min="1"></label><label>{{ t('Ширина, px', 'Width, px') }}<input v-model.number="widthValue" type="number" min="40" max="4000"></label></div>
           <button @click="tableRun((api) => api.columnWidth(widthColumn - 1, widthValue))">{{ t('Применить ширину', 'Apply width') }}</button>
         </fieldset>
+        <fieldset :disabled="!ready || readOnly"><button @click="loadCellTypographySample">{{ t('Загрузить пример текста в ячейках', 'Load cell text sample') }}</button></fieldset>
+        <p class="lab-hint" data-cell-typography-hint>{{ t('Текст в ячейках: пример выделяет область 2 × 2 с rowspan и разными значениями. Выбери выравнивание и LTR/RTL в форме, затем Apply — один Undo отменит оба свойства. Сброс удаляет только свойство ячейки. Абзац Beta имеет собственные left/LTR и сохраняет их: дочернее оформление может перекрывать наследование от ячейки. Физические left/right не меняются автоматически при RTL.', 'Cell text: the sample selects a 2 × 2 region with a rowspan and mixed values. Choose alignment and LTR/RTL in the form, then Apply — one Undo reverses both properties. Reset removes only the cell property. The Beta paragraph has its own left/LTR and retains them: descendant formatting can override cell inheritance. Physical left/right do not change automatically with RTL.') }}</p>
         <div ref="tablePropertiesFormHost" class="demo-table-properties-host"></div>
         <p class="lab-hint">{{ t('Минимум строки: загрузи пример «Таблицы», кликни в первую ячейку данных с rowspan=2 и задай «Минимальная высота строк (1–1000px)» = 80px. Apply изменит обе строки данных, а заголовок останется прежним. Пустое поле сбрасывает высоту; контент может сделать строку выше. Теперь добавь столбец или выполни merge/split: высоты сохранятся. Новая строка не наследует соседнюю высоту.', 'Row minimum: load the Tables sample, click the first body cell with rowspan=2 and set Minimum row height (1–1000px) to 80px. Apply changes both body rows and leaves the header alone. An empty field resets height; content may make a row taller. Now add a column or merge/split: heights stay intact. A new row does not inherit neighboring height.') }}</p>
         <p class="lab-hint">{{ t('Оформление ячеек: загрузи контекстную таблицу и выдели область 2 × 2. Задай отступы 8px, толщину границ 2px и стиль «Штриховая», затем Apply. Пустое поле сбрасывает только своё свойство; цвет, толщина и стиль независимы. Отступ одинаковый для четырёх сторон; collapsed borders и тема могут влиять на вид общей границы.', 'Cell formatting: load the contextual table and select the 2 × 2 region. Set padding to 8px, border width to 2px and style to Dashed, then Apply. An empty field resets only its own property; color, width and style are independent. Padding is uniform on four sides; collapsed borders and the theme can affect a shared border.') }}</p>
@@ -1398,6 +1534,8 @@ onBeforeUnmount(() => {
         <details class="lab-autolink"><summary>{{ t('Автоматические ссылки', 'Automatic links') }}</summary><fieldset :disabled="!ready || readOnly">
           <button @click="startAutolink(true)">{{ t('Подготовить URL для Enter', 'Prepare URL for Enter') }}</button>
           <button @click="startAutolink(false)">{{ t('Подготовить plain-text вставку', 'Prepare plain-text paste') }}</button>
+          <button @click="startEmailAutolink">{{ t('Подготовить email для пробела', 'Prepare email for Space') }}</button>
+          <p class="lab-hint" data-email-autolink-hint>{{ t('В полной демке явно включено autolink: { email: true }; пресеты по умолчанию распознают только URL. Подготовь email и нажми Space или Enter самостоятельно, либо вставь один адрес обычным текстом. Поддержан ограниченный ASCII-адрес без query/header-параметров, а не весь RFC email. Данные никуда не отправляются; сохранённая mailto-ссылка открывает почтовое приложение только при явном открытии. Первый Undo снимает ссылку, сохраняя введённый пробел.', 'The full demo explicitly enables autolink: { email: true }; presets recognize only URLs by default. Prepare an email and press Space or Enter yourself, or paste one address as plain text. A conservative ASCII address without query/header parameters is supported, not every RFC email form. No data is sent; explicitly opening the saved mailto link delegates to a mail application. The first Undo removes the link while retaining the typed space.') }}</p>
           <p class="lab-hint">{{ t('Нажми Enter после подготовленного URL или вставь один URL как обычный текст без HTML, пробелов и переносов. Space тоже работает. Первый Undo убирает ссылку, второй — исходный Enter или вставку. Дальнейший текст идёт вне ссылки. Shift+Enter, HTML и замена выделения не преобразуются. Превью и сетевых запросов нет.', 'Press Enter after the prepared URL or paste one URL as plain text without HTML, whitespace or line breaks. Space also works. First Undo removes the link; second removes Enter or paste. Further typing stays outside the link. Shift+Enter, HTML and selected replacement are not converted. No previews or network requests.') }}</p>
         </fieldset></details>
         <details class="lab-persistent-mentions"><summary>{{ t('Сохраняемые упоминания с ID', 'Persistent mentions with IDs') }}</summary><fieldset :disabled="!ready">
@@ -1504,6 +1642,41 @@ onBeforeUnmount(() => {
             <a :href="ru ? '/search-highlights' : '/en/search-highlights'">{{ t('Подключение и ограничения подсветки', 'Highlight setup and limitations') }}</a>
           </div>
           <p class="lab-hint">{{ t('Буквальный поиск, без регулярных выражений. Совпадения пересекают стили, но не блоки, ячейки, переносы и изображения. Выделяется активное совпадение; поиск доступен в read-only.', 'Literal search without regular expressions. Matches cross inline styles, but not blocks, cells, line breaks or images. The active match is selected; search works in read-only.') }}</p>
+        </details>
+        <details class="lab-preview"><summary>{{ t('Предпросмотр документа', 'Document preview') }}</summary>
+          <div class="lab-inline-actions"><button :disabled="!ready || readOnly" @click="loadPreviewSample">{{ t('Загрузить пример предпросмотра', 'Load preview sample') }}</button></div>
+          <div ref="previewHost"></div>
+          <p class="lab-hint">{{ t('Отдельный вид не изменяет редактор, выделение или Undo. Изображения по умолчанию заменены подписью без нового запроса, ссылки не открываются. Открытый вид обновляется после изменений; закрытый не хранит снимок.', 'The separate view leaves the editor, selection and Undo unchanged. Images default to text placeholders without another request; links stay inert. An open preview follows changes; a closed view retains no snapshot.') }}</p>
+          <a :href="ru ? '/preview' : '/en/preview'">{{ t('Подключение и политика ресурсов предпросмотра', 'Preview setup and resource policy') }}</a>
+        </details>
+        <details class="lab-text-drop"><summary>{{ t('Перетаскивание текста', 'Text drag and drop') }}</summary>
+          <div class="lab-inline-actions">
+            <button :disabled="!ready || readOnly" @click="loadTextDropSample">{{ t('Загрузить пример перетаскивания', 'Load text drag sample') }}</button>
+            <button :disabled="!ready || readOnly" @click="selectTextDropSource">{{ t('Выделить Move this', 'Select Move this') }}</button>
+          </div>
+          <p class="lab-hint" data-text-drop-hint>{{ t('Пример выделяет Move this с сохранением полужирного и курсива. Перетащи выделенный текст в абзац Destination, обычный пункт списка или ячейку. Внутри этого редактора действие по умолчанию переносит, Ctrl/Meta/Alt копируют; один Undo восстанавливает исходный текст и выделение. Внешний текст и безопасный inline HTML всегда копируются. При необходимости сначала выдели фрагмент заново.', 'The sample selects Move this with bold and italic marks. Drag the selection into Destination, an ordinary list item or a cell. Within this editor the default action moves; Ctrl/Meta/Alt copy. One Undo restores original content and selection. External text and safe inline HTML always copy. Reselect the fragment first when needed.') }}</p>
+          <p class="lab-hint" data-text-drop-limits>{{ t('Клавиатурная альтернатива: вырезать/копировать, поставить курсор и вставить обычными сочетаниями ОС. Это отдельные операции буфера, а не один drag-жест. Перенос через несколько исходных блоков, semantic-узлы и упоминания не поддержаны; файлы обрабатывает модуль изображений. Read-only блокирует drop. Реальные OS drag/drop и touch-сценарии требуют отдельной проверки.', 'Keyboard alternative: cut/copy, place the caret and paste with the usual OS shortcuts. Those are separate clipboard operations, not one drag gesture. Multi-block sources, semantic nodes and mentions are unsupported; files belong to the image module. Read-only blocks dropping. Real OS drag/drop and touch scenarios need separate validation.') }}</p>
+          <a :href="ru ? '/text-drop' : '/en/text-drop'">{{ t('Подключение перетаскивания текста', 'Text drag and drop setup') }}</a>
+        </details>
+        <details class="lab-reading"><summary>{{ t('Печать и оглавление', 'Print and outline') }}</summary>
+          <div class="lab-inline-actions"><button :disabled="!ready || readOnly" @click="loadReadingSample">{{ t('Загрузить пример чтения', 'Load reading sample') }}</button></div>
+          <div ref="printHost"></div>
+          <p class="lab-hint" data-print-hint>{{ t('Печать открывает настоящий диалог браузера с отдельным проверенным снимком. Панели и сайт не печатаются; изображения заменены alt-текстом, ссылки неактивны, гарнитуры системные. Размер страницы, разбиение и сохранение в PDF определяет браузер/ОС. Если браузер не сообщил о завершении, используй «Отменить» для освобождения снимка.', 'Print opens the actual browser dialog for a separate validated snapshot. Toolbars and the site are excluded; images become alt text, links stay inert and fonts are system fonts. Page size, pagination and saving to PDF belong to the browser/OS. If completion is not reported, use Cancel to release the snapshot.') }}</p>
+          <div ref="outlineHost"></div>
+          <p class="lab-hint" data-outline-hint>{{ t('Оглавление показывает обычные заголовки, включая вложенные цитаты, списки и ячейки. Кнопка переводит курсор к настоящему заголовку и прокручивает его в видимую область, без изменения документа или Undo. Навигация и печать доступны в read-only; IDs в документ не добавляются.', 'The outline lists ordinary headings, including headings in quotes, lists and cells. A button moves the caret to the actual heading and scrolls it into view without changing content or Undo. Navigation and printing work read-only; no IDs are added to the document.') }}</p>
+          <a :href="ru ? '/print' : '/en/print'">{{ t('Подключение печати', 'Print setup') }}</a> · <a :href="ru ? '/outline' : '/en/outline'">{{ t('Подключение оглавления', 'Outline setup') }}</a>
+        </details>
+        <details class="lab-save-state"><summary>{{ t('Сохранение документа', 'Document saving') }}</summary>
+          <div class="lab-inline-actions">
+            <button :disabled="!ready || readOnly" @click="prepareSaveSample">{{ t('Подготовить несохранённый пример', 'Prepare unsaved sample') }}</button>
+            <button :disabled="!ready || readOnly || saveSnapshot.status !== 'saving'" @click="editDuringSave">{{ t('Изменить во время сохранения', 'Edit while saving') }}</button>
+            <button :disabled="!ready" @click="acknowledgeDemoSave">{{ t('Приложение подтверждает текущую версию', 'Application acknowledges current revision') }}</button>
+          </div>
+          <label class="lab-checkbox"><input v-model="failNextSave" type="checkbox" :disabled="!ready || saveSnapshot.status === 'saving'">{{ t('Следующее сохранение с ошибкой', 'Fail the next save') }}</label>
+          <div ref="saveStateHost"></div>
+          <p class="lab-hint" data-demo-save-revisions>{{ t(`Текущая версия: ${saveSnapshot.revision}; подтверждена: ${saveSnapshot.savedRevision}; вызовов: ${demoSaveCalls}; последнее подтверждение имитации: ${demoSavedRevision ?? '—'}.`, `Current revision: ${saveSnapshot.revision}; acknowledged: ${saveSnapshot.savedRevision}; calls: ${demoSaveCalls}; last simulated acknowledgement: ${demoSavedRevision ?? '—'}.`) }}</p>
+          <p class="lab-hint">{{ t('Здесь только имитация задержки 700 мс: без сети и хранения. Сначала подготовь пример, затем сохрани. Если внести правку во время ожидания, ответ старой версии не сделает новую сохранённой. Повторная попытка берёт текущий документ. API-замена устанавливает новую сохранённую базу.', 'This is a 700 ms simulation only: no network or storage. Prepare a sample, then save. Editing while pending leaves the newer revision unsaved after the older response. Retry captures the current document. API replacement establishes a new saved baseline.') }}</p>
+          <a :href="ru ? '/save-state' : '/en/save-state'">{{ t('Контракт сохранения и ответственность сервера', 'Save contract and server responsibilities') }}</a>
         </details>
         <details class="lab-special-characters"><summary>{{ t('Спецсимволы', 'Special characters') }}</summary>
           <div class="lab-inline-actions">

@@ -1,0 +1,31 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`explicit email demo completes native Space and keeps history in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const panel = page.locator('.lab-autolink');
+  await panel.locator('summary').click();
+  const prepare = panel.getByRole('button', { name: t('Подготовить email для пробела', 'Prepare email for Space'), exact: true });
+  await prepare.click();
+  const address = 'Writer.Name+tag@Example.com';
+  await expect(content).toHaveText(address);
+  await expect(content.locator('a')).toHaveCount(0);
+  await page.keyboard.press('Space');
+  const link = content.locator('a');
+  await expect(link).toHaveText(address);
+  await expect(link).toHaveAttribute('href', `mailto:${address}`);
+  const toolbar = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true });
+  await toolbar.locator('[data-mw-ui-action="undo"]').click();
+  await expect(content.locator('a')).toHaveCount(0);
+  expect((await content.textContent())?.replace(/\u00a0/g, ' ')).toBe(`${address} `);
+  await toolbar.locator('[data-mw-ui-action="redo"]').click();
+  await expect(link).toHaveAttribute('href', `mailto:${address}`);
+  await page.keyboard.type('X');
+  await expect(link).toHaveText(address);
+  await expect(content).toContainText('X');
+  await expect(panel.locator('[data-email-autolink-hint]')).toContainText('email: true');
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(prepare).toBeDisabled();
+});

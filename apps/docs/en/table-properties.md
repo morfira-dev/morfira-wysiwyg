@@ -124,9 +124,26 @@ Customize the caption on the editor container; styles are scoped to `.mw-content
 }
 ```
 
+## Cell text alignment and direction
+
+`cellTextAlign` accepts `left | center | right | justify | false`; `cellDirection` accepts `ltr | rtl | false`. Their public types, `TableCellTextAlign` and `TableCellDirection`, are exported from `/plugins/table-properties`. The properties affect every actual TD/TH in the logical rectangle, including complete merged cells:
+
+```ts
+properties.update({ cellTextAlign: 'right', cellDirection: 'rtl' });
+properties.update({ cellTextAlign: false }); // remove only the cell text-align
+const { cellTextAlign, cellDirection } = properties.getState();
+// own value | false | 'mixed'
+```
+
+The form adds native Cell text alignment and Cell text direction selects. Default removes the own style/attribute rather than forcing left/LTR. Apply sends only dirty fields: a patch containing both properties is one Undo step. Mixed values remain untouched until their corresponding field is edited. Explicit `undefined`, `start/end`, `auto`, arbitrary CSS and extra declarations reject the entire patch.
+
+These properties format the **cell container** without recursively rewriting its contents. An explicit `text-align` or `dir` on an inner paragraph can override inheritance. Physical left/right are independent of RTL; direction does not reorder stored characters or automatically detect a language. Contents, actual cells, spans, headers, caption, selection and unrelated properties survive. HTML/JSON and supported rectangle clipboard already retain allowed `text-align` and `dir` without a schema format change. Reset-absent and identical updates add no empty history step.
+
+On the homepage or playground, open Tables and click **Load cell text sample**. It selects a 2 × 2 region with a rowspan and mixed values. Apply right/RTL, then Undo. The Beta paragraph retains its own left/LTR; Outside cells remain unchanged. Default removes only the cell formatting.
+
 ## Form drafts and localization
 
-The controller exposes `element`, `refresh()`, `getValues()`, `setValues(partial)`, and idempotent `destroy()`. Value fields are strings: `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn`, `caption`, `rowMinHeight`, `cellPadding`, `cellBorderWidth`, `cellBorderStyle`. Header selects use `"true"` for on and an empty string for off; an empty caption removes it and an empty row height resets it. Caption whitespace is retained. `getValues()` includes the new fields; update application-owned exact snapshot comparisons. setValues changes only the draft and marks supplied fields dirty, without editing the document.
+The controller exposes `element`, `refresh()`, `getValues()`, `setValues(partial)`, and idempotent `destroy()`. Value fields are strings: `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn`, `caption`, `rowMinHeight`, `cellPadding`, `cellBorderWidth`, `cellBorderStyle`, `cellTextAlign`, `cellDirection`. Header selects use `"true"` for on and an empty string for off; an empty caption removes it and an empty row height resets it. Caption whitespace is retained. `getValues()` includes the new fields; update application-owned exact snapshot comparisons. setValues changes only the draft and marks supplied fields dirty, without editing the document.
 
 Apply sends **only dirty fields**. Mixed colors show an empty control with the Mixed values placeholder; editing width alone preserves differing cell colors. A successful Apply reloads authoritative values. Locale/read-only refresh preserves a draft for the same target; switching tables or replacing the document discards stale drafts and authority.
 

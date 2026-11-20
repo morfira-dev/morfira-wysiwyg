@@ -54,6 +54,21 @@ At a collapsed caret after a completed URL, ordinary Enter links the URL only af
 
 Paste must be an actual clipboard event whose HTML representation is empty and whose `text/plain` contains exactly one supported URL token, at most 2048 UTF-16 units, with no whitespace or line breaks. The source selection must be collapsed in a supported flow. Clipboard text stays verbatim; terminal punctuation remains outside the anchor, and neighboring text is not included. HTML/rich clipboard payloads, multiline text, whitespace-delimited URLs and selected replacement remain literal. Programmatic insertion is not clipboard completion.
 
+## Email — explicit opt-in
+
+By default, `autolink()` and the standard/extended presets recognize only URLs. Enable email when installing the plugin; it adds neither a separate plugin nor a network request:
+
+```ts
+plugins: [autolink({ email: true })]
+// or createStandardPreset({ autolink: { email: true } })
+```
+
+`email` accepts only boolean and defaults to `false`. Existing `enabled` state and `setEnabled` commands control all completion together. The full demo explicitly enables email. Click Prepare email for Space and type Space or Enter yourself after `Writer.Name+tag@Example.com`. An actual single-address plain-text paste with an empty HTML representation is also supported. It produces `href="mailto:Writer.Name+tag@Example.com"`, retaining the literal display text and case.
+
+The deliberately conservative ASCII grammar allows at most 254 address characters and 64 local-part characters: nonempty letter/digit/underscore/plus/hyphen atoms separated by single dots. The domain has at least two labels of at most 63 letters/digits/interior hyphens; its final label is 2–63 ASCII letters. Leading/trailing dots, double `@`, edge hyphens, quoted local parts, IDN/Unicode, IP literals, display names, percent-encoding and query/header parameters are unsupported. Malformed tokens must not be partially linked. This is not complete RFC validation, an address-existence check or account authorization.
+
+The same boundaries remain: collapsed caret, Space/controlled Enter/one plain-text token, IME/read-only and semantic-node guards. HTML, multiline clipboard, API import and selected replacement gain no email conversion. First Undo removes the automatic link while retaining the original space/Enter/paste; second Undo reverses that input. Nothing is sent anywhere. Explicitly opening the saved mailto link delegates to the browser/system mail application and does not itself send a message.
+
 ## History and limits
 
 Conversion is a separate atomic operation **after** native space input is recorded. One Undo removes automatic linking and restores the literal URL **including the space already typed**. Redo restores the anchor and post-space caret; following text stays outside the anchor. One conversion produces one additional user `change` event.

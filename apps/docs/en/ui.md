@@ -276,3 +276,20 @@ The explicit [contextual table toolbar](/en/contextual-tables) adds row/column i
 ## Fullscreen workspace
 
 [Fullscreen workspace mode](/en/fullscreen) is separately imported through `createFullscreenUI` and `/ui/fullscreen.css`. It expands the application’s existing editor/toolbar wrapper without remounting adapters. Enter/Exit and Escape do not create history; read-only remains viewable. The mode is nonmodal, does not call the browser Fullscreen API and is not implicitly part of presets. External contextual-overlay hosts and layering remain application-owned.
+
+## Preview and saving
+
+The optional [document preview](/en/preview) uses a separate reading region with inert links and default image placeholders. Its live updates run only while open; manual refresh is also available. It does not remount or mutate the editor.
+
+[Save state](/en/save-state) separates a headless application-owned persistence contract from optional localized status UI. Manual saving is the default; autosave is explicit. A successful older reply cannot acknowledge newer edits. The demo simulates latency and a recoverable error without network/storage. Neither module is installed by presets.
+
+The table properties form also includes native `cellTextAlign` and `cellDirection` selects: text alignment and LTR/RTL apply to selected cells without recursively restyling their paragraphs. Reset restores inheritance; explicit descendant formatting survives. [Example, mixed state and limits](/en/table-properties#cell-text-alignment-and-direction).
+
+
+## Print and heading navigation
+
+[Browser print](/en/print) is a separate `/ui/print` module with required CSS and localized Print/Cancel controls. An explicit request opens the real browser dialog for a validated snapshot without site chrome/toolbars; images become text and fonts are system fonts. It is not a PDF converter or an exact-pagination guarantee. Completion, cancellation or disposal releases the snapshot.
+
+[Document outline](/en/outline) is a separate `/ui/outline` module with CSS, a bounded list of ordinary headings and native navigation buttons. It adds no document anchors or IDs. Both modules work read-only, stay outside preset defaults and appear in the homepage's “Print and outline” section.
+
+[Text drag and drop](/en/text-drop) is `/plugins/text-drop` behavior without a UI wrapper or CSS requirement. The full demo installs it explicitly and prepares a rich selection for pointer dragging, reselection after Undo, or normal keyboard Cut/Copy/Paste. Presets do not change drop behavior automatically; files/images and semantic nodes retain their own ownership boundaries.
