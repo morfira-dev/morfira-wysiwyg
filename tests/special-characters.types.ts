@@ -4,6 +4,7 @@ import type { Editor } from '@morfira-dev/wysiwyg';
 
 export interface SpecialCharacterTestOptions {
   value?: string;
+  presentation?: 'inline' | 'dialog';
   characters?: SpecialCharacter[];
   semantic?: boolean;
   tables?: boolean;

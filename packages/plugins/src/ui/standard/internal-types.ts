@@ -9,6 +9,12 @@ export interface TablePanelController {
   destroy(): void;
 }
 
+export interface TablePopoverController {
+  refresh(): void;
+  destroy(): void;
+}
+
+
 export type ActiveStandardPanel =
   | { kind: 'link'; controller: LinkFormController }
   | { kind: 'image'; controller: ImageFormController }

@@ -7,3 +7,8 @@
 .mw-special-characters :is(input,button):focus-visible{outline:2px solid var(--mw-accent,#4269dc);outline-offset:2px}
 .mw-special-characters .mw-special-character:disabled{opacity:.45;cursor:default}
 .mw-special-characters-status{margin:0;min-height:1.25em;font-size:.8rem;color:var(--mw-muted,#647089)}
+
+.mw-special-characters-dialog{box-sizing:border-box;width:min(34rem,calc(100vw - 2rem));max-height:calc(100dvh - 2rem);padding:1rem;border:1px solid var(--mw-border,#d5dbe5);border-radius:var(--mw-radius,.75rem);color:var(--mw-text,#202b40);background:var(--mw-bg,#fff);box-shadow:var(--mw-dialog-shadow,0 18px 60px #0003);overflow:auto;font-family:var(--mw-font,system-ui,sans-serif)}
+.mw-special-characters-dialog::backdrop{background:var(--mw-dialog-backdrop,#11182766)}
+.mw-special-characters-dialog>.mw-special-characters{border:0;padding:0;max-width:none}
+.mw-special-characters-close{display:block;margin:0 0 .75rem auto;padding:.4rem .65rem;border:1px solid var(--mw-border,#d5dbe5);border-radius:var(--mw-radius,.4rem);color:inherit;background:inherit;font:inherit;cursor:pointer}

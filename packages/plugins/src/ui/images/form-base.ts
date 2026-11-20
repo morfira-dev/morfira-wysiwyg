@@ -9,8 +9,8 @@ import { createFormInput, createUIButton, createUIElement, createUIStatus } from
 import { listenToUI } from '../shared/events.js';
 import { imageFormMessages } from './messages.js';
 import { createImageSizeLock } from './size-lock.js';
-import type { ImageUploadUIFactory } from './internal-types.js';
-import type { ImageFormController, ImageFormField, ImageFormMessageKey, ImageFormOptions, ImageFormValues } from './types.js';
+import type { ImageFormBaseController, ImageUploadUIFactory } from './internal-types.js';
+import type { ImageFormField, ImageFormMessageKey, ImageFormOptions, ImageFormValues } from './types.js';
 
 const fields: readonly ImageFormField[] = ['src', 'alt', 'width', 'height', 'caption'];
 const checkedValues = (values: Partial<ImageFormValues>): Partial<ImageFormValues> => {
@@ -30,7 +30,7 @@ const selectedImage = (editor: Editor, range: Range | undefined): HTMLImageEleme
   if (node instanceof HTMLElement && node.localName === 'figure' && node.querySelectorAll('img').length === 1) return node.querySelector('img') ?? undefined;
 };
 
-export const createImageFormBase = (host: HTMLElement, editor: Editor, options: ImageFormOptions = {}, createUploadUI?: ImageUploadUIFactory): ImageFormController => {
+export const createImageFormBase = (host: HTMLElement, editor: Editor, options: ImageFormOptions = {}, createUploadUI?: ImageUploadUIFactory): ImageFormBaseController => {
   if (editor.surface.contains(host)) throw new Error('Mount image forms outside persisted editor content.');
   const mode = options.mode === undefined ? 'all' : options.mode;
   if (mode !== 'all' && mode !== 'edit') throw new TypeError('Image form mode must be all or edit.');
@@ -43,7 +43,8 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
   const document = host.ownerDocument;
   const form = createUIElement(document, 'section', 'mw-form mw-image-form');
   form.setAttribute('role', 'form');
-  const selection = createFormSelection(editor);
+  let restoring = false;
+  const selection = createFormSelection(editor, () => !restoring);
   const inputs = {} as Record<ImageFormField, HTMLInputElement>;
   const labels = {} as Record<ImageFormField, HTMLSpanElement>;
   const fieldset = createUIElement(document, 'fieldset', 'mw-form-fields');
@@ -79,7 +80,6 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
 
   let disposed = false;
   let composing = false;
-  let restoring = false;
   let apiRevision = 0;
   let documentRevision = 0;
   let alignmentTarget: HTMLImageElement | undefined;
@@ -347,5 +347,17 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
   renderLocale();
   refresh();
   host.append(form);
-  return { element: form, refresh, getValues, setValues, destroy };
+  return {
+    element: form, refresh, getValues, setValues, destroy,
+    open: () => { if (!disposed) form.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus(); },
+    close: () => {},
+    isOpen: () => !disposed,
+    cancelUpload: () => uploadUI?.cancel(),
+    suspendFocus: (suspend) => {
+      const previous = restoring;
+      restoring = true;
+      try { suspend(); }
+      finally { restoring = previous; }
+    },
+  };
 };

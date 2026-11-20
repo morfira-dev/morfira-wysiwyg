@@ -8,8 +8,10 @@ export interface ImageFormValues {
   caption: string;
 }
 export type ImageFormMode = 'all' | 'edit';
+export type ImageFormPresentation = 'inline' | 'dialog';
 export interface ImageFormOptions {
   mode?: ImageFormMode;
+  presentation?: ImageFormPresentation;
   keepAspectRatio?: boolean;
   initialValues?: Partial<ImageFormValues>;
   label?: string;
@@ -17,6 +19,9 @@ export interface ImageFormOptions {
 }
 export interface ImageFormController {
   readonly element: HTMLElement;
+  open(): void;
+  close(): void;
+  isOpen(): boolean;
   refresh(): void;
   getValues(): ImageFormValues;
   setValues(values: Partial<ImageFormValues>): void;

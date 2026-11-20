@@ -8,12 +8,13 @@ import type { TablePickerFactory } from '../table-picker/types.js';
 export interface StandardEditorUIOptions {
   density?: EditorUIOptions['density'];
   overflow?: EditorUIOptions['overflow'];
+  presentation?: 'inline' | 'floating';
   label?: string;
   onError?: (error: unknown) => void;
   links?: LinkFormOptions;
   images?: ImageFormOptions;
   search?: SearchFormOptions;
-  table?: { rows?: number; columns?: number; picker?: TablePickerFactory };
+  table?: { rows?: number; columns?: number; picker?: TablePickerFactory; presentation?: 'inline' | 'popover' };
 }
 
 export interface StandardEditorUIController {

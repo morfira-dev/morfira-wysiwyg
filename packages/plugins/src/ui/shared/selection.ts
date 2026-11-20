@@ -2,7 +2,7 @@ import type { Editor } from '@morfira-dev/wysiwyg-core';
 import type { FormSelection } from './types.js';
 
 /** Keep native boundaries, including empty blocks, while an external form owns focus. */
-export const createFormSelection = (editor: Editor): FormSelection => {
+export const createFormSelection = (editor: Editor, captureEnabled?: () => boolean): FormSelection => {
   const surface = editor.surface;
   const document = surface.ownerDocument;
   let saved: Range | undefined;
@@ -12,7 +12,7 @@ export const createFormSelection = (editor: Editor): FormSelection => {
   let apiRevision = 0;
   const valid = (range: Range): boolean => surface.contains(range.startContainer) && surface.contains(range.endContainer);
   const capture = () => {
-    if (disposed || (document.activeElement !== surface && !surface.contains(document.activeElement))) return;
+    if (disposed || captureEnabled?.() === false || (document.activeElement !== surface && !surface.contains(document.activeElement))) return;
     const selection = document.getSelection();
     if (!selection?.rangeCount) return;
     const range = selection.getRangeAt(0);

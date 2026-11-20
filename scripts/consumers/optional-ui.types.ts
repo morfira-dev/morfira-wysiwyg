@@ -8,6 +8,13 @@ import type { PrintUIController } from '@morfira-dev/wysiwyg/ui/print';
 import type { OutlineUIController } from '@morfira-dev/wysiwyg/ui/outline';
 import type { ContextualLinkUIController } from '@morfira-dev/wysiwyg/ui/contextual-link';
 import type { ContextualImageUIController } from '@morfira-dev/wysiwyg/ui/contextual-image';
+import type { StandardEditorUIController } from '@morfira-dev/wysiwyg/ui/standard';
+
+export interface FloatingProbe {
+  editor: Editor;
+  ui: StandardEditorUIController;
+  characters: SpecialCharacterUIController;
+}
 
 export interface ReadingProbe {
   editor: Editor;
@@ -28,6 +35,8 @@ export interface OptionalUIProbe {
   setupFeatures: () => void;
   setupReading: () => void;
   getReading: () => ReadingProbe;
+  setupFloating: () => void;
+  getFloating: () => FloatingProbe;
   dispose: () => void;
 }
 

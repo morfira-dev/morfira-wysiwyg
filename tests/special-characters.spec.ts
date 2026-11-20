@@ -12,7 +12,7 @@ const html = (page: Page) => page.evaluate(() => window.editor.getHTML());
 const initialize = async (page: Page, options: SpecialCharacterTestOptions = {}) => {
   await page.goto('/');
   await expect(page.getByRole('textbox')).toBeVisible();
-  await page.evaluate(async ({ value, characters, semantic, tables }) => {
+  await page.evaluate(async ({ value, characters, semantic, tables, presentation }) => {
     window.dispose();
     await Promise.all(['core/dist/style.css', 'plugins/dist/ui/special-characters.css'].map((path) => new Promise<void>((resolve, reject) => {
       const css = document.createElement('link');
@@ -37,9 +37,9 @@ const initialize = async (page: Page, options: SpecialCharacterTestOptions = {})
     window.editor.setSelection(1);
     const path = '/packages/wysiwyg/dist/ui/special-characters.js';
     window.specialCharacterModule = await import(/* @vite-ignore */ path) as typeof import('@morfira-dev/wysiwyg/ui/special-characters');
-    window.specialCharacterUI = window.specialCharacterModule.createSpecialCharacterUI(host, window.editor, { characters });
+    window.specialCharacterUI = window.specialCharacterModule.createSpecialCharacterUI(host, window.editor, { characters, presentation });
     window.dispose = () => { window.specialCharacterUI.destroy(); window.editor.destroy(); mount.remove(); host.remove(); };
-  }, { value: options.value ?? '<p>XY</p>', characters: options.characters ?? characters, semantic: options.semantic ?? false, tables: options.tables ?? false });
+  }, { value: options.value ?? '<p>XY</p>', characters: options.characters ?? characters, semantic: options.semantic ?? false, tables: options.tables ?? false, presentation: options.presentation });
 };
 
 const caret = (page: Page, selector: string, offset: number) => page.evaluate(({ selector, offset }) => {
@@ -310,4 +310,55 @@ test('controllers isolate state and stale controls stay inert after controller o
     return { ...values, cleaned, refreshRejected, editorUsable: window.editor.getHTML() };
   });
   expect(result).toEqual({ first: '<p>XY</p>', second: '<p>A§B</p>', cleaned: true, refreshRejected: true, editorUsable: '<p>X!Y</p>' });
+});
+
+
+test('dialog character presentation restores selection for insertion and cancels without changing history', async ({ page }) => {
+  await initialize(page, { value: '<p>Alpha word</p>', presentation: 'dialog' });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.evaluate(() => {
+    const text = window.editor.surface.querySelector('p')!.firstChild!;
+    window.editor.focus();
+    document.getSelection()!.setBaseAndExtent(text, 10, text, 6);
+    window.specialCharacterUI.open();
+  });
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByLabel('Find a symbol', { exact: true })).toBeFocused();
+  await character(page).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(await html(page)).toBe('<p>Alpha €</p>');
+  await page.keyboard.type('X');
+  await expect(content(page)).toHaveText('Alpha €X');
+  await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
+  expect(await html(page)).toBe('<p>Alpha word</p>');
+  expect(await page.evaluate(() => window.editor.getSelection())).toEqual({ index: 6, length: 4 });
+  await page.evaluate(() => window.specialCharacterUI.open());
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.evaluate(() => window.specialCharacterUI.element.querySelector<HTMLButtonElement>('[data-mw-character="euro"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  expect(await html(page)).toBe('<p>Alpha word</p>');
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+});
+
+test('dialog characters close and invalidate on replacement, read-only and disposal', async ({ page }) => {
+  await initialize(page, { presentation: 'dialog' });
+  await page.evaluate(() => window.specialCharacterUI.open());
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.evaluate(() => window.editor.setHTML('<p>Fresh</p>'));
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.evaluate(() => {
+    window.editor.setSelection(2);
+    window.specialCharacterUI.open();
+    window.editor.setReadOnly(true);
+  });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(await html(page)).toBe('<p>Fresh</p>');
+  await page.evaluate(() => {
+    window.editor.setReadOnly(false);
+    window.editor.setSelection(2);
+    window.specialCharacterUI.open();
+    window.specialCharacterUI.destroy();
+  });
+  await expect(page.locator('.mw-special-characters-dialog')).toHaveCount(0);
+  expect(await html(page)).toBe('<p>Fresh</p>');
 });

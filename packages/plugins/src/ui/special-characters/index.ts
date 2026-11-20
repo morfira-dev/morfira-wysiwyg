@@ -24,9 +24,14 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
   if (!host || host.ownerDocument !== document || !host.isConnected || host.childNodes.length || root.contains(host)
     || host.namespaceURI !== 'http://www.w3.org/1999/xhtml') throw new TypeError('Special characters need an empty connected external HTML host.');
   if (!options || typeof options !== 'object' || Array.isArray(options)
-    || Object.keys(options).some((key) => !['label', 'characters', 'onError'].includes(key))) throw new TypeError('Expected special-character UI options.');
+    || Object.keys(options).some((key) => !['label', 'presentation', 'characters', 'onError'].includes(key))) throw new TypeError('Expected special-character UI options.');
   if (options.label !== undefined && !validPanelLabel(options.label)) throw new TypeError('The panel label must be bounded literal text.');
   if (options.onError !== undefined && typeof options.onError !== 'function') throw new TypeError('The error handler must be a callback.');
+  if (options.presentation !== undefined && !['inline', 'dialog'].includes(options.presentation)) throw new TypeError('Expected inline or dialog presentation.');
+  const dialog = options.presentation === 'dialog' ? document.createElement('dialog') : undefined;
+  if (dialog && typeof dialog.showModal !== 'function') throw new Error('Native dialog presentation is unavailable.');
+  const closeButton = dialog ? createUIButton(document, 'mw-special-characters-close') : undefined;
+  let invoker: HTMLElement | undefined;
   const custom = options.characters === undefined ? undefined : snapshotCharacters(options.characters);
   const label = options.label;
   const onError = options.onError;
@@ -109,6 +114,8 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
     status.textContent = statusKey ? message(statusKey) : visible.length ? `${message('ui.specialCharacters.results')}: ${visible.length}` : message('ui.specialCharacters.empty');
   };
   const render = (): void => {
+    if (dialog) dialog.setAttribute('aria-label', label ?? message('ui.specialCharacters.label'));
+    if (closeButton) closeButton.textContent = message('ui.specialCharacters.close');
     const focusedCharacter = buttons.find((button) => button === document.activeElement)?.dataset.mwCharacter;
     element.setAttribute('aria-label', label ?? message('ui.specialCharacters.label'));
     search.caption.textContent = message('ui.specialCharacters.search');
@@ -140,7 +147,21 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
     capture();
     render();
   };
+  const close = (): void => {
+    if (!dialog?.open) return;
+    dialog.close();
+    if (!disposed && invoker?.isConnected) invoker.focus({ preventScroll: true });
+  };
+  const open = (): void => {
+    if (disposed) throw new Error('Special-character UI has been destroyed.');
+    if (dialog?.open) return;
+    invoker = document.activeElement instanceof view.HTMLElement ? document.activeElement : undefined;
+    capture();
+    if (dialog) dialog.showModal();
+    search.input.focus({ preventScroll: true });
+  };
   const invalidate = (): void => {
+    close();
     generation++;
     target = undefined;
     statusKey = undefined;
@@ -156,6 +177,19 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
   const restore = (snapshot: CharacterTarget, revision: number): boolean => {
     restoring = true;
     try {
+      if (dialog) {
+        // Native modal close may already have focused the editor and replaced
+        // the shared bookmark. Restore this revision-bound target explicitly.
+        if (generation !== revision || !current(snapshot)) return false;
+        const native = document.getSelection();
+        if (!native) return false;
+        native.setBaseAndExtent(snapshot.start, snapshot.startOffset, snapshot.end, snapshot.endOffset);
+        editor.focus();
+        if (generation !== revision || !current(snapshot) || !nativeMatches(snapshot)) return false;
+        if (snapshot.backward) native.setBaseAndExtent(snapshot.end, snapshot.endOffset, snapshot.start, snapshot.startOffset);
+        saved.capture();
+        return true;
+      }
       return saved.restore(() => generation === revision && current(snapshot) && nativeMatches(snapshot), true)
         && generation === revision && current(snapshot) && nativeMatches(snapshot);
     }
@@ -163,7 +197,7 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
   };
   const insert = (event: MouseEvent): void => {
     const index = buttons.indexOf(event.target as HTMLButtonElement);
-    if (event.defaultPrevented || index < 0 || !element.isConnected || element.ownerDocument !== document
+    if (event.defaultPrevented || index < 0 || (dialog && !dialog.open) || !element.isConnected || element.ownerDocument !== document
       || root.contains(element) || !target || !current(target)) return;
     const character = visible[index];
     const snapshot = target;
@@ -171,6 +205,13 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
     event.preventDefault();
     event.stopPropagation();
     try {
+      if (dialog?.open) {
+        // Native close can synchronously focus the editor and collapse its
+        // selection (Firefox). Do not recapture that temporary focus state.
+        restoring = true;
+        try { dialog.close(); }
+        finally { restoring = false; }
+      }
       if (!restore(snapshot, revision)) return;
       inserting = true;
       editor.transact(() => {
@@ -200,6 +241,12 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
       return;
     }
     if (event.key === 'Escape') {
+      if (dialog?.open) {
+        event.preventDefault();
+        event.stopPropagation();
+        close();
+        return;
+      }
       if (target && current(target)) {
         event.preventDefault();
         event.stopPropagation();
@@ -242,8 +289,9 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
     generation++;
     target = undefined;
     observer.disconnect();
+    if (dialog?.open) dialog.close();
     const errors: unknown[] = [];
-    for (const stop of [...cleanups.splice(0).reverse(), () => saved.destroy(), () => element.remove()]) {
+    for (const stop of [...cleanups.splice(0).reverse(), () => saved.destroy(), () => element.remove(), () => dialog?.remove()]) {
       try { stop(); }
       catch (error) { errors.push(error); }
     }
@@ -274,7 +322,14 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
     }));
     cleanups.push(editor.events.on('localechange', refresh));
     cleanups.push(editor.events.on('destroy', destroy));
-    host.append(element);
+    if (dialog && closeButton) {
+      dialog.className = 'mw-special-characters-dialog';
+      dialog.append(closeButton, element);
+      host.append(dialog);
+      listen(closeButton, 'click', close);
+      listen(dialog, 'cancel', (event) => { event.preventDefault(); close(); });
+    }
+    else host.append(element);
     refresh();
   }
   catch (error) {
@@ -282,5 +337,5 @@ export const createSpecialCharacterUI = (host: HTMLElement, editor: Editor, opti
     catch { /* Preserve setup error after every owned cleanup was attempted. */ }
     throw error;
   }
-  return { element, refresh, destroy };
+  return { element, refresh, open, close, isOpen: () => dialog ? dialog.open : element.isConnected, destroy };
 };

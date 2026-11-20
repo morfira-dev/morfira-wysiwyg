@@ -47,9 +47,18 @@ try {
     assert.equal(typeof globalThis.document, 'undefined');
     assert.equal(typeof createFullscreenUI, 'function');
     assert.equal(typeof createSpecialCharacterUI, 'function');
+    const { createStandardEditorUI } = await import('@morfira-dev/wysiwyg/ui/standard');
+    const { createStandardPreset } = await import('@morfira-dev/wysiwyg/presets/standard');
+    const { createTablePicker } = await import('@morfira-dev/wysiwyg/ui/table-picker');
+    assert.equal(typeof createStandardEditorUI, 'function');
+    assert.equal(typeof createStandardPreset, 'function');
+    assert.equal(typeof createTablePicker, 'function');
   `], { cwd: temporary });
   const fixture = join(temporary, 'consumer.ts');
   await writeFile(fixture, await readFile(join(repository, 'scripts/consumers/optional-ui.fixture.ts')));
+  await writeFile(join(temporary, 'optional-ui.types.ts'), await readFile(join(repository, 'scripts/consumers/optional-ui.types.ts')));
+  await writeFile(join(temporary, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
+  execFileSync(process.execPath, [join(repository, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2022', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', fixture], { cwd: temporary, stdio: 'pipe' });
   const javascript = await build({
     entryPoints: [fixture], absWorkingDir: temporary, bundle: true, minify: true,
     write: false, metafile: true, platform: 'browser', format: 'esm', target: 'es2022',
@@ -59,7 +68,7 @@ try {
     assert.ok(!input.includes('/packages/') && !input.startsWith('packages/'), `Unexpected workspace source or artifact alias: ${input}`);
   }
   const stylesheet = await build({
-    stdin: { contents: "@import '@morfira-dev/wysiwyg/style.css'; @import '@morfira-dev/wysiwyg/ui/special-characters.css'; @import '@morfira-dev/wysiwyg/ui/fullscreen.css'; @import '@morfira-dev/wysiwyg/ui/preview.css'; @import '@morfira-dev/wysiwyg/ui/save-state.css'; @import '@morfira-dev/wysiwyg/ui/print.css'; @import '@morfira-dev/wysiwyg/ui/outline.css'; @import '@morfira-dev/wysiwyg/ui/forms.css'; @import '@morfira-dev/wysiwyg/ui/contextual-link.css'; @import '@morfira-dev/wysiwyg/ui/contextual-image.css';", resolveDir: temporary, loader: 'css' },
+    stdin: { contents: "@import '@morfira-dev/wysiwyg/style.css'; @import '@morfira-dev/wysiwyg/ui/special-characters.css'; @import '@morfira-dev/wysiwyg/ui/fullscreen.css'; @import '@morfira-dev/wysiwyg/ui/preview.css'; @import '@morfira-dev/wysiwyg/ui/save-state.css'; @import '@morfira-dev/wysiwyg/ui/print.css'; @import '@morfira-dev/wysiwyg/ui/outline.css'; @import '@morfira-dev/wysiwyg/ui/forms.css'; @import '@morfira-dev/wysiwyg/ui/editor.css'; @import '@morfira-dev/wysiwyg/ui/table-picker.css'; @import '@morfira-dev/wysiwyg/ui/contextual-link.css'; @import '@morfira-dev/wysiwyg/ui/contextual-image.css';", resolveDir: temporary, loader: 'css' },
     bundle: true, minify: true, write: false, logLevel: 'silent',
   });
   const site = join(temporary, 'site');
@@ -185,6 +194,58 @@ try {
       await expect(page.locator('[data-reading-probe] .mw-content figure')).toHaveCount(0);
       await page.evaluate(() => window.morfiraOptionalUI.getReading().editor.undo());
       await expect(page.locator('[data-reading-probe] .mw-content figcaption')).toHaveText('Caption');
+      await page.evaluate(() => window.morfiraOptionalUI.setupFloating());
+      const floating = page.locator('[data-floating-probe]');
+      const floatingContent = floating.locator('.mw-content');
+      const floatingPanel = floating.locator('.mw-ui-panel');
+      const floatingLink = floating.locator('[data-mw-ui-action="link"]');
+      await floatingLink.click();
+      await expect(floatingPanel).toHaveClass(/mw-ui-panel-popover/);
+      await expect(floatingPanel).toHaveCSS('position', 'fixed');
+      await floatingPanel.getByLabel('Link URL', { exact: true }).press('Escape');
+      await expect(floatingPanel).toBeHidden();
+      await expect(floatingLink).toBeFocused();
+      await floating.locator('[data-mw-ui-action="table"]').click();
+      await expect(floatingPanel).toHaveClass(/mw-ui-panel-popover/);
+      await expect(floatingPanel.locator('.mw-table-picker')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(floatingPanel).toBeHidden();
+      await floating.locator('[data-mw-ui-action="image"]').click();
+      const imageDialog = floating.locator('dialog.mw-image-dialog');
+      await expect(imageDialog).toBeVisible();
+      await expect(imageDialog).toHaveJSProperty('open', true);
+      await imageDialog.getByRole('button', { name: 'Insert image', exact: true }).click();
+      await expect(imageDialog).toBeHidden();
+      await expect(floatingContent.locator('img')).toHaveAttribute('alt', 'Archive dialog image');
+      await page.evaluate(() => window.morfiraOptionalUI.getFloating().editor.undo());
+      await expect(floatingContent).toHaveText('word word');
+      await expect(floatingContent.locator('img')).toHaveCount(0);
+      await floating.locator('[data-mw-ui-action="search"]').click();
+      await expect(floatingPanel).toHaveClass(/mw-ui-search-docked/);
+      await expect(floating.locator('dialog:modal')).toHaveCount(0);
+      await floatingPanel.getByRole('button', { name: 'Find', exact: true }).click();
+      await expect(floatingPanel.getByRole('status')).toHaveText('Match 1 of 2');
+      await floatingContent.click();
+      await expect(floatingContent).toBeFocused();
+      await expect(floatingPanel).toBeVisible();
+      await floatingPanel.getByRole('button', { name: 'Replace all', exact: true }).click();
+      await expect(floatingContent).toHaveText('term term');
+      await page.evaluate(() => window.morfiraOptionalUI.getFloating().editor.undo());
+      await expect(floatingContent).toHaveText('word word');
+      await floatingPanel.getByLabel('Find text', { exact: true }).press('Escape');
+      await page.evaluate(() => {
+        const probe = window.morfiraOptionalUI.getFloating();
+        probe.editor.focus();
+        probe.editor.setSelection(4);
+        probe.characters.open();
+      });
+      const symbolDialog = floating.locator('dialog.mw-special-characters-dialog');
+      await expect(symbolDialog).toBeVisible();
+      await symbolDialog.getByRole('button', { name: /Archive euro/ }).click();
+      await expect(symbolDialog).toBeHidden();
+      await expect(floatingContent).toHaveText('word€ word');
+      await page.evaluate(() => window.morfiraOptionalUI.getFloating().editor.undo());
+      await expect(floatingContent).toHaveText('word word');
       await page.evaluate(() => window.morfiraOptionalUI.dispose());
       await expect(page.locator('.mw-editor')).toHaveCount(0);
       assert.deepEqual(errors, [], 'Installed optional UI must not emit browser errors.');
@@ -196,7 +257,7 @@ try {
   finally {
     await server.close();
   }
-  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, literal insertion/Undo, preview, save state, fullscreen/Escape, merged-cell typography, email completion, print/outline, text move/Undo, mixed-link/caption contexts and cleanup (Chromium only).');
+  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, literal insertion/Undo, preview, save state, fullscreen/Escape, merged-cell typography, email completion, print/outline, text move/Undo, mixed-link/caption contexts, floating link/table panels, image/symbol dialogs, nonmodal search/replace and cleanup (Chromium only).');
 }
 finally {
   await rm(temporary, { recursive: true, force: true });

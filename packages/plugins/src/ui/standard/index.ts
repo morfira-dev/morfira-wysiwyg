@@ -16,8 +16,9 @@ import type { ImageFormValues } from '../images/types.js';
 import { createSearchForm } from '../search/index.js';
 import type { SearchFormValues } from '../search/types.js';
 import { createTablePanel } from './table.js';
+import { createAnchoredPanel } from './panel-popover.js';
 import { standardEditorUIMessages } from './messages.js';
-import type { ActiveStandardPanel, StandardPanel } from './internal-types.js';
+import type { ActiveStandardPanel, StandardPanel, TablePopoverController } from './internal-types.js';
 import type { StandardEditorUIController, StandardEditorUIOptions, StandardEditorUIMessageKey } from './types.js';
 
 export { standardEditorUIMessages } from './messages.js';
@@ -44,18 +45,20 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
   editor.getLocale();
   if (host.childNodes.length || host === editor.surface || editor.surface.contains(host))
     throw new Error('Mount editor UI into an empty host outside persisted editor content.');
-  if (!record(options) || Object.keys(options).some((key) => !['density', 'overflow', 'label', 'onError', 'links', 'images', 'search', 'table'].includes(key)))
+  if (!record(options) || Object.keys(options).some((key) => !['density', 'overflow', 'presentation', 'label', 'onError', 'links', 'images', 'search', 'table'].includes(key)))
     throw new TypeError('Expected standard editor UI options.');
   if (options.label !== undefined && typeof options.label !== 'string') throw new TypeError('The UI label must be a string.');
   if (options.onError !== undefined && typeof options.onError !== 'function') throw new TypeError('The UI error handler must be a callback.');
   if (options.overflow !== undefined && !['wrap', 'more'].includes(options.overflow)) throw new TypeError('Invalid standard UI overflow.');
+  if (options.presentation !== undefined && !['inline', 'floating'].includes(options.presentation)) throw new TypeError('Invalid standard UI presentation.');
   for (const value of [options.links, options.images, options.search, options.table]) {
     if (value !== undefined && !record(value)) throw new TypeError('UI feature options must be objects.');
   }
   const dimensions = { rows: options.table?.rows ?? 3, columns: options.table?.columns ?? 3 };
-  if (Object.keys(options.table ?? {}).some((key) => !['rows', 'columns', 'picker'].includes(key)) || Object.values(dimensions).some((value) => !Number.isInteger(value) || value < 1 || value > 100))
+  if (Object.keys(options.table ?? {}).some((key) => !['rows', 'columns', 'picker', 'presentation'].includes(key)) || Object.values(dimensions).some((value) => !Number.isInteger(value) || value < 1 || value > 100))
     throw new RangeError('Initial table dimensions must be integers from 1 to 100.');
   if (options.table?.picker !== undefined && typeof options.table.picker !== 'function') throw new TypeError('Expected a table picker factory.');
+  if (options.table?.presentation !== undefined && !['inline', 'popover'].includes(options.table.presentation)) throw new TypeError('Invalid table panel presentation.');
   // Validate all required behavior before mounting UI or installing listeners.
   tableCommands(editor);
   imageCommands(editor);
@@ -89,6 +92,8 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
   const cleanups: (() => void)[] = [];
   let shell: EditorUIController | undefined;
   let active: ActiveStandardPanel | undefined;
+  let presentation: TablePopoverController | undefined;
+  let stopImageClose: (() => void) | undefined;
   let invoker: HTMLButtonElement | undefined;
   let linkDraft: LinkFormValues | undefined;
   let imageDraft: ImageFormValues | undefined;
@@ -128,7 +133,14 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
   const closePanel = (restoreFocus: boolean, remember = true) => {
     const previous = active;
     active = undefined;
+    stopImageClose?.();
+    stopImageClose = undefined;
+    presentation?.destroy();
+    presentation = undefined;
     panel.hidden = true;
+    header.hidden = false;
+    panel.classList.remove('mw-ui-image-dialog-host');
+    delete panel.dataset.kind;
     if (remember && previous) {
       if (previous.kind === 'link') linkDraft = previous.controller.getValues();
       else if (previous.kind === 'image') imageDraft = previous.controller.getValues();
@@ -148,6 +160,7 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
     if (disposed) return;
     shell?.refresh();
     active?.controller.refresh();
+    presentation?.refresh();
     updateLocale();
     updateLaunchers();
   };
@@ -175,6 +188,7 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
       else if (kind === 'image') active = {
         kind, controller: createImageForm(body, editor, {
           ...imageOptions,
+          presentation: imageOptions.presentation ?? (options.presentation === 'floating' ? 'dialog' : 'inline'),
           initialValues: imageDraft ?? imageOptions.initialValues,
           onError: (error) => diagnose(error, imageOptions.onError),
         }),
@@ -192,7 +206,27 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
           () => { closePanel(false); editor.focus(); }, report, options.table?.picker),
       };
       panel.hidden = false;
+      panel.dataset.kind = kind;
+      panel.classList.toggle('mw-ui-search-docked', kind === 'search' && options.presentation === 'floating');
+      panel.classList.toggle('mw-ui-image-dialog-host', kind === 'image' && (imageOptions.presentation === 'dialog' || (imageOptions.presentation === undefined && options.presentation === 'floating')));
       refresh();
+      if (active?.kind === 'image' && (imageOptions.presentation === 'dialog' || (imageOptions.presentation === undefined && options.presentation === 'floating'))) {
+        // The image form owns its native dialog and temporarily removes modal
+        // inertness itself when validated commands restore the editor target.
+        header.hidden = true;
+        active.controller.open();
+        const current = active;
+        const dialog = current.controller.element.closest('dialog');
+        if (dialog) stopImageClose = listenToUI(dialog, 'close', () => {
+          if (active === current && !current.controller.isOpen()) closePanel(false);
+        });
+        return;
+      }
+      header.hidden = false;
+      const floating = kind === 'link' && options.presentation === 'floating'
+        || kind === 'table' && (options.table?.presentation === 'popover' || (options.table?.presentation === undefined && options.presentation === 'floating'));
+      if (floating) presentation = createAnchoredPanel(panel, () => invoker?.closest('[hidden]')
+        ? toolbarHost.querySelector<HTMLButtonElement>('[data-mw-ui-more]') ?? undefined : invoker, kind === 'link' ? 380 : 280);
       const focusable = body.querySelector<HTMLElement>('input:not(:disabled),select:not(:disabled),textarea:not(:disabled),button:not(:disabled):not([tabindex="-1"])');
       (focusable ?? close).focus();
     }
@@ -209,6 +243,7 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
     closePanel(true);
   };
   const outside = (event: PointerEvent) => {
+    if (active?.kind === 'search' && options.presentation === 'floating') return;
     if (active && !event.composedPath().includes(element)) closePanel(false);
   };
   const closeClick = () => closePanel(true);

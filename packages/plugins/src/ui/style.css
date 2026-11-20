@@ -16,3 +16,8 @@
 @media (forced-colors: active) { .mw-form .mw-image-alignment button[aria-pressed=true] { outline: 1px solid Highlight; } }
 .mw-form-status { margin: 0; color: var(--mw-muted, #8490a1); overflow-wrap: anywhere; }
 .mw-form-status[data-error=true], .mw-form-status.mw-form-error { color: var(--mw-form-error, #b42318); }
+.mw-image-dialog { color: var(--mw-text, #263043); background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-radius, var(--mw-radius, 12px)); padding: var(--mw-dialog-padding, 12px); width: min(var(--mw-image-dialog-width, 480px), calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; box-shadow: var(--mw-dialog-shadow, 0 20px 70px #0003); }
+.mw-image-dialog::backdrop { background: var(--mw-dialog-backdrop, #0f172a80); }
+.mw-image-dialog .mw-form { border: 0; padding: 10px 0 0; }
+.mw-image-dialog-close { display: block; margin-inline-start: auto; font: inherit; color: inherit; background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-control-radius, 6px); padding: 7px 9px; cursor: pointer; }
+.mw-image-dialog-close:focus-visible { outline: 2px solid var(--mw-accent, #6658e8); outline-offset: 2px; }

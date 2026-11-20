@@ -8,6 +8,7 @@ export interface EditorUIControl {
   readonly reset?: boolean;
   readonly labelKey?: EditorUIMessageKey;
   readonly options?: readonly { value: string; key: EditorUIMessageKey }[];
+  colorDraft?: string;
 }
 
 export interface EditorUIOverflow {

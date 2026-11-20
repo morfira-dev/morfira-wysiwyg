@@ -8,6 +8,7 @@ export interface SpecialCharacter {
 
 export interface SpecialCharacterUIOptions {
   readonly label?: string;
+  readonly presentation?: 'inline' | 'dialog';
   readonly characters?: readonly SpecialCharacter[];
   readonly onError?: (error: unknown) => void;
 }
@@ -15,6 +16,9 @@ export interface SpecialCharacterUIOptions {
 export interface SpecialCharacterUIController {
   readonly element: HTMLElement;
   refresh(): void;
+  open(): void;
+  close(): void;
+  isOpen(): boolean;
   destroy(): void;
 }
 

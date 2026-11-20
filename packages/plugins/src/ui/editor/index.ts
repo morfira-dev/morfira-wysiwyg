@@ -158,7 +158,9 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
           (node as HTMLSelectElement).value = mixed?.includes(property) ? 'mixed' : String(id === 'block' && formats['code-block'] ? 'code-block' : formats[property] ?? (id === 'block' ? 0 : id === 'align' ? 'left' : ''));
         }
         else if (node instanceof HTMLInputElement) {
-          node.value = colorValue(formats[id]);
+          if (control.colorDraft === undefined && (document.activeElement !== node || readOnly || composing)) {
+            node.value = colorValue(formats[id]);
+          }
           node.dataset.mixed = String(Boolean(mixed?.includes(id)));
         }
         else if (control.reset) node.disabled = readOnly || composing || (!formats[id] && !mixed?.includes(id));
@@ -173,11 +175,11 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
     overflow?.refresh();
     updateTabs();
   };
-  const activate = (control: EditorUIControl) => {
+  const activate = (control: EditorUIControl, colorDraft?: string) => {
     if (disposed || control.element.disabled) return;
     focused = controls.indexOf(control);
     const mutates = control.action?.mutates !== false;
-    const chosen = control.element instanceof HTMLInputElement || control.element instanceof HTMLSelectElement ? control.element.value : undefined;
+    const chosen = colorDraft ?? (control.element instanceof HTMLInputElement || control.element instanceof HTMLSelectElement ? control.element.value : undefined);
     const fromOverflow = overflow?.region.contains(control.element);
     if (mutates && (editor.isReadOnly() || composing)) return;
     selection.capture();
@@ -306,10 +308,22 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
           node.type = 'color';
           node.className = 'mw-ui-color';
           node.dataset.mwUiAction = item;
-          const control = { id: item, builtin: item, element: node };
+          const control: EditorUIControl = { id: item, builtin: item, element: node };
           controls.push(control);
-          listen(node, 'pointerdown', () => selection.capture());
-          listen(node, 'change', () => activate(control));
+          const startColorDraft = () => {
+            control.colorDraft = undefined;
+            selection.capture();
+          };
+          listen(node, 'pointerdown', startColorDraft);
+          listen(node, 'focus', () => selection.capture());
+          listen(node, 'input', () => {
+            if (!disposed && !composing && !editor.isReadOnly()) control.colorDraft = node.value;
+          });
+          listen(node, 'change', () => {
+            const draft = control.colorDraft;
+            control.colorDraft = undefined;
+            activate(control, draft);
+          });
           group.append(node);
           button(group, { id: `${item}-reset`, builtin: item, reset: true, labelKey: item === 'color' ? 'ui.editor.colorReset' : 'ui.editor.backgroundReset' });
         }
@@ -330,18 +344,25 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
     listen(editor.surface, 'compositionstart', () => {
       if (editor.isReadOnly()) return;
       composing = true;
+      for (const control of controls) control.colorDraft = undefined;
       refresh();
     });
     listen(editor.surface, 'compositionend', () => { composing = false; refresh(); });
     cleanups.push(
       editor.subscribe((change) => {
-        if (change.source === 'api') composing = false;
+        if (change.source === 'api') {
+          composing = false;
+          for (const control of controls) control.colorDraft = undefined;
+        }
         refresh();
       }),
       editor.onSelectionChange(refresh),
       editor.events.on('localechange', refresh),
       editor.events.on('readonlychange', (readOnly) => {
-        if (readOnly) composing = false;
+        if (readOnly) {
+          composing = false;
+          for (const control of controls) control.colorDraft = undefined;
+        }
         refresh();
       }),
       editor.events.on('destroy', destroy),

@@ -35,6 +35,41 @@ The standard UI checks required plugins before leaving mounted DOM or listeners.
 
 ### U3 — Responsive overflow and contextual controls — staged work
 
+### Optional floating insertion panels and docked search (2026-11-20)
+
+Standard and extended ready UI accept `presentation?: 'inline' | 'floating'`.
+Omitted/inline preserves the existing in-flow panel contract. Floating uses an
+owned anchored nonmodal popover for link/table insertion, the image form's own
+native dialog for images, and a compact **nonmodal in-flow search strip** directly
+under the toolbar. Search never opens a modal or obscures/inerts the editor; it
+stays open while the user clicks and edits the document. Its first row contains
+query/navigation/count, and its second contains replacement/actions/options,
+with bounded reflow on small screens. Existing reusable forms/commands retain
+selection, validation, history and draft ownership. There is no generic popup
+service, new dependency or overlay markup in persisted editor content.
+
+The explicit table `presentation: 'inline' | 'popover'` override remains
+available independently; an explicit image-form presentation also takes
+precedence over the ready UI default. Only one ready panel is active. Link/table
+outside dismissal does not swallow the external click. Escape/Close from an
+active panel returns focus to its invoker (or More when that invoker is hidden).
+Search's document interaction exception does not keep unrelated insertion
+popovers open. Native image dialog owns its own focus/close lifecycle; the ready
+shell must not open a second enclosing dialog and tracks its final close without
+mistaking temporary command-time suspension for dismissal. External replacement
+clears/invalidates drafts and closes presentation; destruction releases all
+listeners, observers, top-layer state and transient geometry. Read-only and
+composition preserve form/command-specific mutation guards.
+
+Anchored panels use a feature-detected native manual popover where available,
+with a fixed-position bounded fallback; clamp against the current visual
+viewport, track resize/scroll only while open, and restore prior styles/top-layer
+attributes on close. These controls do not certify all native OS dialogs or
+screen readers. Focused browser cases cover link selection/Undo, table insertion,
+search navigation/replacement while editor access remains available, dismissal,
+read-only/API replacement and per-instance cleanup. Actual verification remains
+separate in the verification log.
+
 Add measured overflow and small contextual link/image/table affordances after the baseline shell/forms pass acceptance. Context is read through public selection/plugin APIs. The UI does not simulate a new atomic selection model or persist controls in the document. Use contextual controls only for capabilities with stable existing selection contracts; later node-view/decorations SDK work is not assumed implemented.
 
 One interaction remains one transaction/history step. Opening, closing, resizing/repositioning or changing a UI panel is not a document edit. Advanced table/image operations must still satisfy their feature specifications before a new control exposes them.
@@ -67,6 +102,19 @@ Representative acceptance covers: (1) width/priority/tie changes and whole-group
 - Opening a popup by keyboard places focus on its first meaningful enabled control. Escape closes the current popup without changing document/history and returns focus predictably. Closing must not silently commit an invalid draft. Outside interaction dismisses only the owned popup according to its form contract and does not steal focus from the user's target.
 - Color palettes use an accessible grid/radio-like single-selection pattern with arrow/Home/End navigation and a meaningful current/mixed/default label. Menu roles are used for action menus, not indiscriminately for every property form.
 - Pointer activation must preserve ranges without preventing ordinary text editing in the panel. Match focus behavior across Chromium/Firefox/WebKit, including Safari's button-focus differences. Composition/IME in fields does not accidentally submit the panel.
+
+### Native color draft refresh
+
+The ready toolbar commits a native color/highlight picker on `change`, not each
+intermediate `input`. Preserve an input-reported draft across toolbar refreshes
+until that commit; selection/locale/manual refresh must not replace the pending
+choice with the document's previous color before `change` reads it. A focused
+native color control also retains its current value across unrelated refreshes.
+The final change restores the remembered actual editor selection through the
+existing guarded action path and creates one ordinary formatting Undo. Reopening
+the control starts a fresh draft; read-only, composition and external document
+replacement invalidate pending drafts. This is a control-event regression
+contract, not evidence of automated testing of native OS picker dialogs.
 
 ## Responsive layout and positioning
 
@@ -131,3 +179,23 @@ The independently imported caret/selected-link UI slice is specified in [context
 
 
 U3d image properties are independently specified in [contextual-images.md](contextual-images.md), using exact native IMG selection and the additive edit-only image form in ui-forms.md. Presets remain unchanged; whole-figure/caption-caret contexts and image resizing remain outside this slice. Report actual verification separately.
+
+## Local demo color controls (2026-11-20)
+
+The homepage/playground external text/background color inputs apply their chosen
+value on native `change` to the remembered editor selection. Separate Apply and
+Reset buttons remain available. Picking a color must not require an additional
+Apply click; preserve the selected range and direction across picker focus loss.
+Read-only blocks the controls. This demo wiring is independent of the ready
+toolbar's own color controls, which already apply on change. Document native
+picker testing separately from deterministic input/change event regressions.
+
+### Search layout evidence and product choice (2026-11-20)
+
+Official references inspected: [CKEditor find/replace](https://ckeditor.com/docs/ckeditor5/latest/features/find-and-replace.html)
+documents a default dialog usable alongside editing and an optional dropdown;
+[TinyMCE searchreplace](https://www.tiny.cloud/docs/tinymce/latest/searchreplace/)
+documents a dialog. Morfira deliberately uses a normal-flow nonmodal strip below
+the toolbar in floating presentation, per the user's request to keep document
+text unobscured and editable. This is an independently implemented layout choice,
+not copied implementation or a competitor parity claim.

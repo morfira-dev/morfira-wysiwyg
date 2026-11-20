@@ -56,12 +56,17 @@ export const createSearchForm = (host: HTMLElement, editor: Editor, options: Sea
   replacement.maxLength = 20000;
   const { label: caseLabel, caption: caseText, input: caseSensitive } = createFormInput(document, 'checkbox', true);
   const { label: wholeLabel, caption: wholeText, input: wholeWord } = createFormInput(document, 'checkbox', true);
+  queryLabel.classList.add('mw-search-query');
+  replacementLabel.classList.add('mw-search-replacement');
+  caseLabel.classList.add('mw-search-case');
+  wholeLabel.classList.add('mw-search-whole');
   const find = createUIButton(document);
   const previous = createUIButton(document);
   const next = createUIButton(document);
   const replaceCurrent = createUIButton(document);
   const replaceAll = createUIButton(document);
   const clear = createUIButton(document);
+  for (const [button, action] of [[find, 'find'], [previous, 'previous'], [next, 'next'], [replaceCurrent, 'replace'], [replaceAll, 'replace-all'], [clear, 'clear']] as const) button.dataset.mwSearchAction = action;
   fields.append(queryLabel, caseLabel, wholeLabel, replacementLabel);
   actions.append(find, previous, next, replaceCurrent, replaceAll, clear);
   element.append(fields, actions, status);

@@ -73,6 +73,81 @@ test('native color and reset controls restore the actual selected text and remai
   await expect(page.locator('.mw-content span')).toHaveCSS('color', 'rgb(18, 52, 86)');
 });
 
+for (const [label, property] of [['Text color', 'color'], ['Highlight color', 'background-color']]) {
+  test(`native ${label} draft survives refresh and commits once after picker blur`, async ({ page }) => {
+    await initialize(page, '<p>Hello <em>world</em></p>');
+    await page.evaluate(() => {
+      const text = window.editor.surface.querySelector('p')!.firstChild!;
+      window.editor.focus();
+      document.getSelection()!.setBaseAndExtent(text, 5, text, 0);
+      window.editor.getPlugin<EditorUIController>('test-editor-ui')!.refresh();
+    });
+    expect(await page.evaluate(() => {
+      const selection = document.getSelection()!;
+      const range = selection.getRangeAt(0);
+      return selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset;
+    })).toBe(true);
+    const input = page.locator(`[data-mw-ui-action="${property === 'color' ? 'color' : 'background'}"]`);
+    await input.evaluate((node: HTMLInputElement) => {
+      node.focus();
+      node.value = '#123456';
+      node.dispatchEvent(new Event('input', { bubbles: true }));
+      window.editor.getPlugin<EditorUIController>('test-editor-ui')!.refresh();
+      window.editor.setLocale('ru');
+    });
+    await expect(input).toHaveValue('#123456');
+    expect(await html(page)).toBe('<p>Hello <em>world</em></p>');
+    expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+    await input.evaluate((node: HTMLInputElement) => {
+      node.blur();
+      window.editor.getPlugin<EditorUIController>('test-editor-ui')!.refresh();
+      node.focus();
+      window.editor.getPlugin<EditorUIController>('test-editor-ui')!.refresh();
+      node.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await expect(page.locator('.mw-content span')).toHaveText('Hello');
+    await expect(page.locator('.mw-content span')).toHaveCSS(property, 'rgb(18, 52, 86)');
+    await expect(page.locator('.mw-content em')).toHaveText('world');
+    expect(await page.evaluate(() => {
+      const selection = document.getSelection()!;
+      const range = selection.getRangeAt(0);
+      return {
+        selected: selection.toString(),
+        backward: selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset,
+      };
+    })).toEqual({ selected: 'Hello', backward: true });
+    await page.evaluate(() => window.editor.undo());
+    expect(await html(page)).toBe('<p>Hello <em>world</em></p>');
+    expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+  });
+}
+
+test('native color pending drafts cannot mutate replacement or read-only documents and detached controls stay inert', async ({ page }) => {
+  await initialize(page);
+  const result = await page.getByLabel('Text color', { exact: true }).evaluate((node: HTMLInputElement) => {
+    node.focus();
+    node.value = '#123456';
+    node.dispatchEvent(new Event('input', { bubbles: true }));
+    window.editor.setHTML('<p>External</p>');
+    node.dispatchEvent(new Event('change', { bubbles: true }));
+    const replaced = window.editor.getHTML();
+    window.editor.setSelection(0, 8);
+    node.focus();
+    node.value = '#654321';
+    node.dispatchEvent(new Event('input', { bubbles: true }));
+    window.editor.setReadOnly(true);
+    node.dispatchEvent(new Event('change', { bubbles: true }));
+    const readonly = window.editor.getHTML();
+    window.editor.setReadOnly(false);
+    window.editor.getPlugin<EditorUIController>('test-editor-ui')!.destroy();
+    node.value = '#abcdef';
+    node.dispatchEvent(new Event('input', { bubbles: true }));
+    node.dispatchEvent(new Event('change', { bubbles: true }));
+    return { replaced, readonly, final: window.editor.getHTML(), undo: window.editor.canUndo() };
+  });
+  expect(result).toEqual({ replaced: '<p>External</p>', readonly: '<p>External</p>', final: '<p>External</p>', undo: false });
+});
+
 test('backwards and empty merged-cell ranges survive native control focus', async ({ page }) => {
   await initialize(page, '<table><tbody><tr><td rowspan="2"><p><br></p><p>Hello</p></td><td>A</td></tr><tr><td>B</td></tr></tbody></table>');
   await page.evaluate(() => {

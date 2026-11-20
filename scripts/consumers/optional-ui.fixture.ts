@@ -13,7 +13,10 @@ import { textDrop } from '@morfira-dev/wysiwyg/plugins/text-drop';
 import { images } from '@morfira-dev/wysiwyg/plugins/images';
 import { createContextualLinkUI } from '@morfira-dev/wysiwyg/ui/contextual-link';
 import { createContextualImageUI } from '@morfira-dev/wysiwyg/ui/contextual-image';
-import type { OptionalUIProbe, ReadingProbe } from './optional-ui.types.js';
+import { createStandardPreset } from '@morfira-dev/wysiwyg/presets/standard';
+import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
+import { createTablePicker } from '@morfira-dev/wysiwyg/ui/table-picker';
+import type { FloatingProbe, OptionalUIProbe, ReadingProbe } from './optional-ui.types.js';
 
 const target = document.createElement('section');
 target.dataset.optionalWorkspace = '';
@@ -39,6 +42,8 @@ let featureEditor: ReturnType<typeof createEditor> | undefined;
 let featureHost: HTMLElement | undefined;
 let reading: ReadingProbe | undefined;
 let readingHost: HTMLElement | undefined;
+let floating: FloatingProbe | undefined;
+let floatingHost: HTMLElement | undefined;
 const probe: OptionalUIProbe = {
   editor, characters, fullscreen, preview, saveState: saveAPI, saveUI, getSaveCalls: () => saveCalls,
   setupReading: () => {
@@ -59,6 +64,36 @@ const probe: OptionalUIProbe = {
   getReading: () => {
     if (!reading) throw new Error('Create the reading editor first.');
     return reading;
+  },
+  setupFloating: () => {
+    if (floating) throw new Error('Consumer floating editor already exists.');
+    floatingHost = document.createElement('section');
+    floatingHost.dataset.floatingProbe = '';
+    const tools = document.createElement('div');
+    const host = document.createElement('div');
+    const charactersHost = document.createElement('div');
+    floatingHost.append(tools, host, charactersHost);
+    document.body.append(floatingHost);
+    const instance = createEditor(host, createStandardPreset({ locale: 'en', value: '<p>word word</p>' }));
+    instance.focus();
+    instance.setSelection(0, 4);
+    floating = {
+      editor: instance,
+      ui: createStandardEditorUI(tools, instance, {
+        presentation: 'floating',
+        images: { initialValues: { src: '/context-image.png', alt: 'Archive dialog image' } },
+        table: { picker: createTablePicker },
+        search: { initialValues: { query: 'word', replacement: 'term' } },
+      }),
+      characters: createSpecialCharacterUI(charactersHost, instance, {
+        presentation: 'dialog',
+        characters: [{ id: 'archive-euro', text: '€', label: 'Archive euro' }],
+      }),
+    };
+  },
+  getFloating: () => {
+    if (!floating) throw new Error('Create the floating editor first.');
+    return floating;
   },
   setupFeatures: () => {
     if (featureEditor) throw new Error('Consumer feature editor already exists.');
@@ -85,6 +120,10 @@ const probe: OptionalUIProbe = {
     featureEditor.setSelection(0);
   },
   dispose: () => {
+    floating?.characters.destroy();
+    floating?.ui.destroy();
+    floating?.editor.destroy();
+    floatingHost?.remove();
     reading?.links.destroy();
     reading?.image.destroy();
     reading?.print.destroy();

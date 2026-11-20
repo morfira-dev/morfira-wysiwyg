@@ -3,10 +3,10 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import type { TablePickerTestState } from './table-picker.types.js';
 
-const initialize = async (page: Page, rows = 3, columns = 3) => {
+const initialize = async (page: Page, rows = 3, columns = 3, presentation?: 'inline' | 'popover') => {
   await page.goto('/');
   await expect(page.getByRole('textbox')).toBeVisible();
-  await page.evaluate(async ({ rows, columns }) => {
+  await page.evaluate(async ({ rows, columns, presentation }) => {
     window.dispose();
     const uiHost = document.createElement('div');
     uiHost.className = 'picker-ui';
@@ -24,7 +24,7 @@ const initialize = async (page: Page, rows = 3, columns = 3) => {
     const { createTablePicker } = await import(/* @vite-ignore */ pickerPath) as typeof import('@morfira-dev/wysiwyg/ui/table-picker');
     const state = {} as TablePickerTestState;
     state.ui = createStandardEditorUI(uiHost, window.editor, {
-      table: { rows, columns, picker: (host, options) => {
+      table: { rows, columns, presentation, picker: (host, options) => {
         state.select = options.onSelect;
         state.picker = createTablePicker(host, options);
         return state.picker;
@@ -32,7 +32,7 @@ const initialize = async (page: Page, rows = 3, columns = 3) => {
     });
     window.editor.providePlugin('test-picker', state);
     window.dispose = () => { state.ui.destroy(); window.editor.destroy(); };
-  }, { rows, columns });
+  }, { rows, columns, presentation });
 };
 const tools = (page: Page) => page.locator('.picker-ui');
 const launcher = (page: Page) => tools(page).locator('[data-mw-ui-action="table"]');
@@ -188,4 +188,75 @@ test('standalone widgets validate atomically, keep independent state and release
 test('the selective picker imports on the server without browser globals', () => {
   const output = execFileSync(process.execPath, ['--input-type=module', '--eval', "import { createTablePicker } from '@morfira-dev/wysiwyg/ui/table-picker'; console.log(typeof createTablePicker, typeof document, typeof customElements)"], { cwd: process.cwd(), encoding: 'utf8' }).trim();
   expect(output).toBe('function undefined undefined');
+});
+
+test('popover table insertion stays outside page flow and preserves keyboard focus and one-step history', async ({ page }) => {
+  await initialize(page, 3, 3, 'popover');
+  const before = await content(page).boundingBox();
+  await launcher(page).focus();
+  await page.keyboard.press('Enter');
+  const panel = tools(page).locator('.mw-ui-panel');
+  await expect(panel).toBeVisible();
+  await expect(panel).toHaveClass(/mw-ui-panel-popover/);
+  await expect(panel).toHaveCSS('position', 'fixed');
+  const after = await content(page).boundingBox();
+  expect(after!.y).toBeCloseTo(before!.y, 0);
+  expect(after!.height).toBeCloseTo(before!.height, 0);
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(launcher(page)).toBeFocused();
+  await expect(panel).not.toHaveAttribute('popover');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Control+Home');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Space');
+  await expect(content(page).locator('td')).toHaveCount(2);
+  await expect(content(page)).toBeFocused();
+  await page.evaluate(() => window.editor.undo());
+  expect(await page.evaluate(() => window.editor.getHTML())).toBe('<p>AB</p>');
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+});
+
+test('popover table panel fits a short narrow viewport and fixed fallback releases geometry on dismissal', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 400 });
+  await initialize(page, 3, 3, 'popover');
+  await page.evaluate(() => {
+    Object.defineProperty(HTMLElement.prototype, 'showPopover', { configurable: true, value: undefined });
+    const outside = document.createElement('button');
+    outside.id = 'picker-outside';
+    outside.textContent = 'Outside action';
+    Object.assign(outside.style, { position: 'fixed', top: '0', left: '0', zIndex: '2000' });
+    document.body.append(outside);
+    const launcher = document.querySelector<HTMLElement>('.picker-ui [data-mw-ui-action="table"]')!;
+    Object.assign(launcher.style, { position: 'fixed', bottom: '0', right: '0' });
+  });
+  await launcher(page).click();
+  const panel = tools(page).locator('.mw-ui-panel');
+  await expect(panel).toBeVisible();
+  await expect(panel).not.toHaveAttribute('popover');
+  const bounds = await panel.boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(19);
+  expect(bounds!.y).toBeGreaterThanOrEqual(19);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(341);
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(381);
+  await expect(panel).toHaveCSS('overflow', 'auto');
+  await page.locator('#picker-outside').click();
+  await expect(panel).toBeHidden();
+  await expect(panel).not.toHaveClass(/mw-ui-panel-popover/);
+  expect(await panel.evaluate((element) => element.style.position)).toBe('');
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+  await launcher(page).click();
+  const retained = await chooser(page).getByRole('button').first().elementHandle();
+  await page.evaluate(() => window.editor.setHTML('<p>Replacement</p>'));
+  await expect(panel).toBeHidden();
+  await retained!.evaluate((element) => element.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  await page.evaluate(() => {
+    window.editor.getPlugin<TablePickerTestState>('test-picker')!.ui.destroy();
+    window.dispatchEvent(new Event('resize'));
+    document.dispatchEvent(new Event('scroll'));
+  });
+  await expect(tools(page).locator('.mw-ui-panel')).toHaveCount(0);
+  expect(await page.evaluate(() => window.editor.getHTML())).toBe('<p>Replacement</p>');
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
 });

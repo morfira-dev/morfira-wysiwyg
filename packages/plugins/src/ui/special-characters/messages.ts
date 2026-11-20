@@ -1,6 +1,7 @@
 export const specialCharacterUIMessages = Object.freeze({
   en: Object.freeze({
     'ui.specialCharacters.label': 'Special characters',
+    'ui.specialCharacters.close': 'Close special characters',
     'ui.specialCharacters.search': 'Find a symbol',
     'ui.specialCharacters.characters': 'Characters',
     'ui.specialCharacters.insert': 'Insert character',
@@ -43,6 +44,7 @@ export const specialCharacterUIMessages = Object.freeze({
   }),
   ru: Object.freeze({
     'ui.specialCharacters.label': 'Спецсимволы',
+    'ui.specialCharacters.close': 'Закрыть спецсимволы',
     'ui.specialCharacters.search': 'Найти символ',
     'ui.specialCharacters.characters': 'Символы',
     'ui.specialCharacters.insert': 'Вставить символ',

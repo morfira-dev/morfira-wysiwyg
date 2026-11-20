@@ -192,5 +192,5 @@ export const createImageUploadUI = (
   };
   cleanups.push(editor.events.on('destroy', destroy));
   render();
-  return { element, isUploading: () => Boolean(upload), render, destroy };
+  return { element, isUploading: () => Boolean(upload), render, cancel: cancelUpload, destroy };
 };

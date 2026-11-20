@@ -76,3 +76,18 @@ tarball smoke. Measure raw/gzip/Brotli/CSS independently and a deduplicated
 standard-special-characters-ready profile. Initial standalone guards: 12000 gzip
 JS bytes including selected core helpers, 3000 raw CSS bytes. The selected profile
 keeps standard's existing 80000 gzip JS / 20000 raw CSS caps. Presets remain unchanged.
+
+## Optional dialog presentation (2026-11-20)
+
+`presentation: 'dialog'` creates an initially closed native modal dialog; inline
+remains the default. `open()`, `close()` and `isOpen()` belong to its controller.
+Open captures the ordinary editor target before moving focus to search. Native
+dialog focus containment and Escape are used; Close/Escape return focus to the
+connected invoker. Before validated insertion the dialog closes so editor focus
+and callback-time target checks remain effective; successful insertion leaves
+the document caret available. API replacement/read-only/composition close the
+dialog and invalidate the target. Destroy removes the owned dialog/listeners.
+No polyfill, global registration, persisted UI or dependency is added; browsers
+without native dialog support refuse this opt-in explicitly. Deterministic
+browser tests cover focus, literal insertion/history, cancellation and stale
+targets, not every platform's assistive technology.

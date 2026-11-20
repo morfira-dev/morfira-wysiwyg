@@ -4,10 +4,10 @@ import type { Page } from '@playwright/test';
 import type { StandardEditorUIController } from '@morfira-dev/wysiwyg/ui/standard';
 import './ui-images.types.js';
 
-const initialize = async (page: Page, html = '<p>A<strong>word</strong>Z</p>', index = 1, length = 4) => {
+const initialize = async (page: Page, html = '<p>A<strong>word</strong>Z</p>', index = 1, length = 4, presentation?: 'inline' | 'floating') => {
   await page.goto('/');
   await expect(page.getByRole('textbox')).toBeVisible();
-  await page.evaluate(async ({ html, index, length }) => {
+  await page.evaluate(async ({ html, index, length, presentation }) => {
     window.dispose();
     const editorHost = document.createElement('div');
     editorHost.className = 'standard-editor';
@@ -34,19 +34,74 @@ const initialize = async (page: Page, html = '<p>A<strong>word</strong>Z</p>', i
     const modulePath = '/packages/plugins/dist/ui/standard.js';
     const { createStandardEditorUI } = await import(/* @vite-ignore */ modulePath) as typeof import('@morfira-dev/wysiwyg/ui/standard');
     const ui = createStandardEditorUI(uiHost, window.editor, {
+      presentation,
       images: { initialValues: { src: '/logo.svg' } },
       search: { initialValues: { query: 'word', replacement: 'term' } },
       onError: (error) => errors.push(error),
     });
     window.editor.providePlugin('test-standard-ui', ui);
     window.editor.providePlugin('test-standard-errors', errors);
-  }, { html, index, length });
+  }, { html, index, length, presentation });
 };
 const content = (page: Page) => page.locator('.standard-editor .mw-content');
 const tools = (page: Page) => page.locator('.standard-ui-host');
 const launcher = (page: Page, id: string) => tools(page).locator(`[data-mw-ui-action="${id}"]`);
 const panel = (page: Page) => tools(page).locator('.mw-ui-panel');
 const html = (page: Page) => page.evaluate(() => window.editor.getHTML());
+
+test('floating ready link popover preserves the selected target without shifting the editor', async ({ page }) => {
+  await initialize(page, undefined, undefined, undefined, 'floating');
+  await page.addStyleTag({ url: '/packages/plugins/dist/ui/editor.css' });
+  const before = await content(page).boundingBox();
+  await launcher(page, 'link').click();
+  await expect(panel(page)).toHaveClass(/mw-ui-panel-popover/);
+  expect((await content(page).boundingBox())?.y).toBe(before?.y);
+  await panel(page).getByLabel('Link URL', { exact: true }).fill('https://example.com/selected');
+  await panel(page).getByRole('button', { name: 'Create link', exact: true }).click();
+  await expect(content(page).locator('a')).toHaveText('word');
+  await expect(content(page).locator('strong')).toHaveText('word');
+  await panel(page).getByLabel('Link URL', { exact: true }).focus();
+  await page.keyboard.press('Escape');
+  await expect(panel(page)).toBeHidden();
+  await expect(launcher(page, 'link')).toBeFocused();
+  await page.evaluate(() => window.editor.undo());
+  expect(await html(page)).toBe('<p>A<strong>word</strong>Z</p>');
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+  await page.evaluate(() => window.editor.setSelection(1, 4));
+  await launcher(page, 'link').click();
+  await page.getByLabel('Outside target', { exact: true }).click();
+  await expect(panel(page)).toBeHidden();
+  await expect(page.getByLabel('Outside target', { exact: true })).toBeFocused();
+});
+
+test('floating ready search stays docked and leaves the editor available through navigation and replacement', async ({ page }) => {
+  await initialize(page, '<p>word word</p>', 0, 0, 'floating');
+  await page.addStyleTag({ url: '/packages/plugins/dist/ui/editor.css' });
+  await launcher(page, 'search').click();
+  await expect(panel(page)).toHaveClass(/mw-ui-search-docked/);
+  await expect(tools(page).locator('dialog')).toHaveCount(0);
+  await panel(page).getByRole('button', { name: 'Find', exact: true }).click();
+  await expect(panel(page).getByRole('status')).toHaveText('Match 1 of 2');
+  await panel(page).getByRole('button', { name: 'Next match', exact: true }).click();
+  await expect(panel(page).getByRole('status')).toHaveText('Match 2 of 2');
+  await content(page).click();
+  await expect(content(page)).toBeFocused();
+  await expect(panel(page)).toBeVisible();
+  await page.keyboard.press('End');
+  await page.keyboard.type('!');
+  await expect(content(page)).toHaveText('word word!');
+  await expect(panel(page)).toBeVisible();
+  await page.evaluate(() => window.editor.undo());
+  await panel(page).getByRole('button', { name: 'Replace all', exact: true }).click();
+  await expect(content(page)).toHaveText('term term');
+  await expect(panel(page)).toBeVisible();
+  await page.evaluate(() => window.editor.undo());
+  expect(await html(page)).toBe('<p>word word</p>');
+  await panel(page).getByLabel('Find text', { exact: true }).focus();
+  await page.keyboard.press('Escape');
+  await expect(panel(page)).toBeHidden();
+  await expect(launcher(page, 'search')).toBeFocused();
+});
 
 test('standard preset exposes a localized keyboard horizontal-rule action with guarded one-step history', async ({ page }) => {
   await initialize(page, '<p>AB</p>', 1, 0);
