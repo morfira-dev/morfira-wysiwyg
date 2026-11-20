@@ -125,6 +125,8 @@ export const transformInlineAttributes = (document: EditorDocument, from: number
       });
     }
     const link = operation.kind === 'link' && node.tag === 'a' ? node.attributes : inheritedLink;
+    if (!node.children.length && (blocks.has(node.tag) || node.tag === 'hr' || node.tag === 'col' || node.attributes['data-mw-node']))
+      return [{ node, selected: false }];
     if (!node.children.length)
       return [{ node, selected: position >= from && position < to, link }];
     const children = node.children.flatMap((child) => visit(child, link));

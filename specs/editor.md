@@ -12,6 +12,12 @@ Status: implemented preview contract. Current browser, build, type and generated
 - History bookmarks at an empty text node preserve its parent boundary, because HTML snapshots omit empty text nodes. Redo after inserting a link in an empty block must leave subsequent typing after the link.
 
 - Formatting must preserve unaffected text, support partial removal and cross-paragraph selections, and restore selection. Document operations must be atomic on failure.
+- Text-offset inline link/style transforms never select empty structural blocks,
+  HR/COL leaves or semantic roots merely because they share an offset with later
+  selected text. Preserve those owners outside generated inline wrappers; empty
+  paragraphs/headings/cells remain structurally valid. Existing inline IMG/BR
+  affinity at a selected text boundary remains unchanged. Undo/Redo retains the
+  original empty structure and exact text selection.
 - Paste replaces selection using validated HTML or plain text; unsupported drops are blocked. Read-only prevents user/programmatic user-edit commands while allowing external replacement.
 - Every instance owns listeners and plugin APIs. Destroy is idempotent and performs all cleanup even when a disposer fails. Imports are safe to evaluate during SSR; createEditor requires browser DOM.
 - Vue v-model, React controlled value including StrictMode, and Svelte bind:value share document/change semantics. External replacement emits no adapter feedback event. Same-value feedback preserves caret.
