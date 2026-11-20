@@ -1,5 +1,90 @@
 # Verification record
 
+## Expanded image and mixed linked-text contexts — 2026-11-20
+
+Implemented the 2026-11-20 addenda in contextual-images.md/contextual-links.md and
+the reusable link form's selection-scope removal contract in ui-links.md. Three
+subagents implemented image runtime/regressions, link runtime/regressions and
+RU/EN guides/demo. Independent reviews covered source/placement range separation,
+selected-only metadata, hidden/protected ownership, focus-time drift and disposal.
+No core, persisted schema, public factory/options, dependencies or preset defaults
+changed. Whole-anchor link behavior and original IMG-node contexts are retained.
+
+Simple FIGURE node selections and ordinary caption carets now target their own
+actual IMG while preserving the source Range. Placement uses a separate IMG Range.
+Whole-figure hidden caption/descendant contents and caption link/code/semantic paths
+are refused. Mixed link context accepts bounded one-flow ranges intersecting safe
+ordinary linked text. It has no ambiguous Open URL and reuses selection-scope
+forms to patch/unlink only selected portions, preserving outside metadata and
+backward selection/history. Pure unlinked text keeps its formatting toolbar.
+
+Actual validation and corrections:
+
+- Final pnpm run build passed declarations, Angular build and all size guards.
+  First measurement exceeded the image entry's unchanged 16000 gzip JS guard by
+  233 bytes. Importing the Range comparison from its actual shared owner instead
+  of the contextual-text module removed an unnecessary side-effect chunk. No
+  functionality, dependency boundary or budget was weakened.
+- Facade declarations and TS/Svelte/Vue type checking passed after two explicit
+  HTMLButtonElement casts in retained-control browser fixtures.
+- Final check:project, check:tree-shaking and package:check passed, including eight
+  public archive layouts with declarations/exports/MIT/file boundaries.
+- Initial selected six-file run executed 96 browser executions: 84 passed, 12 failed
+  in 4.3 minutes. All image cases passed: 18 expanded-context and 27 original
+  image executions across Chromium/Firefox/WebKit. Image runtime then remained
+  unchanged; those 45 passing executions were not repeated.
+- The failing link families revealed invalid-submit draft loss during outer
+  transaction rollback, hidden readonly buttons not synchronously disabled and
+  selection-scope stale-form compatibility. Invalid metadata now validates before
+  mutation; readonly updates controls synchronously; stale actions still refuse
+  through selection guards. One old image-containing range expectation was
+  restored to its proper unsupported state, not made eligible. A genuine
+  reselection fixture now reports pointerup after Escape rather than bypassing
+  dismissal suppression with a queued refresh.
+- Final affected link repeat ran 51 executions: 48 passed, three failed only
+  because a test referenced Node's sample variable inside page.evaluate without
+  passing it. A three-browser repeat after fixing that argument passed 3/3 in
+  13.8 seconds. Thus all 96 unique targeted executions have passing staged
+  evidence; there is no single final all-green 96/96 run or full-suite claim.
+- Final package-runtime docs build passed in 92.72 seconds while affected jobs
+  were running. Six localized docs scenarios then passed 4/6: mixed-sample reload
+  after Undo reused identical HTML and its dismissed selection. The explicit demo
+  command now starts a fresh caret before constructing its requested backward
+  range, preserving same-value editor feedback and dismissal contracts. Site-only
+  rebuild passed in 18.00 seconds, and only the two affected RU/EN smokes repeated:
+  2/2 passed in 12.8 seconds. All six targeted docs scenarios are covered by staged
+  passing results; no packages were rebuilt while browser tests consumed them.
+- Final consumers:optional-ui passed from three actual core/plugins/facade
+  archives: native mixed selection with Open absent, selected unlink/Undo and
+  caption-caret image removal/Undo. Public JS/CSS resolved from installed archives,
+  with no source aliases, one Chromium only and no full consumer matrix.
+- git diff --check and git diff --cached --check passed before recording results.
+
+Focused servers used task-owned ports 5191/4183, preserving existing sessions.
+No full local editor/docs/consumer matrices, GitHub monitoring, benchmarks, commit,
+push or publication ran. The aggregate docs chunk advisory remains unchanged.
+These checks do not certify every browser/device/assistive technology or arbitrary
+structural ranges. Cross-block mixed contexts, expanded caption selections and
+complex figures remain excluded. No user-resource previews/clones were added.
+
+Measured bytes (raw / gzip / Brotli), shared retained chunks counted once:
+
+| Entry/profile | Raw | gzip | Brotli |
+| --- | ---: | ---: | ---: |
+| Contextual image entry closure | 44605 | 15841 | 14143 |
+| Contextual link entry closure | 29881 | 11403 | 10151 |
+| Image contextual CSS | 1662 | 676 | 545 |
+| Link contextual CSS | 1735 | 690 | 550 |
+| Standard + image context ready JS | 237718 | 70539 | 59866 |
+| Standard + link context ready JS | 239910 | 71447 | 60609 |
+
+Both independent entry guards remain 16000 gzip JS / 3000 raw CSS. Selected
+standard profiles retain 80000 gzip JS / 20000 raw CSS. They are independent
+profiles, not a measurement of both panels plus every optional module. Core
+remains 94084 / 29191 / 25689 JS bytes; the 80000 raw-byte soft target is still
+exceeded independently of passing hard gzip guards. Framework runtimes, maps,
+declarations and external resources are excluded.
+
 ## Optional rich text drag/drop — 2026-11-20
 
 Implemented [text-drop.md](text-drop.md) with three subagents owning runtime,

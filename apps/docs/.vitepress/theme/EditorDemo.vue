@@ -215,6 +215,7 @@ const listSelectionSample = () => {
 const imageSample = () => `<h2>${t('Изображения с подписью', 'Images with captions')}</h2><p>${t('Нажми на изображение: в разделе «Ссылки и изображения» доступны размер, alt, подпись и выравнивание слева, по центру или справа.', 'Click the image: Links and images provides dimensions, alt text, caption and left, center or right alignment.')}</p><figure><img src="/logo.svg" alt="Morfira" width="160" height="160"><figcaption>${t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption')}</figcaption></figure><p>${t('Здесь можно продолжить текст.', 'Continue writing here.')}</p>`;
 const contextualImageSample = () => `<p>${t('До изображения', 'Before the image')}</p><figure title="Contextual image sample"><img src="/logo.svg" alt="${t('Знак Morfira', 'Morfira mark')}" width="120" height="80"><figcaption><em>${t('Исходная подпись', 'Original caption')}</em></figcaption></figure><p>${t('После изображения', 'After the image')}</p>`;
 const contextualLinkSample = () => `<p title="Contextual link sample">Before <a href="https://example.com/article" title="Original"><strong>Mor</strong><em>fira</em></a> after</p><p>${t('Поставь курсор или выдели часть текста внутри ссылки: доступны открытие, редактирование и удаление всей ссылки без потери оформления.', 'Place the caret or select text inside the link to open, edit or unlink the whole link without losing rich content.')}</p>`;
+const mixedContextualLinkSample = () => '<p title="Mixed contextual link sample"><a href="https://example.com/first" title="First"><strong>Alpha</strong></a> + plain + <a href="https://example.com/second" title="Second"><em>Beta</em></a> tail</p>';
 const contextualSample = () => `<p title="Contextual sample">Alpha <strong>bold</strong> <em>italic</em> <a href="https://example.com">link</a> tail</p><p>${t('Выдели часть текста: панель появляется над выделением без перехвата фокуса.', 'Select some text: the toolbar appears above the selection without taking focus.')}</p>`;
 const textDirectionSample = () => '<p title="Direction first" style="text-align: center">مرحبا <strong>Latin</strong> <a href="https://example.com">رابط</a></p><p title="Direction second">שלום <em>world</em></p><ul><li title="Direction item">العربية · עברית · Latin</li></ul>';
 const listPropertySample = () => '<ol title="List properties sample" start="3" reversed="false"><li title="List property first">Alpha <strong>one</strong><ul title="List properties nested"><li>Nested branch</li></ul></li><li title="List property second"><em>Beta</em> tail</li></ol><p title="List properties after">Keep paragraph</p>';
@@ -313,6 +314,34 @@ const loadContextualImageSample = () => run((instance) => {
   sample.value = 'contextual-image';
   instance.setHTML(contextualImageSample());
   selectContextualImage?.();
+  output.value = '';
+});
+const selectContextualImageContext = (kind: 'figure' | 'caption') => run((instance) => {
+  const figure = instance.surface.querySelector('[title="Contextual image sample"]');
+  if (!figure) throw new Error(t('Загрузи пример изображения заново.', 'Load the image sample again.'));
+  figure.scrollIntoView({ block: 'center' });
+  const range = figure.ownerDocument.createRange();
+  if (kind === 'figure') range.selectNode(figure);
+  else {
+    const text = figure.querySelector('figcaption em')?.firstChild;
+    if (!text) throw new Error(t('В примере нет подписи.', 'The sample has no caption.'));
+    range.setStart(text, Math.min(3, text.textContent?.length ?? 0));
+    range.collapse(true);
+  }
+  const selection = figure.ownerDocument.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}, false);
+const loadMixedContextualLinkSample = () => run((instance) => {
+  sample.value = 'contextual-link-mixed';
+  instance.setHTML(mixedContextualLinkSample());
+  // A same-value reload preserves state; choose a fresh caret before the range.
+  instance.setSelection(0);
+  const block = instance.surface.querySelector('[title="Mixed contextual link sample"]')!;
+  block.scrollIntoView({ block: 'center' });
+  const first = block.querySelector('strong')!.firstChild!;
+  const last = block.querySelector('em')!.firstChild!;
+  block.ownerDocument.getSelection()?.setBaseAndExtent(last, 2, first, 2);
   output.value = '';
 });
 const updateContextualLinkUI = () => { mountContextualLinkUI?.(); };
@@ -716,7 +745,7 @@ const startStructuralSlash = (command: string) => run((instance) => { const text
 const startSuggestions = (kind: 'mentions' | 'slash') => run((instance) => { const text = kind === 'mentions' ? '@an' : '/sig'; instance.setHTML(`<p>${text}</p>`); instance.setSelection(text.length); (kind === 'mentions' ? mentionAPI : slashAPI)?.open(); });
 const sampleFactories: Record<string, () => string> = {
   empty: () => '<p><br></p>', input: inputSample, paste: inputSample, 'list-selection': listSelectionSample, suggestions: suggestionSample,
-  'contextual-table': contextualTableSample, 'contextual-image': contextualImageSample, 'contextual-link': contextualLinkSample, contextual: contextualSample, 'text-direction': textDirectionSample, 'list-properties': listPropertySample, fonts: fontSample, checklists: checklistSample, 'horizontal-rule': horizontalRuleSample, markdown: markdownSample, statistics: statisticsSample, search: searchSample,
+  'contextual-table': contextualTableSample, 'contextual-image': contextualImageSample, 'contextual-link': contextualLinkSample, 'contextual-link-mixed': mixedContextualLinkSample, contextual: contextualSample, 'text-direction': textDirectionSample, 'list-properties': listPropertySample, fonts: fontSample, checklists: checklistSample, 'horizontal-rule': horizontalRuleSample, markdown: markdownSample, statistics: statisticsSample, search: searchSample,
   images: imageSample, styling: stylingSample, lists: listSample,
   tables: tableSample, article, showcase,
 };
@@ -1451,16 +1480,19 @@ onBeforeUnmount(() => {
         <details class="lab-contextual-image"><summary>{{ t('Контекстные свойства изображения', 'Contextual image properties') }}</summary><fieldset :disabled="!ready">
           <button :disabled="readOnly" @click="loadContextualImageSample">{{ t('Загрузить пример свойств изображения', 'Load image properties sample') }}</button>
           <button @click="selectContextualImageSample">{{ t('Выделить изображение примера', 'Select sample image') }}</button>
+          <button @click="selectContextualImageContext('figure')">{{ t('Выделить всю фигуру', 'Select whole figure') }}</button>
+          <button @click="selectContextualImageContext('caption')">{{ t('Поставить курсор в подпись', 'Place caret in caption') }}</button>
           <p class="lab-hint">{{ t('Выдели само изображение кликом либо кнопкой, затем Alt+F10 переведёт фокус в панель. «Свойства изображения» открывают форму только редактирования: Enter обновляет, кнопок вставки и загрузки нет. Изменения и удаление поддерживают Undo; удаление простой figure удаляет и её подпись.', 'Select the image itself by clicking or using the button, then Alt+F10 enters the panel. Image properties opens an edit-only form: Enter updates, with no insertion or upload controls. Metadata and removal support Undo; removing a simple figure removes its caption too.') }}</p>
-          <p class="lab-hint">{{ t('Это отдельный необязательный UI, включённый в полной демке. Цель — точный нативный Range узла IMG, без превью-копии изображения. Курсор в подписи, выделение всей figure и сложные figure не поддержаны; это не resize/crop. Read-only может оставлять просмотр и блокирует изменение. Кнопка выбора не меняет документ.', 'This separate optional UI is enabled in the full demo. It uses the exact native IMG node Range without a second preview image. Caption carets, whole-figure ranges and complex figures are excluded; this is not resize/crop. Read-only may retain summary while blocking edits. The selection button does not change the document.') }}</p>
+          <p class="lab-hint">{{ t('Это отдельный необязательный UI, включённый в полной демке. Цель — точный нативный Range узла IMG, всей простой figure или курсора в её обычной подписи, без превью-копии изображения. Положение панели определяется IMG; исходное выделение возвращается по Escape. Развёрнутая подпись, ссылки/код внутри подписи и сложные figure не подходят; это не resize/crop. Read-only может оставлять просмотр и блокирует изменение. Кнопка выбора не меняет документ.', 'This separate optional UI is enabled in the full demo. It accepts an exact IMG node Range, a whole simple figure or a caret in its ordinary caption without a second preview image. Placement follows the IMG; Escape returns the original selection. Expanded caption ranges, caption links/code and complex figures are excluded; this is not resize/crop. Read-only may retain summary while blocking edits. The selection button does not change the document.') }}</p>
         </fieldset></details>
         <details class="lab-contextual-link"><summary>{{ t('Действия со ссылкой', 'Link actions') }}</summary><fieldset :disabled="!ready || readOnly">
           <button @click="loadContextualLinkSample">{{ t('Загрузить пример ссылки', 'Load link sample') }}</button>
+          <button @click="loadMixedContextualLinkSample">{{ t('Загрузить выделение нескольких ссылок', 'Load multiple-link selection') }}</button>
           <button @click="selectContextualLinkSample('forward')">{{ t('Выделить часть ссылки', 'Select link text') }}</button>
           <button @click="selectContextualLinkSample('backward')">{{ t('Выделить ссылку назад', 'Select link text backward') }}</button>
           <button @click="selectContextualLinkSample('mixed')">{{ t('Выделить текст через границу ссылки', 'Select across the link boundary') }}</button>
           <p class="lab-hint">{{ t('Курсор или выделение текста целиком внутри одной ссылки открывает адрес и действия «Открыть», «Изменить», «Удалить». Изменение URL и удаление относятся ко всей ссылке, даже если выделена только её часть; текст и оформление сохраняются. Направление выделения сохраняется при возврате из действий. Alt+F10 переводит фокус в панель, Escape возвращает сохранённый диапазон. Каждое изменение — обычный шаг Undo.', 'A caret or text range wholly inside one link shows its address and Open/Edit/Remove actions. URL edits and unlinking apply to the whole link even when only part is selected; text and rich content survive. Returning from actions preserves the selection direction. Alt+F10 enters the panel and Escape returns the saved range. Each edit is an ordinary Undo step.') }}</p>
-          <p class="lab-hint">{{ t('Это отдельный необязательный UI, включённый в полной демке. Внутри одной ссылки он имеет приоритет над текстовой панелью, включая Alt+F10. Смешанное выделение, несколько ссылок и ссылки только с изображением не подходят. Для создания ссылки на обычном тексте используй стандартную форму. Адрес проверяется перед открытием; read-only оставляет просмотр/открытие и блокирует изменение.', 'This separate optional UI is enabled in the full demo. Inside one link it takes priority over the text toolbar, including Alt+F10. Mixed selections, multiple links and image-only links are excluded. Use the standard form to create a link on plain text. The address is checked before opening; read-only allows preview/Open while blocking edits.') }}</p>
+          <p class="lab-hint">{{ t('Это отдельный необязательный UI, включённый в полной демке. Внутри одной ссылки он имеет приоритет над текстовой панелью, включая Alt+F10. Смешанное выделение текста и нескольких ссылок внутри одного текстового блока открывает действия только для выделенной части, без неоднозначной кнопки открытия. Невыделенные части ссылок сохраняются; исходные смешанные URL не подставляются в форму. Обычный текст без ссылок остаётся у текстовой панели. Межблочные диапазоны и ссылки только с изображением не подходят. Адрес проверяется перед открытием; read-only оставляет просмотр/открытие и блокирует изменение.', 'This separate optional UI is enabled in the full demo. Inside one link it takes priority over the text toolbar, including Alt+F10. A mixed selection of text and multiple links within one text block uses selected-range actions with no ambiguous Open action. Unselected link portions survive; mixed URLs are not guessed in the form. Pure unlinked text stays with text formatting. Cross-block ranges and image-only links are excluded. The address is checked before opening; read-only allows preview/Open while blocking edits.') }}</p>
         </fieldset></details>
         <details class="lab-contextual"><summary>{{ t('Контекстная панель', 'Contextual toolbar') }}</summary><fieldset :disabled="!ready || readOnly">
           <button @click="loadContextualSample">{{ t('Загрузить пример выделения', 'Load selection sample') }}</button>

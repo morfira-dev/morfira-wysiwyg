@@ -59,12 +59,13 @@ try {
     assert.ok(!input.includes('/packages/') && !input.startsWith('packages/'), `Unexpected workspace source or artifact alias: ${input}`);
   }
   const stylesheet = await build({
-    stdin: { contents: "@import '@morfira-dev/wysiwyg/style.css'; @import '@morfira-dev/wysiwyg/ui/special-characters.css'; @import '@morfira-dev/wysiwyg/ui/fullscreen.css'; @import '@morfira-dev/wysiwyg/ui/preview.css'; @import '@morfira-dev/wysiwyg/ui/save-state.css'; @import '@morfira-dev/wysiwyg/ui/print.css'; @import '@morfira-dev/wysiwyg/ui/outline.css';", resolveDir: temporary, loader: 'css' },
+    stdin: { contents: "@import '@morfira-dev/wysiwyg/style.css'; @import '@morfira-dev/wysiwyg/ui/special-characters.css'; @import '@morfira-dev/wysiwyg/ui/fullscreen.css'; @import '@morfira-dev/wysiwyg/ui/preview.css'; @import '@morfira-dev/wysiwyg/ui/save-state.css'; @import '@morfira-dev/wysiwyg/ui/print.css'; @import '@morfira-dev/wysiwyg/ui/outline.css'; @import '@morfira-dev/wysiwyg/ui/forms.css'; @import '@morfira-dev/wysiwyg/ui/contextual-link.css'; @import '@morfira-dev/wysiwyg/ui/contextual-image.css';", resolveDir: temporary, loader: 'css' },
     bundle: true, minify: true, write: false, logLevel: 'silent',
   });
   const site = join(temporary, 'site');
   await mkdir(site);
   await writeFile(join(site, 'consumer.js'), javascript.outputFiles[0].contents);
+  await writeFile(join(site, 'context-image.png'), Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGz0AAAAASUVORK5CYII=', 'base64'));
   await writeFile(join(site, 'consumer.css'), stylesheet.outputFiles[0].contents);
   await writeFile(join(site, 'index.html'), '<!doctype html><html lang="en"><meta charset="utf-8"><link rel="stylesheet" href="/consumer.css"><body><script type="module" src="/consumer.js"></script></body></html>');
   const server = await serveConsumer(site);
@@ -149,6 +150,41 @@ try {
         editor.undo();
         return { moved, restored: [...editor.surface.children].map((block) => block.textContent), undo: editor.canUndo() };
       }), { moved: ['SectionBody', '', true], restored: ['Section', 'Body'], undo: false });
+      await page.evaluate(() => {
+        const reader = window.morfiraOptionalUI.getReading();
+        reader.editor.setHTML('<p>Before <a href="/first" title="First">One</a> between <a href="/second" title="Second">Two</a> after</p><figure><img src="/context-image.png" width="80" height="50" alt="Archive image"><figcaption>Caption</figcaption></figure>');
+        reader.editor.focus();
+        const paragraph = reader.editor.surface.querySelector('p')!;
+        const range = document.createRange();
+        range.selectNodeContents(paragraph);
+        document.getSelection()!.removeAllRanges();
+        document.getSelection()!.addRange(range);
+        reader.links.refresh();
+      });
+      const mixed = page.locator('[data-reading-probe] .mw-contextual-link');
+      await expect(mixed).toBeVisible();
+      await expect(mixed.locator('[data-mw-link-action="open"]')).toBeHidden();
+      await mixed.locator('[data-mw-link-action="remove"]').click();
+      await expect(page.locator('[data-reading-probe] .mw-content p a')).toHaveCount(0);
+      await page.evaluate(() => {
+        const reader = window.morfiraOptionalUI.getReading();
+        reader.editor.undo();
+      });
+      await expect(page.locator('[data-reading-probe] .mw-content p a')).toHaveCount(2);
+      await page.locator('[data-reading-probe] figcaption').scrollIntoViewIfNeeded();
+      await page.evaluate(() => {
+        const reader = window.morfiraOptionalUI.getReading();
+        const text = reader.editor.surface.querySelector('figcaption')!.firstChild!;
+        reader.editor.focus();
+        document.getSelection()!.setBaseAndExtent(text, 2, text, 2);
+        reader.image.refresh();
+      });
+      const imageContext = page.locator('[data-reading-probe] .mw-contextual-image');
+      await expect(imageContext).toBeVisible();
+      await imageContext.locator('[data-mw-image-action="remove"]').click();
+      await expect(page.locator('[data-reading-probe] .mw-content figure')).toHaveCount(0);
+      await page.evaluate(() => window.morfiraOptionalUI.getReading().editor.undo());
+      await expect(page.locator('[data-reading-probe] .mw-content figcaption')).toHaveText('Caption');
       await page.evaluate(() => window.morfiraOptionalUI.dispose());
       await expect(page.locator('.mw-editor')).toHaveCount(0);
       assert.deepEqual(errors, [], 'Installed optional UI must not emit browser errors.');
@@ -160,7 +196,7 @@ try {
   finally {
     await server.close();
   }
-  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, literal insertion/Undo, preview, save state, fullscreen/Escape, merged-cell typography, email completion, print/outline, text move/Undo and cleanup (Chromium only).');
+  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, literal insertion/Undo, preview, save state, fullscreen/Escape, merged-cell typography, email completion, print/outline, text move/Undo, mixed-link/caption contexts and cleanup (Chromium only).');
 }
 finally {
   await rm(temporary, { recursive: true, force: true });

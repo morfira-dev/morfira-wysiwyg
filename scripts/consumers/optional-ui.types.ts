@@ -6,11 +6,15 @@ import type { SpecialCharacterUIController } from '@morfira-dev/wysiwyg/ui/speci
 import type { FullscreenUIController } from '@morfira-dev/wysiwyg/ui/fullscreen';
 import type { PrintUIController } from '@morfira-dev/wysiwyg/ui/print';
 import type { OutlineUIController } from '@morfira-dev/wysiwyg/ui/outline';
+import type { ContextualLinkUIController } from '@morfira-dev/wysiwyg/ui/contextual-link';
+import type { ContextualImageUIController } from '@morfira-dev/wysiwyg/ui/contextual-image';
 
 export interface ReadingProbe {
   editor: Editor;
   print: PrintUIController;
   outline: OutlineUIController;
+  links: ContextualLinkUIController;
+  image: ContextualImageUIController;
 }
 
 export interface OptionalUIProbe {

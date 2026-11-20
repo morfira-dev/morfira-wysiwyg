@@ -10,6 +10,9 @@ import { tableProperties, tablePropertyCommands } from '@morfira-dev/wysiwyg/plu
 import { createPrintUI } from '@morfira-dev/wysiwyg/ui/print';
 import { createOutlineUI } from '@morfira-dev/wysiwyg/ui/outline';
 import { textDrop } from '@morfira-dev/wysiwyg/plugins/text-drop';
+import { images } from '@morfira-dev/wysiwyg/plugins/images';
+import { createContextualLinkUI } from '@morfira-dev/wysiwyg/ui/contextual-link';
+import { createContextualImageUI } from '@morfira-dev/wysiwyg/ui/contextual-image';
 import type { OptionalUIProbe, ReadingProbe } from './optional-ui.types.js';
 
 const target = document.createElement('section');
@@ -45,10 +48,13 @@ const probe: OptionalUIProbe = {
     const host = document.createElement('div');
     const printHost = document.createElement('div');
     const outlineHost = document.createElement('div');
-    readingHost.append(host, printHost, outlineHost);
+    const linkHost = document.createElement('div');
+    const imageHost = document.createElement('div');
+    readingHost.append(host, printHost, outlineHost, linkHost, imageHost);
     document.body.append(readingHost);
-    const instance = createEditor(host, { locale: 'en', value: '<h2>Section</h2><p>Body</p>', plugins: [textDrop()] });
-    reading = { editor: instance, print: createPrintUI(printHost, instance), outline: createOutlineUI(outlineHost, instance) };
+    const instance = createEditor(host, { locale: 'en', value: '<h2>Section</h2><p>Body</p>', plugins: [textDrop(), images()] });
+    reading = { editor: instance, print: createPrintUI(printHost, instance), outline: createOutlineUI(outlineHost, instance),
+      links: createContextualLinkUI(linkHost, instance), image: createContextualImageUI(imageHost, instance) };
   },
   getReading: () => {
     if (!reading) throw new Error('Create the reading editor first.');
@@ -79,6 +85,8 @@ const probe: OptionalUIProbe = {
     featureEditor.setSelection(0);
   },
   dispose: () => {
+    reading?.links.destroy();
+    reading?.image.destroy();
     reading?.print.destroy();
     reading?.outline.destroy();
     reading?.editor.destroy();

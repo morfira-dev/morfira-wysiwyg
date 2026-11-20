@@ -63,8 +63,9 @@ for (const english of [false, true]) test(`link selection actions edit and unlin
   await undo.click();
   await expect(link).toHaveAttribute('href', 'https://example.com/updated');
   await lab.getByRole('button', { name: t('Выделить текст через границу ссылки', 'Select across the link boundary'), exact: true }).click();
-  await expect(contextual).toBeHidden();
-  await expect(page.locator('.mw-contextual-toolbar')).toBeVisible();
+  await expect(contextual).toBeVisible();
+  await expect(contextual.locator('[data-mw-link-action="open"]')).toBeHidden();
+  await expect(page.locator('.mw-contextual-toolbar')).toBeHidden();
   await link.locator('strong').click();
   await expect(contextual).toBeVisible();
   const box = await contextual.boundingBox();

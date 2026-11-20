@@ -252,7 +252,7 @@ CSS is scoped to `.mw-form`. It uses common `--mw-text`, `--mw-muted`, `--mw-sur
 
 Nonempty selections can use the separate [contextual UI](/en/contextual-toolbar), rather than a behavior plugin: `/ui/contextual` plus explicit `/ui/contextual.css`. Presets do not install it; it reuses existing commands/history.
 
-A caret or text range wholly inside one link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open and whole-link editing/unlinking with Undo. Plain text without a link, mixed ranges and multiple anchors are excluded; presets do not install this UI.
+A caret or text range wholly inside one link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open and whole-link editing/unlinking with Undo. Pure unlinked text stays with text formatting, while eligible mixed single-flow linked ranges use selected-part actions without Open; presets do not install this UI.
 
 ## Contextual table actions
 
@@ -293,3 +293,5 @@ The table properties form also includes native `cellTextAlign` and `cellDirectio
 [Document outline](/en/outline) is a separate `/ui/outline` module with CSS, a bounded list of ordinary headings and native navigation buttons. It adds no document anchors or IDs. Both modules work read-only, stay outside preset defaults and appear in the homepage's “Print and outline” section.
 
 [Text drag and drop](/en/text-drop) is `/plugins/text-drop` behavior without a UI wrapper or CSS requirement. The full demo installs it explicitly and prepares a rich selection for pointer dragging, reselection after Undo, or normal keyboard Cut/Copy/Paste. Presets do not change drop behavior automatically; files/images and semantic nodes retain their own ownership boundaries.
+
+Contextual image properties also accept whole simple figures and ordinary caption carets, preserving the original Range. Mixed linked text within one inline flow edits only selected portions; different URLs are never guessed in form drafts. [Images](/en/contextual-images#whole-figures-and-caption-carets) · [Links](/en/contextual-links#text-across-multiple-links).

@@ -314,10 +314,10 @@ Optional [LTR/RTL text direction](/en/text-direction), through `/plugins/text-di
 
 The optional [contextual selection toolbar](/en/contextual-toolbar) uses the independent `/ui/contextual` entry. `getFormats(range?)` projects a remembered current Range without moving Selection/focus; omission retains existing behavior. Shell custom readers receive a cloned range as their second argument, while commands still validate the actual target.
 
-A caret or text range wholly inside one ordinary link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open and whole-link editing/unlinking with Undo. When both are mounted, this module takes priority over the contextual text toolbar for an eligible range; plain text, mixed ranges and multiple anchors retain the text toolbar's previous behavior. Presets do not install this UI.
+A caret or text range wholly inside one ordinary link can use separate [contextual link actions](/en/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open and whole-link editing/unlinking with Undo. When both are mounted, this module takes priority over the contextual text toolbar for an eligible range; pure unlinked text retains text formatting. An eligible mixed single-flow linked range offers selected-part Apply/Remove without Open. Presets do not install this UI.
 
 
-Explicit [contextual image properties](/en/contextual-images) use `/ui/contextual-image` with the images plugin, an exact IMG node Range and existing update/remove history. The reused image form adds `mode?: ImageFormMode` (`all` by default, `edit` excludes Insert/upload and makes Enter update). Caption carets and whole-figure ranges are outside this first contextual slice.
+Explicit [contextual image properties](/en/contextual-images) use `/ui/contextual-image` with the images plugin, an exact IMG node Range and existing update/remove history. The reused image form adds `mode?: ImageFormMode` (`all` by default, `edit` excludes Insert/upload and makes Enter update). Whole simple-figure Ranges and ordinary caption carets are also supported: placement follows IMG and Escape restores the original Range. Caption links/code and expanded caption ranges are excluded.
 
 ## Contextual table actions
 

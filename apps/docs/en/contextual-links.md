@@ -2,7 +2,7 @@
 
 The [homepage](/en/#editor) and [playground](/en/playground) enable a separate **Link actions** switch. Load its sample and place the caret inside link text, or use “Select link text” / “Select link text backward”. Its address and **Open link**, **Edit link**, **Remove link** appear. Automatic showing neither takes focus nor opens a website. The selection buttons do not change the document or history.
 
-Expanded-range support is implemented locally; its regressions are authored but have not been executed yet. Earlier caret-only results do not validate the new scenario. Actual runs are tracked separately in the roadmap.
+Caret, single-anchor text ranges and mixed linked ranges have separate scenarios. Actual runs are tracked in the roadmap; historical results do not automatically validate new contexts.
 
 ## Installation
 
@@ -32,11 +32,11 @@ The controller provides `element`, `refresh()` and idempotent `destroy()`. Refre
 
 ## Caret, selection, actions and history
 
-Eligibility requires **a caret or nonempty text range wholly inside one actual ordinary HTML anchor**, within the focused editor. A partial range may cross differently formatted text children in either direction. Outer parent boundaries, plain text without a link, mixed linked/plain ranges, multiple anchors and image-only links are excluded. Owning semantic nodes and foreign namespaces are also excluded: the whole anchor, including descendants outside the selected substring, and its ancestors are checked. Use the standard form or [contextual formatting toolbar](/en/contextual-toolbar) to create a link on plain text.
+Single-anchor mode requires **a caret or nonempty text range wholly inside one actual ordinary HTML anchor**, within the focused editor. A partial range may cross differently formatted text children in either direction. Plain text without a link remains with text formatting; the mixed single-flow profile below supports linked/plain ranges and multiple anchors. Cross-block boundaries and image-only links remain excluded. Owning semantic nodes and foreign namespaces are also excluded: the whole anchor, including descendants outside the selected substring, and its ancestors are checked. Use the standard form or [contextual formatting toolbar](/en/contextual-toolbar) to create a link on plain text.
 
-**Actions apply to the whole existing link.** For example, selecting `orfi` within `<a><strong>Mor</strong><em>fira</em></a>` and changing the URL updates that entire anchor; Remove unlinks it entirely. This does not split a partial selection into separate link fragments. Original text, rich content, selection and direction survive, with one Undo per change.
+**Single-anchor actions apply to that whole link.** For example, selecting `orfi` within `<a><strong>Mor</strong><em>fira</em></a>` and changing the URL updates that entire anchor; Remove unlinks it entirely. This does not split a partial selection into separate link fragments. Original text, rich content, selection and direction survive, with one Undo per change.
 
-When both contextual modules are mounted, link actions take priority for an eligible range inside one link: the text toolbar hides and yields Alt+F10. Plain/mixed text keeps its existing text toolbar behavior. Unmounting link actions restores text toolbar handling for that range. Both modules remain independently and explicitly installed; presets do not add them.
+When both contextual modules are mounted, link actions take priority for an eligible range inside one link: the text toolbar hides and yields Alt+F10. Pure unlinked text keeps its existing text toolbar behavior; eligible mixed linked ranges use the range actions below. Unmounting link actions restores text toolbar handling for that range. Both modules remain independently and explicitly installed; presets do not add them.
 
 - **Open** is a native anchor with `target="_blank"` and `rel="noopener noreferrer"`. Navigation requires an explicit user action.
 - **Edit** restores the remembered range, rechecks the same anchor and opens the existing form with focus in its URL field. The form uses explicit `scope: 'anchor'` to update whole-link metadata without replacing its text.
@@ -55,3 +55,11 @@ Moving focus into owned controls can temporarily clear native Selection: the UI 
 The actual current href is validated through the editor codec before preview and immediately before opening, then resolved against `document.baseURI`. Only **http/https/mailto/tel** are allowed; relative URLs require a safe resolved result. Protocol-relative URLs, control/space-obfuscated values and unsafe schemes are ineligible. The codec trims outer whitespace around otherwise safe URLs; internal control/space obfuscations are rejected. URL/messages render as plain text, never HTML. Validation neither fetches a link nor creates a remote page preview.
 
 This frontend boundary does not replace server validation, CSP or application policy for external destinations. Custom text and `onError` belong to trusted application code. Image/table controls, arbitrary portals, transformed-coordinate mapping and complete accessibility/mobile certification are not added. Actual checks and sizes are recorded separately in the [roadmap](/en/roadmap#verification-and-limits).
+
+## Text across multiple links
+
+Choose **Load multiple-link selection** in the demo. The range covers part of the first link, plain text and part of the second. In this mode **Set link for selection** opens the existing form with `scope: 'selection'` and empty metadata drafts; **Remove links from selection** unlinks only selected portions. No Open URL action is offered because there is no single navigation target.
+
+Applying one address links the selected text while unselected parts keep their original URLs, title/target and formatting. Rich text and backward direction survive, with one Undo/Redo operation. Text wholly within one anchor keeps the existing whole-anchor mode.
+
+Mixed context requires one ordinary inline flow: paragraph/heading, list item, quote or cell. Cross-block ranges, selected images, code, semantic/foreign/hidden content are excluded. Pure unlinked text stays with text formatting; an eligible mixed linked range receives only link actions. Read-only blocks editing; replacement, lost ownership and stale drafts cannot redirect the operation to new content.
