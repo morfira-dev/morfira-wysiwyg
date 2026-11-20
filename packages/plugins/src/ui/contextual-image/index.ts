@@ -5,7 +5,7 @@ import { createImageFormBase as createImageForm } from '../images/form-base.js';
 import { imageCommands } from '../../images/index.js';
 import type { ImageFormController } from '../images/types.js';
 import { contextualAnchor, placeContextualToolbar } from '../contextual/geometry.js';
-import { sameContextualRange } from '../contextual/selection.js';
+import { sameContextualRange } from '../shared/range.js';
 import { contextualImageUIMessages } from './messages.js';
 import { contextualImageTarget, nativeContextualImage, ordinaryContextualImage } from './target.js';
 import type { ContextualImageTarget } from './internal-types.js';
@@ -128,7 +128,7 @@ export const createContextualImageUI = (host: HTMLElement, editor: Editor, optio
       return;
     }
     current = target;
-    const anchor = contextualAnchor(surface, target.range);
+    const anchor = contextualAnchor(surface, target.placementRange);
     if (!anchor) {
       element.hidden = true;
       focusRequested = false;
@@ -231,7 +231,15 @@ export const createContextualImageUI = (host: HTMLElement, editor: Editor, optio
     if (!previous) return;
     restoring++;
     try {
-      if (!selection.restore() || disposed || revision !== apiRevision) return;
+      const range = previous.range.cloneRange();
+      const before = editor.getHTML();
+      const point = [range.startContainer, range.startOffset, range.endContainer, range.endOffset] as const;
+      const accepts = (): boolean => !disposed && !composing && !editor.isReadOnly() && revision === apiRevision
+        && (document.activeElement === surface || surface.contains(document.activeElement)) && editor.getHTML() === before
+        && range.startContainer === point[0] && range.startOffset === point[1]
+        && range.endContainer === point[2] && range.endOffset === point[3]
+        && contextualImageTarget(editor, range)?.image === previous.image;
+      if (!selection.restore(accepts) || disposed || revision !== apiRevision) return;
       const target = nativeContextualImage(editor);
       if (target?.image !== previous.image) return;
       current = target;
@@ -257,7 +265,7 @@ export const createContextualImageUI = (host: HTMLElement, editor: Editor, optio
     }
     if (!disposed && !element.hidden && !composing) {
       const target = inspectCurrent();
-      if (target && contextualAnchor(surface, target.range)) {
+      if (target && contextualAnchor(surface, target.placementRange)) {
         current = target;
         selection.capture();
         return;

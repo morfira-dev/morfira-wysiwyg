@@ -202,7 +202,7 @@ test('inline caption promotion in a merged cell keeps adjacent cells and support
   expect(await html(page)).toBe(before);
 });
 
-test('ineligible figure, caption, mixed, semantic and foreign selections do not expose image actions', async ({ page }) => {
+test('eligible figures and caption carets retain structural, semantic and foreign selection barriers', async ({ page }) => {
   await initialize(page);
   await select(page);
   await expect(panel(page)).toBeVisible();
@@ -241,7 +241,7 @@ test('ineligible figure, caption, mixed, semantic and foreign selections do not 
     surface.append(foreign);
     const foreignRange = inspect(foreign);
     return { wholeFigure, captionCaret, mixed, multi, semantic, foreignRange };
-  })).toEqual({ wholeFigure: true, captionCaret: true, mixed: true, multi: true, semantic: true, foreignRange: true });
+  })).toEqual({ wholeFigure: false, captionCaret: false, mixed: true, multi: true, semantic: true, foreignRange: true });
 });
 
 test('read-only, IME, API replacement and focus-time destruction keep retained actions inert', async ({ page }) => {

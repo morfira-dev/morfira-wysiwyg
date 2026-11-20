@@ -1,5 +1,36 @@
 # Contextual image properties — U3d
 
+## Whole-figure and caption-caret context — 2026-11-20
+
+This addendum supersedes the first-slice rejection of whole-figure node ranges
+and ordinary caption carets below. No new public factory/option, format, core
+change, dependency, image clone or implicit preset is required.
+
+Accept exactly one node Range selecting a simple FIGURE owning one direct IMG
+and at most one direct FIGCAPTION, under the existing ordinary ownership rules.
+Also accept a collapsed actual caret inside that figure's ordinary caption.
+Reject expanded caption ranges, mixed text/figure ranges, complex/multiple-image
+figures, protected/foreign owners and hidden content. A caption caret inside an
+anchor or code/semantic content stays with its existing owner, not image context.
+Validate the actual caption path and visibility, not only image ancestors.
+
+Keep the original native range and direction for restoration, dismissal and
+focus-time revalidation; never select the IMG merely to show UI. Use a separate
+actual IMG node Range for placement so a long caption/full-figure range does not
+anchor actions far away. Existing image commands already resolve these contexts;
+reuse validated edit/remove and the edit-only form. Escape before mutation restores
+the exact caption/figure range once. API replacement, Undo node replacement,
+callback edits, readonly/IME and dismissal retain existing guards. Changed/removed
+captions may invalidate old context; never retarget drafts to recreated images.
+Native IMG selection remains compatible; Alt+F10 opens these eligible Properties.
+
+Add representative three-browser tests: figure edit/remove/history, caption caret
+restoration/keyboard, rich unchanged captions, readonly, competing link/protected
+caption ownership, stale focus/API/disposal and resource identity. Preserve prior
+node-selection regressions; update only newly supported negative expectations.
+Add RU/EN demo/docs. Keep existing 16000 gzip JS/3000 raw CSS and standard guards;
+focused tests only, no full matrices or implicit Git writes.
+
 Status: accepted implementation contract. Actual validation belongs to verification-backlog.md.
 
 ## Independent entry and eligibility
