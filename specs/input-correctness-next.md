@@ -1,5 +1,11 @@
 # Next input-correctness slices
 
+The optional single-flow rich text drag/drop implementation now follows
+[text-drop.md](text-drop.md), with actual focused verification recorded separately.
+It supports bounded own-editor move/copy and external inline/plain copy, not
+general structural dragging. Core retains its blocked-default drop policy; the
+historical audit below describes the baseline before this explicit plugin.
+
 Status: read-only code/test audit and proposed follow-up scope. No runtime behavior is implemented or newly certified by this document. The current ready UI/preset release is separate. Existing contracts remain `block-boundaries.md`, `composition.md`, `lists-toolbar.md`, `plugin-sdk.md` and `transactions.md`.
 
 The subsequent accepted sibling-leaf implementation contract is `input-replacement.md`; semantic heading behavior is specified in `block-boundaries.md`, and clipboard/API insertion over these leaf boundaries follows `paste-replacement.md`. The next bounded list-selection contract is `list-selection.md`, with forward Delete in `lists-toolbar.md`; this newer list code is not yet verified (`verification-backlog.md`). Those contracts supersede the corresponding proposals below. This audit retains the original evidence and unimplemented follow-up scenarios; it is not a current validation report.

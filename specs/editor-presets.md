@@ -164,3 +164,48 @@ The `standard-special-characters-ready` profile adds only `createSpecialCharacte
 ## Independently selected fullscreen UI
 
 The `standard-fullscreen-ready` profile adds only `createFullscreenUI` and its explicit CSS to standard ready, with shared JS counted once. Keep 80000 gzip JS / 20000 raw CSS for this selected closure, and 8000 gzip JS / 2000 raw CSS for the standalone fullscreen entry. There is no implicit fullscreen control in presets and no additional framework/DOM mount. Current measurements belong to verification-backlog.md.
+
+## Independently selected preview and save state
+
+The `standard-preview-ready`, `standard-save-state-ready`, and combined
+`standard-authoring-ready` profiles add only the explicitly selected preview UI,
+application-owned save-state behavior and save-state UI to standard ready. Count
+shared JS once, and retain 80000 gzip JS / 20000 raw CSS. Neither capability is
+installed by presets. Standalone preview and save-state UI use 12000 gzip JS;
+headless save-state uses 8000 gzip JS; CSS guards are 3000/2000 raw bytes respectively.
+Actual validation and measurements belong to verification-backlog.md.
+
+## Explicit email completion and selected-cell typography
+
+Standard/extended forward `autolink: { email: true }` to the existing optional
+autolink plugin; omitted/false email keeps URL-only completion. The new option
+does not add another plugin, locale, network request or completion route. Existing
+autolink and preset profiles measure the entire retained implementation, including
+the opt-in recognizer; a runtime false is not a tree-shaking boundary.
+
+The existing standard/extended-table-properties-ready profiles include the added
+cellTextAlign/cellDirection command fields and native form selects. They remain
+optional, reuse existing codecs and CSS, and retain the current selected-profile
+guards. Actual measurements and focused validation belong to the verification
+record, rather than the historical sizes above.
+
+## Independently selected reading tools
+
+The `standard-print-ready`, `standard-outline-ready` and combined
+`standard-reading-ready` profiles add only createPrintUI/createOutlineUI and their
+explicit stylesheets to standard ready, counting shared JS once. No core or
+default preset installs either tool. Existing standard guards remain 80000 gzip
+JS / 20000 raw CSS. Standalone public print closure uses 12000 gzip JS / 4000 raw
+CSS guards, outline uses 10000 gzip JS / 3000 raw CSS. Print includes its required
+safe snapshot builder, while outline never retains the document serializer.
+Actual measurements and verification belong to verification-backlog.md.
+
+## Independently selected text drag/drop
+
+The standard-text-drop-ready profile retains textDrop and the standard ready
+factories through their built public imports. It does not install text drag/drop
+by default or add CSS. Shared JS is counted once and the selected profile keeps
+80000 gzip JS / 20000 raw CSS. The standalone public plugin closure has a 15000
+gzip JS guard, including any required core helpers. Runtime enabled:false is a
+preference rather than a claim that the import graph disappears. Current bounds
+and actual browser/archive evidence belong to text-drop.md and verification-backlog.md.

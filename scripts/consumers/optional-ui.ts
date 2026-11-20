@@ -28,6 +28,22 @@ try {
     import assert from 'node:assert/strict';
     const { createFullscreenUI } = await import('@morfira-dev/wysiwyg/ui/fullscreen');
     const { createSpecialCharacterUI } = await import('@morfira-dev/wysiwyg/ui/special-characters');
+    const { createPreviewUI } = await import('@morfira-dev/wysiwyg/ui/preview');
+    const { saveState } = await import('@morfira-dev/wysiwyg/plugins/save-state');
+    const { createSaveStateUI } = await import('@morfira-dev/wysiwyg/ui/save-state');
+    const { createPrintUI } = await import('@morfira-dev/wysiwyg/ui/print');
+    const { createOutlineUI } = await import('@morfira-dev/wysiwyg/ui/outline');
+    assert.equal(typeof createPrintUI, 'function');
+    assert.equal(typeof createOutlineUI, 'function');
+    const { autolink } = await import('@morfira-dev/wysiwyg/plugins/autolink');
+    const { tableProperties } = await import('@morfira-dev/wysiwyg/plugins/table-properties');
+    const { textDrop } = await import('@morfira-dev/wysiwyg/plugins/text-drop');
+    assert.equal(typeof textDrop().setup, 'function');
+    assert.equal(typeof autolink({ email: true }).setup, 'function');
+    assert.equal(typeof tableProperties().setup, 'function');
+    assert.equal(typeof createPreviewUI, 'function');
+    assert.equal(typeof saveState, 'function');
+    assert.equal(typeof createSaveStateUI, 'function');
     assert.equal(typeof globalThis.document, 'undefined');
     assert.equal(typeof createFullscreenUI, 'function');
     assert.equal(typeof createSpecialCharacterUI, 'function');
@@ -43,7 +59,7 @@ try {
     assert.ok(!input.includes('/packages/') && !input.startsWith('packages/'), `Unexpected workspace source or artifact alias: ${input}`);
   }
   const stylesheet = await build({
-    stdin: { contents: "@import '@morfira-dev/wysiwyg/style.css'; @import '@morfira-dev/wysiwyg/ui/special-characters.css'; @import '@morfira-dev/wysiwyg/ui/fullscreen.css';", resolveDir: temporary, loader: 'css' },
+    stdin: { contents: "@import '@morfira-dev/wysiwyg/style.css'; @import '@morfira-dev/wysiwyg/ui/special-characters.css'; @import '@morfira-dev/wysiwyg/ui/fullscreen.css'; @import '@morfira-dev/wysiwyg/ui/preview.css'; @import '@morfira-dev/wysiwyg/ui/save-state.css'; @import '@morfira-dev/wysiwyg/ui/print.css'; @import '@morfira-dev/wysiwyg/ui/outline.css';", resolveDir: temporary, loader: 'css' },
     bundle: true, minify: true, write: false, logLevel: 'silent',
   });
   const site = join(temporary, 'site');
@@ -63,6 +79,14 @@ try {
       await expect(content).toHaveText('AB');
       await page.getByRole('button', { name: /Consumer euro/ }).click();
       await expect(content).toHaveText('A€B');
+      assert.equal(await page.evaluate(() => window.morfiraOptionalUI.saveState.getState().dirty), true);
+      assert.equal(await page.evaluate(() => window.morfiraOptionalUI.saveState.save()), true);
+      assert.equal(await page.evaluate(() => window.morfiraOptionalUI.getSaveCalls()), 1);
+      assert.equal(await page.evaluate(() => window.morfiraOptionalUI.saveState.getState().status), 'saved');
+      await page.evaluate(() => window.morfiraOptionalUI.preview.open());
+      await expect(page.locator('.mw-preview-content')).toHaveText('A€B');
+      await expect(content).toHaveText('A€B');
+      await page.evaluate(() => window.morfiraOptionalUI.preview.close());
       await page.evaluate(() => window.morfiraOptionalUI.editor.undo());
       await expect(content).toHaveText('AB');
       assert.equal(await page.evaluate(() => window.morfiraOptionalUI.fullscreen.enter()), true);
@@ -71,6 +95,60 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await page.evaluate(() => window.morfiraOptionalUI.fullscreen.isActive()), false);
       await expect(content).toHaveText('AB');
+      await page.evaluate(() => window.morfiraOptionalUI.setupFeatures());
+      const featureContent = page.locator('[data-feature-probe] .mw-content');
+      await page.keyboard.type('User+tag@example.com ');
+      await expect(featureContent.locator('a')).toHaveAttribute('href', 'mailto:User+tag@example.com');
+      await expect(featureContent.locator('td').first()).toHaveAttribute('dir', 'rtl');
+      await expect(featureContent.locator('td').first()).toHaveCSS('text-align', 'center');
+      await page.evaluate(() => window.morfiraOptionalUI.setupReading());
+      await page.locator('[data-reading-probe] .mw-outline button').click();
+      assert.deepEqual(await page.evaluate(() => {
+        const selection = document.getSelection();
+        const node = selection?.anchorNode;
+        const element = node?.nodeType === 1 ? node as Element : node?.parentElement;
+        return { heading: element?.closest('h2')?.textContent, collapsed: selection?.isCollapsed, offset: selection?.anchorOffset };
+      }), { heading: 'Section', collapsed: true, offset: 0 });
+      assert.deepEqual(await page.evaluate(() => {
+        const reader = window.morfiraOptionalUI.getReading();
+        const originalPrint = window.print;
+        let calls = 0;
+        let text = '';
+        window.print = () => {
+          calls++;
+          text = document.querySelector('[data-mw-print-surface]')?.textContent ?? '';
+          window.dispatchEvent(new Event('afterprint'));
+        };
+        try {
+          return { accepted: reader.print.print(), calls, text,
+            pending: reader.print.isPrinting(), undo: reader.editor.canUndo(),
+            lease: document.body.hasAttribute('data-mw-print-active') };
+        }
+        finally { window.print = originalPrint; }
+      }), { accepted: true, calls: 1, text: 'SectionBody', pending: false, undo: false, lease: false });
+      assert.deepEqual(await page.evaluate(() => {
+        const editor = window.morfiraOptionalUI.getReading().editor;
+        const source = editor.surface.querySelector('p')!;
+        const heading = editor.surface.querySelector('h2')!;
+        editor.focus();
+        const selection = document.getSelection()!;
+        const range = document.createRange();
+        range.selectNodeContents(source);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        const transfer = new DataTransfer();
+        source.dispatchEvent(new DragEvent('dragstart', { dataTransfer: transfer, bubbles: true, cancelable: true }));
+        const destination = document.createRange();
+        destination.setStart(heading.firstChild!, heading.firstChild!.textContent!.length);
+        destination.collapse(true);
+        const box = destination.getBoundingClientRect();
+        heading.dispatchEvent(new DragEvent('drop', { dataTransfer: transfer, clientX: box.left + 1,
+          clientY: box.top + box.height / 2, bubbles: true, cancelable: true }));
+        source.dispatchEvent(new DragEvent('dragend', { dataTransfer: transfer, bubbles: true }));
+        const moved = [heading.textContent, source.textContent, editor.canUndo()];
+        editor.undo();
+        return { moved, restored: [...editor.surface.children].map((block) => block.textContent), undo: editor.canUndo() };
+      }), { moved: ['SectionBody', '', true], restored: ['Section', 'Body'], undo: false });
       await page.evaluate(() => window.morfiraOptionalUI.dispose());
       await expect(page.locator('.mw-editor')).toHaveCount(0);
       assert.deepEqual(errors, [], 'Installed optional UI must not emit browser errors.');
@@ -82,7 +160,7 @@ try {
   finally {
     await server.close();
   }
-  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, literal insertion/Undo, fullscreen/Escape and cleanup (Chromium only).');
+  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, literal insertion/Undo, preview, save state, fullscreen/Escape, merged-cell typography, email completion, print/outline, text move/Undo and cleanup (Chromium only).');
 }
 finally {
   await rm(temporary, { recursive: true, force: true });

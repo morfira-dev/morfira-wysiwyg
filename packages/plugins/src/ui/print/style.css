@@ -1,0 +1,25 @@
+.mw-print { color: var(--mw-text, #263043); font-family: var(--mw-font, system-ui, sans-serif); }
+.mw-print-controls { display: flex; align-items: center; flex-wrap: wrap; gap: var(--mw-print-gap, 8px); }
+.mw-print button { font: inherit; color: inherit; background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-control-radius, 6px); padding: 6px 10px; cursor: pointer; }
+.mw-print button:focus-visible { outline: 2px solid var(--mw-focus, #2563eb); outline-offset: 2px; }
+.mw-print button:disabled { cursor: default; opacity: .55; }
+.mw-print-status { margin: 6px 0; color: var(--mw-muted, #687486); }
+.mw-print [hidden] { display: none !important; }
+.mw-print-surface { --mw-print-ready: 1; display: none !important; }
+@media print {
+  body[data-mw-print-active] { display: block !important; overflow: visible !important; height: auto !important; }
+  body[data-mw-print-active] > :not(.mw-print-surface) { display: none !important; }
+  body[data-mw-print-active] > .mw-print-surface { display: block !important; color: var(--mw-print-color, #000); background: var(--mw-print-background, #fff); font: var(--mw-print-font-size, 12pt)/var(--mw-print-line-height, 1.5) system-ui, sans-serif; overflow-wrap: anywhere; }
+  .mw-print-surface h1, .mw-print-surface h2, .mw-print-surface h3, .mw-print-surface h4, .mw-print-surface h5, .mw-print-surface h6 { break-after: avoid; }
+  .mw-print-surface table { display: table; width: auto; max-width: 100%; border-collapse: collapse; }
+  .mw-print-surface thead { display: table-header-group; }
+  .mw-print-surface tfoot { display: table-footer-group; }
+  .mw-print-surface tr { break-inside: avoid; }
+  .mw-print-surface td, .mw-print-surface th { border: 1px solid var(--mw-print-border, #777); padding: .3em .5em; }
+  .mw-print-surface caption, .mw-print-surface figcaption { text-align: start; }
+  .mw-print-surface pre { white-space: pre-wrap; }
+  .mw-print-surface [data-checklist-checked] { list-style-type: none; }
+  .mw-print-surface [data-checklist-checked]::before { content: '☐ '; }
+  .mw-print-surface [data-checklist-checked="true"]::before { content: '☑ '; }
+  .mw-print-surface .mw-preview-image { padding: .1em .3em; border: 1px dashed var(--mw-print-border, #777); }
+}

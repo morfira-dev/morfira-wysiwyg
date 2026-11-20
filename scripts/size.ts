@@ -36,6 +36,11 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     const pickerCSS = await readFile(`${path}/ui/table-picker.css`);
     report['ui-table-picker.css'] = { raw: pickerCSS.length, gzip: gzipSync(pickerCSS).length, brotli: brotliCompressSync(pickerCSS).length };
     if (pickerCSS.length > 2000) { console.error('table-picker: exceeds 2000 raw CSS byte budget'); failed = true; }
+    for (const [feature, budget] of [['preview', 3000], ['save-state', 2000], ['print', 4000], ['outline', 3000]] as const) {
+      const css = await readFile(`${path}/ui/${feature}.css`);
+      report[`ui-${feature}.css`] = { raw: css.length, gzip: gzipSync(css).length, brotli: brotliCompressSync(css).length };
+      if (css.length > budget) { console.error(`${feature}: exceeds ${budget} raw CSS byte budget`); failed = true; }
+    }
     const fullscreenCSS = await readFile(`${path}/ui/fullscreen.css`);
     report['ui-fullscreen.css'] = { raw: fullscreenCSS.length, gzip: gzipSync(fullscreenCSS).length, brotli: brotliCompressSync(fullscreenCSS).length };
     if (fullscreenCSS.length > 2000) { console.error('fullscreen: exceeds 2000 raw CSS byte budget'); failed = true; }
@@ -61,7 +66,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     report['ui-search-highlights.css'] = { raw: searchCSS.length, gzip: gzipSync(searchCSS).length, brotli: brotliCompressSync(searchCSS).length };
     if (searchCSS.length > 1500) { console.error('search highlights: exceeds 1500 raw CSS byte budget'); failed = true; }
     const editorCSS = await readFile(`${path}/ui/editor.css`); report['ui-editor.css'] = { raw: editorCSS.length, gzip: gzipSync(editorCSS).length, brotli: brotliCompressSync(editorCSS).length };
-    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/special-characters', 'ui/fullscreen', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/search-highlights']) {
+    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/special-characters', 'ui/fullscreen', 'ui/preview', 'ui/save-state', 'ui/print', 'ui/outline', 'text-drop', 'save-state', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/search-highlights']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].gzip > 150_000) { console.error(`${entry}: exceeds 150000 byte gzip JS budget`); failed = true; }
@@ -69,6 +74,10 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
       if (entry === 'ui/search-highlights' && report[`${entry}.js`].gzip > 8000) { console.error('search highlights: exceeds 8000 gzip JS byte budget'); failed = true; }
       if (entry === 'checklists' && report[`${entry}.js`].raw > 8000) { console.error('checklists: exceeds 8000 byte JS budget'); failed = true; }
       if (entry === 'horizontal-rule' && report[`${entry}.js`].raw > 5000) { console.error('horizontal-rule: exceeds 5000 byte JS budget'); failed = true; }
+      if (['ui/preview', 'ui/save-state', 'ui/print'].includes(entry) && report[`${entry}.js`].gzip > 12000) { console.error(`${entry}: exceeds 12000 gzip JS byte budget`); failed = true; }
+      if (entry === 'ui/outline' && report[`${entry}.js`].gzip > 10000) { console.error('outline: exceeds 10000 gzip JS byte budget'); failed = true; }
+      if (entry === 'text-drop' && report[`${entry}.js`].gzip > 15000) { console.error('text-drop: exceeds 15000 gzip JS byte budget'); failed = true; }
+      if (entry === 'save-state' && report[`${entry}.js`].gzip > 8000) { console.error('save-state: exceeds 8000 gzip JS byte budget'); failed = true; }
       if (entry === 'ui/fullscreen' && report[`${entry}.js`].gzip > 8000) { console.error('fullscreen: exceeds 8000 gzip JS byte budget'); failed = true; }
       if (entry === 'ui/special-characters' && report[`${entry}.js`].gzip > 12000) { console.error('special characters: exceeds 12000 gzip JS byte budget'); failed = true; }
       if (entry === 'ui/table-picker' && report[`${entry}.js`].gzip > 4000) { console.error('table-picker: exceeds 4000 gzip JS byte budget'); failed = true; }
@@ -124,13 +133,28 @@ if (report['fullscreen-standalone.js'].gzip > 8000) {
   console.error('standalone fullscreen: exceeds 8000 gzip JS byte budget');
   failed = true;
 }
+for (const [entry, symbol, label, budget] of [['ui/preview', 'createPreviewUI', 'preview', 12000], ['ui/save-state', 'createSaveStateUI', 'save-state-ui', 12000], ['ui/print', 'createPrintUI', 'print', 12000], ['ui/outline', 'createOutlineUI', 'outline', 10000], ['plugins/text-drop', 'textDrop', 'text-drop', 15000]] as const) {
+  const result = await build({
+    stdin: { contents: `import { ${symbol} } from '@morfira-dev/wysiwyg/${entry}'; globalThis.__morfiraAuthoringUI = ${symbol};`, resolveDir: process.cwd(), loader: 'ts' },
+    bundle: true, minify: true, write: false, format: 'esm', platform: 'browser',
+    target: 'es2022', tsconfigRaw: { compilerOptions: {} }, logLevel: 'silent',
+  });
+  const buffer = result.outputFiles[0].contents;
+  report[`${label}-standalone.js`] = { raw: buffer.length, gzip: gzipSync(buffer).length, brotli: brotliCompressSync(buffer).length };
+  if (report[`${label}-standalone.js`].gzip > budget) { console.error(`${label}: exceeds ${budget} gzip JS byte budget`); failed = true; }
+}
 // Consumer profiles retain the actual public factories and bundle their shared JS once.
 // Runtime feature flags are deliberately not used as a tree-shaking claim.
 for (const profile of ['minimal', 'standard', 'extended']) {
   const preset = ({ minimal: 'createMinimalPreset', standard: 'createStandardPreset', extended: 'createExtendedPreset' } as Record<string, string>)[profile];
   const ui = ({ minimal: 'createEditorUI', standard: 'createStandardEditorUI', extended: 'createExtendedEditorUI' } as Record<string, string>)[profile];
-  for (const variant of ['headless', 'ready', ...(profile !== 'minimal' ? ['table-properties-ready'] : []), ...(profile === 'standard' ? ['search-highlights-ready', 'special-characters-ready', 'fullscreen-ready', 'table-picker-ready', 'image-input-ready', 'table-picker-image-input-ready', 'fonts-ready', 'list-properties-ready', 'fonts-list-properties-ready', 'text-direction-ready', 'fonts-list-properties-text-direction-ready', 'contextual-ready', 'contextual-link-ready', 'contextual-image-ready', 'image-resize-ready', 'contextual-table-ready', 'fonts-list-properties-text-direction-contextual-ready'] : [])]) {
+  for (const variant of ['headless', 'ready', ...(profile !== 'minimal' ? ['table-properties-ready'] : []), ...(profile === 'standard' ? ['search-highlights-ready', 'special-characters-ready', 'fullscreen-ready', 'preview-ready', 'save-state-ready', 'authoring-ready', 'print-ready', 'outline-ready', 'reading-ready', 'text-drop-ready', 'table-picker-ready', 'image-input-ready', 'table-picker-image-input-ready', 'fonts-ready', 'list-properties-ready', 'fonts-list-properties-ready', 'text-direction-ready', 'fonts-list-properties-text-direction-ready', 'contextual-ready', 'contextual-link-ready', 'contextual-image-ready', 'image-resize-ready', 'contextual-table-ready', 'fonts-list-properties-text-direction-contextual-ready'] : [])]) {
     const ready = variant !== 'headless';
+    const withTextDrop = variant === 'text-drop-ready';
+    const withPrint = variant === 'print-ready' || variant === 'reading-ready';
+    const withOutline = variant === 'outline-ready' || variant === 'reading-ready';
+    const withPreview = variant === 'preview-ready' || variant === 'authoring-ready';
+    const withSaveState = variant === 'save-state-ready' || variant === 'authoring-ready';
     const withFullscreen = variant === 'fullscreen-ready';
     const withSpecialCharacters = variant === 'special-characters-ready';
     const withSearchHighlights = variant === 'search-highlights-ready';
@@ -147,6 +171,11 @@ for (const profile of ['minimal', 'standard', 'extended']) {
     const withContextual = variant.includes('contextual') && !withContextualLink && !withContextualImage && !withContextualTable;
     const name = `profile-${profile}-${variant}`;
     let contents = `import { createEditor } from '@morfira-dev/wysiwyg'; import { ${preset} } from '@morfira-dev/wysiwyg/presets/${profile}'; ${ready ? `import { ${ui} } from '@morfira-dev/wysiwyg/ui/${profile === 'minimal' ? 'editor' : profile}';` : ''} ${withFonts ? "import { fonts } from '@morfira-dev/wysiwyg/plugins/fonts';" : ''} ${withListProperties ? "import { listProperties } from '@morfira-dev/wysiwyg/plugins/list-properties';" : ''} ${withTextDirection ? "import { textDirection } from '@morfira-dev/wysiwyg/plugins/text-direction';" : ''} ${withContextual ? "import { createContextualToolbar } from '@morfira-dev/wysiwyg/ui/contextual';" : ''} ${withContextualLink ? "import { createContextualLinkUI } from '@morfira-dev/wysiwyg/ui/contextual-link';" : ''} ${withContextualImage ? "import { createContextualImageUI } from '@morfira-dev/wysiwyg/ui/contextual-image';" : ''} ${withImageResize ? "import { createImageResizeUI } from '@morfira-dev/wysiwyg/ui/image-resize';" : ''} ${withContextualTable ? "import { createContextualTableUI } from '@morfira-dev/wysiwyg/ui/contextual-table';" : ''} globalThis.__morfiraProfile = { createEditor, ${preset}${ready ? `, ${ui}` : ''}${withFonts ? ', fonts' : ''}${withListProperties ? ', listProperties' : ''}${withTextDirection ? ', textDirection' : ''}${withContextual ? ', createContextualToolbar' : ''}${withContextualLink ? ', createContextualLinkUI' : ''}${withContextualImage ? ', createContextualImageUI' : ''}${withImageResize ? ', createImageResizeUI' : ''}${withContextualTable ? ', createContextualTableUI' : ''} };`;
+    if (withTextDrop) contents += "import { textDrop } from '@morfira-dev/wysiwyg/plugins/text-drop'; globalThis.__morfiraTextDrop = textDrop;";
+    if (withPrint) contents += "import { createPrintUI } from '@morfira-dev/wysiwyg/ui/print'; globalThis.__morfiraPrint = createPrintUI;";
+    if (withOutline) contents += "import { createOutlineUI } from '@morfira-dev/wysiwyg/ui/outline'; globalThis.__morfiraOutline = createOutlineUI;";
+    if (withPreview) contents += "import { createPreviewUI } from '@morfira-dev/wysiwyg/ui/preview'; globalThis.__morfiraPreview = createPreviewUI;";
+    if (withSaveState) contents += "import { saveState } from '@morfira-dev/wysiwyg/plugins/save-state'; import { createSaveStateUI } from '@morfira-dev/wysiwyg/ui/save-state'; globalThis.__morfiraSaveState = { saveState, createSaveStateUI };";
     if (withFullscreen) contents += "import { createFullscreenUI } from '@morfira-dev/wysiwyg/ui/fullscreen'; globalThis.__morfiraFullscreen = createFullscreenUI;";
     if (withSpecialCharacters) contents += "import { createSpecialCharacterUI } from '@morfira-dev/wysiwyg/ui/special-characters'; globalThis.__morfiraSpecialCharacters = createSpecialCharacterUI;";
     if (withSearchHighlights) contents += "import { createSearchHighlights } from '@morfira-dev/wysiwyg/ui/search-highlights'; globalThis.__morfiraSearchHighlights = createSearchHighlights;";
@@ -173,6 +202,10 @@ for (const profile of ['minimal', 'standard', 'extended']) {
       ...(withSearchHighlights ? ['@morfira-dev/wysiwyg/ui/search-highlights.css'] : []),
       ...(withSpecialCharacters ? ['@morfira-dev/wysiwyg/ui/special-characters.css'] : []),
       ...(withFullscreen ? ['@morfira-dev/wysiwyg/ui/fullscreen.css'] : []),
+      ...(withPrint ? ['@morfira-dev/wysiwyg/ui/print.css'] : []),
+      ...(withOutline ? ['@morfira-dev/wysiwyg/ui/outline.css'] : []),
+      ...(withPreview ? ['@morfira-dev/wysiwyg/ui/preview.css'] : []),
+      ...(withSaveState ? ['@morfira-dev/wysiwyg/ui/save-state.css'] : []),
       ...(withTablePicker ? ['@morfira-dev/wysiwyg/ui/table-picker.css'] : []),
       ...(withContextualTable ? ['@morfira-dev/wysiwyg/ui/contextual-table.css'] : []),
       ...(withContextualImage ? ['@morfira-dev/wysiwyg/ui/contextual-image.css'] : []),

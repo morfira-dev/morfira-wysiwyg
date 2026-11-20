@@ -192,7 +192,35 @@
       "types": "./dist/ui/fullscreen.d.ts",
       "import": "./dist/ui/fullscreen.js"
     },
-    "./ui/fullscreen.css": "./dist/ui/fullscreen.css"
+    "./ui/fullscreen.css": "./dist/ui/fullscreen.css",
+    "./plugins/save-state": {
+      "types": "./dist/plugins/save-state.d.ts",
+      "import": "./dist/plugins/save-state.js"
+    },
+    "./ui/save-state": {
+      "types": "./dist/ui/save-state.d.ts",
+      "import": "./dist/ui/save-state.js"
+    },
+    "./ui/preview": {
+      "types": "./dist/ui/preview.d.ts",
+      "import": "./dist/ui/preview.js"
+    },
+    "./ui/preview.css": "./dist/ui/preview.css",
+    "./ui/save-state.css": "./dist/ui/save-state.css",
+    "./ui/print": {
+      "types": "./dist/ui/print.d.ts",
+      "import": "./dist/ui/print.js"
+    },
+    "./ui/print.css": "./dist/ui/print.css",
+    "./ui/outline": {
+      "types": "./dist/ui/outline.d.ts",
+      "import": "./dist/ui/outline.js"
+    },
+    "./ui/outline.css": "./dist/ui/outline.css",
+    "./plugins/text-drop": {
+      "types": "./dist/plugins/text-drop.d.ts",
+      "import": "./dist/plugins/text-drop.js"
+    }
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.11.0",

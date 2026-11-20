@@ -1,0 +1,6 @@
+.mw-save-state { display:flex; flex-wrap:wrap; align-items:center; gap:var(--mw-save-gap,10px); color:var(--mw-text,#263043); font:inherit; }
+.mw-save-state p { margin:0; color:var(--mw-muted,#64748b); }
+.mw-save-state[data-mw-save-status="error"] p { color:var(--mw-save-error,#b42318); }
+.mw-save-state button { font:inherit; color:inherit; background:var(--mw-surface,#fff); border:1px solid var(--mw-border,#cbd5e1); border-radius:var(--mw-save-radius,6px); padding:6px 12px; cursor:pointer; }
+.mw-save-state button:focus-visible { outline:2px solid var(--mw-focus,#2563eb); outline-offset:2px; }
+.mw-save-state button:disabled { cursor:default; opacity:.55; }

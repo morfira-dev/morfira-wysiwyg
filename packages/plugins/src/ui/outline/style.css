@@ -1,0 +1,13 @@
+.mw-outline { color: var(--mw-text, #263043); font-family: var(--mw-font, system-ui, sans-serif); }
+.mw-outline-list { margin: 0; padding: 0; list-style: none; max-height: var(--mw-outline-max-height, 50vh); overflow: auto; }
+.mw-outline-list button { display: block; width: 100%; text-align: start; overflow-wrap: anywhere; font: inherit; color: inherit; background: transparent; border: 0; border-radius: var(--mw-control-radius, 6px); padding: 6px 8px; cursor: pointer; }
+.mw-outline-list [data-mw-outline-level="2"] { padding-inline-start: 20px; }
+.mw-outline-list [data-mw-outline-level="3"] { padding-inline-start: 32px; }
+.mw-outline-list [data-mw-outline-level="4"] { padding-inline-start: 44px; }
+.mw-outline-list [data-mw-outline-level="5"] { padding-inline-start: 56px; }
+.mw-outline-list [data-mw-outline-level="6"] { padding-inline-start: 68px; }
+.mw-outline-list button:hover { background: var(--mw-hover, #f2f4f8); }
+.mw-outline-list button[aria-current="location"] { color: var(--mw-accent, #6555d7); background: var(--mw-accent-soft, #f1edff); }
+.mw-outline-list button:focus-visible { outline: 2px solid var(--mw-focus, #2563eb); outline-offset: -2px; }
+.mw-outline-status { color: var(--mw-muted, #687486); font-size: .9em; margin-block: 6px; }
+.mw-outline [hidden] { display: none !important; }

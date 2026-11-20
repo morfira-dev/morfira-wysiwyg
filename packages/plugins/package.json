@@ -170,7 +170,35 @@
       "types": "./dist/ui/fullscreen/index.d.ts",
       "import": "./dist/ui/fullscreen.js"
     },
-    "./ui/fullscreen.css": "./dist/ui/fullscreen.css"
+    "./ui/fullscreen.css": "./dist/ui/fullscreen.css",
+    "./save-state": {
+      "types": "./dist/save-state/index.d.ts",
+      "import": "./dist/save-state.js"
+    },
+    "./ui/save-state": {
+      "types": "./dist/ui/save-state/index.d.ts",
+      "import": "./dist/ui/save-state.js"
+    },
+    "./ui/preview": {
+      "types": "./dist/ui/preview/index.d.ts",
+      "import": "./dist/ui/preview.js"
+    },
+    "./ui/preview.css": "./dist/ui/preview.css",
+    "./ui/save-state.css": "./dist/ui/save-state.css",
+    "./ui/print": {
+      "types": "./dist/ui/print/index.d.ts",
+      "import": "./dist/ui/print.js"
+    },
+    "./ui/print.css": "./dist/ui/print.css",
+    "./ui/outline": {
+      "types": "./dist/ui/outline/index.d.ts",
+      "import": "./dist/ui/outline.js"
+    },
+    "./ui/outline.css": "./dist/ui/outline.css",
+    "./text-drop": {
+      "types": "./dist/text-drop/index.d.ts",
+      "import": "./dist/text-drop.js"
+    }
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.11.0"
