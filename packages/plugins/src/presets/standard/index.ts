@@ -29,7 +29,7 @@ export const createStandardPreset = (options: StandardPresetOptions = {}): Edito
       ...(options.search === false ? [] : [search()]),
       ...(options.statistics === false ? [] : [statistics(featureOptions(options.statistics, 'statistics', ['locale']))]),
       ...(options.markdown === false ? [] : [markdownShortcuts(featureOptions(options.markdown, 'markdown', ['enabled', 'blocks', 'inline']))]),
-      ...(options.autolink === false ? [] : [autolink(featureOptions(options.autolink, 'autolink', ['enabled']))]),
+      ...(options.autolink === false ? [] : [autolink(featureOptions(options.autolink, 'autolink', ['enabled', 'email']))]),
       ...(options.horizontalRule === false ? [] : [horizontalRule()]),
       ...editor.plugins!,
     ],

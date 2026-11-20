@@ -74,9 +74,31 @@ const trimPunctuation = (input: string): string => {
   return value;
 };
 
-export const candidateAt = (text: string, truncated = false, space = false): AutolinkCandidate | undefined => {
+/** Conservative whole-token recognition: never search inside a malformed address. */
+const emailAt = (prefix: string, truncated: boolean): AutolinkCandidate | undefined => {
+  const match = /(?:^|\s)([(\[{]*)([^\s]+)$/.exec(prefix);
+  if (!match || (truncated && match.index === 0)) return;
+  const label = trimPunctuation(match[2]);
+  if (!label || label.length > 254) return;
+  const parts = label.split('@');
+  if (parts.length !== 2) return;
+  const [local, domain] = parts;
+  if (local.length > 64 || !/^[a-z\d_+-]+(?:\.[a-z\d_+-]+)*$/i.test(local)) return;
+  const labels = domain.split('.');
+  if (labels.length < 2 || !/^[a-z]{2,63}$/i.test(labels.at(-1)!)) return;
+  if (labels.some((part) => part.length > 63 || /^xn--/i.test(part)
+      || !/^[a-z\d](?:[a-z\d-]*[a-z\d])?$/i.test(part))) return;
+  const start = match.index + match[0].length - match[2].length;
+  return { start, length: label.length, href: `mailto:${label}` };
+};
+
+export const candidateAt = (text: string, truncated = false, space = false, email = false): AutolinkCandidate | undefined => {
   if (space && !/[ \u00a0]$/.test(text)) return;
   const prefix = space ? text.slice(0, -1) : text;
+  // A valid email local part can start with www.; do not classify it as URL
+  // userinfo. Whole-token email validation cannot authorize a URL with userinfo.
+  const address = email ? emailAt(prefix, truncated) : undefined;
+  if (address) return address;
   const match = /(?:^|[\s(\[{])((?:https?:\/\/|www\.)[^\s<>"']+)$/i.exec(prefix);
   if (!match) return;
   const start = match.index + match[0].length - match[1].length;

@@ -1,5 +1,6 @@
 export interface AutolinkOptions {
   enabled?: boolean;
+  email?: boolean;
 }
 
 export interface AutolinkState {

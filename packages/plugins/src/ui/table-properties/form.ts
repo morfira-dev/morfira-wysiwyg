@@ -34,9 +34,11 @@ export const createTablePropertiesForm = (host: HTMLElement, editor: Editor, opt
     const field = createUIElement(document, 'label');
     const caption = createUIElement(document, 'span');
     const choice = key === 'alignment' ? ['reset', 'left', 'center', 'right']
-      : key === 'cellVerticalAlign' ? ['reset', 'top', 'middle', 'bottom']
-        : key === 'cellBorderStyle' ? ['reset', 'solid', 'dashed', 'dotted', 'double', 'none']
-          : key === 'headerRow' || key === 'headerColumn' ? ['off', 'on'] : undefined;
+      : key === 'cellTextAlign' ? ['reset', 'left', 'center', 'right', 'justify']
+        : key === 'cellDirection' ? ['reset', 'ltr', 'rtl']
+          : key === 'cellVerticalAlign' ? ['reset', 'top', 'middle', 'bottom']
+            : key === 'cellBorderStyle' ? ['reset', 'solid', 'dashed', 'dotted', 'double', 'none']
+              : key === 'headerRow' || key === 'headerColumn' ? ['off', 'on'] : undefined;
     const input = choice ? createUIElement(document, 'select')
       : key === 'caption' ? createUIElement(document, 'textarea') : createUIElement(document, 'input');
     if (input instanceof document.defaultView!.HTMLInputElement) input.maxLength = 100;

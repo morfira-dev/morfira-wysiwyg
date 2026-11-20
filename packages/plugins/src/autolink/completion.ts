@@ -17,7 +17,7 @@ const blockAt = (root: HTMLElement, caret: Range): HTMLElement | undefined => {
 };
 
 /** Optional completion uses committed receipts, never a speculative change listener. */
-export const installCompletion = (editor: Editor, enabled: () => boolean): (() => void) => {
+export const installCompletion = (editor: Editor, enabled: () => boolean, email = false): (() => void) => {
   const root = editor.surface;
   let candidates = new WeakMap<Event, CompletionCandidate>();
   const available = () => enabled() && !editor.isReadOnly();
@@ -31,7 +31,7 @@ export const installCompletion = (editor: Editor, enabled: () => boolean): (() =
     const block = caret && blockAt(root, caret);
     if (!caret || !block) return;
     const flow = prefixAt(block, caret);
-    const candidate = candidateAt(flow.text, flow.truncated);
+    const candidate = candidateAt(flow.text, flow.truncated, false, email);
     const range = candidate && rangeAt(flow, candidate.start, candidate.length);
     if (!candidate || !range) return;
     candidates.set(event, { kind: 'enter', block, range, label: range.toString(), href: candidate.href });
@@ -40,7 +40,7 @@ export const installCompletion = (editor: Editor, enabled: () => boolean): (() =
     if (!available() || !event.cancelable || event.defaultPrevented || !event.clipboardData || event.clipboardData.getData('text/html')) return;
     const text = event.clipboardData.getData('text/plain');
     if (!text || text.length > maximumURL || /\s/.test(text)) return;
-    const candidate = candidateAt(text);
+    const candidate = candidateAt(text, false, false, email);
     if (!candidate || candidate.start !== 0) return;
     const caret = caretAt(root);
     const block = caret && blockAt(root, caret);

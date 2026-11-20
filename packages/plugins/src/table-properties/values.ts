@@ -1,4 +1,4 @@
-import type { TableAlignment, TableCellVerticalAlign, TableCellBorderStyle, TablePropertiesPatch } from './types.js';
+import type { TableAlignment, TableCellVerticalAlign, TableCellBorderStyle, TableCellTextAlign, TableCellDirection, TablePropertiesPatch } from './types.js';
 import { checkedRowMinHeight } from './rows.js';
 
 const widthValue = (value: unknown): string | false => {
@@ -17,6 +17,16 @@ const alignmentValue = (value: unknown): TableAlignment | false => {
 const verticalValue = (value: unknown): TableCellVerticalAlign | false => {
   if (value !== false && value !== 'top' && value !== 'middle' && value !== 'bottom')
     throw new TypeError('Cell vertical alignment must be top, middle, bottom or false.');
+  return value;
+};
+const textAlignValue = (value: unknown): TableCellTextAlign | false => {
+  if (value !== false && value !== 'left' && value !== 'center' && value !== 'right' && value !== 'justify')
+    throw new TypeError('Cell text alignment must be left, center, right, justify or false.');
+  return value;
+};
+const directionValue = (value: unknown): TableCellDirection | false => {
+  if (value !== false && value !== 'ltr' && value !== 'rtl')
+    throw new TypeError('Cell direction must be ltr, rtl or false.');
   return value;
 };
 const cellLengthValue = (value: unknown, maximum: number): string | false => {
@@ -53,11 +63,13 @@ export const checkedTablePropertiesPatch = (input: unknown, document: Document):
   if (!input || typeof input !== 'object' || Array.isArray(input)
       || ![Object.prototype, null].includes(Object.getPrototypeOf(input)))
     throw new TypeError('Table properties must be a plain patch object.');
-  const fields = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'headerRow', 'headerColumn', 'caption', 'rowMinHeight', 'cellPadding', 'cellBorderWidth', 'cellBorderStyle'];
+  const fields = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'cellTextAlign', 'cellDirection', 'headerRow', 'headerColumn', 'caption', 'rowMinHeight', 'cellPadding', 'cellBorderWidth', 'cellBorderStyle'];
   if (Reflect.ownKeys(input).some((key) => typeof key !== 'string' || !fields.includes(key)))
     throw new TypeError('Unknown table property.');
   const patch = input as Record<string, unknown>;
   const result: TablePropertiesPatch = {};
+  if (Object.hasOwn(patch, 'cellTextAlign')) result.cellTextAlign = textAlignValue(patch.cellTextAlign);
+  if (Object.hasOwn(patch, 'cellDirection')) result.cellDirection = directionValue(patch.cellDirection);
   if (Object.hasOwn(patch, 'cellPadding')) result.cellPadding = cellLengthValue(patch.cellPadding, 48);
   if (Object.hasOwn(patch, 'cellBorderWidth')) result.cellBorderWidth = cellLengthValue(patch.cellBorderWidth, 12);
   if (Object.hasOwn(patch, 'cellBorderStyle')) result.cellBorderStyle = borderStyleValue(patch.cellBorderStyle);
@@ -98,6 +110,14 @@ export const tableAlignment = (table: HTMLTableElement): TableAlignment | false 
 export const cellVerticalAlign = (cell: HTMLTableCellElement): TableCellVerticalAlign | false => {
   const value = cell.style.verticalAlign;
   return value === 'top' || value === 'middle' || value === 'bottom' ? value : false;
+};
+export const cellTextAlign = (cell: HTMLTableCellElement): TableCellTextAlign | false => {
+  const value = cell.style.textAlign;
+  return value === 'left' || value === 'center' || value === 'right' || value === 'justify' ? value : false;
+};
+export const cellDirection = (cell: HTMLTableCellElement): TableCellDirection | false => {
+  const value = cell.getAttribute('dir');
+  return value === 'ltr' || value === 'rtl' ? value : false;
 };
 export const mixedCellValue = <T extends string | false>(cells: readonly HTMLTableCellElement[], read: (cell: HTMLTableCellElement) => T): T | 'mixed' => {
   const first = read(cells[0]);

@@ -1,8 +1,12 @@
 export type TableAlignment = 'left' | 'center' | 'right';
 export type TableCellVerticalAlign = 'top' | 'middle' | 'bottom';
 export type TableCellBorderStyle = 'solid' | 'dashed' | 'dotted' | 'double' | 'none';
+export type TableCellTextAlign = 'left' | 'center' | 'right' | 'justify';
+export type TableCellDirection = 'ltr' | 'rtl';
 
 export interface TablePropertiesPatch {
+  cellTextAlign?: TableCellTextAlign | false;
+  cellDirection?: TableCellDirection | false;
   cellPadding?: string | false;
   cellBorderWidth?: string | false;
   cellBorderStyle?: TableCellBorderStyle | false;
@@ -18,6 +22,8 @@ export interface TablePropertiesPatch {
 }
 
 export interface TablePropertiesState {
+  readonly cellTextAlign: TableCellTextAlign | false | 'mixed';
+  readonly cellDirection: TableCellDirection | false | 'mixed';
   readonly cellPadding: string | false | 'mixed';
   readonly cellBorderWidth: string | false | 'mixed';
   readonly cellBorderStyle: TableCellBorderStyle | false | 'mixed';

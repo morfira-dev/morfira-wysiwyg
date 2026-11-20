@@ -3,7 +3,7 @@ import type { Editor, EditorPlugin } from '@morfira-dev/wysiwyg-core';
 import { tableCommands } from '../tables/plugin.js';
 import type { TableSelectionState } from '../tables/types.js';
 import { sameTablePropertyTarget, tablePropertyTarget } from './target.js';
-import { cellBorderStyle, cellVerticalAlign, checkedTablePropertiesPatch, mixedCellValue, patchMargins, styleChanges, tableAlignment, tableWidth, writeStyle } from './values.js';
+import { cellBorderStyle, cellVerticalAlign, cellTextAlign, cellDirection, checkedTablePropertiesPatch, mixedCellValue, patchMargins, styleChanges, tableAlignment, tableWidth, writeStyle } from './values.js';
 import { applyTableSemantics, planTableSemantics, tableCaption, tableHeaders } from './semantics.js';
 import { rowMinHeightState, selectedPropertyRows } from './rows.js';
 import type { TablePropertiesRequest, TableSemanticsPlan } from './internal-types.js';
@@ -19,6 +19,8 @@ const changes = (target: TableSelectionState, patch: TablePropertiesPatch, seman
     if (styleChanges(target.table, 'margin-left', left) || styleChanges(target.table, 'margin-right', right)) return true;
   }
   return target.cells.some((cell) => (patch.cellBackground !== undefined && styleChanges(cell, 'background-color', patch.cellBackground))
+    || (patch.cellTextAlign !== undefined && styleChanges(cell, 'text-align', patch.cellTextAlign))
+    || (patch.cellDirection !== undefined && (patch.cellDirection === false ? cell.hasAttribute('dir') : cell.getAttribute('dir') !== patch.cellDirection))
     || (patch.cellPadding !== undefined && styleChanges(cell, 'padding', patch.cellPadding))
     || (patch.cellBorderWidth !== undefined && styleChanges(cell, 'border-width', patch.cellBorderWidth))
     || (patch.cellBorderStyle !== undefined && styleChanges(cell, 'border-style', patch.cellBorderStyle))
@@ -38,6 +40,9 @@ const apply = (editor: Editor, target: TableSelectionState, patch: TableProperti
     writeStyle(target.table, 'margin-right', right);
   }
   for (const cell of target.cells) {
+    if (patch.cellTextAlign !== undefined) writeStyle(cell, 'text-align', patch.cellTextAlign);
+    if (patch.cellDirection === false) cell.removeAttribute('dir');
+    else if (patch.cellDirection !== undefined) cell.setAttribute('dir', patch.cellDirection);
     if (patch.cellPadding !== undefined) writeStyle(cell, 'padding', patch.cellPadding);
     if (patch.cellBorderWidth !== undefined) writeStyle(cell, 'border-width', patch.cellBorderWidth);
     if (patch.cellBorderStyle !== undefined) writeStyle(cell, 'border-style', patch.cellBorderStyle);
@@ -86,6 +91,8 @@ export const tableProperties = (): EditorPlugin => ({
         const target = tablePropertyTarget(editor);
         return {
           disabled: !target || !editor.commands.getState(updateCommand).enabled,
+          cellTextAlign: target ? mixedCellValue(target.cells, cellTextAlign) : false,
+          cellDirection: target ? mixedCellValue(target.cells, cellDirection) : false,
           cellPadding: target ? mixedCellValue(target.cells, (cell) => cell.style.padding || false) : false,
           cellBorderWidth: target ? mixedCellValue(target.cells, (cell) => cell.style.borderWidth || false) : false,
           cellBorderStyle: target ? mixedCellValue(target.cells, cellBorderStyle) : false,

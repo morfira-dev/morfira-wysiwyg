@@ -10,6 +10,8 @@ export interface TablePropertiesFormValues {
   cellBorderWidth: string;
   cellBorderStyle: string;
   cellVerticalAlign: string;
+  cellTextAlign: string;
+  cellDirection: string;
   headerRow: string;
   headerColumn: string;
   caption: string;

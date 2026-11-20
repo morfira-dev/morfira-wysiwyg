@@ -1,5 +1,9 @@
 # Optional autolink — Space, controlled Enter and plain URL paste
 
+The independent opt-in `AutolinkOptions.email` extension follows
+[autolink-email.md](autolink-email.md). It defaults to false, is forwarded by
+standard/extended preset options and does not broaden the completion routes below.
+
 Status: bounded completion implementation contract; current validation is recorded separately. Original strict TypeScript/MIT, zero runtime dependencies, no core import edge to this plugin. Public facade entry is `/plugins/autolink`; no CSS or UI is required.
 
 `autolink(options?: AutolinkOptions)` accepts `enabled?: boolean` (default true); copy and validate configuration before installation. `autolinkCommands(editor)` returns instance-owned `getState(): { enabled: boolean }` and `setEnabled(boolean)`. State changes are preferences only, including in read-only. Commands after disposal throw; disposal releases all listeners and plugin API ownership. Reusing one factory result in different editors must keep state isolated. Imports and factory creation are SSR-safe.

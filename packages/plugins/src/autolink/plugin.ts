@@ -3,20 +3,23 @@ import type { AutolinkCommands, AutolinkOptions } from './types.js';
 import { blockSelector, candidateAt, excluded, prefixAt } from './flow.js';
 import { installCompletion } from './completion.js';
 
-const checkedOptions = (options: AutolinkOptions): boolean => {
-  if (!options || typeof options !== 'object' || Array.isArray(options) || Object.keys(options).some((key) => key !== 'enabled'))
+const checkedOptions = (options: AutolinkOptions): Required<AutolinkOptions> => {
+  if (!options || typeof options !== 'object' || Array.isArray(options)
+      || Reflect.ownKeys(options).some((key) => key !== 'enabled' && key !== 'email'))
     throw new TypeError('Expected autolink options.');
-  if (options.enabled !== undefined && typeof options.enabled !== 'boolean') throw new TypeError('Autolink enabled must be boolean.');
-  return options.enabled ?? true;
+  const { enabled, email } = options;
+  if (enabled !== undefined && typeof enabled !== 'boolean') throw new TypeError('Autolink enabled must be boolean.');
+  if (email !== undefined && typeof email !== 'boolean') throw new TypeError('Autolink email must be boolean.');
+  return { enabled: enabled ?? true, email: email ?? false };
 };
 
 export const autolink = (options: AutolinkOptions = {}): EditorPlugin => {
-  const initiallyEnabled = checkedOptions(options);
+  const initial = checkedOptions(options);
   return {
     name: 'autolink',
     setup: (editor) => {
       const root = editor.surface;
-      let enabled = initiallyEnabled;
+      let enabled = initial.enabled;
       let composing = false;
       let disposed = false;
       const assertActive = () => {
@@ -42,7 +45,7 @@ export const autolink = (options: AutolinkOptions = {}): EditorPlugin => {
         const block = element.closest<HTMLElement>(blockSelector);
         if (!block || !root.contains(block)) return;
         const flow = prefixAt(block, caret);
-        const candidate = candidateAt(flow.text, flow.truncated, true);
+        const candidate = candidateAt(flow.text, flow.truncated, true, initial.email);
         const saved = editor.getSelection();
         if (!candidate || !saved || saved.length) return;
         const offset = saved.index - flow.text.length + candidate.start;
@@ -57,7 +60,7 @@ export const autolink = (options: AutolinkOptions = {}): EditorPlugin => {
       const unchange = editor.subscribe((change) => { if (change.source === 'api') composing = false; });
       const unreadonly = editor.events.on('readonlychange', (value) => { if (value) composing = false; });
       const unprovide = editor.providePlugin('autolink', commands);
-      const removeCompletion = installCompletion(editor, () => enabled && !composing && !disposed);
+      const removeCompletion = installCompletion(editor, () => enabled && !composing && !disposed, initial.email);
       root.addEventListener('input', input);
       root.addEventListener('compositionstart', startComposition);
       root.addEventListener('compositionend', endComposition);
