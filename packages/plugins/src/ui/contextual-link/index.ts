@@ -3,12 +3,12 @@ import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { createFormSelection } from '../shared/selection.js';
 import { registerContextualPreference } from '../shared/contextual-preference.js';
 import { createLinkForm } from '../links/index.js';
+import { editSelectedLinks } from '../links/selection.js';
 import { editAnchorLink } from '../links/anchor.js';
 import type { LinkFormController } from '../links/types.js';
 import { contextualAnchor, placeContextualToolbar } from '../contextual/geometry.js';
-import { sameContextualRange } from '../contextual/selection.js';
 import { contextualLinkUIMessages } from './messages.js';
-import { contextualLinkRange, contextualLinkTarget, contextualLinkURL, nativeContextualLink, ordinaryContextualAnchor } from './target.js';
+import { contextualLinkRange, contextualLinkTarget, contextualLinkURL, nativeContextualLink, ordinaryContextualAnchor, sameLinkTarget, linkTargetRange, linkTargetNodes } from './target.js';
 import type { ContextualLinkTarget } from './internal-types.js';
 import type { ContextualLinkUIController, ContextualLinkUIOptions } from './types.js';
 
@@ -31,6 +31,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
   const element = document.createElement('section');
   element.className = 'mw-contextual-link';
   element.setAttribute('role', 'group');
+  element.tabIndex = -1;
   element.hidden = true;
   const preview = document.createElement('div');
   preview.className = 'mw-contextual-link-preview';
@@ -126,7 +127,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
   const retainedReadonlyPreview = (): boolean => {
     if (!editor.isReadOnly() || document.activeElement !== document.body || !current || element.hidden) return false;
     const candidate = nativeContextualLink(editor);
-    return candidate?.anchor === current.anchor && sameContextualRange(candidate.range, current.range);
+    return sameLinkTarget(candidate, current);
   };
   const observedTarget = (): ContextualLinkTarget | undefined => {
     if (focusedEditor() || retainedReadonlyPreview()) return nativeContextualLink(editor);
@@ -139,23 +140,25 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     return contextualLinkTarget(editor, current.range);
   };
   const inspectCurrent = (): ContextualLinkTarget | undefined => {
-    if (!current || !ordinaryContextualAnchor(editor, current.anchor)) return;
+    if (!current || !contextualLinkTarget(editor, current.range)) return;
     const candidate = observedTarget();
-    return candidate?.anchor === current.anchor && sameContextualRange(candidate.range, current.range) ? candidate : undefined;
+    return sameLinkTarget(candidate, current) ? candidate : undefined;
   };
   const layout = (): void => {
     if (disposed || !geometryCleanups.length || !current) return;
-    if (composing || !ordinaryContextualAnchor(editor, current.anchor)
+    if (composing || !contextualLinkTarget(editor, current.range)
       || (!focusedEditor() && !retainedReadonlyPreview() && !element.contains(document.activeElement))) {
       dismiss();
       return;
     }
-    const freshURL = contextualLinkURL(editor, current.anchor);
-    if (!freshURL) { dismiss(); return; }
-    current.url = freshURL;
-    url.textContent = freshURL.display;
-    url.title = freshURL.display;
-    const anchor = contextualAnchor(surface, contextualLinkRange(current.anchor));
+    if (current.kind === 'anchor') {
+      const freshURL = contextualLinkURL(editor, current.anchor);
+      if (!freshURL) { dismiss(); return; }
+      current.url = freshURL;
+      url.textContent = freshURL.display;
+      url.title = freshURL.display;
+    }
+    const anchor = contextualAnchor(surface, linkTargetRange(current));
     if (!anchor) {
       element.hidden = true;
       scrubOpen();
@@ -166,11 +169,13 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     element.hidden = false;
     try { placeContextualToolbar(element, anchor, gap); }
     finally { element.style.removeProperty('visibility'); }
-    if (preview.hidden) scrubOpen();
+    if (preview.hidden || current.kind === 'range') scrubOpen();
     else open.href = current.url.href;
     if (focusRequested) {
       focusRequested = false;
-      open.focus();
+      if (current.kind === 'anchor') open.focus();
+      else if (!edit.disabled) edit.focus();
+      else element.focus();
     }
   };
   const schedule = (): void => {
@@ -224,28 +229,31 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
       current = undefined;
       return;
     }
-    if (suppressed?.anchor === candidate.anchor && sameContextualRange(suppressed.range, candidate.range)) {
+    if (sameLinkTarget(suppressed, candidate)) {
       element.hidden = true;
       scrubOpen();
       stopGeometry();
       return;
     }
     suppressed = undefined;
-    if (form && (current?.anchor !== candidate.anchor || !sameContextualRange(current.range, candidate.range))) closeForm();
+    if (form && !sameLinkTarget(current, candidate)) closeForm();
     current = candidate;
     selection.capture();
     element.setAttribute('aria-label', options.label ?? message('ui.contextualLink.label'));
     element.title = message('ui.contextualLink.help');
     open.textContent = message('ui.contextualLink.open');
-    edit.textContent = message('ui.contextualLink.edit');
-    remove.textContent = message('ui.contextualLink.remove');
+    edit.textContent = message(candidate.kind === 'anchor' ? 'ui.contextualLink.edit' : 'ui.contextualLink.editRange');
+    remove.textContent = message(candidate.kind === 'anchor' ? 'ui.contextualLink.remove' : 'ui.contextualLink.removeRange');
     edit.disabled = remove.disabled = editor.isReadOnly();
-    url.textContent = candidate.url.display;
-    url.title = candidate.url.display;
-    if (preview.hidden) scrubOpen();
+    open.hidden = candidate.kind === 'range';
+    const display = candidate.kind === 'anchor' ? candidate.url.display : message('ui.contextualLink.range');
+    url.textContent = display;
+    url.title = display;
+    if (preview.hidden || candidate.kind === 'range') scrubOpen();
     else open.href = candidate.url.href;
     const nodes: HTMLElement[] = [];
-    for (let node: HTMLElement | null = candidate.anchor; node; node = node.parentElement) nodes.push(node);
+    for (const owner of linkTargetNodes(candidate))
+      for (let node: HTMLElement | null = owner; node; node = node.parentElement) if (!nodes.includes(node)) nodes.push(node);
     geometry(nodes);
     layout();
   };
@@ -258,16 +266,23 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     const previous = current;
     const revision = apiRevision;
     if (!previous) return;
+    const html = editor.getHTML();
+    const start = previous.range.startContainer;
+    const startOffset = previous.range.startOffset;
+    const end = previous.range.endContainer;
+    const endOffset = previous.range.endOffset;
     restoring++;
     try {
       const acceptsFocus = (): boolean => {
         const candidate = nativeContextualLink(editor);
-        return !disposed && !composing && revision === apiRevision && candidate?.anchor === previous.anchor
-          && sameContextualRange(candidate.range, previous.range);
+        return !disposed && !composing && revision === apiRevision && editor.getHTML() === html
+          && previous.range.startContainer === start && previous.range.startOffset === startOffset
+          && previous.range.endContainer === end && previous.range.endOffset === endOffset
+          && sameLinkTarget(candidate, previous);
       };
       if (!selection.restore(acceptsFocus, true) || !acceptsFocus()) return;
       const target = nativeContextualLink(editor);
-      if (target?.anchor !== previous.anchor || !sameContextualRange(target.range, previous.range)) return;
+      if (!sameLinkTarget(target, previous)) return;
       current = target;
       return target;
     }
@@ -291,7 +306,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     }
     if (!disposed && !element.hidden && !composing) {
       const target = inspectCurrent();
-      if (target && contextualAnchor(surface, contextualLinkRange(target.anchor))) {
+      if (target && contextualAnchor(surface, linkTargetRange(target))) {
         current = target;
         selection.capture();
         return;
@@ -303,7 +318,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
   };
   const opened = (event: MouseEvent): void => {
     const target = inspectCurrent();
-    if (!target || disposed || element.hidden || composing) {
+    if (!target || target.kind !== 'anchor' || disposed || element.hidden || composing) {
       event.preventDefault();
       scrubOpen();
       return;
@@ -321,13 +336,13 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     if (!target) { dismiss(); return; }
     if (disposed || composing || editor.isReadOnly() || revision !== apiRevision) return;
     if (form) return;
-    const created = createLinkForm(formHost, editor, { scope: 'anchor', onError: report });
+    const created = createLinkForm(formHost, editor, { scope: target.kind === 'anchor' ? 'anchor' : 'selection', ...(target.kind === 'range' ? { initialValues: { href: '', title: '', newTab: false, text: '' } } : {}), onError: report });
     form = created;
     scrubOpen();
     preview.hidden = true;
     formHost.hidden = false;
     created.element.querySelector<HTMLInputElement>('input')?.focus();
-    if (disposed || revision !== apiRevision || form !== created || !current || current.anchor !== target.anchor
+    if (disposed || revision !== apiRevision || form !== created || !current || !sameLinkTarget(current, target)
       || !contextualLinkTarget(editor, target.range)) {
       if (!disposed) dismiss();
       return;
@@ -339,7 +354,14 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     const target = restoreTarget();
     if (!target) { dismiss(); return; }
     if (disposed || composing || editor.isReadOnly()) return;
-    if (target.range.collapsed) editor.format('link', false);
+    if (target.kind === 'range') {
+      const revision = apiRevision;
+      restoring++;
+      try { editSelectedLinks(editor, false, () => !disposed && !composing && !editor.isReadOnly() && revision === apiRevision); }
+      catch (error) { report(error); }
+      finally { restoring--; }
+    }
+    else if (target.range.collapsed) editor.format('link', false);
     else {
       const revision = apiRevision;
       restoring++;
@@ -347,7 +369,7 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
         editAnchorLink(editor, target.range, false, () => {
           const candidate = nativeContextualLink(editor);
           return !disposed && !composing && !editor.isReadOnly() && revision === apiRevision
-            && candidate?.anchor === target.anchor && sameContextualRange(candidate.range, target.range);
+            && sameLinkTarget(candidate, target);
         }, () => !disposed && !composing && revision === apiRevision);
       }
       catch (error) { report(error); }
@@ -442,14 +464,15 @@ export const createContextualLinkUI = (host: HTMLElement, editor: Editor, option
     cleanups.push(
       editor.onSelectionChange(discover),
       editor.events.on('localechange', discover),
-      editor.events.on('readonlychange', () => {
+      editor.events.on('readonlychange', (readOnly) => {
+        edit.disabled = remove.disabled = readOnly;
         composing = false;
         if (editor.isReadOnly()) closeForm();
         discover();
       }),
       editor.subscribe((change) => {
+        apiRevision++;
         if (change.source === 'api') {
-          apiRevision++;
           composing = false;
           dismiss();
           current = undefined;

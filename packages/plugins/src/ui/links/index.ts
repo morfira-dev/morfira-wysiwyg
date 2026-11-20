@@ -6,6 +6,7 @@ import { listenToUI } from '../shared/events.js';
 import { linkFormMessages } from './messages.js';
 import type { LinkFormController, LinkFormMessageKey, LinkFormOptions, LinkFormValues } from './types.js';
 import { editAnchorLink, linkRangeAnchor } from './anchor.js';
+import { selectedLinkAnchors, editSelectedLinks } from './selection.js';
 import { sameContextualRange } from '../shared/range.js';
 
 export { linkFormMessages } from './messages.js';
@@ -34,7 +35,7 @@ const anchorAt = (range: Range | undefined, surface: HTMLElement): HTMLAnchorEle
   const element = node.nodeType === 1 ? node as Element : node.parentElement;
   const anchor = element?.closest('a');
   if (anchor instanceof HTMLAnchorElement && surface.contains(anchor)) return anchor;
-  return !range.collapsed ? range.cloneContents().querySelector('a') ?? undefined : undefined;
+  return !range.collapsed ? selectedLinkAnchors(surface, range)[0] : undefined;
 };
 
 export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkFormOptions = {}): LinkFormController => {
@@ -78,6 +79,7 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
   let boundRange = selection.peek();
   let boundAnchor = anchorScope && boundRange ? linkRangeAnchor(editor.surface, boundRange) : undefined;
   let invalidated = false;
+  let documentRevision = 0;
   let composing = false;
   let disposed = false;
   let editing = false;
@@ -86,6 +88,7 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
   const subscriptions: (() => void)[] = [];
   let stopDOM: (() => void)[] = [];
   const boundTarget = (): boolean => {
+    if (invalidated || composing) return false;
     if (!anchorScope) return true;
     const saved = selection.peek();
     const native = document.getSelection();
@@ -119,15 +122,18 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
     for (const [node, key] of captions) node.textContent = localize(locale, key, linkFormMessages);
     submit.textContent = localize(locale, editing ? 'ui.links.update' : 'ui.links.create', linkFormMessages);
     unlink.textContent = localize(locale, 'ui.links.unlink', linkFormMessages);
-    fields.disabled = editor.isReadOnly() || !boundTarget();
+    fields.disabled = editor.isReadOnly() || composing || (anchorScope && !boundTarget());
     unlink.disabled = !editing || editor.isReadOnly();
     status.textContent = statusKey ? localize(locale, statusKey, linkFormMessages) : '';
   };
   const refresh = () => {
     if (disposed) return;
-    const anchor = anchorScope ? boundTarget() ? boundAnchor : undefined : anchorAt(selection.peek(), editor.surface);
-    const next = anchor?.outerHTML ?? '';
-    editing = Boolean(anchor);
+    const remembered = selection.peek();
+    if (!anchorScope && remembered && !element.contains(document.activeElement)) invalidated = false;
+    const anchor = anchorScope ? boundTarget() ? boundAnchor : undefined : remembered ? linkRangeAnchor(editor.surface, remembered) : undefined;
+    const linked = !anchorScope && !anchor && selectedLinkAnchors(editor.surface, remembered).length > 0;
+    const next = anchor?.outerHTML ?? (linked ? 'mixed' : '');
+    editing = Boolean(anchor) || linked;
     if (!element.contains(document.activeElement) && next !== signature) {
       if (anchor) write({ href: anchor.getAttribute('href') ?? '', title: anchor.getAttribute('title') ?? '', newTab: anchor.getAttribute('target') === '_blank', text: '' });
       else if (signature) write({ href: '', title: '', text: '', newTab: false });
@@ -141,16 +147,19 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
     if (error !== undefined) options.onError?.(error);
   };
   const perform = (remove: boolean) => {
-    if (disposed || editor.isReadOnly()) return;
+    if (disposed || composing || editor.isReadOnly()) return;
     if (anchorScope && !boundTarget()) { report('ui.links.select'); return; }
     const values = getValues();
+    const expected = selection.peek();
+    const revision = documentRevision;
+    const html = editor.getHTML();
     const accepts = () => {
-      if (disposed || editor.isReadOnly() || !boundTarget()) return false;
+      if (disposed || editor.isReadOnly() || revision !== documentRevision || editor.getHTML() !== html || !boundTarget()) return false;
       const native = document.getSelection();
-      return Boolean(native?.rangeCount === 1 && boundRange
-        && sameContextualRange(native.getRangeAt(0), boundRange));
+      return Boolean(native?.rangeCount === 1 && (anchorScope ? boundRange && sameContextualRange(native.getRangeAt(0), boundRange)
+        : !expected || sameContextualRange(native.getRangeAt(0), expected)));
     };
-    if (!selection.restore(anchorScope ? accepts : undefined, anchorScope)) {
+    if (!selection.restore(accepts, true) || !accepts()) {
       report('ui.links.select');
       return;
     }
@@ -166,12 +175,24 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
         href: values.href, title: values.title, target: values.newTab ? '_blank' : '_self',
         ...(range?.collapsed && !anchor ? { text: values.text } : {}),
       };
+      if (patch !== false) {
+        // Validate before the outer selected-text transaction: rollback rebuilds
+        // nodes and must not destroy a correctable invalid draft's bound context.
+        if (values.title.length > 1024 || ('text' in patch && (values.text.length < 1 || values.text.length > 20000)))
+          throw new TypeError('Unsupported link metadata.');
+        const checked = editor.schema.validateDocument({ version: 1, children: [{ type: 'element', tag: 'a',
+          attributes: { href: values.href, title: values.title, target: values.newTab ? '_blank' : '_self' }, children: [] }] });
+        const node = checked.children[0];
+        if (node.type !== 'element' || !node.attributes.href) throw new TypeError('Unsupported link URL.');
+      }
       if (anchorScope) {
         if (!accepts() || !range || !boundAnchor) return;
         boundRange = editAnchorLink(editor, range, patch, accepts, () => !disposed && !invalidated && !composing);
         if (remove) boundAnchor = undefined;
       }
+      else if (range && !range.collapsed) editSelectedLinks(editor, patch, () => !disposed && !invalidated && !composing && revision === documentRevision && !editor.isReadOnly());
       else editor.format('link', patch);
+      if (disposed) return;
       selection.capture();
       refresh();
       report(remove ? 'ui.links.removed' : 'ui.links.saved');
@@ -223,10 +244,11 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
     listenToUI(unlink, 'click', removed),
   ];
   subscriptions.push(editor.onSelectionChange(refresh), editor.subscribe((change) => {
-    if (change.source === 'api') { invalidated = true; editing = false; signature = undefined; statusKey = undefined; }
+    documentRevision++;
+    if (change.source === 'api') { composing = false; invalidated = true; editing = false; signature = undefined; statusKey = undefined; }
     refresh();
-  }), editor.events.on('readonlychange', update), editor.events.on('localechange', update), editor.events.on('destroy', destroy));
-  if (anchorScope) {
+  }), editor.events.on('readonlychange', (readOnly) => { if (readOnly) composing = false; update(); }), editor.events.on('localechange', update), editor.events.on('destroy', destroy));
+  {
     stopDOM.push(
       listenToUI(editor.surface, 'compositionstart', () => { composing = true; update(); }),
       listenToUI(editor.surface, 'compositionend', () => { composing = false; update(); }),

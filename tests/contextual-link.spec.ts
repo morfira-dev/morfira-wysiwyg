@@ -202,7 +202,7 @@ test('ineligible shapes and Escape dismiss the preview without stealing the care
       window.contextualLinkUI.refresh();
       return window.contextualLinkUI.element.hidden;
     };
-    // A range covering different anchors remains outside the single-link context.
+    // This range includes an image-only anchor and remains ineligible.
     const expanded = inspect(surface.querySelector('p')!, 0, 2);
     const shortcut = new KeyboardEvent('keydown', { key: 'F10', altKey: true, bubbles: true, cancelable: true });
     surface.dispatchEvent(shortcut);

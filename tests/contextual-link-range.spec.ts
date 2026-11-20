@@ -73,7 +73,7 @@ test('backward partial-link editing and unlink preserve rich children, whole-lin
   expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
 });
 
-test('only text ranges owned by one anchor enable context, including full anchor child boundaries', async ({ page }) => {
+test('ordinary linked text ranges enable context while protected and resource boundaries stay excluded', async ({ page }) => {
   await initializeLinkedRange(page, '<p>Before <a href="/range-destination"><em>Label</em><span>Middle</span><strong> text</strong></a> after <a href="/second">Second</a></p>');
   expect(await page.evaluate(() => {
     const surface = window.editor.surface;
@@ -102,7 +102,7 @@ test('only text ranges owned by one anchor enable context, including full anchor
     const shortcut = new KeyboardEvent('keydown', { key: 'F10', altKey: true, bubbles: true, cancelable: true });
     surface.dispatchEvent(shortcut);
     return { full, across, outside, protectedMiddle, protectedOutside, imageMixed, shortcut: shortcut.defaultPrevented, undo: window.editor.canUndo() };
-  })).toEqual({ full: false, across: true, outside: true, protectedMiddle: true, protectedOutside: true, imageMixed: true, shortcut: false, undo: false });
+  })).toEqual({ full: false, across: false, outside: false, protectedMiddle: true, protectedOutside: true, imageMixed: true, shortcut: false, undo: false });
 });
 
 test('a changed range during focus restoration and an API replacement invalidate retained range actions', async ({ page }) => {

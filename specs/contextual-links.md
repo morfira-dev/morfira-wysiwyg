@@ -1,5 +1,45 @@
 # Contextual link actions — U3c
 
+## Mixed ordinary linked-text ranges — 2026-11-20
+
+This addendum supersedes rejection of mixed/cross-anchor ordinary text ranges
+below, without a new factory/option, dependency, persisted format or preset.
+Keep caret and ranges wholly inside one ordinary anchor in their current
+whole-anchor mode. Add a range mode only for noncollapsed nonempty text selections
+that intersect at least one ordinary safe anchor but are not wholly in one anchor.
+Pure unlinked selections remain owned by contextual text formatting.
+
+Both endpoints must share one closest ordinary inline flow P/H/LI/blockquote/TD/TH.
+Reject any selected structural/image/figure/pre/code/semantic/foreign/hidden or
+noneditable content, cross-block endpoints and unsafe anchors. Inspect actual
+selected nodes before any cloning; do not render resources for eligibility.
+Track concrete range direction, relevant actual nodes and revision. Revalidate
+before/after focus so document edits or replacements cannot redirect old actions.
+No generic structural selection SDK or mapped positions are introduced.
+
+Range mode shows localized selected-link actions and no Open URL (no ambiguous
+navigation target). Edit opens the existing link form with scope:'selection' and
+empty metadata drafts for mixed links, not a guessed first URL. Applying writes
+one safe link patch to exactly selected text; remove unlinks only selected parts.
+Preserve rich marks, unselected anchor prefixes/suffixes/metadata, text, logical
+selection and backward direction with one Undo/Redo. Existing whole-anchor mode,
+safe Open, Escape/Alt+F10, suppression, readonly/IME, locale and stale draft rules
+remain compatible. Context preference claims only this eligible linked range,
+never every unlinked selection; no competing text/link panels for the same range.
+
+Reusable selection-scope link form enables unlink when its valid remembered
+noncollapsed range contains linked text, even if neither endpoint is inside an
+anchor. Keep existing broader form creation scope; do not narrow it to contextual
+single-flow eligibility. Anchor scope remains whole-anchor, and mixed removal
+must not run against a stale or replacement document. Backward range restoration
+belongs inside the same document transaction so history captures it.
+
+Add risk-oriented three-browser regressions for partial multi-anchor patch/unlink,
+backward/history and exact outside metadata, safe Open absence, pure text preference,
+readonly/IME, focus/API/Undo/disposal and invalid payload. Add RU/EN examples/docs,
+preserve existing anchor behavior tests. Keep current 16000 gzip JS/3000 raw CSS
+and selected standard guards; run only focused checks, no Git writes implicitly.
+
 Status: accepted first implementation contract; actual runs belong to verification-backlog.md.
 
 ## Independent composition

@@ -1,5 +1,12 @@
 # Optional link form
 
+Selection-scope removal also accepts remembered noncollapsed linked-text ranges,
+even when range endpoints are outside anchors. Apply/unlink preserve backward
+selection inside the same transaction/history. Anchor scope remains unchanged;
+contextual mixed-range eligibility and stale/draft rules follow the 2026-11-20
+addendum in contextual-links.md. Empty/mixed range metadata must never be guessed
+from the first intersected anchor. Existing broad form creation scope is retained.
+
 Status: implementation contract; extends `specs/ui-forms.md` without changing link commands or schema v1.
 
 `createLinkForm(host, editor, options?)` mounts a nonmodal section with role=form using only core APIs. It never nests a native form, so it can live within an application's Angular/native form. Buttons are type=button; normal Enter in its inputs performs the same link action and prevents the outer application's implicit submit. IME confirmation keys are not intercepted. The controller exposes an HTMLElement `element`, `refresh`, `getValues`, `setValues` and idempotent `destroy`. Draft values are `{ href, title, text, newTab }`; setters validate an entire partial draft before updating controls. Options provide initial drafts, an explicit accessible form label and an optional original-error diagnostic callback.

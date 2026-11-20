@@ -3,8 +3,18 @@ export interface ContextualLinkURL {
   href: string;
 }
 
-export interface ContextualLinkTarget {
-  anchor: HTMLAnchorElement;
-  range: Range;
+export interface ContextualAnchorTarget {
+  readonly kind: 'anchor';
+  readonly anchor: HTMLAnchorElement;
+  readonly range: Range;
   url: ContextualLinkURL;
 }
+
+export interface ContextualRangeTarget {
+  readonly kind: 'range';
+  readonly flow: HTMLElement;
+  readonly anchors: readonly HTMLAnchorElement[];
+  readonly range: Range;
+}
+
+export type ContextualLinkTarget = ContextualAnchorTarget | ContextualRangeTarget;
