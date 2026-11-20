@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { useData } from 'vitepress';
+import { quoteInputSample, selectQuoteInputSample } from './quote-input/index.js';
+import type { QuoteInputDirection } from './quote-input/types.js';
 import { officePasteSamples } from './office-paste/index.js';
 import type { OfficeSample } from './office-paste/index.js';
 import type { Editor, EditorChange } from '@morfira-dev/wysiwyg';
@@ -753,6 +755,18 @@ const loadSample = () => run((instance) => {
   instance.setHTML((sampleFactories[sample.value] ?? showcase)());
   output.value = '';
 });
+const openSpecialCharacters = () => run(() => specialCharacterUI?.open(), false);
+const openImageDialog = () => run(() => imageForm?.open());
+const loadQuoteInputSample = () => run((instance) => {
+  instance.setHTML(quoteInputSample());
+  instance.setSelection(0);
+  output.value = '';
+});
+const selectQuoteInput = (direction: QuoteInputDirection) => run((instance) => {
+  if (!selectQuoteInputSample(instance, direction)) {
+    throw new Error(t('Загрузи пример ввода через цитаты заново.', 'Reload the cross-quote input sample.'));
+  }
+}, false);
 const loadListBodySample = () => {
   sample.value = 'list-selection';
   loadSample();
@@ -1191,6 +1205,7 @@ onMounted(async () => {
       initialValues: { href: 'https://example.com', title: '', text: '', newTab: false },
     });
     imageForm = createImageForm(imageFormHost.value!, editor, {
+      presentation: 'dialog',
       initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64', height: '', caption: '' },
     });
     tablePropertiesForm = createTablePropertiesForm(tablePropertiesFormHost.value!, editor, {
@@ -1202,6 +1217,7 @@ onMounted(async () => {
       onError: (error) => notify(error instanceof Error ? error.message : String(error), true),
     });
     specialCharacterUI = createSpecialCharacterUI(specialCharacterHost.value!, editor, {
+      presentation: 'dialog',
       onError: (error) => notify(error instanceof Error ? error.message : String(error), true),
     });
     searchAPI = searchCommands(editor);
@@ -1221,6 +1237,7 @@ onMounted(async () => {
     disposeEditorUI?.();
     const ui = props.full ? createExtendedEditorUI(toolbar.value!, editor!, {
       label: t('Форматирование', 'Formatting'),
+      presentation: 'floating',
       overflow: toolbarOverflow.value,
       links: { initialValues: { href: 'https://example.com' } },
       images: { initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64' } },
@@ -1335,7 +1352,7 @@ onBeforeUnmount(() => {
     </div>
     <p class="lab-hint">{{ t('Язык меняет готовую панель и формы без замены документа. Подписи примеров и провайдеров подсказок остаются на языке страницы.', 'Language changes the ready toolbar and forms without replacing the document. Sample and suggestion-provider labels remain in the page language.') }}</p>
     <p v-if="toolbarOverflow === 'more'" class="lab-hint">{{ t('«Ещё» переносит целые группы по доступной ширине панели. Смена режима пересоздаёт только UI: документ, история и выделение редактора сохраняются. Контекстные всплывающие инструменты остаются в плане.', 'More moves whole groups according to the toolbar host width. Changing modes remounts only UI: the editor document, history and selection remain. Contextual floating controls remain planned.') }}</p>
-    <p v-if="full && sample === 'input'" class="lab-hint">{{ t('Выдели от конца «Alpha » до середины «Beta» и введи X или нажми Backspace/Delete. Сохраняются начало первого блока и форматированный остаток второго. Такой же пример есть внутри цитаты и объединённой ячейки; выделения между разными контейнерами пока не нормализуются этим обработчиком.', 'Select from the end of “Alpha ” into “Beta”, then type X or press Backspace/Delete. The first block prefix and formatted second-block suffix remain. Try the same within the quote or merged cell; this handler does not normalize selections across different containers.') }}</p>
+    <p v-if="full && sample === 'input'" class="lab-hint">{{ t('Выдели от конца «Alpha » до середины «Beta» и введи X или нажми Backspace/Delete. Сохраняются начало первого блока и форматированный остаток второго. Такой же пример есть внутри цитаты и объединённой ячейки; для ввода через границу обычной цитаты используй отдельный пример ниже.', 'Select from the end of “Alpha ” into “Beta”, then type X or press Backspace/Delete. The first block prefix and formatted second-block suffix remain. Try the same within the quote or merged cell; use the separate example below for input across ordinary quote boundaries.') }}</p>
     <div v-if="message" class="lab-message" :class="{ 'is-error': failed }" :role="failed ? 'alert' : 'status'">{{ message }}</div>
     <div ref="fullscreenWorkspace" class="demo-workspace" :data-fullscreen-active="fullscreenActive">
       <div v-if="full" class="lab-fullscreen-controls">
@@ -1350,10 +1367,12 @@ onBeforeUnmount(() => {
           <label>{{ t('Выравнивание', 'Alignment') }}<select v-model="alignment" :disabled="!ready || readOnly" :aria-label="t('Выравнивание текста', 'Text alignment')" @change="alignment !== 'mixed' && format('align', alignment)"><option value="mixed" disabled>{{ t('Разное', 'Mixed') }}</option><option value="left">{{ t('Слева', 'Left') }}</option><option value="center">{{ t('По центру', 'Center') }}</option><option value="right">{{ t('Справа', 'Right') }}</option><option value="justify">{{ t('По ширине', 'Justify') }}</option></select></label>
         </div>
         <fieldset v-if="full" :disabled="!ready || readOnly" class="lab-inline-actions lab-color-controls">
-          <label>{{ t('Цвет текста', 'Text color') }}<input v-model="textColor" type="color"></label><button @click="format('color', textColor)">{{ t('Применить цвет', 'Apply color') }}</button><button @click="format('color', false)">{{ t('Сбросить цвет', 'Reset color') }}</button>
-          <label>{{ t('Выделение цветом', 'Highlight color') }}<input v-model="highlight" type="color"></label><button @click="format('background', highlight)">{{ t('Применить выделение', 'Apply highlight') }}</button><button @click="format('background', false)">{{ t('Сбросить выделение', 'Reset highlight') }}</button>
+          <label>{{ t('Цвет текста', 'Text color') }}<input v-model="textColor" type="color" @change="format('color', textColor)"></label><button @click="format('color', textColor)">{{ t('Применить цвет', 'Apply color') }}</button><button @click="format('color', false)">{{ t('Сбросить цвет', 'Reset color') }}</button>
+          <label>{{ t('Выделение цветом', 'Highlight color') }}<input v-model="highlight" type="color" @change="format('background', highlight)"></label><button @click="format('background', highlight)">{{ t('Применить выделение', 'Apply highlight') }}</button><button @click="format('background', false)">{{ t('Сбросить выделение', 'Reset highlight') }}</button>
           <span>{{ t('Текст / фон', 'Text / background') }}: {{ activeStyles }}</span>
         </fieldset>
+        <div v-if="full" class="lab-inline-actions lab-insert-actions"><button :disabled="!ready || readOnly" @click="openImageDialog">{{ t('Вставить изображение…', 'Insert image…') }}</button><button :disabled="!ready" @click="openSpecialCharacters">{{ t('Вставить спецсимвол…', 'Insert special character…') }}</button></div>
+        <div ref="specialCharacterHost"></div><div ref="imageFormHost"></div>
         <div ref="toolbar" class="demo-toolbar-host"></div><div ref="host" @compositionstart="refresh" @compositionend="refresh"></div>
         <div class="demo-status"><span>{{ count }} {{ t('символов', 'characters') }}<template v-if="full"> · {{ words }} {{ t('слов', 'words') }}</template></span><span v-if="full">undo {{ undoAvailable ? '●' : '○' }} · redo {{ redoAvailable ? '●' : '○' }} · {{ source }}</span><span v-else>{{ t('Минимальный пресет · готовая панель', 'Minimal preset · ready toolbar') }}</span></div>
         <p v-if="full" class="lab-hint">{{ t('Выделяй текст перед форматированием. Кликни в ячейку перед табличной командой. Ctrl/Cmd+Z — отмена; Ctrl/Cmd+B/I/U — формат; Enter — новый пункт, пустой — выход; Tab/Shift+Tab — вложенность. В таблице Tab — следующая ячейка.', 'Select text before formatting. Click a cell before a table command. Ctrl/Cmd+Z undoes; Ctrl/Cmd+B/I/U formats; Enter splits an item; an empty item exits. Tab/Shift+Tab nests lists; in tables Tab moves to the next cell.') }}</p>
@@ -1387,6 +1406,13 @@ onBeforeUnmount(() => {
           </div>
           <p class="lab-hint">{{ t('Кнопка заменяет документ пустым абзацем и отправляет демонстрационный paste; Undo отменяет вставку. Это написанные вручную образцы разметки, а не реальные снимки буфера Word/Excel/Google Docs. Доступ к системному буферу не нужен. В Word восстанавливаются поддержанные списки, в Docs убирается служебная жирная обёртка, в Excel сохраняются таблица и colspan. Стили из классов и таблиц стилей отбрасываются.', 'Each button replaces the document with an empty paragraph and dispatches a demonstration paste; Undo reverts the paste. These are hand-authored markup samples, not actual Word/Excel/Google Docs clipboard captures. No system clipboard permission is needed. Supported Word lists are reconstructed, the Docs bold wrapper is neutralized, and the Excel table and colspan survive. Classes and stylesheets are discarded.') }}</p>
           <a :href="ru ? '/office-paste' : '/en/office-paste'">{{ t('Поддержка и ограничения офисной вставки', 'Office paste support and limitations') }}</a>
+        </fieldset></details>
+        <details class="lab-quote-input"><summary>{{ t('Ввод через границы цитат', 'Input across quote boundaries') }}</summary><fieldset :disabled="!ready || readOnly">
+          <button @click="loadQuoteInputSample">{{ t('Загрузить пример ввода через цитаты', 'Load cross-quote input sample') }}</button>
+          <button @click="selectQuoteInput('into')">{{ t('Выделить из текста в цитату', 'Select from text into quote') }}</button>
+          <button @click="selectQuoteInput('out')">{{ t('Выделить из цитаты в текст', 'Select from quote into text') }}</button>
+          <button @click="selectQuoteInput('between')">{{ t('Выделить между цитатами', 'Select between quotes') }}</button>
+          <p class="lab-hint">{{ t('Загрузка заменяет документ. После выделения напечатай X либо нажми Backspace/Delete прямо в редакторе. Начальный блок и его контейнер сохраняются; правый оформленный остаток присоединяется к нему. Невыделенные блоки цитат остаются на месте, пустые выбранные цитаты удаляются. Undo возвращает исходный документ и обратное выделение. Это нативный ввод через простые цитаты верхнего уровня; вставка HTML/текста через API или буфер, вложенные/семантические цитаты, списки и таблицы этим примером не расширяются.', 'Loading replaces the document. After selecting, type X or press Backspace/Delete in the editor. The starting block and its container remain; the formatted right suffix joins it. Unselected quote bodies stay in place; emptied selected quotes are removed. Undo restores the original document and backward selection. This is native input across simple top-level quotes; API/clipboard insertion, nested/semantic quotes, lists and tables are not extended by this example.') }}</p>
         </fieldset></details>
         <details class="lab-paste"><summary>{{ t('Вставка между блоками', 'Paste between blocks') }}</summary><fieldset :disabled="!ready || readOnly">
           <p class="lab-hint">{{ t('Загрузи одноимённый пример в меню «Документ», выбери область и выдели пример. Вставка заменяет выделение; Undo возвращает исходный текст и направление выделения. Также можно использовать обычный Ctrl/Cmd+V в редакторе.', 'Load this sample from the Document menu, choose an area and select the sample. Insertion replaces the selection; Undo restores its original text and direction. You can also use ordinary Ctrl/Cmd+V in the editor.') }}</p>
@@ -1714,7 +1740,7 @@ onBeforeUnmount(() => {
           <div class="lab-inline-actions">
             <button :disabled="!ready || readOnly" @click="loadSpecialCharacterSample">{{ t('Загрузить пример замены символом', 'Load symbol replacement sample') }}</button>
           </div>
-          <div ref="specialCharacterHost"></div>
+          <button :disabled="!ready" @click="openSpecialCharacters">{{ t('Открыть спецсимволы', 'Open special characters') }}</button>
           <p class="lab-hint">{{ t('Пример выделяет слово «сумма»: найди € и замени слово одним нажатием. Undo вернёт исходное выделение. В панели работают стрелки, Home/End и Enter/Space; Escape возвращает курсор в редактор. Поиск не меняет документ и доступен в read-only.', 'The sample selects “amount”: find € and replace the word with one activation. Undo restores the original selection. Use arrows, Home/End and Enter/Space in the panel; Escape returns to the editor. Search never changes the document and remains available read-only.') }}</p>
           <a :href="ru ? '/special-characters' : '/en/special-characters'">{{ t('Подключение и свой каталог символов', 'Setup and custom character catalog') }}</a>
         </details>
@@ -1728,7 +1754,7 @@ onBeforeUnmount(() => {
         <details><summary>{{ t('Ссылки и изображения', 'Links and images') }}</summary>
           <div ref="linkFormHost"></div>
           <hr>
-          <div ref="imageFormHost"></div>
+          <button :disabled="!ready || readOnly" @click="openImageDialog">{{ t('Открыть форму изображения', 'Open image form') }}</button>
           <label><input v-model="failNextImageUpload" type="checkbox" :disabled="readOnly" :aria-label="t('Ошибка следующей загрузки', 'Fail next upload')">{{ t('Ошибка следующей загрузки', 'Fail next upload') }}</label>
           <p class="lab-hint">{{ t('Выбери PNG/JPEG/GIF/WebP/AVIF: форма покажет имитацию прогресса. Для проверки ошибки включи «Ошибка следующей загрузки» перед выбором файла; затем нажми «Повторить загрузку». Повтор использует исходную позицию, пока документ не изменился. Файл не читается, не отправляется и не сохраняется.', 'Choose PNG/JPEG/GIF/WebP/AVIF to see simulated progress. Enable Fail next upload before choosing a file to demonstrate an error, then use Retry upload. Retry keeps the original position while the document is unchanged. The file is never read, uploaded or stored.') }}</p>
           <p class="lab-hint">{{ t('Выбери картинку и нажми «Изображение слева», «Изображение по центру» или «Изображение справа». Кнопки сразу меняют размещение одним Undo, не отправляя остальные поля. Сброс убирает явное размещение; подпись и размеры сохраняются. Обтекания текстом нет.', 'Select an image and choose Align image left, Center image or Align image right. These buttons apply placement immediately in one Undo without submitting other fields. Reset removes explicit placement; caption and dimensions survive. Text wrapping is not included.') }}</p>

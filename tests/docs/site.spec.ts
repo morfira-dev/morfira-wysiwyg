@@ -89,7 +89,8 @@ test('full demo formats text, changes blocks and inserts a checked link and loca
   await page.getByLabel('Адрес ссылки', { exact: true }).fill('https://example.com/article');
   await page.getByRole('button', { name: 'Создать ссылку', exact: true }).click();
   await expect(page.locator('.mw-content a')).toHaveAttribute('href', 'https://example.com/article');
-  await page.getByRole('button', { name: 'Вставить изображение', exact: true }).click();
+  await page.getByRole('button', { name: 'Вставить изображение…', exact: true }).click();
+  await page.locator('.mw-image-dialog[open]').getByRole('button', { name: 'Вставить изображение', exact: true }).click();
   await expect(page.locator('.mw-content img')).toHaveAttribute('src', '/logo.svg');
 });
 
@@ -199,12 +200,9 @@ for (const english of [false, true]) test(`colors and link forms preserve caret 
 for (const english of [false, true]) test(`image metadata, captions and undo work on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'images', english);
-  await page.getByText(t('Ссылки и изображения', 'Links and images'), { exact: true }).click();
-  const imageForm = page.locator('.demo-inspector .mw-image-form');
-  await page.locator('.mw-content img').evaluate((image, label) => {
-    image.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-    [...document.querySelectorAll('label')].find((element) => element.textContent?.trim() === label)?.querySelector('input')?.focus();
-  }, t('Ширина изображения', 'Image width'));
+  await page.locator('.mw-content img').click();
+  await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
+  const imageForm = page.locator('.mw-image-dialog[open] .mw-image-form');
   await expect(imageForm.getByLabel(t('Ширина изображения', 'Image width'), { exact: true })).toHaveValue('160');
   await imageForm.getByLabel('Alt', { exact: true }).fill(t('Описание', 'Description'));
   await imageForm.getByLabel(t('Ширина изображения', 'Image width'), { exact: true }).fill('120');
@@ -216,6 +214,9 @@ for (const english of [false, true]) test(`image metadata, captions and undo wor
   await expect(page.locator('.mw-content img')).toHaveCSS('height', '90px');
   await expect(page.locator('.mw-content img')).toHaveAttribute('alt', t('Описание', 'Description'));
   await expect(page.locator('.mw-content figcaption')).toHaveText(t('Новая подпись', 'New caption'));
+  await expect(page.locator('.mw-image-dialog[open]')).toHaveCount(0);
+  await page.locator('.mw-content img').click();
+  await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
   await imageForm.getByLabel(t('URL изображения', 'Image URL'), { exact: true }).fill('javascript:evil()');
   await imageForm.getByRole('button', { name: t('Обновить изображение', 'Update image'), exact: true }).click();
   await expect(imageForm.getByRole('status')).toHaveText(t('Не удалось применить изменения. Проверьте URL, размеры и выделение изображения.', 'Unable to apply image changes. Check the image URL, dimensions and selection.')); await expect(page.locator('.mw-content img')).toHaveAttribute('src', '/logo.svg');
@@ -230,8 +231,9 @@ for (const english of [false, true]) test(`image upload cancellation, result and
   const t = (ru: string, en: string) => english ? en : ru;
   await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'empty', english);
   await page.locator('.mw-content').click();
-  await page.getByText(t('Ссылки и изображения', 'Links and images'), { exact: true }).click();
-  const file = page.getByLabel(t('Файл изображения', 'Image file'), { exact: true });
+  await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
+  const form = page.locator('.mw-image-dialog[open] .mw-image-form');
+  const file = form.getByLabel(t('Файл изображения', 'Image file'), { exact: true });
   await file.setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from('local demo file') });
   await expect(page.getByRole('button', { name: t('Отменить загрузку', 'Cancel upload'), exact: true })).toBeEnabled();
   await page.getByRole('button', { name: t('Отменить загрузку', 'Cancel upload'), exact: true }).click();
@@ -239,10 +241,12 @@ for (const english of [false, true]) test(`image upload cancellation, result and
   await file.setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from('local demo file') });
   await expect(page.locator('.mw-content figure img')).toHaveAttribute('src', '/logo.svg');
   await expect(page.locator('.mw-content figcaption')).toHaveText(t('Демо результата callback загрузки', 'Demo upload callback result'));
-  await expect(page.getByText(t('Изображение вставлено.', 'Image inserted.'), { exact: true })).toBeVisible();
+  await expect(page.locator('.mw-image-dialog[open]')).toHaveCount(0);
   await page.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click(); await expect(page.locator('.mw-content img')).toHaveCount(0);
+  await page.locator('.mw-content').click();
+  await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
   await file.setInputFiles({ name: 'bad.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
-  await expect(page.locator('.mw-image-form [role=status]')).toHaveText(t('Не удалось загрузить изображение. Выберите поддерживаемый файл и повторите попытку.', 'Unable to upload this image. Choose a supported file and try again.')); await expect(page.locator('.mw-content img')).toHaveCount(0);
+  await expect(form.getByRole('status')).toHaveText(t('Не удалось загрузить изображение. Выберите поддерживаемый файл и повторите попытку.', 'Unable to upload this image. Choose a supported file and try again.')); await expect(page.locator('.mw-content img')).toHaveCount(0);
 });
 
 for (const english of [false, true]) test(`literal search, replacement forms and one-step undo on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {

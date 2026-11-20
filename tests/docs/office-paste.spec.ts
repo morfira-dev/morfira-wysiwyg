@@ -12,6 +12,7 @@ for (const english of [false, true]) test(`Office paste samples and support link
   await panel.getByRole('button', { name: t('Вставить пример Word', 'Paste Word sample'), exact: true }).click();
   await expect(content.locator('ol > li').first()).toContainText('First item');
   await expect(content.locator('ol ul > li')).toHaveText('Nested item');
+  await expect(content.locator('ol > li strong').first()).toHaveCSS('font-size', '16px');
   const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
   await undo.click();
   await expect(content).toHaveText('');

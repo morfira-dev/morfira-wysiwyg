@@ -76,3 +76,13 @@ Built-in captions follow `editor.setLocale('ru' | 'en')` and the editor's transl
 ## Size boundaries
 
 Measure `/ui/special-characters` with its selected shared helpers and the separate `standard-special-characters-ready` profile, counting shared chunks once. This does not promise that every combination of optional modules fits the standard profile. See [architecture and size](/en/architecture) and [testing](/en/testing) for measurement rules and current validation.
+
+## Dialog presentation
+
+For an initially closed native dialog, pass `presentation: 'dialog'`, then call
+`ui.open()` from an application button. `ui.close()` dismisses it; `ui.isOpen()`
+reports visibility. Inline stays the default. Open preserves the editor target
+before focusing search; insertion closes the dialog and returns the document
+caret. Escape/Close cancels without history. External replacement, read-only and
+destruction invalidate the target. Native dialog support is required; no polyfill
+is included. The homepage/playground use this mode.

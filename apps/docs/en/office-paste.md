@@ -1,6 +1,6 @@
 # Pasting from Word, Excel and Google Docs
 
-Paste uses the shared safe HTML importer. This slice adds bounded normalization of common Office markup; it does not promise an exact reproduction of every application document or version. New browser regressions are authored but have not been run locally at the user's request. Actual system clipboard captures and application-version checks remain a separate stage.
+Paste uses the shared safe HTML importer. This slice adds bounded normalization of common Office markup; it does not promise an exact reproduction of every application document or version. Actual executed checks are recorded in the project verification log. Actual system clipboard captures and application-version checks remain a separate stage.
 
 ## What survives
 
@@ -11,11 +11,11 @@ Paste uses the shared safe HTML importer. This slice adds bounded normalization 
 | Excel | An HTML table with permitted `rowspan` / `colspan` | Cell content, supported formatting and merged cells survive. Classes, formulas, calculations and stylesheet rules are not imported. Geometry and print layout are not reproduced. |
 | Excel / another tabular source | Tab-separated text in a selected table cell with `tables()` installed | Existing TSV import understands quoted fields, embedded tabs/line breaks and escaped double quotes. This imports values, without formulas; outside a table context TSV does not automatically create a table. |
 
-These are markup recognition rules, not installed-application detection. Identical markup is handled identically regardless of its source. Classes, stylesheets and application preferences are not evaluated. Existing permitted inline styles survive within the schema's limits. Office font sizes in `pt` are not automatically converted to supported units.
+These are markup recognition rules, not installed-application detection. Identical markup is handled identically regardless of its source. Classes, stylesheets and application preferences are not evaluated. Existing permitted inline styles survive within the schema's limits. Explicit inline `font-size` in points is converted to CSS pixels using `1pt = 4/3px`: `12pt` → `16px`, `11pt` → `14.667px`. Unsigned decimal values with up to four integer and three fractional digits are accepted only when the rounded result fits `0…9999.999px`. Values with signs, exponents, functions or `!important` are not converted. Declaration order and existing supported units remain unchanged. Semantic SDK subtrees are not normalized by this rule. Direct JSON `pt` values remain unsupported; HTML import stores canonical `px`. This does not load fonts or restrict imports to the font plugin’s configured toolbar choices.
 
 ## Try it
 
-On the [homepage](/en/#editor) and in the [laboratory](/en/playground), expand “Office application paste”. Three buttons replace the document with an empty paragraph and dispatch a demonstration `paste` event; one Undo reverts the paste. Samples are hand-authored and explicitly identified as synthetic. No system clipboard permission, external application or network request is required.
+On the [homepage](/en/#editor) and in the [laboratory](/en/playground), expand “Office application paste”. Three buttons replace the document with an empty paragraph and dispatch a demonstration `paste` event; one Undo reverts the paste. Samples are hand-authored and explicitly identified as synthetic. No system clipboard permission, external application or network request is required. The Word sample includes `12pt` → `16px`; an Excel cell includes `11pt` → `14.667px`.
 
 For a real clipboard, copy a fragment in the source application, place the caret in the editor and press Ctrl/Cmd+V. The result depends on the HTML supplied by the application and browser. Select a table cell for TSV paste. Save any demo content you need first: loading a sample replaces the document.
 

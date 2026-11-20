@@ -45,7 +45,7 @@ const options: ChecklistOptions = { interactive: false };
 const editor = createEditor(host, { plugins: [checklists(options)] });
 ```
 
-Open **Load checklist interactions** in the demo: it includes parent/child tasks, a multi-paragraph item and an RTL example. Selection buttons place a caret or create a backward range; then try the marker, shortcut and Undo. New regressions and RU/EN scenarios are authored but have not run locally; build/size results are recorded separately in the project's verification record.
+Open **Load checklist interactions** in the demo: it includes parent/child tasks, a multi-paragraph item and an RTL example. Selection buttons place a caret or create a backward range; then try the marker, shortcut and Undo. Current browser/example execution results and their limits are recorded under [testing](/en/testing).
 
 ## Commands and state
 

@@ -111,7 +111,7 @@ If a row write includes a first-row `rowspan > 1`, or a column write includes a 
 
 The caption is a real direct `caption` before the table’s other children. Its text is limited to 5000 UTF-16 units and assigned through `textContent`, so HTML-like input stays literal; whitespace is not trimmed. The multiline form control preserves line breaks; Enter adds a line instead of submitting, so use Apply for changes. Existing rich caption children survive when the requested text matches. Empty string or `false` removes it. Duplicate direct captions are unsupported. A caret only in the caption is not a cell selection: select a cell or use the form’s retained target. These are basic native semantics, without universal complex multi-level header associations or a claim of complete accessibility.
 
-On the homepage or playground, load the Tables sample: it contains a header row, caption and first-column rowspan. In Tables, enable Header column, edit Table caption and apply; one Undo restores the whole patch. New browser definitions are authored but not executed locally in the current work mode.
+On the homepage or playground, load the Tables sample: it contains a header row, caption and first-column rowspan. In Tables, enable Header column, edit Table caption and apply; one Undo restores the whole patch. Current browser/example execution results and their limits are recorded under [testing](/en/testing).
 
 Customize the caption on the editor container; styles are scoped to `.mw-content table > caption`:
 

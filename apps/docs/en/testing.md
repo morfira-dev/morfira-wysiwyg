@@ -1,5 +1,22 @@
 # Testing and releases
 
+## Complete local verification — 20 November 2026
+
+The fresh local run passed **4714 editor/adapter executions** in Chromium,
+Firefox and WebKit. Two existing skips avoid repeating the same browser-independent
+Node Markdown-codec process check; that check passed in the Chromium project.
+There were no failed or flaky results. All **247 RU/EN documentation checks**,
+**15 installed-consumer scenarios** across five adapters, the separate **3 Angular
+22 scenarios**, and **15 release-tooling tests** passed. Static checks, declarations,
+archive exports, selective imports and bundle guards also passed.
+
+This confirms the automated scenarios on the checked local source, without a
+claim of complete Office fidelity, real-device IME, physical OS color-picker or
+screen-reader certification. It does not establish GitHub CI or npm publication.
+The public guides' current status links refer to this run; older dated checkpoints
+below retain their historical scope.
+
+
 Composition tests use `compositionstart`, intermediate `beforeinput`/`input`, `compositionend` and trailing composition input sequences with explicit DOM changes. They check Unicode, history, selection, external replacement, read-only and plugin candidate-confirmation guards. Synthetic events do not start a system IME: Japanese/Chinese/Korean candidate windows and mobile keyboards remain manual checks. Ordinary-block Enter/Shift+Enter and Backspace/Delete boundaries additionally use real browser keyboard input.
 
 ## Local checks

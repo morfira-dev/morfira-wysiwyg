@@ -1,6 +1,6 @@
 # Atomic mentions with IDs
 
-`mentions({ persistent: true, atomic: true })` enables whole-mention navigation and deletion. Both flags are explicit: the default plugin inserts plain text, while `persistent: true` alone stores an editable reference with an ID. This slice is implemented locally; browser regressions are authored but have not run. Earlier editable-reference results do not validate atomic behavior.
+`mentions({ persistent: true, atomic: true })` enables whole-mention navigation and deletion. Both flags are explicit: the default plugin inserts plain text, while `persistent: true` alone stores an editable reference with an ID. Current browser/example execution results and their limits are recorded under [testing](/en/testing). Earlier editable-reference results do not validate atomic behavior.
 
 ## Setup
 

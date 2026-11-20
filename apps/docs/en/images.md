@@ -2,6 +2,39 @@
 
 The optional `createImageForm` is available through `@morfira-dev/wysiwyg/ui/images` and requires `images()`. It provides URL/alt/dimensions/caption, insertion/update/removal and cancellable file upload. [Standalone integration example](/en/ui#images-and-application-owned-upload). The application still owns transport and storage.
 
+## Insert and edit dialog
+
+The compatible default remains an embedded form (`presentation: 'inline'`).
+Explicitly select `presentation: 'dialog'` for a separate window: the form mounts
+closed inside a native `dialog`, and the application opens it from its own button.
+Its fields do not expand the page layout.
+
+```ts
+import { createImageForm } from '@morfira-dev/wysiwyg/ui/images';
+import '@morfira-dev/wysiwyg/ui/forms.css';
+
+const form = createImageForm(formHost, editor, { presentation: 'dialog' });
+const openImage = () => form.open();
+openButton.addEventListener('click', openImage);
+
+const disposeImageDialog = () => {
+  openButton.removeEventListener('click', openImage);
+  form.destroy();
+};
+```
+
+`open()` captures the editor's current position and inspects the selected image;
+`close()` dismisses the window, and `isOpen()` reports its state. Escape and the
+close button cancel the form's owned upload and restore focus to the originating
+button. Successful insert, update, removal or upload closes the dialog; an error
+keeps it open for correction or explicit retry. Alignment buttons apply placement
+immediately and keep the dialog and other drafts open. This form creates no upload
+server and does not change the document format.
+
+On the homepage and playground, **Insert image…** above the editor opens the
+dialog. Select an existing image in the document first to edit it. Enable the
+inspector's **Fail next upload** setting before opening the dialog.
+
 Images are an optional module with no runtime dependencies. Core understands HTML `img`, `figure` and `figcaption`; the module adds selection, editing and upload commands. Import it separately:
 
 ```ts
@@ -62,7 +95,7 @@ Only the image moves: dimensions, URL, figure, rich caption and neighboring node
 
 One ordinary image is supported, including lists and merged table cells; complex figures, protected semantic nodes and foreign targets reject atomically. Each successful change is one Undo step with image selection retained. Read-only and active IME composition block changes; document or selection replacement during focus cannot redirect the operation to another image.
 
-The ready form and its contextual edit mode expose separate left/center/right/reset buttons: they apply placement immediately without submitting other draft fields. Try the **Images** sample on the homepage or in the [playground](/en/playground): click the image and open **Links and images**. New browser scenarios have been authored; they have not been executed locally under the current work mode.
+The ready form and its contextual edit mode expose separate left/center/right/reset buttons: they apply placement immediately without submitting other draft fields. Try the **Images** sample on the homepage or in the [playground](/en/playground): click the image and open **Insert image…**. These actions keep the dialog open; close it with Escape before using Undo in the main toolbar. Current verification results are recorded separately from this capability description.
 
 ## Proportional dimensions
 
@@ -207,7 +240,7 @@ This signal cancels only its associated upload. Aborting an old signal cannot in
 
 ## Demo and appearance
 
-On the [homepage](/en/#editor) and [playground](/en/playground), choose “Images”. For numeric input, enable Keep aspect ratio and edit one side: its counterpart updates before Apply. For dragging, leave **Image resize handles** enabled, click the image and drag a corner; Escape cancels, releasing applies, and Undo restores the size. Turning off the demo toggle destroys only this UI. Alt/dimension/caption fields populate on image selection; commands preserve selection through form focus. To demonstrate upload progress, choose an accepted raster file in **Links and images**. Enable **Fail next upload** before choosing it to produce one simulated error, then use **Retry upload**. The checkbox resets when that attempt starts, allowing the retry to succeed. The demo returns a local logo instead of the chosen file. **Files are never read, uploaded or stored**: progress is simulated locally, not measured network transfer. New browser definitions are authored but not executed locally in the current work mode.
+On the [homepage](/en/#editor) and [playground](/en/playground), choose “Images”. Open **Insert image…** for numeric input: enable Keep aspect ratio and edit one side; its counterpart updates before Apply. A successful update closes the dialog. For dragging, leave **Image resize handles** enabled, click the image and drag a corner; Escape cancels, releasing applies, and Undo restores the size. Turning off the demo toggle destroys only this UI. Alt/dimension/caption fields populate on image selection; commands preserve selection through form focus. To demonstrate an error, first enable **Fail next upload** in **Links and images**, then open the dialog and choose an accepted raster file. After one simulated error, use **Retry upload**. The checkbox resets when that attempt starts, allowing the retry to succeed. The demo returns a local logo instead of the chosen file. **Files are never read, uploaded or stored**: progress is simulated locally, not measured network transfer. Current verification results are recorded separately.
 
 ```css
 .my-editor {

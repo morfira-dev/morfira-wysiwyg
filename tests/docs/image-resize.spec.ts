@@ -10,8 +10,8 @@ for (const english of [false, true]) test(`proportional image drafts, one-step U
   const image = content.locator('figure img');
   await expect(image).toHaveAttribute('width', '160');
   await image.click();
-  const panel = page.locator('details').filter({ has: page.locator('.mw-image-form') });
-  await panel.locator('summary').click();
+  await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
+  const panel = page.locator('.mw-image-dialog[open]');
   const form = panel.locator('.mw-image-form');
   const lock = form.getByLabel(t('Сохранять пропорции', 'Keep aspect ratio'), { exact: true });
   await expect(lock).not.toBeChecked();
@@ -22,8 +22,8 @@ for (const english of [false, true]) test(`proportional image drafts, one-step U
   await expect(height).toHaveValue('240');
   await expect(image).toHaveAttribute('width', '160');
   await expect(image).toHaveAttribute('height', '160');
-  await expect(panel).toContainText(t('Второе поле пересчитается', 'The other field follows'));
   await form.getByRole('button', { name: t('Обновить изображение', 'Update image'), exact: true }).click();
+  await expect(panel).toBeHidden();
   await expect(image).toHaveAttribute('width', '240');
   await expect(image).toHaveAttribute('height', '240');
   await expect(content.locator('figcaption')).toHaveText(t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption'));

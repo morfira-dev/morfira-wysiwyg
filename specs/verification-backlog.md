@@ -1,5 +1,162 @@
 # Verification record
 
+## Full local pre-release verification — 2026-11-20
+
+The user explicitly requested a fresh complete local run and local commits.
+Runtime and browser-test source stayed unchanged throughout the complete run;
+no fixes, weakened assertions or new skips were needed. This supersedes earlier
+paused/unexecuted labels and staged-only results for the current tested source.
+Those historical records remain below, with their original scope and limits.
+
+| Gate | Executed result |
+| --- | --- |
+| pnpm run check:static | Passed project contracts, three consumer-toolchain regressions, all package builds/declarations, eight archive layouts, tree shaking, JS/CSS budgets and TS/Svelte/Vue type checks |
+| Complete editor/adapter suite | 4714 passed, 2 existing Node-only duplicate skips, 0 failed and 0 flaky; 40.2 minutes |
+| Complete RU/EN docs suite | 247 passed, 0 skipped/failed/flaky; 5.8 minutes |
+| Default installed consumer | 15/15 production scenarios: Vue, React, Svelte, Angular 21 and Web Component × Chromium/Firefox/WebKit |
+| Angular 22 installed consumer | 3/3 production scenarios under Node 24.16.0 and TypeScript 6.0.3 |
+| Release tooling tests | 15/15 passed; no real publication or notification |
+
+The two editor skips are the browser-independent Node Markdown-codec process
+check in Firefox/WebKit; that exact test executed successfully in the Chromium
+project. No browser behavior test was skipped to obtain a passing result.
+Editor and docs checks used new task-owned servers on 5207 and 4207 after the
+build; the user's existing preview sessions were preserved. Heavy browser stages
+ran sequentially. These local timings do not measure GitHub runner/CI timings.
+
+Both installed profiles packed the actual eight libraries, checked isolated tool
+and library realpaths and declarations, performed AOT/production builds and ran
+all configured browser scenarios. The default profile also passed framework-free
+core consumption. Temporary consumers were removed. Reports remain under ignored
+artifacts/consumer-packages.json and artifacts/consumer-angular22.json; detailed
+local run logs/JSON are under /tmp/morfira-full-*-20261120.*.
+
+The focused optional-UI actual-tarball smoke also passed: strict installed-package
+TypeScript, SSR-safe exports, public JS/CSS and Chromium insertion/Undo/cleanup
+for image/symbol dialogs, link/table popovers, docked search and existing optional
+UI probes. After all behavioral suites, only documentation verification wording
+was refreshed; the final site rebuild passed in 17.9 seconds. That text-only
+refresh did not change runtime, controls or test definitions and was not followed
+by an unnecessary repeat of the complete browser suites.
+
+The tested runtime is committed as 108ce2f (core) and aab8534 (plugins/facade).
+Source/test modification times were checked: no runtime or browser-test file was
+changed after the full editor run started. This documentation commit records the
+same checked code and generated size report. No GitHub CI observation, push, npm publication,
+Telegram delivery or deployment was performed. Real-device IME/OS color-picker,
+screen-reader certification and real Office application fidelity remain outside
+these automated regression claims.
+
+
+## Native quote input, point typography and insertion UI — 2026-11-20
+
+Three subagents split native quote replacement, Office typography, independent
+SDK/security review, and then the requested floating insertion UI. The parent
+integrated RU/EN docs/demo and the independent special-character dialog. No
+publication, push or CI inspection is part of this stage.
+
+Implemented contracts: native-only root/simple-quote typing and selected deletion
+in input-replacement.md; decoded inline HTML point-size conversion in office-paste.md;
+ready-toolbar color draft preservation and demo change-to-apply in editor-ui.md;
+optional floating link/table panels, image modal and nonmodal docked search;
+independent optional special-character dialog. Inline library defaults remain
+compatible. The homepage/playground opt into floating/modal presentation. SDK
+selection handles in plugin-sdk-next.md are an unimplemented design proposal.
+
+Executed intermediate evidence and corrections (not final all-suite results):
+
+- Initial affected editor selection: 213 executions, 204 passed / 9 failed in
+  3.8 minutes. The failures were three cases across all engines: Office pt-only
+  imports missed an mso/docs prepass trigger; a former quote→root negative case
+  now belonged to the accepted native contract; an empty endpoint expectation
+  incorrectly discarded a retained empty em wrapper. Point conversion moved to
+  existing inert readDOM traversal; the Office prepass itself was not broadened.
+  Negative coverage was retained with a nested quote; empty-affinity assertions
+  continue checking content, editable position and exact history.
+- The following targeted 63 executions returned 51 passed / 12 failed in 1.4
+  minutes. Six color failures used offset-only direction comparison after
+  endpoints moved to different DOM nodes; they now compare the actual Range end.
+  Four link/search setup failures used a nonexistent ui/standard.css URL; the
+  tests now load the actual public ui/editor.css. One WebKit Escape fixture
+  assumed pointer-click focuses a button; it now explicitly focuses/activates
+  its known opener for the focus-return check. A Firefox symbol-dialog failure
+  exposed native-close focus recapture; dialog restore now uses the captured
+  revision-bound target with post-focus freshness/selection checks.
+- First affected docs selection: 16 executions, 12 passed / 4 failed in 32.1s.
+  Two color assertions matched both nested style spans after combining color and
+  background; they now select the actual background owner and assert both colors.
+  Two image alignment cases exposed premature capture-listener microtask finish:
+  modal suspension now finishes after base action handlers in bubbling phase.
+  A dedicated alignment/reset modal and unsaved-draft regression was added.
+- Builds/declarations/size guards passed at the intermediate checkpoints. One
+  initial build was blocked by sandbox tsx IPC and was rerun with permission.
+  A typecheck incorrectly overlapped artifact regeneration and reported missing
+  declarations; the later sequential TS/Svelte/Vue run passed. No declarations
+  or checks were weakened. Project contracts, selective imports/tree shaking and
+  eight archive-layout checks passed before the final symbol-focus correction.
+
+- The next 42-execution subset returned 35 passed / 7 failed in 1.6 minutes.
+  Correct Range-direction checks exposed a real existing core defect: the style
+  transform always reselected forward. The style branch now restores backward
+  direction, with direct color/background apply/reset/Undo/Redo evidence. The
+  remaining Firefox image retry exposed incidental native-close focus recapture
+  after an invalid draft; the image base now guards capture/inspection only
+  during that synchronous suspension, keeping API invalidation and post-focus
+  command validation active. The repeated 18-doc subset returned 16 passed /
+  2 failed in 1.1 minutes: background-owner color assertions were reading the
+  outer wrapper rather than the visible text's nested color owner. Assertions
+  now inspect actual glyph-parent computed color and the background owner.
+- After those corrections, the 36-execution subset passed 36/36 in 1.0 minute
+  across Chromium, Firefox and WebKit: direct style direction/history, both
+  native color drafts, all seven image-dialog scenarios, and symbol-dialog
+  insertion/cancellation/stale/closed-control cases. The earlier passing link,
+  docked-search, table, Office and quote cases were not repeated wholesale.
+
+Final selected-profile measurements (bytes; shared chunks counted once):
+
+| Profile | Minified JS | gzip JS | Brotli JS | Minified CSS |
+| --- | ---: | ---: | ---: | ---: |
+| Core | 96009 | 29658 | 26084 | 3293 |
+| Standard ready | 233509 | 69472 | 59148 | 15494 |
+| Extended ready | 290515 | 86062 | 72615 | 16959 |
+
+The independently measured contextual-image entry is 15921 gzip JS bytes under
+its unchanged 16000-byte guard (79 bytes reserve). Native image dialog code is
+kept outside that contextual entry through the public form wrapper; no budget
+increase or dependency was introduced. Full package build/declarations/size
+checks and the sequential TS/Svelte/Vue typecheck passed on this final runtime.
+
+Final integration evidence:
+
+- Final RU/EN site build passed. The selected live-example run passed 23/23 in
+  53.7s (Chromium), including both color pickers, floating ready insertion/search,
+  quote input, Office samples, image alignment/proportions/upload feedback,
+  special-character modal, table picker and five migrated original image flows.
+- Focused actual-tarball consumer passed SSR-safe public imports, strict TypeScript
+  against extracted declarations with no workspace aliases, public JS/CSS and
+  Chromium operations for anchored link/table panels, image/symbol dialogs,
+  nonmodal search/replacement and cleanup, alongside its existing optional-UI
+  probes. The first smoke attempt referenced a nonexistent standard.css in the
+  test stylesheet; removed it in favor of the existing public editor.css. No
+  package export or runtime change was required for that test-only correction.
+- Final check:project and diff whitespace checks passed. Selective-import and
+  eight archive-layout checks passed earlier in the stage; the final tarball
+  smoke and declarations validate the changed public options. Complete editor,
+  documentation and installed-consumer matrices were deliberately not run.
+- Local built preview on 127.0.0.1:4185 returned HTTP 200. A fresh in-app browser
+  tab loaded the actual homepage and opened the image modal with URL/alt/size/
+  caption/upload fields; focus was inside the URL field. This observation does
+  not certify physical OS color-picker, mobile IME or screen-reader behavior.
+
+All passing subsets above are staged evidence, not a claim of one final complete
+suite pass. No commit, push, publication or GitHub CI observation was performed
+for this stage.
+Complete editor/docs/installed-consumer matrices, real OS color dialogs, mobile
+IME, screen-reader conformance and real Office clipboard captures are not newly
+certified by these event/fixture regressions. Core/plugins retain zero runtime
+dependencies and unchanged enforced gzip/CSS budgets.
+
+
 ## Expanded image and mixed linked-text contexts — 2026-11-20
 
 Implemented the 2026-11-20 addenda in contextual-images.md/contextual-links.md and

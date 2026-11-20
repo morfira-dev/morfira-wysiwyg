@@ -9,8 +9,8 @@ for (const english of [false, true]) test(`image placement controls and Undo in 
   await page.getByRole('button', { name: t('Загрузить пример', 'Load sample'), exact: true }).click();
   const image = content.locator('figure img');
   await image.click();
-  const panel = page.locator('details').filter({ has: page.locator('.mw-image-form') });
-  await panel.locator('summary').click();
+  await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
+  const panel = page.locator('.mw-image-dialog[open]');
   const group = panel.getByRole('group', { name: t('Выравнивание изображения', 'Image alignment'), exact: true });
   const center = group.getByRole('button', { name: t('Изображение по центру', 'Center image'), exact: true });
   const right = group.getByRole('button', { name: t('Изображение справа', 'Align image right'), exact: true });
@@ -23,9 +23,11 @@ for (const english of [false, true]) test(`image placement controls and Undo in 
   await expect(right).toHaveAttribute('aria-pressed', 'true');
   expect(await image.evaluate((node) => [node.style.marginLeft, node.style.marginRight])).toEqual(['auto', '0px']);
   const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await page.keyboard.press('Escape');
   await undo.click();
   expect(await image.evaluate((node) => [node.style.marginLeft, node.style.marginRight])).toEqual(['auto', 'auto']);
   await image.click();
+  await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
   await left.click();
   expect(await image.evaluate((node) => [node.style.marginLeft, node.style.marginRight])).toEqual(['0px', 'auto']);
   await reset.click();
@@ -33,5 +35,6 @@ for (const english of [false, true]) test(`image placement controls and Undo in 
   await expect(image).toHaveAttribute('width', '160');
   await expect(image).toHaveAttribute('height', '160');
   await expect(content.locator('figcaption')).toHaveText(t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption'));
-  await expect(panel).toContainText(t('Кнопки сразу меняют размещение', 'These buttons apply placement immediately'));
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
 });

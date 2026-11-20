@@ -10,11 +10,12 @@ for (const english of [false, true]) test(`simulated image progress, recoverable
   await page.getByLabel(t('Пример документа', 'Document sample'), { exact: true }).selectOption('empty');
   await page.getByRole('button', { name: t('Загрузить пример', 'Load sample'), exact: true }).click();
   await content.click();
-  const panel = page.locator('details').filter({ has: page.locator('.mw-image-form') });
-  await panel.locator('summary').click();
-  const form = panel.locator('.mw-image-form');
-  const fail = panel.getByLabel(t('Ошибка следующей загрузки', 'Fail next upload'), { exact: true });
+  await page.getByText(t('Ссылки и изображения', 'Links and images'), { exact: true }).click();
+  const fail = page.getByLabel(t('Ошибка следующей загрузки', 'Fail next upload'), { exact: true });
   await fail.check();
+  await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
+  const panel = page.locator('.mw-image-dialog[open]');
+  const form = panel.locator('.mw-image-form');
   const file = form.getByLabel(t('Файл изображения', 'Image file'), { exact: true });
   await file.setInputFiles({ name: 'demo.png', mimeType: 'image/png', buffer: Buffer.from('Simulated callback, no real upload') });
   const progress = form.getByRole('progressbar', { name: t('Прогресс загрузки изображения', 'Image upload progress'), exact: true });
@@ -32,9 +33,9 @@ for (const english of [false, true]) test(`simulated image progress, recoverable
   await expect(content.locator('figcaption')).toHaveText(t('Демо результата callback загрузки', 'Demo upload callback result'));
   await expect(progress).not.toBeVisible();
   await expect(retry).not.toBeVisible();
-  await expect(form.getByRole('status')).toHaveText(t('Изображение вставлено.', 'Image inserted.'));
+  await expect(panel).toBeHidden();
   await page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]').click();
   await expect(content.locator('img')).toHaveCount(0);
   expect(posted).toEqual([]);
-  await expect(panel).toContainText(t('Файл не читается, не отправляется и не сохраняется.', 'The file is never read, uploaded or stored.'));
+  await expect(page.locator('.demo-inspector')).toContainText(t('Файл не читается, не отправляется и не сохраняется.', 'The file is never read, uploaded or stored.'));
 });

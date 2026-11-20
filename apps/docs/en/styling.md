@@ -39,3 +39,7 @@ The [homepage](/en/#editor) and [playground](/en/playground) include a “Colors
 API behavior change: an invalid link-command URL could previously be ignored. Now handle the exception, for example in the form’s try/catch. HTML/JSON imports still sanitize unsupported attributes.
 
 You can separately install [link actions at the caret](/en/contextual-links): a validated address preview, Open/Edit/Remove and the existing form. This independent `/ui/contextual-link` changes neither presets nor ready toolbar; image/table contexts remain outside this first slice.
+
+The homepage and playground color pickers apply text/background color when the
+choice is confirmed, without another Apply click. The selected editor range is
+restored after focus moves to the picker. Apply and Reset buttons remain available.

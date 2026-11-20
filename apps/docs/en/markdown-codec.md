@@ -2,7 +2,7 @@
 
 The separate codec converts Markdown to schema-v1 `EditorDocument` and back. It is outside core and presets and does not install [Markdown typing shortcuts](/en/markdown). It uses TypeScript with no third-party runtime dependencies, works without DOM, and makes no network requests.
 
-This is a bounded everyday-authoring dialect, without a claim of full CommonMark/GFM conformance. New regressions are authored but not yet executed; actual checks and sizes are separated from historical results in the [roadmap](/en/roadmap).
+This is a bounded everyday-authoring dialect, without a claim of full CommonMark/GFM conformance. Current browser/example execution results and their limits are recorded under [testing](/en/testing).
 
 ## API and composition
 

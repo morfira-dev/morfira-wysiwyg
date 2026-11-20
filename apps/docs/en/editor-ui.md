@@ -176,3 +176,25 @@ Optional [table size picker](/en/table-picker) uses an explicit factory and CSS 
 
 
 [Table and cell properties](/en/table-properties) use independent `/plugins/table-properties` and `/ui/table-properties` entries: table width/placement and selected-cell background/border color/vertical alignment. The form applies only dirty fields in one Undo, uses existing `/ui/forms.css`, and is outside preset defaults.
+
+## Floating insertion UI and docked search
+
+Use `presentation: 'floating'` in standard/extended UI for compact anchored link
+and table popovers and an image dialog. The compatible default is `inline`.
+Search is a **nonmodal strip below the toolbar**: it stays open while you edit or
+click the document. It has no backdrop, inert document or focus trap. Escape or
+Close dismisses it. Tables retain the grid and numeric dimensions 1–100. Popovers
+fit the viewport and close on outside activation; modal image forms use native
+dialog focus containment. Every operation retains normal validation and history.
+
+```ts
+const ui = createStandardEditorUI(host, editor, {
+  presentation: 'floating',
+  table: { picker: createTablePicker },
+});
+```
+
+Both factories are independently imported from `/ui/standard` and `/ui/table-picker`;
+include their documented CSS. `images.presentation` and `table.presentation` can
+override the common setting for application-specific layout. No media embed or
+video processing capability is implied by this presentation option.
