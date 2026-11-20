@@ -1,5 +1,116 @@
 # Verification record
 
+## Optional fullscreen workspace — 2026-11-20
+
+The new `/ui/fullscreen` factory and explicit CSS follow [fullscreen.md](fullscreen.md).
+The application-owned editor/toolbar wrapper expands in place; browser chrome
+remains visible. No editor/wrapper DOM is moved, cloned or remounted and no new
+persisted format, core capability, preset installation, font or runtime dependency
+is introduced. Light DOM only; ShadowRoot/slotted workspaces and unsupported
+fixed-containing-block ancestors are rejected. Existing Web Component remains
+compatible through its light-DOM workspace wrapper.
+
+Three subagents implemented runtime, eight representative scenarios/public types,
+and RU/EN demo/guides. Independent review corrected destruction/composition
+callback reentrancy and focus restoration after trusted callbacks deliberately
+focus outside the editor. The final contract also preserves entry page scroll
+only while the module still owns the effective locked coordinates; later app
+scrolling and changed overflow axes are retained. A document-level WeakMap owns
+only the temporary scroll lock, while mode state/callbacks/observers stay local.
+Ancestor observation is restricted to actual ownership paths, without document-
+subtree input observation or polling. Escape respects handled nested UI and IME.
+
+Actual local validation on the final runtime:
+
+- pnpm run build: passed, package declarations and all enforced size guards.
+- pnpm exec tsc -p packages/wysiwyg and pnpm run typecheck: passed (TS/Svelte/Vue).
+- check:project, check:tree-shaking and package:check: passed, no framework/runtime
+  dependency, source alias or implicit stylesheet retained by selective imports.
+- Targeted tests/fullscreen.spec.ts: 24/24 passed across Chromium/Firefox/WebKit,
+  20.2 seconds; no broad suite was run for this stage.
+- docs:build:site passed (19.48 seconds); targeted RU/EN fullscreen docs passed
+  2/2 (4.7 seconds), including 390px Russian viewport and actual viewport geometry.
+- consumers:optional-ui passed: three real core/plugins/facade archives unpacked
+  in an isolated consumer, DOM-free public factory imports, actual archived JS/CSS
+  resolution and a single Chromium scenario for literal symbol insertion/Undo,
+  fullscreen/Escape and cleanup. Frameworks and broad adapter matrices are absent.
+  This also supplies later archive evidence for the preceding special-character
+  entry, whose earlier stage had only authored broad consumer definitions.
+- git diff --check passed. No full editor/docs/installed-consumer suites, GitHub
+  monitoring, publication, commit or push ran during the fullscreen stage.
+
+The new targeted archive command is explicit `pnpm run consumers:optional-ui`.
+It builds from installed archive files with no workspace tsconfig aliases and
+checks retained inputs; it is not a replacement for the complete CI consumer
+matrices or evidence for every framework/browser profile. The ordinary CI graph
+is unchanged. The site may warn about its aggregate demo chunk size; no warning
+threshold or product budget was raised.
+
+Measured bytes (raw / gzip / Brotli): standalone public fullscreen factory,
+including retained core helpers, 9337 / 3639 / 3203; optional CSS
+923 / 395 / 317; standard-fullscreen-ready JS 229130 / 68162 / 58218.
+Standalone fullscreen uses 8000 gzip JS / 2000 raw CSS guards; selected standard
+keeps 80000 gzip JS / 20000 raw CSS. Core remains 93957 / 29178 / 25709 JS,
+with its existing 80000 raw-byte soft target still exceeded independently of the
+passing enforced gzip guard. Shared chunks are counted once per profile and
+frameworks, declarations and source maps are excluded.
+
+## Optional special-character panel — 2026-11-20
+
+The new separately imported `/ui/special-characters` factory and explicit CSS
+follow [special-characters.md](special-characters.md). It provides 32 localized
+symbols, bounded snapshotted custom catalogs, literal search/insertion, native
+buttons with eight-column roving keyboard navigation and saved same-flow text
+selection/history. No new persisted schema, core feature, preset installation,
+font download or runtime dependency is added. RU/EN homepage/playground examples,
+API/UI guides and five-adapter installed-tarball smoke use the public entry.
+
+Three subagents implemented runtime, focused tests, and bilingual docs/demo;
+an independent runtime review found composition-cancellation recovery and sparse
+catalog validation defects before execution, and both were corrected. All types
+remain adjacent to their owning feature. Selection boundaries are revalidated
+against exact DOM points and mutation revisions after focus callbacks, without
+loading runtime table grid code. Semantic/resource/foreign/noneditable ranges,
+explicit cell rectangles, stale API targets and cross-own-flow selections decline.
+
+First focused run passed 21/24: all three engines exposed editor-surface locale
+metadata invalidating the saved target. The observer now ignores transient root
+attributes, retaining descendant attributes/childList/characterData guards, and
+locale rerender preserves the same focused visible symbol without stealing
+outside/search focus. The final focused run passed 24/24 (21.7 seconds), including
+IME cancellation without compositionend, readonly/API recovery, stale focus and
+resource barriers. No new test cases or browser matrix were added for those fixes.
+
+Initial docs smoke exposed a sample that used a numeric text selection starting
+outside its strong wrapper. The example now selects the actual strong contents
+with a native Range; formatting assertions were retained. Both final localized
+smokes passed (4.2 seconds), with the Russian example at a 390px viewport.
+
+Final package/static stage passed pnpm run check:static: toolchain unit checks,
+all package builds/declarations, archive/public export checks, strict TS/Svelte/Vue,
+selective imports/tree-shaking and every enforced bundle guard. Site-only build
+passed (7.82 seconds). Its existing aggregate documentation-chunk warning is not
+a library-profile failure and no budget was raised. The broader local editor
+run was stopped at the user's instruction (exit 130): 2565 passed, 1 skipped,
+6 interrupted and 1826 not run. It is not a complete passing run. Complete site
+and installed-consumer matrices were not started for this slice and are deferred;
+only the targeted 24 editor and 2 docs executions above establish browser evidence.
+Tarball smoke definitions are added but actual installed runtime is not yet verified
+for the new entry. Per the user's 2026-11-20 correction, full local runs require a
+new explicit request and are not repeated after each feature. AGENTS.md and the
+project skill now make focused default validation explicit. The task-owned test
+process/server/browsers were stopped; no GitHub CI observation, commit or push ran.
+
+Measured bytes (raw / gzip / Brotli): plugin entry closure 17173 / 6014 / 5260;
+standalone public panel including selected core helpers 17525 / 5761 / 5061;
+optional CSS 1445 / 524 / 437. Standard ready is 221662 / 65898 / 56307 JS;
+standard-special-characters-ready is 236962 / 70003 / 59469 JS and
+13607 / 4448 / 3644 CSS. The added profile keeps 80000 gzip JS / 20000 raw CSS
+caps; standalone panel uses 12000 gzip JS / 3000 raw CSS. Core remains
+93957 / 29178 / 25709 JS: the existing 80000 raw-byte soft target is still exceeded,
+independently of its passing enforced gzip guard. Frameworks/maps/declarations
+are excluded and shared chunks counted once per selected closure.
+
 ## Follow-up CI corrections with resumed local tests — 2026-11-19
 
 Remote [Release #41](https://github.com/morfira-dev/morfira-wysiwyg/actions/runs/44556321819)

@@ -156,3 +156,11 @@ The 2026-11-16 structural optimization under bundle-optimization.md preserves ev
 ## CI regression clarification — 2026-11-19
 
 Extended mention configuration forwards the public `persistent` and `atomic` flags unchanged. Their defaults and validation remain owned by the mentions plugin. The preset and separately imported public mention clipboard API must share the same per-editor registration; the full documentation demo is an integration consumer of this contract.
+
+## Independently selected special-character UI
+
+The `standard-special-characters-ready` profile adds only `createSpecialCharacterUI` and its explicit stylesheet to the standard ready closure. Shared JavaScript is counted once. Keep the existing 80000 gzip JS / 20000 raw CSS guard; the standalone public panel closure is separately guarded at 12000 gzip JS and 3000 raw CSS bytes. Neither standard nor extended installs this UI implicitly. Actual measurements and validation belong to verification-backlog.md.
+
+## Independently selected fullscreen UI
+
+The `standard-fullscreen-ready` profile adds only `createFullscreenUI` and its explicit CSS to standard ready, with shared JS counted once. Keep 80000 gzip JS / 20000 raw CSS for this selected closure, and 8000 gzip JS / 2000 raw CSS for the standalone fullscreen entry. There is no implicit fullscreen control in presets and no additional framework/DOM mount. Current measurements belong to verification-backlog.md.

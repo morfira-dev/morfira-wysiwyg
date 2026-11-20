@@ -364,6 +364,21 @@ export const verifyConsumers = async (url: string, adapters: readonly ConsumerAd
           await expect(note).toHaveAttribute('data-tone', 'note');
           assert.deepEqual(await page.evaluate(() => window.morfiraConsumer.editor!.getJSON()), noteJSON, `${adapter}: SDK redo must restore validated metadata`);
           await page.evaluate(() => window.morfiraConsumer.editor!.undo());
+          await page.evaluate(() => {
+            const probe = window.morfiraConsumer;
+            probe.editor!.setHTML('<p>Consumer symbols</p>');
+            probe.editor!.setSelection(0);
+            probe.showSpecialCharacters!();
+          });
+          const specialCharacters = page.locator('[data-consumer-special-characters]');
+          await specialCharacters.getByRole('button', { name: /Consumer euro/ }).click();
+          await expect(content).toHaveText('€Consumer symbols');
+          await page.evaluate(() => {
+            window.morfiraConsumer.editor!.undo();
+            window.morfiraConsumer.hideSpecialCharacters!();
+          });
+          await expect(content).toHaveText('Consumer symbols');
+          await expect(specialCharacters).toHaveCount(0);
           const userChanges = await page.evaluate(() => window.morfiraConsumer.changes);
           assert.ok(userChanges > 0, `${adapter}: native changes must reach the application`);
           await page.locator('[data-action="external"]').click();

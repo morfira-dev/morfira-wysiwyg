@@ -24,7 +24,8 @@
     "test:consumers": "tsx scripts/consumers/toolchain.test.ts",
     "consumers:check": "tsx scripts/consumers/index.ts",
     "consumers:angular22": "tsx scripts/consumers/index.ts --angular22",
-    "release:notify": "tsx scripts/release-notification.ts"
+    "release:notify": "tsx scripts/release-notification.ts",
+    "consumers:optional-ui": "tsx scripts/consumers/optional-ui.ts"
   },
   "devDependencies": {
     "@angular/common": "21.2.26",

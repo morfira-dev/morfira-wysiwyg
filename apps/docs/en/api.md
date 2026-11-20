@@ -332,3 +332,11 @@ Optional [table size picker](/en/table-picker) uses an explicit factory and CSS 
 ## Observing search ranges
 
 `getSearchRanges(editor)` from `/plugins/search` returns `{ ranges, current }`: fresh native ranges built from the current search index. It changes no focus/selection/history; modifying a returned range cannot modify the private index and confers no command authority. Snapshots can become stale after edits. An [independent optional UI](/en/search-highlights) paints every match.
+
+## Special characters
+
+`createSpecialCharacterUI(host, editor, options?)` from `/ui/special-characters` creates an [optional searchable character panel](/en/special-characters) with keyboard navigation. Import `/ui/special-characters.css` explicitly. Options `label`, `characters?: readonly SpecialCharacter[]` and `onError` configure the group name, a bounded custom catalog `{ id, text, label }` and diagnostics. The controller exposes `element`, `refresh()` and `destroy()`. Insertion is ordinary text through existing core operations with one Undo; it requires no additional plugin, schema change or automatic preset installation.
+
+## Fullscreen workspace
+
+`createFullscreenUI(host, editor, { target, label?, onChange?, onError? })` from `/ui/fullscreen` creates an [independent workspace toggle](/en/fullscreen); import `/ui/fullscreen.css` explicitly. `target` is the existing connected HTML wrapper for editor, toolbar and button host. The controller exposes `element`, `enter()`, `exit()`, `toggle()`, `isActive()`, `refresh()` and `destroy()`. This CSS mode keeps DOM nodes and document/history intact and does not hide browser chrome.

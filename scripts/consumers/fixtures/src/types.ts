@@ -20,6 +20,8 @@ import type { TablePropertiesCommands } from '@morfira-dev/wysiwyg/plugins/table
 import type { TablePropertiesFormController } from '@morfira-dev/wysiwyg/ui/table-properties';
 
 export interface ConsumerProbe {
+  showSpecialCharacters?: () => void;
+  hideSpecialCharacters?: () => void;
   search?: SearchCommands;
   searchHighlights?: SearchHighlightsController;
   showSearchHighlights?: () => void;

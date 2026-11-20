@@ -1,0 +1,36 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`special-character controls insert literal text with Undo and readonly search in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  if (!english) await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const panel = page.locator('.lab-special-characters');
+  await panel.locator('summary').click();
+  await panel.getByRole('button', { name: t('Загрузить пример замены символом', 'Load symbol replacement sample'), exact: true }).click();
+  await expect(content).toHaveText(t('Цена: сумма.', 'Price: amount.'));
+  const before = await content.innerHTML();
+  const query = panel.getByRole('searchbox', { name: t('Найти символ', 'Find a symbol'), exact: true });
+  await query.fill('€');
+  expect(await content.innerHTML()).toBe(before);
+  const euro = panel.getByRole('button', { name: t('Вставить символ: Евро (€)', 'Insert character: Euro (€)'), exact: true });
+  await expect(euro).toBeEnabled();
+  await euro.click();
+  await expect(content).toHaveText(t('Цена: €.', 'Price: €.'));
+  await expect(content.locator('strong')).toHaveText('€');
+  const undo = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true }).locator('[data-mw-ui-action="undo"]');
+  await undo.click();
+  expect(await content.innerHTML()).toBe(before);
+  await expect(undo).toBeDisabled();
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(euro).toBeDisabled();
+  await expect(query).toBeEnabled();
+  await query.fill('no-such-character');
+  await expect(panel.getByRole('status')).toHaveText(t('Символы не найдены.', 'No characters found.'));
+  expect(await content.innerHTML()).toBe(before);
+  await panel.getByRole('link', { name: t('Подключение и свой каталог символов', 'Setup and custom character catalog'), exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/special-characters$`));
+  await expect(page.locator('.vp-doc')).toContainText('SpecialCharacterUIController');
+  await expect(page.locator('.vp-doc')).toContainText('1–256');
+});

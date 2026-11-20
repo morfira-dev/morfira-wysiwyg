@@ -39,6 +39,8 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/presets/standard', symbol: 'createStandardPreset', feature: 'presets/standard', allowed: ['presets/standard', 'presets/shared', ...standardFeatures] },
   { entry: '@morfira-dev/wysiwyg/presets/extended', symbol: 'createExtendedPreset', feature: 'presets/extended', allowed: ['presets/extended', 'presets/standard', 'presets/shared', ...standardFeatures, 'mentions', 'slash', 'suggestions-core'] },
   { entry: '@morfira-dev/wysiwyg/ui/table-properties', symbol: 'createTablePropertiesForm', feature: 'ui/table-properties', allowed: ['ui/table-properties', 'ui/shared', 'table-properties', 'tables'] },
+  { entry: '@morfira-dev/wysiwyg/ui/fullscreen', symbol: 'createFullscreenUI', feature: 'ui/fullscreen', allowed: ['ui/fullscreen', 'ui/shared'] },
+  { entry: '@morfira-dev/wysiwyg/ui/special-characters', symbol: 'createSpecialCharacterUI', feature: 'ui/special-characters', allowed: ['ui/special-characters', 'ui/shared'] },
   { entry: '@morfira-dev/wysiwyg/ui/table-picker', symbol: 'createTablePicker', feature: 'ui/table-picker', allowed: ['ui/table-picker', 'ui/shared'] },
   { entry: '@morfira-dev/wysiwyg/plugins/search', symbol: 'getSearchRanges', feature: 'search', allowed: ['search'] },
   { entry: '@morfira-dev/wysiwyg/ui/search-highlights', symbol: 'createSearchHighlights', feature: 'ui/search-highlights', allowed: ['ui/search-highlights', 'search'] },

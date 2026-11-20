@@ -1,3 +1,5 @@
+import { createSpecialCharacterUI } from '@morfira-dev/wysiwyg/ui/special-characters';
+import '@morfira-dev/wysiwyg/ui/special-characters.css';
 import { createEditorCommand } from '@morfira-dev/wysiwyg';
 import type { Editor, EditorChange, EditorPlugin } from '@morfira-dev/wysiwyg';
 import type { ConsumerProbe } from './types.js';
@@ -77,6 +79,26 @@ export const plugins: EditorPlugin[] = createExtendedPreset({
 }).plugins!;
 export const ready = (editor: Editor) => {
   probe.editor = editor;
+  let characterUI: ReturnType<typeof createSpecialCharacterUI> | undefined;
+  let characterHost: HTMLElement | undefined;
+  const hideSpecialCharacters = () => {
+    characterUI?.destroy();
+    characterHost?.remove();
+    characterUI = undefined;
+    characterHost = undefined;
+  };
+  const showSpecialCharacters = () => {
+    hideSpecialCharacters();
+    characterHost = document.createElement('div');
+    characterHost.dataset.consumerSpecialCharacters = '';
+    document.body.append(characterHost);
+    characterUI = createSpecialCharacterUI(characterHost, editor, {
+      label: 'Consumer special characters',
+      characters: [{ id: 'consumer-euro', text: '€', label: 'Consumer euro' }],
+    });
+  };
+  probe.showSpecialCharacters = showSpecialCharacters;
+  probe.hideSpecialCharacters = hideSpecialCharacters;
   const searchAPI = searchCommands(editor);
   probe.search = searchAPI;
   let highlights: ReturnType<typeof createSearchHighlights> | undefined;
@@ -254,6 +276,9 @@ export const ready = (editor: Editor) => {
   };
   probe.forms = forms;
   editor.events.on('destroy', () => {
+    hideSpecialCharacters();
+    if (probe.showSpecialCharacters === showSpecialCharacters) delete probe.showSpecialCharacters;
+    if (probe.hideSpecialCharacters === hideSpecialCharacters) delete probe.hideSpecialCharacters;
     hideSearchHighlights();
     if (probe.search === searchAPI) delete probe.search;
     if (probe.showSearchHighlights === showSearchHighlights) delete probe.showSearchHighlights;

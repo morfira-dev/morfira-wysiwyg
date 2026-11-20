@@ -1,0 +1,42 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`fullscreen workspace preserves the document and readonly view in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
+  const t = (ru: string, en: string) => english ? en : ru;
+  if (!english) await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(english ? '/en/playground' : '/');
+  const content = page.locator('.mw-content');
+  await expect(content).toBeVisible();
+  const workspace = page.locator('.demo-workspace');
+  const enter = workspace.getByRole('button', { name: t('Во весь экран', 'Enter fullscreen'), exact: true });
+  const exit = workspace.getByRole('button', { name: t('Выйти из полноэкранного режима', 'Exit fullscreen'), exact: true });
+  const before = await content.innerHTML();
+  const original = await content.elementHandle();
+  await enter.click();
+  await expect(exit).toHaveAttribute('aria-pressed', 'true');
+  await expect(workspace).toHaveClass(/mw-fullscreen/);
+  const geometry = await workspace.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return { left: Math.round(box.left), top: Math.round(box.top), width: Math.round(box.width), height: Math.round(box.height), viewportWidth: window.innerWidth, viewportHeight: window.innerHeight };
+  });
+  expect(geometry).toMatchObject({ left: 0, top: 0, width: geometry.viewportWidth, height: geometry.viewportHeight });
+  expect(await content.innerHTML()).toBe(before);
+  expect(await original!.evaluate((element) => element === document.querySelector('.mw-content'))).toBe(true);
+  await content.focus();
+  await page.keyboard.press('Escape');
+  await expect(enter).toHaveAttribute('aria-pressed', 'false');
+  await expect(workspace).not.toHaveClass(/mw-fullscreen/);
+  expect(await content.innerHTML()).toBe(before);
+  await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
+  await expect(content).toHaveAttribute('contenteditable', 'false');
+  await expect(enter).toBeEnabled();
+  await enter.click();
+  await expect(exit).toHaveAttribute('aria-pressed', 'true');
+  await exit.focus();
+  await page.keyboard.press('Escape');
+  await expect(enter).toHaveAttribute('aria-pressed', 'false');
+  expect(await content.innerHTML()).toBe(before);
+  await workspace.getByRole('link', { name: t('Подключение полноэкранного режима', 'Fullscreen setup'), exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/fullscreen$`));
+  await expect(page.locator('.vp-doc')).toContainText('FullscreenUIController');
+  await expect(page.locator('.vp-doc')).toContainText('Fullscreen API');
+});

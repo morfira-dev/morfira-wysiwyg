@@ -1,0 +1,9 @@
+.mw-special-characters{box-sizing:border-box;display:grid;gap:var(--mw-special-characters-gap,.65rem);width:100%;max-width:32rem;padding:var(--mw-special-characters-padding,.8rem);border:1px solid var(--mw-border,#d5dbe5);border-radius:var(--mw-radius,.65rem);color:var(--mw-text,#202b40);background:var(--mw-bg,#fff);font:inherit}
+.mw-special-characters>label{display:grid;gap:.35rem;font-size:.875rem}
+.mw-special-characters input{box-sizing:border-box;min-width:0;width:100%;padding:.5rem .65rem;border:1px solid var(--mw-border,#d5dbe5);border-radius:var(--mw-radius,.4rem);color:inherit;background:inherit;font:inherit}
+.mw-special-characters-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:.3rem}
+.mw-special-characters .mw-special-character{box-sizing:border-box;min-width:0;min-height:2.35rem;padding:.3rem;border:1px solid var(--mw-border,#d5dbe5);border-radius:var(--mw-radius,.35rem);color:inherit;background:var(--mw-control-bg,#f5f7fb);font:inherit;font-size:1.15rem;overflow-wrap:anywhere;cursor:pointer}
+.mw-special-characters .mw-special-character:hover:not(:disabled){background:var(--mw-control-hover,#e9effa)}
+.mw-special-characters :is(input,button):focus-visible{outline:2px solid var(--mw-accent,#4269dc);outline-offset:2px}
+.mw-special-characters .mw-special-character:disabled{opacity:.45;cursor:default}
+.mw-special-characters-status{margin:0;min-height:1.25em;font-size:.8rem;color:var(--mw-muted,#647089)}

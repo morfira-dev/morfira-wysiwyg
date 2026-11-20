@@ -22,12 +22,16 @@ import type { LinkFormController } from '@morfira-dev/wysiwyg/ui/links';
 import type { ImageFormController } from '@morfira-dev/wysiwyg/ui/images';
 import type { TablePropertiesFormController } from '@morfira-dev/wysiwyg/ui/table-properties';
 import type { SearchFormController } from '@morfira-dev/wysiwyg/ui/search';
+import type { SpecialCharacterUIController } from '@morfira-dev/wysiwyg/ui/special-characters';
+import type { FullscreenUIController } from '@morfira-dev/wysiwyg/ui/fullscreen';
 import type { SearchCommands } from '@morfira-dev/wysiwyg/plugins/search';
 import type { SearchHighlightsController, SearchHighlightsState } from '@morfira-dev/wysiwyg/ui/search-highlights';
 import type { TableCommands, TableClipboardData } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 import '@morfira-dev/wysiwyg/ui/search-highlights.css';
+import '@morfira-dev/wysiwyg/ui/special-characters.css';
+import '@morfira-dev/wysiwyg/ui/fullscreen.css';
 import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/ui/contextual.css';
 import '@morfira-dev/wysiwyg/ui/contextual-link.css';
@@ -72,6 +76,12 @@ const linkFormHost = ref<HTMLElement>();
 const imageFormHost = ref<HTMLElement>();
 const tablePropertiesFormHost = ref<HTMLElement>();
 const searchFormHost = ref<HTMLElement>();
+const fullscreenWorkspace = ref<HTMLElement>();
+const fullscreenHost = ref<HTMLElement>();
+const fullscreenActive = ref(false);
+let fullscreenUI: FullscreenUIController | undefined;
+const specialCharacterHost = ref<HTMLElement>();
+let specialCharacterUI: SpecialCharacterUIController | undefined;
 let linkForm: LinkFormController | undefined;
 let imageForm: ImageFormController | undefined;
 let tablePropertiesForm: TablePropertiesFormController | undefined;
@@ -415,6 +425,19 @@ const startAutolink = (enter: boolean) => run((instance) => {
   const text = enter ? 'https://example.com' : '';
   instance.setHTML(enter ? `<p>${text}</p>` : '<p><br></p>');
   instance.setSelection(text.length);
+  output.value = '';
+});
+const loadSpecialCharacterSample = () => run((instance) => {
+  const prefix = t('Цена: ', 'Price: ');
+  const word = t('сумма', 'amount');
+  instance.setHTML(`<p>${prefix}<strong>${word}</strong>.</p>`);
+  const document = instance.surface.ownerDocument;
+  const range = document.createRange();
+  range.selectNodeContents(instance.surface.querySelector('strong')!);
+  const selection = document.getSelection()!;
+  selection.removeAllRanges();
+  selection.addRange(range);
+  specialCharacterUI?.refresh();
   output.value = '';
 });
 const startMarkdown = () => run((instance) => { instance.setHTML('<p><br></p>'); instance.setSelection(0); });
@@ -922,6 +945,8 @@ onMounted(async () => {
     { createLinkForm },
     { createImageForm },
     { createSearchForm },
+    { createSpecialCharacterUI },
+    { createFullscreenUI },
     { searchCommands },
     { createSearchHighlights },
     { createMinimalPreset },
@@ -952,6 +977,8 @@ onMounted(async () => {
     import('@morfira-dev/wysiwyg/ui/links'),
     import('@morfira-dev/wysiwyg/ui/images'),
     import('@morfira-dev/wysiwyg/ui/search'),
+    import('@morfira-dev/wysiwyg/ui/special-characters'),
+    import('@morfira-dev/wysiwyg/ui/fullscreen'),
     import('@morfira-dev/wysiwyg/plugins/search'),
     import('@morfira-dev/wysiwyg/ui/search-highlights'),
     import('@morfira-dev/wysiwyg/presets/minimal'),
@@ -1009,6 +1036,14 @@ onMounted(async () => {
       initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64', height: '', caption: '' },
     });
     tablePropertiesForm = createTablePropertiesForm(tablePropertiesFormHost.value!, editor, {
+      onError: (error) => notify(error instanceof Error ? error.message : String(error), true),
+    });
+    fullscreenUI = createFullscreenUI(fullscreenHost.value!, editor, {
+      target: fullscreenWorkspace.value!,
+      onChange: (active) => { fullscreenActive.value = active; },
+      onError: (error) => notify(error instanceof Error ? error.message : String(error), true),
+    });
+    specialCharacterUI = createSpecialCharacterUI(specialCharacterHost.value!, editor, {
       onError: (error) => notify(error instanceof Error ? error.message : String(error), true),
     });
     searchAPI = searchCommands(editor);
@@ -1094,6 +1129,8 @@ onBeforeUnmount(() => {
   tablePropertiesForm?.destroy();
   searchHighlights?.destroy();
   searchForm?.destroy();
+  fullscreenUI?.destroy();
+  specialCharacterUI?.destroy();
   unmention?.();
   unslash?.();
   unstatistics?.();
@@ -1137,7 +1174,12 @@ onBeforeUnmount(() => {
     <p v-if="toolbarOverflow === 'more'" class="lab-hint">{{ t('«Ещё» переносит целые группы по доступной ширине панели. Смена режима пересоздаёт только UI: документ, история и выделение редактора сохраняются. Контекстные всплывающие инструменты остаются в плане.', 'More moves whole groups according to the toolbar host width. Changing modes remounts only UI: the editor document, history and selection remain. Contextual floating controls remain planned.') }}</p>
     <p v-if="full && sample === 'input'" class="lab-hint">{{ t('Выдели от конца «Alpha » до середины «Beta» и введи X или нажми Backspace/Delete. Сохраняются начало первого блока и форматированный остаток второго. Такой же пример есть внутри цитаты и объединённой ячейки; выделения между разными контейнерами пока не нормализуются этим обработчиком.', 'Select from the end of “Alpha ” into “Beta”, then type X or press Backspace/Delete. The first block prefix and formatted second-block suffix remain. Try the same within the quote or merged cell; this handler does not normalize selections across different containers.') }}</p>
     <div v-if="message" class="lab-message" :class="{ 'is-error': failed }" :role="failed ? 'alert' : 'status'">{{ message }}</div>
-    <div class="demo-workspace">
+    <div ref="fullscreenWorkspace" class="demo-workspace" :data-fullscreen-active="fullscreenActive">
+      <div v-if="full" class="lab-fullscreen-controls">
+        <div ref="fullscreenHost"></div>
+        <span>{{ fullscreenActive ? t('Рабочая область развёрнута. Escape возвращает обычный вид.', 'Workspace expanded. Escape returns to the normal view.') : t('Редактор и панель можно развернуть на окно без изменения документа.', 'Expand the editor and toolbar to the viewport without changing the document.') }}</span>
+        <a :href="ru ? '/fullscreen' : '/en/fullscreen'">{{ t('Подключение полноэкранного режима', 'Fullscreen setup') }}</a>
+      </div>
       <div class="demo-editing">
         <div v-if="full" class="lab-block-controls">
           <label>{{ t('Блок', 'Block') }}<select v-model="heading" :disabled="!ready || readOnly" :aria-label="t('Формат блока', 'Block format')" @change="heading !== 'mixed' && format('header', Number(heading) || false)"><option value="mixed" disabled>{{ t('Разное', 'Mixed') }}</option><option value="0">{{ t('Абзац', 'Paragraph') }}</option><option v-for="level in 6" :key="level" :value="String(level)">H{{ level }}</option></select></label>
@@ -1462,6 +1504,14 @@ onBeforeUnmount(() => {
             <a :href="ru ? '/search-highlights' : '/en/search-highlights'">{{ t('Подключение и ограничения подсветки', 'Highlight setup and limitations') }}</a>
           </div>
           <p class="lab-hint">{{ t('Буквальный поиск, без регулярных выражений. Совпадения пересекают стили, но не блоки, ячейки, переносы и изображения. Выделяется активное совпадение; поиск доступен в read-only.', 'Literal search without regular expressions. Matches cross inline styles, but not blocks, cells, line breaks or images. The active match is selected; search works in read-only.') }}</p>
+        </details>
+        <details class="lab-special-characters"><summary>{{ t('Спецсимволы', 'Special characters') }}</summary>
+          <div class="lab-inline-actions">
+            <button :disabled="!ready || readOnly" @click="loadSpecialCharacterSample">{{ t('Загрузить пример замены символом', 'Load symbol replacement sample') }}</button>
+          </div>
+          <div ref="specialCharacterHost"></div>
+          <p class="lab-hint">{{ t('Пример выделяет слово «сумма»: найди € и замени слово одним нажатием. Undo вернёт исходное выделение. В панели работают стрелки, Home/End и Enter/Space; Escape возвращает курсор в редактор. Поиск не меняет документ и доступен в read-only.', 'The sample selects “amount”: find € and replace the word with one activation. Undo restores the original selection. Use arrows, Home/End and Enter/Space in the panel; Escape returns to the editor. Search never changes the document and remains available read-only.') }}</p>
+          <a :href="ru ? '/special-characters' : '/en/special-characters'">{{ t('Подключение и свой каталог символов', 'Setup and custom character catalog') }}</a>
         </details>
         <details class="lab-statistics"><summary>{{ t('Статистика', 'Statistics') }}</summary>
           <table class="lab-statistics-table"><caption>{{ t('Счётчики текста', 'Text counts') }}</caption><thead><tr><th>{{ t('Метрика', 'Metric') }}</th><th>{{ t('Документ', 'Document') }}</th><th>{{ t('Выделение', 'Selection') }}</th></tr></thead><tbody>

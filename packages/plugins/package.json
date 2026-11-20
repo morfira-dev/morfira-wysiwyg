@@ -160,7 +160,17 @@
       "types": "./dist/ui/search-highlights/index.d.ts",
       "import": "./dist/ui/search-highlights.js"
     },
-    "./ui/search-highlights.css": "./dist/ui/search-highlights.css"
+    "./ui/search-highlights.css": "./dist/ui/search-highlights.css",
+    "./ui/special-characters": {
+      "types": "./dist/ui/special-characters/index.d.ts",
+      "import": "./dist/ui/special-characters.js"
+    },
+    "./ui/special-characters.css": "./dist/ui/special-characters.css",
+    "./ui/fullscreen": {
+      "types": "./dist/ui/fullscreen/index.d.ts",
+      "import": "./dist/ui/fullscreen.js"
+    },
+    "./ui/fullscreen.css": "./dist/ui/fullscreen.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.11.0"

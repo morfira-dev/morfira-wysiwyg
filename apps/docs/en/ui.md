@@ -268,3 +268,11 @@ The explicit [contextual table toolbar](/en/contextual-tables) adds row/column i
 ## Search highlights without document changes
 
 `createSearchHighlights(editor)` from `/ui/search-highlights` complements the search form and requires separate `/ui/search-highlights.css`. It paints native CSS Highlight API ranges instead of document markup. Without the API, search remains usable without all-result painting. [Setup, state and cleanup](/en/search-highlights).
+
+## Special-character panel
+
+[Special characters](/en/special-characters) use a separate `createSpecialCharacterUI` import from `/ui/special-characters` and explicit `/ui/special-characters.css`. No plugin is required: the panel inserts literal text into one valid text range, retains Undo, and provides a small replaceable catalog, search and keyboard navigation. Core and presets do not install it automatically.
+
+## Fullscreen workspace
+
+[Fullscreen workspace mode](/en/fullscreen) is separately imported through `createFullscreenUI` and `/ui/fullscreen.css`. It expands the application’s existing editor/toolbar wrapper without remounting adapters. Enter/Exit and Escape do not create history; read-only remains viewable. The mode is nonmodal, does not call the browser Fullscreen API and is not implicitly part of presets. External contextual-overlay hosts and layering remain application-owned.
