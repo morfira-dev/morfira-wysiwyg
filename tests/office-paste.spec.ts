@@ -180,3 +180,104 @@ test('unsupported Word labels and level jumps retain their visible content inste
     anchor: 'https://example.com/marker',
   });
 });
+
+test('inline point typography normalizes bounded HTML sizes and preserves duplicate declaration order', async ({ page }) => {
+  await initialize(page);
+  const result = await page.evaluate(() => {
+    const schema = window.editor.schema;
+    const source = '<p><span style="font-size:12pt">Whole</span>'
+      + '<span style="FONT-SIZE: 11PT">Fraction</span>'
+      + '<span style="font-size:0pt">Zero</span>'
+      + '<span style="font-size:7499.999pt">Upper</span>'
+      + '<span style="font-size:7500pt">Overflow</span>'
+      + '<span style="font-size:12pt;font-size:20px">Last pixels</span>'
+      + '<span style="font-size:20px;font-size:12pt">Last points</span>'
+      + '<span style="font-size:12pt;font-size:calc(2px + 1em)">Safe fallback</span>'
+      + '<span style="font-size:1.5em">Existing unit</span>'
+      + '<span STYLE = "font&#45;size:1&#50;&#112;t">Encoded declaration</span></p>';
+    const parsed = schema.parseHTML(source);
+    const html = schema.documentHTML(parsed);
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const spans = [...template.content.querySelectorAll('span')];
+    const sizes = spans.filter((_, index) => index !== 3).map((node) => node.style.fontSize);
+    return {
+      sizes,
+      upper: spans[3].getAttribute('style'),
+      roundTrip: schema.documentHTML(schema.validateDocument(parsed)) === html,
+      stable: schema.sanitizeHTML(html) === html,
+    };
+  });
+  expect(result).toEqual({
+    sizes: ['16px', '14.667px', '0px', '', '20px', '16px', '16px', '1.5em', '16px'],
+    upper: 'font-size: 9999.999px',
+    roundTrip: true,
+    stable: true,
+  });
+});
+
+test('point typography paste retains rich spans, Word list paragraphs and Excel cells in one undoable edit', async ({ page }) => {
+  await initialize(page);
+  const before = await page.evaluate(() => ({ html: window.editor.getHTML(), selection: window.editor.getSelection() }));
+  await paste(page, '<p><strong style="font-size:12pt;color:#123456">Rich</strong> body</p>'
+    + '<p style="mso-list:l0 level1 lfo1;font-size:11pt"><span style="mso-list:Ignore">1.</span>Item</p>'
+    + '<table><tr><td rowspan="2" style="font-size:9pt">Merged</td><td>North</td></tr><tr><td>South</td></tr></table>');
+  await expect(page.locator('.mw-content strong')).toHaveText('Rich');
+  expect(await page.locator('.mw-content strong').evaluate((node) => node.style.fontSize)).toBe('16px');
+  await expect(page.locator('.mw-content strong')).toHaveCSS('color', 'rgb(18, 52, 86)');
+  await expect(page.locator('.mw-content ol > li > p')).toHaveText('Item');
+  expect(await page.locator('.mw-content ol > li > p').evaluate((node) => node.style.fontSize)).toBe('14.667px');
+  await expect(page.locator('.mw-content td[rowspan="2"]')).toHaveText('Merged');
+  expect(await page.locator('.mw-content td[rowspan="2"]').evaluate((node) => node.style.fontSize)).toBe('12px');
+  await expect(page.locator('.mw-content > p').last()).toHaveText('Keep');
+  const after = await html(page);
+  expect(after).not.toMatch(/mso-|font-size: [\d.]+pt|Plain fallback/);
+  expect(await page.evaluate(() => window.changes.filter((change) => change.source === 'user').length)).toBe(1);
+  await page.evaluate(() => window.editor.undo());
+  expect(await page.evaluate(() => ({ html: window.editor.getHTML(), selection: window.editor.getSelection() }))).toEqual(before);
+  expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+  await page.evaluate(() => window.editor.redo());
+  expect(await html(page)).toBe(after);
+});
+
+test('point typography rejects malformed CSS without broadening JSON, semantic or resource boundaries', async ({ page }) => {
+  await initialize(page);
+  const result = await page.evaluate(() => {
+    const schema = window.editor.schema;
+    const values = ['-12pt', '+12pt', '1e2pt', '.5pt', '12.0001pt', '10000pt', '12pt!important', '12/**/pt', 'var(--size)', 'url(https://example.invalid/font)', '12pt extra'];
+    const source = '<p>' + values.map((size) => `<span style="font-size:${size};color:red;background-image:url(https://example.invalid/image)">Bad</span>`).join('')
+      + '<span style="width:12pt;height:9pt;font-size:12px">Dimensions</span>'
+      + '<span style="font-size:12pt;' + ' '.repeat(20000) + '">Oversized</span>'
+      + '</p><svg><text style="font-size:12pt">Foreign</text></svg>';
+    const output = schema.sanitizeHTML(source);
+    const template = document.createElement('template');
+    template.innerHTML = output;
+    const spans = [...template.content.querySelectorAll('span')];
+    const documentValue = schema.parseHTML('<p><span>JSON</span></p>');
+    const paragraph = documentValue.children[0];
+    if (paragraph.type !== 'element' || paragraph.children[0].type !== 'element') throw new Error('Expected inline fixture.');
+    paragraph.children[0].attributes.style = 'font-size:12pt;color:red';
+    const jsonOutput = schema.documentHTML(schema.validateDocument(documentValue));
+    const semanticHost = document.createElement('div');
+    const semantic = window.createEditor(semanticHost, {
+      schema: [{ name: 'test:typography', kind: 'inline', tag: 'span', attributes: {} }],
+    });
+    try {
+      const semanticOutput = semantic.schema.sanitizeHTML('<p><span data-mw-node="test:typography" style="font-size:12pt"><em style="font-size:9pt">Semantic</em></span></p>');
+      return {
+        invalid: spans.slice(0, values.length).map((node) => ({ size: node.style.fontSize, color: node.style.color })),
+        dimensions: spans[values.length].getAttribute('style'),
+        oversized: spans[values.length + 1].getAttribute('style'),
+        output, jsonOutput, semanticOutput,
+      };
+    } finally {
+      semantic.destroy();
+    }
+  });
+  expect(result.invalid).toEqual(Array.from({ length: 11 }, () => ({ size: '', color: 'red' })));
+  expect(result.dimensions).toBe('font-size: 12px');
+  expect(result.oversized).toBeNull();
+  expect(result.output).not.toMatch(/example.invalid|background-image|Foreign|svg|font-size: [\d.]+pt/);
+  expect(result.jsonOutput).toBe('<p><span style="color: red">JSON</span></p>');
+  expect(result.semanticOutput).toBe('<p><span data-mw-node="test:typography"><em>Semantic</em></span></p>');
+});

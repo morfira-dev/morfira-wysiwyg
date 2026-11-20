@@ -130,14 +130,14 @@ test('noncancelable beforeinput retains browser ownership without a second repla
   expect(result).toEqual({ prevented: [false, false, false], html: original, selection: { index: 2, length: 5 }, changes: 0, undo: false });
 });
 
-test('structural barriers and different parents remain outside the ordinary sibling replacement path', async ({ page }) => {
+test('structural barriers and unsupported container parents remain outside native replacement', async ({ page }) => {
   const cases = [
     { html: '<p>Alpha</p><table><tbody><tr><td><p>Cell</p></td></tr></tbody></table><p>Beta</p>', first: '.mw-content > p:first-child', last: '.mw-content > p:last-child' },
     { html: '<p>Alpha</p><figure><img src="https://example.test/image.png" alt="Image"></figure><p>Beta</p>', first: '.mw-content > p:first-child', last: '.mw-content > p:last-child' },
     { html: '<p>Alpha</p><ul><li>Item</li></ul><p>Beta</p>', first: '.mw-content > p:first-child', last: '.mw-content > p:last-child' },
     { html: '<p>Alpha</p><pre>Code</pre><p>Beta</p>', first: '.mw-content > p:first-child', last: '.mw-content > p:last-child' },
     { html: '<p>Alpha</p><hr><p>Beta</p>', first: '.mw-content > p:first-child', last: '.mw-content > p:last-child' },
-    { html: '<blockquote><p>Alpha</p></blockquote><p>Beta</p>', first: 'blockquote > p', last: '.mw-content > p' },
+    { html: '<blockquote><blockquote><p>Alpha</p></blockquote></blockquote><p>Beta</p>', first: 'blockquote > blockquote > p', last: '.mw-content > p' },
     { html: '<table><tbody><tr><td rowspan="2"><p>Alpha</p></td><td><p>Beta</p></td></tr><tr><td><p>Other</p></td></tr></tbody></table>', first: 'td[rowspan] > p', last: 'td:nth-child(2) > p' },
   ];
   for (const fixture of cases) {

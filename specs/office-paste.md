@@ -33,10 +33,51 @@ JSON schema v1 and existing atomic paste/history/selection rules are unchanged.
 - Excel semantic HTML tables retain the existing grid/span and safe-formatting
   contract; TSV uses the existing table plugin path. Formulas, workbook metadata,
   class stylesheets, Office XML, drawings and local file images are not imported.
-  Existing bounded CSS units remain unchanged: Office point-valued font sizes
-  and class-only heading/typographic declarations are not translated.
+  Explicit inline point-valued font sizes are translated under the bounded
+  typography contract below; class-only heading/typographic declarations are
+  not translated.
   This slice does not parse raw Windows CF_HTML offset headers or claim universal
   fidelity for all application/browser/version combinations.
+
+## Bounded inline point sizes
+
+HTML import translates an explicit inline `font-size` in `pt` to `px` during
+inert safe traversal, without consulting stylesheets, layout or computed
+styles. This applies to any HTML using the supported inline markup; no source
+application detection is required. Normalization reads decoded inline attributes,
+including HTML character references, never CSSOM. Ordinary HTML keeps the existing
+safe-traversal resource policy; point conversion does not enable the separate
+full-source Office marker/wrapper prepass or broaden its trigger conditions.
+Preserve declaration order, including duplicate
+font-size declarations, so the last accepted value keeps precedence and an invalid
+later declaration does not discard an earlier safe fallback. The CSS absolute-unit
+ratio is 4/3; round to at most three fractional
+digits and remove insignificant trailing zeroes. Accept unsigned decimals with
+one to four integer digits and at most three fractional digits, including zero,
+only when the converted value is at most 9999.999px (the existing safe length
+grammar). Thus 12pt becomes 16px and 11pt becomes 14.667px. Conversion does not
+restrict imported sizes to an optional fonts plugin's configured choices.
+
+Reject signs, exponent syntax, unitless values, comments, functions, escapes,
+`!important` and overflow by leaving them to the existing safe-style filter;
+they never become accepted point sizes. Do not reinterpret width/height or other
+point-valued properties. Preserve independent safe declarations and rich child
+formatting. Skip original style attributes longer than 20000 code units rather
+than shortening them into accepted input, foreign-namespace elements, and
+application-owned semantic wrappers/subtrees (`data-mw-node`). The subsequent
+safe reconstruction remains authoritative for every attribute and URL.
+
+This is an additive HTML-import normalization shared by initial/set/insert HTML,
+clipboard and schema HTML methods. Its output persists canonical px in schema-v1
+HTML/JSON; direct JSON `pt` remains filtered by the existing style policy. No
+document version, public API, font resource loading or runtime dependency changes.
+It is not complete Office typography, stylesheet support or evidence from real
+application clipboard captures.
+
+Focused acceptance covers direct HTML and JSON round trips, fractional and
+boundary conversion, invalid CSS/security filtering, selection replacement and
+one-step paste history with surviving rich formatting. Existing guarded paste
+and source-resource bounds remain in force.
 
 ## Safety and ownership
 

@@ -3,7 +3,7 @@ import { normalizeFontFamily } from './font-family.js';
 import { normalizeListMarker } from './list-marker.js';
 import { normalizeDirection } from './direction.js';
 import { normalizeCellBoxStyle, normalizeCellBorder } from './cell-box.js';
-import { normalizeOfficeHTML } from './office-paste/index.js';
+import { normalizeOfficeHTML, normalizePointSize } from './office-paste/index.js';
 import { countText, countElement, maximumHTMLLength, maximumNodes, maximumDepth } from './budget.js';
 import type { DocumentAttributeResolver, DocumentBudget, DocumentElementValidator } from './internal-types.js';
 import type { DocumentTag, TextNode, ElementNode, DocumentNode, EditorDocument } from './types.js';
@@ -139,6 +139,7 @@ const readDOM = (node: Node, depth: number, budget: DocumentBudget, resolve?: Do
   const original = element.localName.toLowerCase();
   if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml' || omitted.has(original))
     return [];
+  normalizePointSize(element);
   const children = [...element.childNodes].flatMap((child) => readDOM(child, depth + 1, budget, resolve, validateElement));
   const tag = aliases[original] ?? original;
   if (!tags.has(tag)) {

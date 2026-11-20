@@ -21,3 +21,34 @@ Use the existing validated synchronous transaction, not a second history stack. 
 Chromium, Firefox and WebKit cover real typing/Backspace/Delete and beforeinput-only insertion/deletion; forward/backward rich ranges; exact next typing and undo/redo; earlier typing isolation; literal markup payloads; Unicode, empty blocks and br node boundaries; left attributes and unaffected node identity; blockquote and merged-cell isolation. Guard tests cover canceled/read-only/composition/unsupported selections and controlled React StrictMode feedback. Clipboard/API insertion over the same source boundaries follows `paste-replacement.md`. Cross-container replacement, multi-item list replacement, drop, word deletion, native replacement target ranges and real-device IME remain separate contracts.
 
 No new runtime dependency, CSS, eager optional module or timing claim is introduced. Report actual raw/gzip/Brotli core and selected profile sizes after implementation.
+
+## Native cross-quote replacement (2026-11-20)
+
+The same three cancelable native beforeinput types additionally own a bounded
+cross-container range through direct editor-root ordinary p/h leaves and simple
+direct-root blockquotes. A simple quote contains only ordinary p/h leaves with
+the supported inline tree; it has no registered semantic marker. Both endpoints
+are inside actual distinct ordinary leaves, in different root children. All root
+children from the first through the last must be ordinary leaves or simple
+quotes. Nested quotes, semantic quote/leaf roots, images, lists, tables, figures,
+pre/hr and protected contenteditable=false source descendants exclude this path.
+Intervening unsupported structures keep the previous delegated native-input path;
+this slice does not claim to reject or normalize every structural selection.
+
+Retain the actual starting leaf, wrapper attributes and quote path. Its prefix
+and the ending leaf's marked suffix join with literal text at the starting inline
+context. Remove only the covered leaves. Preserve earlier leaves of the first
+quote and later leaves of the final quote, including their actual nodes/order.
+Remove a touched quote wrapper only when it is empty after the cut; never flatten
+surviving quote branches. Starting inside a quote therefore keeps the joined
+result inside that quote; starting outside keeps the joined result outside.
+An end at offset zero still joins the untouched ending suffix into the start;
+this is endpoint affinity, not a general structural move command.
+
+One transaction/change/Undo restores exact original HTML and forward/backward
+range; redo restores the replacement caret. Empty placeholders, inline affinity,
+read-only, composition and canceled-event rules remain the same. Test root→quote,
+quote→root and quote→quote, retained branches/identity, Unicode/empty endpoints,
+next actual typing, isolated history and excluded structures in all three engines.
+Clipboard/API paste eligibility is unchanged: this native-only addendum does not
+broaden the separate `paste-replacement.md` contract.

@@ -6,6 +6,7 @@ Status: implemented local milestone after lists/toolbar; 246 editor/adapter brow
 
 - `format('color', value)` and `format('background', value)` accept a validated named/hex/rgb/hsl CSS color or false. Only color/background-color may be written. Semicolons, arbitrary declarations, URLs, var() and invalid colors reject before mutation. Reuse schema validation and the browser CSS parser.
 - Apply only to selected inline content across marks, links, paragraphs, lists and cells. Retain unselected formatting, block structure and unrelated styles. false removes that inline property while retaining the other; inherited block colors/backgrounds remain block styles. Clear formatting removes inline spans/colors as before.
+- Expanded inline-style operations preserve the actual forward/backward selection direction after their existing schema reconstruction, including independent style reset. Undo restores the original directed range and redo restores the formatted directed range; a toolbar color draft does not turn a backward selection into a forward one.
 - At a caret establish pending styles for subsequent text input. They add no history until typing, support disabling an inherited inline color, coexist with boolean marks, and reset on selection movement/external replacement. Undo/redo restores content/caret; read-only prevents changes.
 - `getFormats()` reports nearest explicit color/background CSS values and their mixed states. Adjacent identical inline wrappers coalesce so ordinary typing does not add one span per character.
 

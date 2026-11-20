@@ -13,6 +13,25 @@ const declaration = (element: Element, property: string): string | undefined => 
   return result;
 };
 
+export const normalizePointSize = (element: Element): void => {
+  if (!htmlElement(element)) return;
+  const style = element.getAttribute('style');
+  if (!style || style.length > 20000 || !/pt/i.test(style)
+    || element.closest('[data-mw-node]')) return;
+  let changed = false;
+  const declarations = style.split(';').map((part) => {
+    const separator = part.indexOf(':');
+    if (part.slice(0, separator).trim().toLowerCase() !== 'font-size') return part;
+    const point = /^(\d{1,4}(?:\.\d{1,3})?)pt$/i.exec(part.slice(separator + 1).trim());
+    if (!point) return part;
+    const pixels = Math.round(Number(point[1]) * 4 / 3 * 1000) / 1000;
+    if (pixels > 9999.999) return part;
+    changed = true;
+    return `font-size: ${pixels}px`;
+  });
+  if (changed) element.setAttribute('style', declarations.join(';'));
+};
+
 const listItem = (element: Element): OfficeListItem | undefined => {
   if (!htmlElement(element) || element.localName !== 'p'
     || element.closest('[data-mw-node]') || element.querySelector('[data-mw-node]')) return;

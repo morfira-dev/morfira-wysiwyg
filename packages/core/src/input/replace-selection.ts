@@ -1,5 +1,6 @@
 import { inlineSourceChildren as inlineTree } from './inline-source.js';
 import { activeRange } from '../selection/index.js';
+import { quoteSelectionReplacement } from './quote-selection.js';
 import type { SelectionReplacement, CutSelectionReplacement } from './internal-types.js';
 
 const leafTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
@@ -28,7 +29,7 @@ const selectedLeaves = (root: HTMLElement, range: Range): HTMLElement[] | undefi
 
 export const handlesSelectionReplacement = (root: HTMLElement, inputType: string, data: string | null): boolean => {
   if (inputType !== 'deleteContentBackward' && inputType !== 'deleteContentForward' && !(inputType === 'insertText' && typeof data === 'string')) return false;
-  return Boolean(selectionReplacement(root));
+  return Boolean(nativeSelectionReplacement(root));
 };
 
 export const selectionReplacement = (root: HTMLElement, range: Range | undefined = activeRange(root)): SelectionReplacement | undefined => {
@@ -36,8 +37,14 @@ export const selectionReplacement = (root: HTMLElement, range: Range | undefined
   return range && leaves ? { range, leaves } : undefined;
 };
 
+const nativeSelectionReplacement = (root: HTMLElement): SelectionReplacement | undefined => {
+  const range = activeRange(root);
+  if (!range || range.collapsed) return;
+  return selectionReplacement(root, range) ?? quoteSelectionReplacement(root, range);
+};
+
 /** Shared live cut, called only after eligibility and detached import validation. */
-export const cutSelectionReplacement = ({ range, leaves, contentRoots }: SelectionReplacement): CutSelectionReplacement => {
+export const cutSelectionReplacement = ({ range, leaves, contentRoots, emptyContainers }: SelectionReplacement): CutSelectionReplacement => {
   const left = contentRoots?.left ?? leaves[0];
   const right = contentRoots?.right ?? leaves[leaves.length - 1];
   const document = left.ownerDocument;
@@ -65,6 +72,9 @@ export const cutSelectionReplacement = ({ range, leaves, contentRoots }: Selecti
     for (const placeholder of left.querySelectorAll('br')) placeholder.remove();
   }
   for (const leaf of leaves.slice(1)) leaf.remove();
+  for (const container of emptyContainers ?? []) {
+    if (!container.hasChildNodes()) container.remove();
+  }
   return { left, right, tail, caret };
 };
 
@@ -86,9 +96,9 @@ export const finishSelectionReplacement = (leaf: HTMLElement, caret: Range): voi
   selection?.addRange(caret);
 };
 
-/** Replace only ordinary sibling leaves inside the editor's validated transaction. */
+/** Replace an accepted native leaf interval inside the editor's validated transaction. */
 export const replaceSelection = (root: HTMLElement, text: string): void => {
-  const selected = selectionReplacement(root);
+  const selected = nativeSelectionReplacement(root);
   if (!selected) return;
   const { left, tail, caret } = cutSelectionReplacement(selected);
   if (text) {

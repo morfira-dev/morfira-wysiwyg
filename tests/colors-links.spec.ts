@@ -6,6 +6,42 @@ const initialize = async (page: Page, value: string) => {
 };
 const html = (page: Page) => page.evaluate(() => window.editor.getHTML());
 
+test('direct inline style commands retain backward rich selection through apply, reset and history', async ({ page }) => {
+  const original = '<p>Alpha <em>Beta</em> tail</p>';
+  await initialize(page, original);
+  for (const name of ['color', 'background']) {
+    await page.evaluate((original) => {
+      window.editor.setHTML(original);
+      const root = window.editor.surface;
+      window.editor.focus();
+      document.getSelection()!.setBaseAndExtent(root.querySelector('em')!.firstChild!, 2, root.querySelector('p')!.firstChild!, 2);
+    }, original);
+    await page.evaluate((name) => window.editor.format(name, '#123456'), name);
+    const state = await page.evaluate(() => {
+      const native = document.getSelection()!;
+      const range = native.getRangeAt(0);
+      return { text: native.toString(), backward: native.anchorNode === range.endContainer && native.anchorOffset === range.endOffset };
+    });
+    expect(state).toEqual({ text: 'pha Be', backward: true });
+    await page.evaluate((name) => window.editor.format(name, false), name);
+    expect(await html(page)).toBe(original);
+    expect(await page.evaluate(() => {
+      const native = document.getSelection()!;
+      const range = native.getRangeAt(0);
+      return native.anchorNode === range.endContainer && native.anchorOffset === range.endOffset;
+    })).toBe(true);
+    await page.evaluate(() => { window.editor.undo(); window.editor.undo(); });
+    expect(await html(page)).toBe(original);
+    expect(await page.evaluate(() => window.editor.canUndo())).toBe(false);
+    await page.evaluate(() => window.editor.redo());
+    expect(await page.evaluate(() => {
+      const native = document.getSelection()!;
+      const range = native.getRangeAt(0);
+      return { text: native.toString(), backward: native.anchorNode === range.endContainer && native.anchorOffset === range.endOffset };
+    })).toEqual(state);
+  }
+});
+
 test('partial colors preserve marks and independent highlights across blocks and cells', async ({ page }) => {
   await initialize(page, '<p><strong>abcd</strong></p><table><tbody><tr><td>ef</td></tr></tbody></table>');
   await page.evaluate(() => { window.editor.setSelection(1, 4); window.editor.format('color', '#ff0000'); window.editor.format('background', '#ffff00'); });

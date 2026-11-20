@@ -122,8 +122,14 @@ export const applyFormat = (root: HTMLElement, name: string, value: unknown, sch
     const style = normalizeInlineStyle(name, value);
     if (!selection.length)
       return;
+    const native = root.ownerDocument.getSelection();
+    const backward = native?.anchorNode === range.endContainer && native.anchorOffset === range.endOffset;
     root.innerHTML = schema.documentHTML(transformInlineAttributes(schema.parseHTML(root.innerHTML), selection.index, selection.index + selection.length, { kind: 'style', property: inlineStyles[name], value: style }));
     selectText(root, selection.index, selection.length);
+    if (backward && native?.rangeCount) {
+      const selected = native.getRangeAt(0);
+      native.setBaseAndExtent(selected.endContainer, selected.endOffset, selected.startContainer, selected.startOffset);
+    }
     return;
   }
   let blocks = selectedBlocks(root, range, false);
