@@ -28,6 +28,7 @@
 | `getSelection()` | Текстовые смещения `{ index, length }` или undefined вне области ввода |
 | `setSelection(index, length?)` | Выделение текста; неотрицательные целые смещения |
 | `selection.capture() / isCurrent(handle) / getRange(handle) / restore(handle) / release(handle)` | Выделение одной ревизии для внешнего UI; [контракт](/plugin-sdk#сохранённое-выделение-для-внешнего-ui) |
+| `positions.track(index, association?) / resolve(handle) / release(handle) / subscribe(listener)` | Явно переносимые UTF-16-позиции. `transact(mutate, { mapping })` проверяет последовательные `{ from, to, insert }`; неизвестные изменения сбрасывают цели. Undo/redo используют обратный/прямой план. Не structural mapping. |
 | `getFormats(range?)` | Форматы в начале выделения, `mixed`, глубина и доступность отступов |
 | `format(name, value)` | Форматирование с историей |
 | `insertHTML(html)` | Проверенная вставка вместо выделения |

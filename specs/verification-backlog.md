@@ -1,5 +1,31 @@
 # Verification record
 
+## Explicit position mapping and transaction focus safety — 2026-11-23
+
+Implemented editor.positions and explicit outer transaction mapping under
+plugin-position-mapping.md. Plans validate exact sequential UTF-16 text replay;
+unknown changes expire positions rather than guessing identities. Supported history
+uses real entry-associated forward/inverse maps. Focus callbacks revalidate current
+snapshot, read-only, composition and destruction before invoking transaction edits.
+Mapping subscribers publish after core change events to preserve reentrant order.
+
+Executed package builds/declarations and all existing size budgets passed;
+TS/Svelte/Vue and project contracts passed. All 12 new mapping cases passed in
+Chromium/Firefox/WebKit (36 executions) within the 210-case selected SDK/transaction
+run. That run recorded 209 passes and one Firefox clipboard failure in the separate
+new generic-atom module; mapping acceptance had no failures. Further optional-SDK
+results are recorded separately when its clipboard regression is resolved.
+Package archives and corrected selective imports passed. The first tree-shaking
+attempt used the wrong generated /plugins/sdk path; the explicit /sdk probes fix
+that tooling mistake without changing runtime or weakening dependency guards.
+
+Core measured at 102749 raw / 31940 gzip / 28026 Brotli JS bytes; no CSS or runtime
+dependency added. Logs: /tmp/morfira-sdk-next-editor-20261123.log,
+/tmp/morfira-sdk-extensions-build-final-20261123.log,
+/tmp/morfira-sdk-extensions-types-20261123.log,
+/tmp/morfira-sdk-next-tree-final-20261123.log. Full suites were not run.
+
+
 ## Revision-bound selection SDK and link-form adoption — 2026-11-23
 
 Implemented editor.selection capture/isCurrent/getRange/restore/release under

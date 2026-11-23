@@ -28,6 +28,7 @@
 | `getSelection()` | `{ index, length }` text offsets, or undefined outside the surface |
 | `setSelection(index, length?)` | Select text; nonnegative integer offsets |
 | `selection.capture() / isCurrent(handle) / getRange(handle) / restore(handle) / release(handle)` | Revision-bound selection handles for external UI; [contract](/en/plugin-sdk#remembered-selections-for-external-ui) |
+| `positions.track(index, association?) / resolve(handle) / release(handle) / subscribe(listener)` | Explicitly mapped UTF-16 positions. `transact(mutate, { mapping })` validates sequential `{ from, to, insert }` steps; unknown edits expire targets. Undo/redo use inverse/forward plans. This is not structural mapping. |
 | `getFormats(range?)` | Formats at selection start, `mixed`, list depth and indentation availability |
 | `format(name, value)` | Undoable user-format command |
 | `insertHTML(html)` | Validated paste-like replacement of the current selection |

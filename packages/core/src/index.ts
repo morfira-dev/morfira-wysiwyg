@@ -19,3 +19,5 @@ export { createEditorCommand } from './commands/index.js';
 export type { EditorCommand, EditorCommandDefinition, EditorCommandState, EditorCommands } from './commands/types.js';
 
 export type { EditorSelectionHandle, EditorSelectionHandles } from './selection/handles/types.js';
+
+export type { EditorPositionHandle, EditorMappedPosition, EditorPositionChange, EditorPositions, EditorTransactionOptions, TextMappingStep } from './positions/types.js';

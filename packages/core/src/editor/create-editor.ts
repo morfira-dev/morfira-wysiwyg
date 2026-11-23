@@ -1,3 +1,7 @@
+import { createPositionRegistry } from '../positions/index.js';
+import { prepareTextMapping, inverseTextMapping } from '../positions/mapping.js';
+import type { PreparedTextMapping } from '../positions/internal-types.js';
+import type { EditorTransactionOptions } from '../positions/types.js';
 import { createSelectionHandleRegistry } from '../selection/handles/index.js';
 import { createDocumentSchema } from '../schema/index.js';
 import { createCommandRegistry } from '../commands/index.js';
@@ -195,6 +199,15 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       }
     },
   });
+  const positionHistory = new WeakMap<Snapshot, PreparedTextMapping>();
+  const positionRegistry = createPositionRegistry({
+    surface,
+    isAvailable: () => !destroyed && !composing && !transactionDepth && !pendingInput,
+    canCapture: () => {
+      try { return htmlSnapshots.read() === current.html; }
+      catch { return false; }
+    },
+  });
   let lastSelection = current.selection;
   const clearCompositionTail = () => {
     compositionTail = undefined;
@@ -208,6 +221,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     pendingInput = undefined;
     clearCompositionTail();
     if (rollback && before) {
+      positionRegistry.invalidate();
       surface.innerHTML = before.html;
       ensureDocument(surface);
       restoreBookmark(surface, before.selection);
@@ -219,11 +233,14 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     }
   };
   const restoreCurrentDOM = () => {
+    positionRegistry.invalidate();
     selectionHandles.invalidate();
     surface.innerHTML = current.html;
     ensureDocument(surface);
     restoreBookmark(surface, current.selection);
     selectionHandles.synchronize();
+    positionRegistry.synchronize();
+    positionRegistry.notify();
   };
   const notifySelection = () => {
     if (destroyed)
@@ -251,6 +268,12 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       failures.push(error);
     }
     try {
+      positionRegistry.notify();
+    }
+    catch (error) {
+      failures.push(error);
+    }
+    try {
       notifySelection();
     }
     catch (error) {
@@ -259,13 +282,16 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     if (failures.length)
       throw new AggregateError(failures, 'Editor change notification failed.');
   };
-  const commitMutation = (before: Snapshot, inputType = ''): boolean => {
+  const commitMutation = (before: Snapshot, inputType = '', mapping?: PreparedTextMapping): boolean => {
     const selection = readTextSelection(surface);
     if (ensureDocument(surface) && selection)
       selectText(surface, selection.index, selection.length);
     const after = capture();
+    if (mapping && mapping.after !== (surface.textContent ?? ''))
+      throw new Error('Declared position mapping does not match the committed text.');
     selectionHandles.synchronize();
     if (after.html === before.html) {
+      positionRegistry.synchronize();
       current = after;
       return false;
     }
@@ -278,6 +304,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
         undoStack.shift();
     }
     redoStack.length = 0;
+    if (mapping) positionHistory.set(before, mapping);
+    positionRegistry.accept(mapping);
     current = after;
     lastInputTime = inputType ? now : 0;
     lastInputType = inputType;
@@ -287,7 +315,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     if (commitMutation(before, inputType))
       emit('user');
   };
-  const restore = (snapshot: Snapshot) => {
+  const restore = (snapshot: Snapshot, mapping?: PreparedTextMapping) => {
+    positionRegistry.synchronize();
+    const beforeText = surface.textContent ?? '';
     selectionHandles.invalidate();
     clearTyping();
     surface.innerHTML = snapshot.html;
@@ -297,6 +327,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     restoreTyping(snapshot);
     current = capture();
     selectionHandles.synchronize();
+    positionRegistry.accept(mapping && mapping.before === beforeText && mapping.after === (surface.textContent ?? '') ? mapping : undefined);
     lastSelection = current.selection;
     lastInputTime = 0;
     emit('user');
@@ -328,7 +359,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     }
     if (failures.length) throw new AggregateError(failures, 'Input commit notification failed.');
   };
-  const runTransaction = (mutate: (surface: HTMLElement) => void, inputType = '', origin?: InputCommitOrigin) => {
+  const runTransaction = (mutate: (surface: HTMLElement) => void, inputType = '', origin?: InputCommitOrigin, transactionOptions?: EditorTransactionOptions) => {
     assertActive();
     if (readOnly || composing)
       return;
@@ -346,6 +377,12 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       }
     };
     if (transactionDepth) {
+      if (transactionOptions !== undefined) {
+        const error = new Error('Only the outermost transaction may declare position mapping.');
+        transactionFailed = true;
+        transactionError = error;
+        throw error;
+      }
       transactionDepth++;
       try {
         invoke();
@@ -360,7 +397,12 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       }
       return;
     }
+    const beforeFocus = current;
     editor.focus();
+    // Application focus callbacks may commit a replacement, revoke editing or
+    // destroy the instance. Never run an old operation against that newer state.
+    if (destroyed || readOnly || composing || current !== beforeFocus) return;
+    positionRegistry.synchronize();
     const before = capture();
     const previousUndo = [...undoStack];
     const previousRedo = [...redoStack];
@@ -374,15 +416,22 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     pendingSelectionNotification = false;
     let changed = false;
     try {
+      if (transactionOptions !== undefined && (!transactionOptions || typeof transactionOptions !== 'object'
+        || Array.isArray(transactionOptions) || Object.keys(transactionOptions).some((key) => key !== 'mapping')))
+        throw new TypeError('Unsupported transaction options.');
+      const mapping = transactionOptions?.mapping === undefined ? undefined
+        : prepareTextMapping(transactionOptions.mapping, surface.textContent ?? '');
       // A replacement can return to the old text offset without a selectionchange flush.
       const initialRange = activeRange(surface);
       if (initialRange && !initialRange.collapsed) clearTyping();
       invoke();
       if (transactionFailed)
         throw transactionError;
-      changed = commitMutation(before, inputType);
+      changed = commitMutation(before, inputType, mapping);
     }
     catch (error) {
+      positionRegistry.invalidate();
+      positionRegistry.synchronize();
       selectionHandles.invalidate();
       surface.innerHTML = before.html;
       ensureDocument(surface);
@@ -398,6 +447,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       lastInputType = previousInputType;
       transactionDepth = 0;
       pendingSelectionNotification = false;
+      try { positionRegistry.notify(); }
+      catch (notificationError) { throw new AggregateError([error, notificationError], 'Transaction and position notification failed.'); }
       throw error;
     }
     finally {
@@ -410,8 +461,10 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       if (origin) notifyCommittedInput(origin);
       else emit('user');
     }
-    else if (selectionChanged)
-      notifySelection();
+    else {
+      positionRegistry.notify();
+      if (selectionChanged) notifySelection();
+    }
   };
   const registry = createCommandRegistry({ editor: () => editor, isComposing: () => composing, assertActive });
   const prepareHTML = (html: string): DocumentFragment => {
@@ -443,7 +496,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     }, '', origin);
   };
   const editor: Editor = {
-    element: container, surface, events, schema, commands: registry.commands, selection: selectionHandles.selection,
+    element: container, surface, events, schema, commands: registry.commands, selection: selectionHandles.selection, positions: positionRegistry.positions,
     getLocale: () => {
       assertActive();
       return { locale: locale.locale, translations: { ...locale.translations } };
@@ -469,6 +522,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       if (content === editor.getHTML())
         return;
       cancelComposition(false);
+      positionRegistry.invalidate();
+      positionRegistry.synchronize();
       selectionHandles.invalidate();
       clearTyping();
       surface.innerHTML = content;
@@ -563,8 +618,11 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       clearCompositionTail();
       const previous = undoStack.pop();
       if (previous) {
-        redoStack.push(capture());
-        restore(previous);
+        const mapping = positionHistory.get(previous);
+        const present = capture();
+        if (mapping) positionHistory.set(present, mapping);
+        redoStack.push(present);
+        restore(previous, mapping ? inverseTextMapping(mapping) : undefined);
       }
     },
     redo: () => {
@@ -575,13 +633,16 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       clearCompositionTail();
       const next = redoStack.pop();
       if (next) {
-        undoStack.push(capture());
-        restore(next);
+        const mapping = positionHistory.get(next);
+        const present = capture();
+        if (mapping) positionHistory.set(present, mapping);
+        undoStack.push(present);
+        restore(next, mapping);
       }
     },
     canUndo: () => { assertActive(); return undoStack.length > 0; },
     canRedo: () => { assertActive(); return redoStack.length > 0; },
-    transact: (mutate) => runTransaction(mutate),
+    transact: (mutate, transactionOptions) => runTransaction(mutate, '', undefined, transactionOptions),
     providePlugin: (name, api) => {
       assertActive();
       if (pluginAPIs.has(name))
@@ -599,6 +660,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       cancelComposition(false);
       destroyed = true;
       selectionHandles.destroy();
+      positionRegistry.destroy();
       const failures: unknown[] = [];
       try {
         eventHub.destroy();
@@ -770,19 +832,24 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     commit(before, event.inputType);
   });
   listen('compositionstart', () => {
+    positionRegistry.invalidate();
     selectionHandles.invalidate();
     if (readOnly) {
       canceledComposition = true;
+      positionRegistry.notify();
       return;
     }
-    if (composing)
+    if (composing) {
+      positionRegistry.notify();
       return;
+    }
     clearTyping();
     clearCompositionTail();
     pendingInput = undefined;
     canceledComposition = false;
     compositionStart = capture();
     composing = true;
+    positionRegistry.notify();
   });
   listen('compositionend', () => {
     if (canceledComposition) {

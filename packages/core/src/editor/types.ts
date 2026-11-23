@@ -1,3 +1,4 @@
+import type { EditorPositions, EditorTransactionOptions } from '../positions/types.js';
 import type { EditorSelectionHandles } from '../selection/handles/types.js';
 import type { DocumentSchema, SchemaContribution } from '../schema/types.js';
 import type { EditorCommands } from '../commands/types.js';
@@ -34,6 +35,7 @@ export interface Editor {
   readonly schema: DocumentSchema;
   readonly commands: EditorCommands;
   readonly selection: EditorSelectionHandles;
+  readonly positions: EditorPositions;
   getLocale(): EditorLocale;
   setLocale(locale: string, translations?: EditorTranslations): void;
   getHTML(): string;
@@ -54,7 +56,7 @@ export interface Editor {
   canUndo(): boolean;
   canRedo(): boolean;
   /** Execute one undoable plugin edit. Read-only and active composition block it. */
-  transact(mutate: (surface: HTMLElement) => void): void;
+  transact(mutate: (surface: HTMLElement) => void, options?: EditorTransactionOptions): void;
   providePlugin<T>(name: string, api: T): () => void;
   getPlugin<T>(name: string): T | undefined;
   subscribe(listener: (change: EditorChange) => void): () => void;
