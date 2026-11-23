@@ -1,5 +1,19 @@
 # Testing and releases
 
+## Accessibility and responsive UI — 23 November 2026
+
+The focused run passed **135/135** in Chromium, Firefox and WebKit; built RU/EN
+examples passed **8/8** in Chromium. Types, builds, selected-import guards,
+archives and the focused actual-tarball UI smoke passed. The set covers toolbar
+roving focus, native keys, computed contrast, forced colors, coarse-pointer sizes,
+short native dialogs and narrow search containers inside wide windows.
+
+The [public laboratory](/en/accessibility) separates desktop automation and touch
+emulation from physical devices and screen readers. Actual iOS/Android, OS IME,
+VoiceOver/NVDA/JAWS/TalkBack and native zoom remain unverified. Full suites and
+GitHub CI were not run. Core JS is unchanged at 32383 gzip bytes; standard ready
+is 72279 and extended ready 89125, with all existing guards preserved.
+
 ## Extension SDK and Office corpus — 23 November 2026
 
 The final focused run passed **267/267** in Chromium, Firefox and WebKit and

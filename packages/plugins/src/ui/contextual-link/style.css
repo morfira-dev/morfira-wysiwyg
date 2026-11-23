@@ -10,3 +10,6 @@
 @media (forced-colors: active) { .mw-contextual-link { border-color: CanvasText; } .mw-contextual-link-actions a, .mw-contextual-link-actions button { border-color: ButtonText; } }
 
 .mw-contextual-link [hidden] { display: none !important; }
+
+.mw-contextual-link-actions a,.mw-contextual-link-actions button{overflow-wrap:anywhere}
+@media(pointer:coarse){.mw-contextual-link-actions a,.mw-contextual-link-actions button{min-height:44px}}

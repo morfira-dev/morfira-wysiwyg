@@ -1,8 +1,8 @@
 .mw-standard-editor-ui { position: relative; min-width: 0; color: var(--mw-text, #263043); font-family: var(--mw-font, system-ui, sans-serif); }
 .mw-standard-editor-ui .mw-ui-panel { margin-block-start: var(--mw-ui-gap, 8px); padding: var(--mw-ui-panel-padding, 12px); background: var(--mw-popup-surface, var(--mw-surface, #fff)); color: var(--mw-text, #263043); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-ui-radius, 10px); box-shadow: var(--mw-popup-shadow, 0 8px 24px #16213b14); max-width: 100%; min-width: 0; }
 .mw-standard-editor-ui .mw-ui-panel[hidden] { display: none; }
-.mw-standard-editor-ui .mw-ui-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-block-end: 10px; }
-.mw-standard-editor-ui .mw-ui-panel-title { margin: 0; font: inherit; font-weight: 600; }
+.mw-standard-editor-ui .mw-ui-panel-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-block-end: 10px; }
+.mw-standard-editor-ui .mw-ui-panel-title { margin: 0; min-width: 0; overflow-wrap: anywhere; font: inherit; font-weight: 600; }
 .mw-standard-editor-ui .mw-ui-panel-close { border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-control-radius, 6px); padding: 6px 10px; background: var(--mw-surface, #fff); color: inherit; font: inherit; cursor: pointer; }
 .mw-standard-editor-ui .mw-ui-panel-close:hover { background: var(--mw-hover, #f0f2f7); }
 .mw-standard-editor-ui .mw-ui-panel-close:focus-visible { outline: 2px solid var(--mw-accent, #6658e8); outline-offset: 2px; }
@@ -11,6 +11,7 @@
 .mw-standard-editor-ui .mw-ui-status:empty { display: none; }
 .mw-standard-editor-ui .mw-ui-image-dialog-host { display: contents; }
 .mw-standard-editor-ui .mw-ui-search-docked { --mw-form-control-size: 32px; padding: var(--mw-ui-panel-padding, 10px); }
+.mw-standard-editor-ui .mw-ui-search-docked .mw-ui-panel-body { container: mw-search / inline-size; }
 .mw-standard-editor-ui .mw-ui-search-docked .mw-ui-panel-header { margin-block-end: 6px; }
 .mw-standard-editor-ui .mw-ui-search-docked .mw-search-form { display: grid; grid-template-columns: minmax(8rem, 1fr) repeat(6, auto); align-items: end; gap: 6px; }
 .mw-standard-editor-ui .mw-ui-search-docked .mw-form-fields,
@@ -26,7 +27,7 @@
 .mw-standard-editor-ui .mw-ui-search-docked [data-mw-search-action=clear] { grid-area: 2 / 5; }
 .mw-standard-editor-ui .mw-ui-search-docked .mw-search-case { grid-area: 2 / 6; }
 .mw-standard-editor-ui .mw-ui-search-docked .mw-search-whole { grid-area: 2 / 7; }
-@media (max-width: 800px) {
+@container mw-search (max-width: 800px) {
   .mw-standard-editor-ui .mw-ui-search-docked .mw-search-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .mw-standard-editor-ui .mw-ui-search-docked .mw-search-form > *,
   .mw-standard-editor-ui .mw-ui-search-docked .mw-search-form .mw-form-fields > *,
@@ -39,3 +40,6 @@
 .mw-standard-editor-ui .mw-ui-panel-popover .mw-table-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .mw-standard-editor-ui .mw-ui-panel-popover .mw-table-form > :first-child:not(label),
 .mw-standard-editor-ui .mw-ui-panel-popover .mw-table-form > button { grid-column: 1 / -1; }
+
+@container mw-search (max-width: 480px) { .mw-standard-editor-ui .mw-ui-search-docked .mw-search-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (pointer: coarse) { .mw-standard-editor-ui .mw-ui-panel-close { min-height: 44px; } }

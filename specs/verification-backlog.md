@@ -1,5 +1,68 @@
 # Verification record
 
+## Accessibility and responsive UI — 2026-11-23
+
+Contracts: ui-accessibility.md and ui-responsive.md. Added delegated toolbar
+focusin synchronization of roving tabindex; native keys, document operations and
+public APIs remain unchanged. Default muted #657185 improves placeholder/quote/
+caption contrast, preserving application overrides and persisted document colors.
+Scoped forced-colors outlines keep contenteditable/control keyboard focus visible.
+Coarse-pointer controls use 44px activation sizes; native WebKit select requires
+an explicit bounded height while retaining appearance:auto.
+
+Forms/dialogs now use bounded border-box sizing, shrinkable/wrapping content and
+vertical modal overflow. Docked search uses named inline-size container queries,
+not viewport width; 320px hosts inside 1200px windows retain their two-column grid.
+Optional CSS remains owned by each feature; there is no new runtime dependency,
+listener beyond the existing shell's cleaned delegated focus listener, or preset
+feature import. RU/EN public-API laboratory isolates documentation heading styles.
+
+Final focused editor run: **135/135 passed** in Chromium, Firefox and WebKit.
+Files: editor-ui-accessibility, ui-responsive, ui-contrast, editor-ui,
+editor-ui-overflow and ui-image-dialog.spec.ts. The initial run was 132 passed /
+3 failed: WebKit select rendered 22px despite min-height, and two native-dialog
+checks assumed a browser-independent Tab cycle across browser chrome. The actual
+select height is fixed; the checks now navigate owned controls. macOS WebKit uses
+Option+Tab, while other platforms retain ordinary Tab. A subagent repeat of the
+latter case was interrupted by coordinated server replacement; the final complete
+focused run above covers the final effective macOS path. Linux execution of the
+platform-specific test branch is deferred to existing CI, which was not inspected.
+
+Final built-site coverage: **8/8 Chromium checks** for RU/EN accessibility,
+media/formula and reusable UI examples. RU accessibility uses 390x844 mobile/touch
+emulation; EN uses desktop viewport. Visually inspected local 390px and 1280px
+laboratory captures; corrected a VitePress h2 border leaking into the embedded
+example and added a regression. This is browser emulation/desktop automation, not
+physical-device or screen-reader evidence. Host: macOS 27.2.1; visual capture
+browser Chromium 158.0.8127.18. CSS large-text checks use 24px controls; they are not
+claimed native OS/browser 400% zoom or an accessibility conformance audit.
+
+Package build/declarations, final TypeScript/Svelte/Vue checks, project contracts,
+selective-import guards, eight archive-boundary checks and focused actual-tarball
+optional UI/SSR smoke passed. After the package build, only changed editor CSS was
+rebundled using the same esbuild configuration and copied to the facade; size
+measurement and site build then consumed those outputs. A fresh task-owned Vite
+was started for final browser checks. Full suites, adapter matrices, GitHub CI,
+publication and deployment were not run.
+
+| Selected closure | Raw JS | gzip JS | Brotli JS | Raw CSS | gzip CSS | Brotli CSS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 103768 | 32383 | 28451 | 3397 | 1197 | 987 |
+| Standard ready | 233328 | 72279 | 61506 | 16581 | 4707 | 3904 |
+| Extended ready | 290034 | 89125 | 74871 | 18046 | 5280 | 4355 |
+
+Core JavaScript is unchanged; ready JavaScript adds 17 raw bytes for delegated
+focus observation. Standard plus table properties is 79818 gzip JS bytes, leaving
+182 bytes under its unchanged 80000 guard. All active gzip/CSS/adapter guards pass;
+the core 80000 raw development target remains exceeded. Shared chunks count once;
+framework runtimes, maps, declarations, fonts and additional locales are excluded.
+Media CSS is 1997 raw/589 gzip/490 Brotli; formula CSS 1684/593/492.
+
+Open evidence gate: actual iOS/Android hardware, virtual keyboard/IME and rotation,
+native zoom, VoiceOver/NVDA/JAWS/TalkBack announcements and application-owned themes.
+Use the bilingual accessibility guide's manual checklist; no WCAG, complete mobile
+support or universal assistive-technology compatibility is claimed.
+
 ## Optional media, formulas and extended Markdown — 2026-11-23
 
 Block 3 implements independent media/formula plugins and native modal forms,

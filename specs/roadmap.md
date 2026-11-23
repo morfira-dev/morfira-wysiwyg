@@ -259,3 +259,27 @@ presets do not install media/formula. Validation and raw/gzip/Brotli/CSS evidenc
 belong to verification-backlog.md. The next product gaps remain accessibility
 and real-device evidence, followed by consistent responsive UI/focus behavior;
 this stage does not certify those areas or authorize publication.
+
+## Blocks 5/6 — bounded accessibility and responsive UI — 2026-11-23
+
+Implemented the automated accessibility slice: direct toolbar focus updates its
+roving Tab stop, native input/select keys retain their ownership, default muted
+text meets the tested contrast threshold, and forced-colors keyboard focus stays
+visible. Coarse-pointer toolbar targets are at least 44px, including native
+WebKit selects without replacing their appearance. Contract: ui-accessibility.md.
+
+Responsive forms now bound their border boxes and modal height, wrap long labels
+and actions, and expose coarse-pointer activation areas. Docked search chooses
+its grid from its actual named inline-size container, including narrow columns
+inside wide windows. Dialog keyboard tests follow owned controls and the native
+macOS WebKit Option+Tab policy rather than assuming browser-chrome Tab cycling.
+Contract: ui-responsive.md. A RU/EN public-API laboratory demonstrates width,
+density, locale and read-only; docs styles are isolated from its editor headings.
+
+Final focused evidence is in verification-backlog.md. These bounded implementation
+slices are complete locally, but the real-device/assistive-technology gate of
+block 5 remains open: physical iOS/Android, OS keyboards/IME, native zoom and
+VoiceOver/NVDA/JAWS/TalkBack require recorded manual sessions. Desktop engines,
+touch emulation and source review do not close that gate or establish WCAG
+conformance. Do not replace it with speculative feature expansion or claim a
+fully certified accessibility milestone.

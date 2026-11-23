@@ -5,3 +5,6 @@
 .mw-contextual-table :focus-visible { outline: 2px solid var(--mw-accent, #6658e8); outline-offset: 2px; }
 .mw-contextual-table :disabled { opacity: .45; cursor: default; }
 @media (forced-colors: active) { .mw-contextual-table { border-color: CanvasText; } .mw-contextual-table button { border-color: ButtonText; } }
+
+.mw-contextual-table button{overflow-wrap:anywhere}
+@media(pointer:coarse){.mw-contextual-table button{min-height:44px}}

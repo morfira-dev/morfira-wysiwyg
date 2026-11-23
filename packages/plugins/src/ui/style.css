@@ -1,23 +1,25 @@
-.mw-form { color: var(--mw-text, #263043); font-family: var(--mw-font, system-ui, sans-serif); font-size: var(--mw-form-font-size, 14px); display: grid; gap: var(--mw-form-gap, 10px); padding: var(--mw-form-padding, 14px); background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-radius, var(--mw-radius, 12px)); }
+.mw-form { color: var(--mw-text, #263043); font-family: var(--mw-font, system-ui, sans-serif); font-size: var(--mw-form-font-size, 14px); box-sizing: border-box; min-width: 0; max-width: 100%; overflow-wrap: anywhere; display: grid; gap: var(--mw-form-gap, 10px); padding: var(--mw-form-padding, 14px); background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-radius, var(--mw-radius, 12px)); }
 .mw-form *, .mw-form *::before, .mw-form *::after { box-sizing: border-box; }
 .mw-form fieldset { display: grid; gap: var(--mw-form-gap, 10px); border: 0; padding: 0; margin: 0; min-width: 0; }
 .mw-form label { display: grid; gap: 4px; min-width: 0; }
 .mw-form input, .mw-form textarea, .mw-form select, .mw-form button { font: inherit; color: inherit; border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-control-radius, 6px); padding: 7px 9px; background: var(--mw-surface, #fff); min-width: 0; max-width: 100%; }
 .mw-form input:focus-visible, .mw-form textarea:focus-visible, .mw-form select:focus-visible, .mw-form button:focus-visible { outline: 2px solid var(--mw-accent, #6658e8); outline-offset: 2px; }
-.mw-form button { cursor: pointer; }
+.mw-form button { cursor: pointer; overflow-wrap: anywhere; }
 .mw-form button:hover:enabled { background: var(--mw-hover, #f0f2f7); }
 .mw-form :disabled { opacity: .55; cursor: default; }
 .mw-form input[type=checkbox] { width: auto; }
-.mw-form label:has(input[type=checkbox]) { display: flex; align-items: center; gap: 7px; }
+.mw-form label:has(input[type=checkbox]) { display: flex; align-items: center; gap: 7px; overflow-wrap: anywhere; }
 .mw-form-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .mw-image-upload { display: grid; gap: var(--mw-form-gap, 10px); }
 .mw-image-upload progress { width: 100%; accent-color: var(--mw-accent, #6658e8); }
 .mw-form .mw-image-alignment button[aria-pressed=true] { color: var(--mw-accent, #6658e8); border-color: var(--mw-accent, #6658e8); background: var(--mw-accent-soft, #f0edff); }
 @media (forced-colors: active) { .mw-form .mw-image-alignment button[aria-pressed=true] { outline: 1px solid Highlight; } }
-.mw-form-status { margin: 0; color: var(--mw-muted, #8490a1); overflow-wrap: anywhere; }
+.mw-form-status { margin: 0; color: var(--mw-muted, #657185); overflow-wrap: anywhere; }
 .mw-form-status[data-error=true], .mw-form-status.mw-form-error { color: var(--mw-form-error, #b42318); }
-.mw-image-dialog { color: var(--mw-text, #263043); background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-radius, var(--mw-radius, 12px)); padding: var(--mw-dialog-padding, 12px); width: min(var(--mw-image-dialog-width, 480px), calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; box-shadow: var(--mw-dialog-shadow, 0 20px 70px #0003); }
+.mw-image-dialog { box-sizing: border-box; max-width: calc(100vw - 32px); color: var(--mw-text, #263043); background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-radius, var(--mw-radius, 12px)); padding: var(--mw-dialog-padding, 12px); width: min(var(--mw-image-dialog-width, 480px), calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; box-shadow: var(--mw-dialog-shadow, 0 20px 70px #0003); }
 .mw-image-dialog::backdrop { background: var(--mw-dialog-backdrop, #0f172a80); }
 .mw-image-dialog .mw-form { border: 0; padding: 10px 0 0; }
 .mw-image-dialog-close { display: block; margin-inline-start: auto; font: inherit; color: inherit; background: var(--mw-surface, #fff); border: 1px solid var(--mw-border, #e4e8ef); border-radius: var(--mw-form-control-radius, 6px); padding: 7px 9px; cursor: pointer; }
 .mw-image-dialog-close:focus-visible { outline: 2px solid var(--mw-accent, #6658e8); outline-offset: 2px; }
+
+@media (pointer: coarse) { .mw-form button, .mw-form input:not([type=checkbox]), .mw-form select, .mw-form label:has(input[type=checkbox]), .mw-image-dialog-close { min-height: 44px; } }
