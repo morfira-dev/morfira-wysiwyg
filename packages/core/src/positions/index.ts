@@ -1,14 +1,17 @@
 import { createEventHub, createPluginEvent } from '../events/index.js';
 import type { EventHub } from '../events/types.js';
-import type { EditorPositionChange, EditorPositionHandle, EditorPositions } from './types.js';
-import type { PositionRecord, PositionRegistry, PositionRegistryOptions } from './internal-types.js';
+import type { EditorPositionChange, EditorPositionHandle, EditorPositions, EditorNodePositionHandle } from './types.js';
+import type { PositionRecord, PositionRegistry, PositionRegistryOptions, NodePositionRecord } from './internal-types.js';
 import { mapPositionRecord } from './mapping.js';
+import { checkedStructuralPath, structuralDOMLeaf, structuralText, mapNodePosition } from './structural.js';
 
-export type { EditorPositionHandle, EditorMappedPosition, EditorPositionChange, EditorPositions, EditorTransactionOptions, TextMappingStep } from './types.js';
+export type { EditorPositionHandle, EditorMappedPosition, EditorPositionChange, EditorPositions, EditorTransactionOptions, TextMappingStep, StructuralNodePath, StructuralMappingStep, EditorNodePositionHandle, EditorMappedNodePosition } from './types.js';
 
-export const createPositionRegistry = ({ surface, isAvailable, canCapture, canPresent }: PositionRegistryOptions): PositionRegistry => {
+export const createPositionRegistry = ({ surface, isAvailable, canCapture, canPresent, readDocument, clearDocument }: PositionRegistryOptions): PositionRegistry => {
   const records = new WeakMap<EditorPositionHandle, PositionRecord>();
   const live = new Set<PositionRecord>();
+  const nodeRecords = new WeakMap<EditorNodePositionHandle, NodePositionRecord>();
+  const nodeLive = new Set<NodePositionRecord>();
   const event = createPluginEvent<EditorPositionChange>('positionchange');
   let notifications: EventHub | undefined;
   const pending: EditorPositionChange[] = [];
@@ -31,9 +34,12 @@ export const createPositionRegistry = ({ surface, isAvailable, canCapture, canPr
     if (failures.length) throw new AggregateError(failures, 'Position listeners failed.');
   };
   const invalidate = () => {
-    const hadLive = live.size > 0;
+    clearDocument();
+    const hadLive = live.size > 0 || nodeLive.size > 0;
     for (const record of live) record.active = false;
     live.clear();
+    for (const record of nodeLive) record.active = false;
+    nodeLive.clear();
     stopObserving();
     if (hadLive && notifications)
       pending.push(Object.freeze({ kind: 'invalidated', steps: Object.freeze([]) }));
@@ -58,6 +64,36 @@ export const createPositionRegistry = ({ surface, isAvailable, canCapture, canPr
     observer.observe(surface, { subtree: true, childList: true, characterData: true, attributes: true });
   };
   const positions: EditorPositions = {
+    trackNode: (path, offset, association = 1) => {
+      if (destroyed || !isAvailable() || flush() || dirty || !surface.isConnected || !canCapture()) return;
+      const clean = checkedStructuralPath(path);
+      const node = structuralDOMLeaf(surface, readDocument(), clean);
+      if (!node) { clearDocument(); return; }
+      const text = structuralText(node);
+      if (text === undefined || !Number.isSafeInteger(offset) || offset < 0 || offset > text.length || association !== -1 && association !== 1)
+        throw new RangeError('Node positions require a supported text-only leaf and valid offset/association.');
+      const token = Object.freeze({}) as EditorNodePositionHandle;
+      const record: NodePositionRecord = { path: clean, offset, association, deleted: false, active: true };
+      nodeRecords.set(token, record);
+      nodeLive.add(record);
+      observe();
+      return token;
+    },
+    resolveNode: (handle) => {
+      if (destroyed || !isAvailable() || flush() || dirty) return;
+      if (!surface.isConnected) { invalidate(); notify(); return; }
+      const record = nodeRecords.get(handle);
+      return record?.active ? { path: [...record.path], offset: record.offset, deleted: record.deleted } : undefined;
+    },
+    releaseNode: (handle) => {
+      const record = nodeRecords.get(handle);
+      if (!record) return;
+      nodeRecords.delete(handle);
+      nodeLive.delete(record);
+      record.active = false;
+      if (!nodeLive.size) clearDocument();
+      if (!live.size && !nodeLive.size) stopObserving();
+    },
     track: (index, association = 1) => {
       if (destroyed || !isAvailable() || flush() || dirty || !surface.isConnected || !canCapture()) return;
       if (!Number.isSafeInteger(index) || index < 0 || index > (surface.textContent?.length ?? 0) || (association !== -1 && association !== 1))
@@ -85,7 +121,7 @@ export const createPositionRegistry = ({ surface, isAvailable, canCapture, canPr
       records.delete(handle);
       live.delete(record);
       record.active = false;
-      if (!live.size) stopObserving();
+      if (!live.size && !nodeLive.size) stopObserving();
     },
     setPresentation: (node, editable) => {
       if (destroyed || !isAvailable() || (editable !== false && editable !== undefined) || !canPresent(node)) return false;
@@ -117,16 +153,17 @@ export const createPositionRegistry = ({ surface, isAvailable, canCapture, canPr
   };
   return {
     positions,
-    accept: (mapping) => {
-      // Accepted explicit mutations are accounted for by the validated plan.
+    accept: (mapping, structural) => {
+      clearDocument();
       observer?.takeRecords();
       dirty = false;
-      if (!mapping) {
-        invalidate();
-        return;
-      }
-      for (const record of live) mapPositionRecord(record, mapping.steps);
-      if (notifications) pending.push(Object.freeze({ kind: 'mapped', steps: mapping.steps }));
+      if (!mapping && !structural) { invalidate(); return; }
+      if (mapping) for (const record of live) mapPositionRecord(record, mapping.steps);
+      else { for (const record of live) record.active = false; live.clear(); }
+      if (structural) for (const record of nodeLive) mapNodePosition(record, structural.steps);
+      else { for (const record of nodeLive) record.active = false; nodeLive.clear(); }
+      if (!live.size && !nodeLive.size) stopObserving();
+      if (notifications) pending.push(Object.freeze({ kind: 'mapped', steps: mapping?.steps ?? Object.freeze([]), ...(structural ? { structural: true as const } : {}) }));
     },
     invalidate,
     synchronize: () => {

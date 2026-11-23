@@ -20,4 +20,4 @@ export type { EditorCommand, EditorCommandDefinition, EditorCommandState, Editor
 
 export type { EditorSelectionHandle, EditorSelectionHandles } from './selection/handles/types.js';
 
-export type { EditorPositionHandle, EditorMappedPosition, EditorPositionChange, EditorPositions, EditorTransactionOptions, TextMappingStep } from './positions/types.js';
+export type { EditorPositionHandle, EditorMappedPosition, EditorPositionChange, EditorPositions, EditorTransactionOptions, TextMappingStep, StructuralNodePath, StructuralMappingStep, EditorNodePositionHandle, EditorMappedNodePosition } from './positions/types.js';

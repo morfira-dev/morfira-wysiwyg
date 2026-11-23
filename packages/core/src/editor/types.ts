@@ -50,6 +50,8 @@ export interface Editor {
   isReadOnly(): boolean;
   format(name: string, value: unknown): void;
   insertHTML(html: string): void;
+  /** Insert bounded literal text at one guarded ordinary collapsed caret. */
+  insertTextAtCaret(text: string): boolean;
   focus(): void;
   undo(): void;
   redo(): void;

@@ -6,3 +6,6 @@ export type { NodeExtensionOptions, NodeCommands, NodeViewContext, NodeView, Nod
 
 export { createInlineNodeViews } from './inline-node-views/index.js';
 export type { InlineNodeViewsOptions, InlineNodeViewsController } from './types.js';
+
+export { structuralCommands } from './structural/index.js';
+export type { StructuralCommands } from './structural/types.js';

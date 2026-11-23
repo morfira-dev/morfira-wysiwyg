@@ -370,3 +370,16 @@ Optional [table size picker](/en/table-picker) uses an explicit factory and CSS 
 ## Text drag and drop
 
 `textDrop({ enabled?, onError? })` and `textDropCommands(editor)` from `/plugins/text-drop` install bounded rich-text drag/drop separately from presets. `getState()` and `setEnabled(boolean)` manage the preference; actual edits remain blocked read-only/during composition. Internal moves/copies retain formatting and one Undo; external inline HTML/plain text always copies. Files and structural/semantic sources are outside this plugin's ownership. No CSS is required. The [contract and example](/en/text-drop) explain the 20,000 UTF-16-unit bound and source/target freshness checks.
+
+
+## Literal caret input
+
+`editor.insertTextAtCaret(text): boolean` inserts up to 20000 UTF-16 units as
+literal text, preserving pending formats and normal typing-history grouping.
+CR normalizes to LF; HTML is not interpreted and no paragraph structure is added.
+It requires a collapsed native caret in a supported ordinary inline flow; expanded
+ranges, root gaps, PRE and semantic/noneditable owners refuse. Read-only,
+composition and stale focus-time targets return false. Invalid payloads reject;
+destroyed editors retain the normal lifecycle-error contract. This typed plugin
+operation supports terminal-atom boundaries without fabricated input events or
+permission to edit protected nodes.

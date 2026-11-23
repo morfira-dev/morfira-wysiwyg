@@ -1,7 +1,8 @@
 import { semanticPresentationTarget } from '../positions/presentation.js';
 import { createPositionRegistry } from '../positions/index.js';
 import { prepareTextMapping, inverseTextMapping } from '../positions/mapping.js';
-import type { PreparedTextMapping } from '../positions/internal-types.js';
+import { prepareStructuralMapping, inverseStructuralMapping } from '../positions/structural.js';
+import type { PreparedTextMapping, PreparedStructuralMapping } from '../positions/internal-types.js';
 import type { EditorTransactionOptions } from '../positions/types.js';
 import { createSelectionHandleRegistry } from '../selection/handles/index.js';
 import { createDocumentSchema } from '../schema/index.js';
@@ -16,6 +17,7 @@ import {
   inspectWrappedListInput, editWrappedListInput,
 } from '../lists/index.js';
 import { editBlockInput, handlesBlockInput, handlesSelectionReplacement, replaceSelection, prepareSelectionPaste, replaceSelectionWithFragment } from '../input/index.js';
+import { inlineSourceChildren } from '../input/inline-source.js';
 import { applyFormat, inlineFormats, readFormats } from '../formatting/index.js';
 import { inlineStyles, normalizeInlineStyle } from '../formatting/inline-attributes.js';
 import { createEventHub } from '../events/index.js';
@@ -198,9 +200,23 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       }
     },
   });
+  let positionHTML: string | undefined;
+  let positionDocument: ReturnType<typeof schema.parseHTML> | undefined;
+  const clearPositionDocument = () => { positionHTML = undefined; positionDocument = undefined; };
+  const readPositionDocument = () => {
+    const html = htmlSnapshots.read();
+    if (!positionDocument || positionHTML !== html) {
+      positionDocument = schema.parseHTML(html);
+      positionHTML = html;
+    }
+    return positionDocument;
+  };
   const positionHistory = new WeakMap<Snapshot, PreparedTextMapping>();
+  const structuralHistory = new WeakMap<Snapshot, PreparedStructuralMapping>();
   const positionRegistry = createPositionRegistry({
     surface,
+    readDocument: readPositionDocument,
+    clearDocument: clearPositionDocument,
     canPresent: (node) => semanticPresentationTarget(surface, schema, node),
     isAvailable: () => !destroyed && !composing && !transactionDepth && !pendingInput,
     canCapture: () => {
@@ -282,13 +298,15 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     if (failures.length)
       throw new AggregateError(failures, 'Editor change notification failed.');
   };
-  const commitMutation = (before: Snapshot, inputType = '', mapping?: PreparedTextMapping): boolean => {
+  const commitMutation = (before: Snapshot, inputType = '', mapping?: PreparedTextMapping, structural?: PreparedStructuralMapping): boolean => {
     const selection = readTextSelection(surface);
     if (ensureDocument(surface) && selection)
       selectText(surface, selection.index, selection.length);
     const after = capture();
     if (mapping && mapping.after !== (surface.textContent ?? ''))
       throw new Error('Mapping does not match the edited text.');
+    if (structural && structural.afterHTML !== after.html)
+      throw new Error('Structural mapping does not match the edited document.');
     selectionHandles.synchronize();
     if (after.html === before.html) {
       positionRegistry.synchronize();
@@ -305,7 +323,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     }
     redoStack.length = 0;
     if (mapping) positionHistory.set(before, mapping);
-    positionRegistry.accept(mapping);
+    if (structural) structuralHistory.set(before, structural);
+    positionRegistry.accept(mapping, structural);
     current = after;
     lastInputTime = inputType ? now : 0;
     lastInputType = inputType;
@@ -315,9 +334,10 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     if (commitMutation(before, inputType))
       emit('user');
   };
-  const restore = (snapshot: Snapshot, mapping?: PreparedTextMapping) => {
+  const restore = (snapshot: Snapshot, mapping?: PreparedTextMapping, structural?: PreparedStructuralMapping) => {
     positionRegistry.synchronize();
     const beforeText = surface.textContent ?? '';
+    const beforeHTML = htmlSnapshots.read();
     selectionHandles.invalidate();
     clearTyping();
     surface.innerHTML = snapshot.html;
@@ -327,7 +347,8 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     restoreTyping(snapshot);
     current = capture();
     selectionHandles.synchronize();
-    positionRegistry.accept(mapping && mapping.before === beforeText && mapping.after === (surface.textContent ?? '') ? mapping : undefined);
+    positionRegistry.accept(mapping && mapping.before === beforeText && mapping.after === (surface.textContent ?? '') ? mapping : undefined,
+      structural && structural.beforeHTML === beforeHTML && structural.afterHTML === current.html ? structural : undefined);
     lastSelection = current.selection;
     lastInputTime = 0;
     emit('user');
@@ -417,19 +438,21 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     let changed = false;
     try {
       if (transactionOptions !== undefined && (!transactionOptions || typeof transactionOptions !== 'object'
-        || Array.isArray(transactionOptions) || Object.keys(transactionOptions).some((key) => key !== 'mapping' && key !== 'resetTyping')))
+        || Array.isArray(transactionOptions) || Object.keys(transactionOptions).some((key) => key !== 'mapping' && key !== 'structuralMapping' && key !== 'resetTyping')))
         throw new TypeError('Unsupported transaction options.');
       if (transactionOptions?.resetTyping !== undefined && typeof transactionOptions.resetTyping !== 'boolean')
         throw new TypeError('resetTyping must be boolean.');
       const mapping = transactionOptions?.mapping === undefined ? undefined
         : prepareTextMapping(transactionOptions.mapping, surface.textContent ?? '');
+      const structural = transactionOptions?.structuralMapping === undefined ? undefined
+        : prepareStructuralMapping(transactionOptions.structuralMapping, readPositionDocument(), schema);
       // A replacement can return to the old text offset without a selectionchange flush.
       const initialRange = activeRange(surface);
       if (transactionOptions?.resetTyping || initialRange && !initialRange.collapsed) clearTyping();
       invoke();
       if (transactionFailed)
         throw transactionError;
-      changed = commitMutation(before, inputType, mapping);
+      changed = commitMutation(before, inputType, mapping, structural);
     }
     catch (error) {
       positionRegistry.invalidate();
@@ -467,6 +490,63 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       positionRegistry.notify();
       if (selectionChanged) notifySelection();
     }
+  };
+  const ordinaryLiteralCaret = (range: Range): boolean => {
+    if (!range.collapsed || range.startContainer === surface) return false;
+    let block: Element | undefined;
+    for (let element = range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement;
+      element && element !== surface; element = element.parentElement) {
+      if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml' || element.hasAttribute('data-mw-node')
+        || element.getAttribute('contenteditable') === 'false') return false;
+      if (!block && /^(?:p|h[1-6]|li|blockquote|td|th)$/.test(element.localName)) block = element;
+      else if (!block && !/^(?:strong|em|u|s|sub|sup|a|span|code)$/.test(element.localName)) return false;
+      else if (block && element !== block && !/^(?:li|ul|ol|blockquote|table|thead|tbody|tfoot|tr|td|th)$/.test(element.localName)) return false;
+    }
+    return !!block && inlineSourceChildren(block);
+  };
+  const normalizeInsertedSelection = (): void => {
+    const range = activeRange(surface);
+    if (!range || range.startContainer.nodeType !== 3 || range.startOffset !== (range.startContainer.textContent?.length ?? 0)) return;
+    const walker = document.createTreeWalker(surface, NodeFilter.SHOW_TEXT);
+    walker.currentNode = range.startContainer;
+    let next: Node | null;
+    while ((next = walker.nextNode())) {
+      if (!next.textContent?.length) continue;
+      if (range.comparePoint(next, 0) === 0) {
+        range.setStart(next, 0);
+        applyNativeRange(document.getSelection(), range);
+      }
+      break;
+    }
+  };
+  const insertLiteralText = (text: string, overrides: Record<string, string | boolean>): void => {
+    const start = readTextSelection(surface)!.index;
+    const range = activeRange(surface)!;
+    const parent = range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement;
+    const block = parent?.closest('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre');
+    if (block && !block.textContent && block.childNodes.length === 1 && block.firstChild instanceof HTMLBRElement) {
+      block.replaceChildren();
+      range.selectNodeContents(block);
+      range.collapse(true);
+    }
+    const inserted = document.createTextNode(text);
+    range.insertNode(inserted);
+    const actual = document.createRange();
+    actual.selectNodeContents(inserted);
+    applyNativeRange(document.getSelection(), actual);
+    typingOverrides = { ...overrides };
+    for (const [name, enabled] of Object.entries(overrides)) {
+      if ((Object.hasOwn(inlineStyles, name) ? readFormats(surface)[name] ?? false : Boolean(readFormats(surface)[name])) !== enabled)
+        applyFormat(surface, name, enabled, schema);
+      normalizeInsertedSelection();
+    }
+    const end = activeRange(surface)!;
+    end.collapse(false);
+    applyNativeRange(document.getSelection(), end);
+    // HTML history merges adjacent Text nodes; keep the actual caret bookmark stable.
+    const caretElement = end.endContainer.nodeType === 1 ? end.endContainer as Element : end.endContainer.parentElement;
+    caretElement?.closest('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre')?.normalize();
+    typingOffset = start + text.length;
   };
   const registry = createCommandRegistry({ editor: () => editor, isComposing: () => composing, assertActive });
   const prepareHTML = (html: string): DocumentFragment => {
@@ -597,6 +677,40 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       clearTyping();
       editor.transact(() => applyFormat(surface, name, value, schema));
     },
+    insertTextAtCaret: (value) => {
+      assertActive();
+      if (typeof value !== 'string' || value.length > 20000 || value.includes('\u0000'))
+        throw new TypeError('Literal caret input requires at most 20000 UTF-16 units without NUL.');
+      if (!value || readOnly || composing || transactionDepth) return false;
+      const text = value.replace(/\r\n?/g, '\n');
+      const native = document.getSelection();
+      const initial = native?.rangeCount === 1 ? activeRange(surface) : undefined;
+      if (!initial || !ordinaryLiteralCaret(initial)) return false;
+      const handle = selectionHandles.selection.capture();
+      if (!handle) return false;
+      const formats = JSON.stringify([typingOffset, typingOverrides]);
+      const currentIntent = (): boolean => {
+        if (destroyed || readOnly || composing || !selectionHandles.selection.isCurrent(handle)
+          || formats !== JSON.stringify([typingOffset, typingOverrides])) return false;
+        const current = document.getSelection()?.rangeCount === 1 ? activeRange(surface) : undefined;
+        return !!current && ordinaryLiteralCaret(current) && current.startContainer === initial.startContainer
+          && current.startOffset === initial.startOffset && current.endContainer === initial.endContainer && current.endOffset === initial.endOffset;
+      };
+      let inserted = false;
+      try {
+        editor.focus();
+        if (!currentIntent()) return false;
+        const overrides = typingAtCaret() ? { ...typingOverrides } : {};
+        runTransaction(() => {
+          if (!currentIntent()) return;
+          insertLiteralText(text, overrides);
+          inserted = true;
+        }, 'insertText');
+        if (inserted) pendingInput = undefined;
+        return inserted;
+      }
+      finally { selectionHandles.selection.release(handle); }
+    },
     insertHTML: (html) => {
       assertActive();
       if (readOnly || composing) return;
@@ -621,10 +735,12 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       const previous = undoStack.pop();
       if (previous) {
         const mapping = positionHistory.get(previous);
+        const structural = structuralHistory.get(previous);
         const present = capture();
         if (mapping) positionHistory.set(present, mapping);
+        if (structural) structuralHistory.set(present, structural);
         redoStack.push(present);
-        restore(previous, mapping ? inverseTextMapping(mapping) : undefined);
+        restore(previous, mapping ? inverseTextMapping(mapping) : undefined, structural ? inverseStructuralMapping(structural) : undefined);
       }
     },
     redo: () => {
@@ -636,10 +752,12 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       const next = redoStack.pop();
       if (next) {
         const mapping = positionHistory.get(next);
+        const structural = structuralHistory.get(next);
         const present = capture();
         if (mapping) positionHistory.set(present, mapping);
+        if (structural) structuralHistory.set(present, structural);
         undoStack.push(present);
-        restore(next, mapping);
+        restore(next, mapping, structural);
       }
     },
     canUndo: () => { assertActive(); return undoStack.length > 0; },
@@ -780,26 +898,9 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     }
     if (event.inputType === 'insertText' && event.data && !composing && !event.isComposing && typingAtCaret() && Object.keys(typingOverrides).length) {
       event.preventDefault();
-      const start = readTextSelection(surface)!.index;
       const text = event.data;
       const overrides = { ...typingOverrides };
-      runTransaction(() => {
-        const range = activeRange(surface)!;
-        const parent = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
-        const block = parent?.closest('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre');
-        if (block && !block.textContent && block.childNodes.length === 1 && block.firstChild instanceof HTMLBRElement) {
-          block.replaceChildren();
-          range.selectNodeContents(block);
-          range.collapse(true);
-        }
-        range.insertNode(document.createTextNode(text));
-        selectText(surface, start, text.length);
-        for (const [name, enabled] of Object.entries(overrides))
-          if ((Object.hasOwn(inlineStyles, name) ? readFormats(surface)[name] ?? false : Boolean(readFormats(surface)[name])) !== enabled)
-            applyFormat(surface, name, enabled, schema);
-        selectText(surface, start + text.length);
-        typingOffset = start + text.length;
-      }, 'insertText');
+      runTransaction(() => insertLiteralText(text, overrides), 'insertText');
       pendingInput = undefined;
       return;
     }
