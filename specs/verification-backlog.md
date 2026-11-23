@@ -1,5 +1,39 @@
 # Verification record
 
+## Office capture corpus, normalization and local replay — 2026-11-23
+
+Added byte/source-pinned MIT clipboard data under tests/fixtures/office: two
+upstream-documented real Word captures (Jodit), documented real Excel HTML/plain
+(gridclip), separately classified Google Docs upstream samples (Lexical), and a
+fresh project-native Google Docs HTML/plain capture. Raw hashes and original MIT
+notices are preserved; Excel CRLF is protected by local .gitattributes.
+
+The native Docs source was a newly created non-sensitive project test document,
+with ordinary paragraphs, intentional bold and a bullet list. Native Cmd+C in
+Chrome/macOS produced the stored text/html and text/plain at
+2026-11-23T08:03:38.605Z. Exact browser/OS/rolling Docs versions are unknown;
+private account/document URL and proprietary internal clipboard MIME are not
+stored in the corpus. Browser UI confirmed text/formatting and saved state. This
+is a real source capture; editor acceptance replays its saved MIME through
+synthetic paste events, not a claimed real-application/device matrix.
+
+Concrete fixes: nearest explicit Wingdings font qualifies the Word section-sign
+bullet; a closer Arial declaration blocks reinterpretation. Excel mso-ignore:
+colspan overflow restores empty adjacent cells rather than inventing a merge.
+True merges/rowspans, protected semantic owners, bounded expansion and existing
+input/history safety remain. Unknown/class-driven Office styles, exact spacing,
+number-format formulas and unsupported metadata losses are documented per source.
+
+Eight corpus cases and existing Office paste cases passed in all three engines
+inside the final 267/267 focused run. Final docs run passed 6/6, including two
+RU/EN corpus replay/capture/export cases and two existing homepage/playground
+Office examples. The capture UI reads bounded raw MIME as inert text, supports
+local JSON download with self-reported app metadata, and uploads nothing.
+Types, package build/budgets, actual tarball smoke and selective imports passed;
+no full suite, GitHub CI or publication was run. Final generated measurements
+are committed with this stage and recorded in the SDK section below.
+
+
 ## Optional extension SDK and accepted mapping integration — 2026-11-23
 
 Implemented /sdk safe semantic node commands, bounded inline atoms, external-host

@@ -225,3 +225,14 @@ subtree cleanup cannot invalidate accepted current mappings. Optional /sdk stays
 out of core and presets. This is not arbitrary structural mapping, editable
 contentDOM or widget decorations. Focused evidence belongs to the verification
 record, not a full-suite or production-maturity claim.
+
+## Real Office source corpus — 2026-11-23
+
+The Office guide now replays licensed pinned Word/Excel upstream captures and a
+fresh native Google Docs capture, preserving hashes and explicit provenance/loss
+classification. Lexical Docs samples remain separately marked as weaker evidence.
+Word font-qualified bullets and Excel overflow-cell interpretation are corrected.
+Local raw-MIME capture/export helps extend the corpus without executing source
+HTML or uploading it. These fixtures and three-engine replay are not a full
+current Word/Excel/Docs/browser/device compatibility certification; see
+office-paste.md and the verification record.

@@ -1,6 +1,10 @@
+<script setup lang="ts">
+import OfficeCorpusExample from '../.vitepress/theme/OfficeCorpusExample.vue';
+</script>
+
 # Pasting from Word, Excel and Google Docs
 
-Paste uses the shared safe HTML importer. This slice adds bounded normalization of common Office markup; it does not promise an exact reproduction of every application document or version. Actual executed checks are recorded in the project verification log. Actual system clipboard captures and application-version checks remain a separate stage.
+Paste uses the shared safe HTML importer. This slice adds bounded normalization of common Office markup; it does not promise an exact reproduction of every application document or version. Actual executed checks are recorded in the project verification log. The external corpus below now includes documented historical Word/Excel captures, a fresh native Google Docs capture and separate upstream Docs samples; a current application/version matrix remains separate.
 
 ## What survives
 
@@ -41,3 +45,31 @@ Use `insertHTML` for a change covered by history. `setHTML` is an external docum
 Markup is parsed inertly and then passes ordinary reconstruction of allowed nodes/attributes. Office-specific CSS declarations do not become persisted styles. Scripts, event handlers, foreign namespaces, unsafe URLs and arbitrary CSS are discarded; shared document resource limits apply. Permitted images may still load their URL when actually rendered — host restrictions, CSP and backend validation remain application responsibilities. See [security](/en/security).
 
 This slice does not read `.docx` / `.xlsx` files, Office XML, RTF, special MIME types, numeric CF_HTML offsets or CSS `@list` rules. Formula, comment, tracked-change, footnote, page-break, exact typography and full LibreOffice compatibility are not claimed. Unrecognized lists retain their text instead of guessing structure. Real Word/Excel/Google Docs versions and further formats must populate a separate matrix of evidenced scenarios.
+
+## External corpus: provenance and measured losses
+
+<OfficeCorpusExample />
+
+| Sample | Provenance | Preserved / deliberately lost |
+| --- | --- | --- |
+| Word Windows / Edge, Word Mac / Safari | [Jodit real clipboard tests](https://github.com/xdan/jodit/blob/39c0ac9943124205e4e7c3551eb16754ef5ed2a5/src/plugins/paste-from-word/paste-from-word.test.js), MIT, upstream-trimmed; Word 16.113 is identified in its comment, OS/browser versions and capture date unknown | Nested ordinary bullets include explicitly font-qualified Wingdings `§`. Alphabetic/Roman labels remain literal text; class stylesheets and page layout are discarded. |
+| Excel 365 16.0.20430.20092 | [gridclip capture protocol](https://github.com/fillddak/gridclip/blob/e6e315c6c46e3c7ff37ebf390dcc344643dcb4a6/test/fixtures/REAL-CAPTURES.md), MIT; Windows 11 / Korean locale / headed Chromium 141, 2026-10-01; upstream anonymized temporary-path username | Real horizontal/vertical merges, Korean text, displayed values, emoji and literal escaped HTML survive. `mso-ignore:colspan` overflow becomes a separate empty cell rather than a false merge. Hidden rows were absent from the original clipboard; formulas, number-format rules and stylesheet layout are not recovered. |
+| Google Docs — project native capture | 2026-11-23, 08:03:38.605 UTC, Google Chrome / macOS; browser and OS versions unknown, Docs uses an unpinned rolling web version. Project-authored non-sensitive MIT text, actual Cmd+C; private document URL and internal-slice MIME excluded | Three paragraphs, a semantic bullet list and intentional bold survive. `11pt` → `14.667px`; exact spacing/indentation and service attributes are discarded. Editor text extraction need not reproduce every block-separator newline in the original `text/plain`. |
+| Google Docs table / BIU formatting | [Lexical clipboard samples](https://github.com/facebook/lexical/tree/dc8cfac3c08f7d4bd4eff86a63089b4a88fae0e5/packages/lexical-playground/src/__tests__/browser), MIT; original capture method/date/OS/browser not documented | Neutral wrapper is removed, safe table/text/inline typography survives. Bounded numeric colgroup widths survive; per-edge borders, pt padding and exact line spacing are not reproduced. This is an upstream application sample, not independently verified fresh Docs capture. |
+
+Original payloads, SHA-256 hashes, transformations and MIT notices are kept together
+in `tests/fixtures/office`. The Word payloads are cooked string literals extracted
+without executing upstream tests; Excel bytes (including CRLF) are preserved exactly
+as published. No external editor implementation is used.
+
+Only an ordinary TD under TR with explicit decimal colspan 2–1000, no rowspan
+beyond 1 and no semantic SDK ownership qualifies for Excel overflow expansion.
+Source-node and final document/grid budgets still apply. A `§` without explicit
+Wingdings ancestry remains text. These rules do not enable arbitrary CSS evaluation.
+
+The capture form reads actual paste MIME data and downloads local JSON with a
+timestamp, browser string and self-reported application/version/OS. HTML is shown
+only as text and never executed or uploaded. Each MIME string is bounded to
+5,000,000 code units. Saving metadata does not independently prove app origin.
+Review a capture before adding it to a shared corpus; no broad Office certification
+is implied by replaying these samples in three browser engines.

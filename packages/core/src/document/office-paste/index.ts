@@ -46,7 +46,15 @@ const listItem = (element: Element): OfficeListItem | undefined => {
   const text = (marker.textContent ?? '').trim();
   const numbered = /^(\d{1,9})[.)]$/.exec(text);
   const number = numbered ? Number(numbered[1]) : 0;
-  if (!numbered && !/^[·•○▪■o]$/.test(text)) return;
+  const wingdingsBullet = text === '§' && (() => {
+    for (let current: Element | null = marker; current && current !== element; current = current.parentElement) {
+      if (current.localName !== 'span') continue;
+      const family = declaration(current, 'font-family');
+      if (family !== undefined) return /^(?:wingdings|"wingdings"|'wingdings')$/.test(family);
+    }
+    return false;
+  })();
+  if (!numbered && !/^[·•○▪■o]$/.test(text) && !wingdingsBullet) return;
   if (numbered && (!Number.isSafeInteger(number) || number < 1)) return;
   return { paragraph: element as HTMLParagraphElement, marker, identity: `${metadata[1]}:${metadata[3]}`, level: Number(metadata[2]), kind: numbered ? 'ol' : 'ul', number };
 };
@@ -98,6 +106,23 @@ export const normalizeOfficeHTML = (root: DocumentFragment): void => {
     for (const child of entry.node.childNodes) stack.push({ node: child, depth: entry.depth + 1 });
   }
   for (const element of elements) {
+    if (htmlElement(element) && element.localName === 'td'
+      && element.parentElement?.localName === 'tr' && htmlElement(element.parentElement)
+      && (element.getAttribute('style')?.length ?? 0) <= 20000
+      && declaration(element, 'mso-ignore') === 'colspan'
+      && !element.closest('[data-mw-node]') && !element.querySelector('[data-mw-node]')
+      && (!element.hasAttribute('rowspan') || element.getAttribute('rowspan') === '1')) {
+      const value = element.getAttribute('colspan') ?? '';
+      const span = /^\d{1,4}$/.test(value) ? Number(value) : 0;
+      if (span >= 2 && span <= 1000) {
+        count += span - 1;
+        if (count > maximumNodes) throw new RangeError('Office HTML exceeds structural limits.');
+        element.removeAttribute('colspan');
+        const reference = element.nextSibling;
+        for (let index = 1; index < span; index++)
+          element.parentNode!.insertBefore(element.ownerDocument.createElement('td'), reference);
+      }
+    }
     if (htmlElement(element) && element.localName === 'b'
       && element.id.startsWith('docs-internal-guid-')
       && element.id.length > 'docs-internal-guid-'.length

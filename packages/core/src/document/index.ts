@@ -161,7 +161,7 @@ export const parseHTML = (html: string, resolve?: DocumentAttributeResolver, val
   // A template is inert: script execution and active resource loading are never used for import.
   const template = document.createElement('template');
   template.innerHTML = html;
-  if (/mso-list\s*:|docs-internal-guid-/i.test(html)) normalizeOfficeHTML(template.content);
+  if (/mso-list\s*:|mso-ignore\s*:\s*colspan|docs-internal-guid-/i.test(html)) normalizeOfficeHTML(template.content);
   const budget: DocumentBudget = { count: 0, htmlLength: 0 };
   return { version: 1, children: [...template.content.childNodes].flatMap((node) => readDOM(node, 0, budget, resolve, validateElement)) };
 };

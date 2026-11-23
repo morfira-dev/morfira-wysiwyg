@@ -106,3 +106,58 @@ markup shapes, not captured real-application clipboard evidence. Real Word,
 Excel and Google Docs release/browser/OS captures and native clipboard permission
 checks remain a separate verification task. No local behavioral test run or CI
 result is implied by authoring those regressions.
+
+## Evidence corpus and capture workflow — 2026-11-23
+
+`tests/fixtures/office/manifest.json` pins immutable upstream commits and SHA-256
+payloads with adjacent MIT notices. Import data only, never an external editor's
+normalization code. Preserve original fixture bytes; distinguish upstream trimmed
+Word captures, upstream anonymized Excel captures and Google Docs-labeled samples
+whose original capture method/browser/version are undocumented. Unknown provenance
+fields remain null. Existing authored synthetic samples retain their explicit label.
+
+The Word Windows/Edge and Mac/Safari captures expose a Wingdings `§` bullet. Treat
+this character as a bullet only inside one recognized `mso-list:Ignore` marker
+whose nearest explicitly font-qualified own/intervening SPAN uses Wingdings
+(quoted or unquoted, case-insensitive). A nearer different font blocks that rule. A normal section sign, different font, unsupported
+marker or semantic subtree does not authorize discarding text. Decimal and other
+existing marker rules are unchanged; alphabetic/Roman labels remain literal.
+
+Real Excel overflow cells use `colspan` with inline `mso-ignore:colspan`; these are
+not true merges. For an ordinary HTML TD under an ordinary TR with no semantic
+ownership, rowspan absent/1 and explicit decimal colspan 2–1000, remove only this
+false span and insert span-minus-one empty TD siblings immediately after it.
+Retain source content and all later column positions; true colspan/rowspan merges
+remain unchanged. Never expand semantic owners/descendants, foreign namespaces,
+invalid spans or unsupported rowspan combinations. Count added cells against the
+existing source-node limit before expansion; final schema/grid budgets still apply.
+Recognize this explicit declaration in the inert Office prepass trigger. No general
+CSS evaluation, hidden-row recovery or spreadsheet-formula interpretation is added.
+
+Acceptance uses original data through actual ClipboardEvent import plus history,
+exact unaffected content and structural assertions: Word nested bullet level3 and
+unknown Roman labels; Excel true header/vertical merges versus overflow empty cells,
+Korean/emoji/quoted literal text and displayed numeric values; Docs neutral wrapper,
+styles, semantic table and retained colgroup widths versus unsupported edge/layout styles. Representative malformed
+and semantic-owner variants remain separately authored security regressions.
+
+The guide's local capture form reads raw `text/html` and `text/plain` from a user
+paste and exports JSON with timestamp, browser string and self-reported application
+version/OS. Store raw payload only as text; never assign it to innerHTML, fetch its
+resources or upload it. Bound each payload to 5,000,000 code units before storing.
+Capture metadata does not prove application origin. A sample viewer uses the safe
+editor importer and labels its original source and known losses. Current browser
+runs are separate from historical upstream source-application captures.
+
+### Fresh native Google Docs capture
+
+`google-docs-native-chrome.html` and `.txt` record actual native Cmd+C from
+Google Docs on 2026-11-23T08:03:38.605Z in Google Chrome/macOS (exact versions
+unknown). The non-sensitive sample is project-authored MIT content: three
+paragraphs, explicit bold and one bullet item. Preserve raw HTML/plaintext bytes
+and hashes; exclude private document/account URLs and Docs internal-slice MIME.
+The manifest distinguishes this own capture from upstream Docs samples with
+undocumented capture methods. Replay acceptance covers semantic list/paragraph
+content, intentional bold versus neutral wrapper, canonical pt typography, known
+plain-text block-separator losses and one-step selection/history restoration.
+This narrow fresh capture is not a cross-version Google Docs certification.

@@ -1,0 +1,3 @@
+# Preserve upstream clipboard bytes, including Excel CRLF.
+*.html -text
+*.txt -text

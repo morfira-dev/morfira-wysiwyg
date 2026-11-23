@@ -1,0 +1,136 @@
+{
+  "license": "MIT; original copyright notices are retained in adjacent LICENSE.*.txt files. Runtime/editor implementation remains independent.",
+  "sourcePolicy": "Unmodified upstream payload bytes or cooked string literal data extracted without executing upstream tests. No editor implementation code is imported. Original upstream capture claims are not independent current-application certification.",
+  "fixtures": [
+    {
+      "file": "word-windows-edge.html",
+      "sha256": "9031bb2b6e26f49362852c3a15dc14e4e66b5be796fab4c1782ebe6a426f1a03",
+      "source": "https://github.com/xdan/jodit/blob/39c0ac9943124205e4e7c3551eb16754ef5ed2a5/src/plugins/paste-from-word/paste-from-word.test.js",
+      "status": "upstream-documented-capture-trimmed",
+      "application": "Word 16.113 (upstream comment; Generator metadata says Word 15)",
+      "environment": {
+        "os": "Windows (version unknown)",
+        "browser": "Edge (version unknown)",
+        "captureDate": null,
+        "transformation": "Upstream trimmed paragraphs and stylesheet rules; cooked literal extracted without further edits."
+      },
+      "losses": [
+        "Class stylesheets, alphabetic/Roman labels and page layout remain unsupported. Font-qualified Wingdings section-sign bullets become ordinary bullets."
+      ]
+    },
+    {
+      "file": "word-mac-safari.html",
+      "sha256": "9ca20cbad39c59c4ab750e9bc729190c74d7d583e5cc853babb90dd6f16765f2",
+      "source": "https://github.com/xdan/jodit/blob/39c0ac9943124205e4e7c3551eb16754ef5ed2a5/src/plugins/paste-from-word/paste-from-word.test.js",
+      "status": "upstream-documented-capture-trimmed",
+      "application": "Word 16.113 (upstream comment)",
+      "environment": {
+        "os": "macOS (version unknown)",
+        "browser": "Safari (version unknown)",
+        "captureDate": null,
+        "transformation": "Safari rewrites clipboard HTML; upstream trimmed data; cooked literal extracted without further edits."
+      },
+      "losses": [
+        "Stylesheet layout, alphabetic/Roman labels and exact Word typography remain unsupported."
+      ]
+    },
+    {
+      "file": "google-docs-table.html",
+      "sha256": "4b17ac7fe02016b3a3115cb9e2d3195750add46b81e9f9d0bf5445644b079acc",
+      "source": "https://github.com/facebook/lexical/blob/dc8cfac3c08f7d4bd4eff86a63089b4a88fae0e5/packages/lexical-playground/src/__tests__/browser/TablesHTMLCopyAndPaste.test.ts",
+      "status": "upstream-application-labeled-clipboard-sample",
+      "application": "Google Docs (version unknown)",
+      "environment": {
+        "os": null,
+        "browser": null,
+        "captureDate": null,
+        "transformation": "Cooked text/html literal from upstream Google Docs test; original capture method not documented."
+      },
+      "losses": [
+        "Bounded numeric colgroup widths, semantic table content and supported inline formatting survive; per-edge borders and pt padding are not reproduced."
+      ]
+    },
+    {
+      "file": "google-docs-formatting.html",
+      "sha256": "1b61e71fdc64c195de374afbd6e9f834b2553addb1acd535924d3ac6cc9c7f1b",
+      "source": "https://github.com/facebook/lexical/blob/dc8cfac3c08f7d4bd4eff86a63089b4a88fae0e5/packages/lexical-playground/src/__tests__/browser/TextFormatHTMLCopyAndPaste.test.ts",
+      "status": "upstream-origin-marked-clipboard-sample",
+      "application": "Google Docs-origin HTML (docs-internal-guid marker; test labels BIU formatting)",
+      "environment": {
+        "os": null,
+        "browser": null,
+        "captureDate": null,
+        "transformation": "Cooked text/html literal from upstream test; original capture method not documented."
+      },
+      "losses": [
+        "Font files and exact line spacing are not imported; supported BIU style and pt-to-px typography survive."
+      ]
+    },
+    {
+      "file": "excel-windows-chromium.html",
+      "sha256": "30cd73afa8047f5f6e0cf51d7937ec6480f2cd2891003e818d677535b125013d",
+      "source": "https://github.com/fillddak/gridclip/blob/e6e315c6c46e3c7ff37ebf390dcc344643dcb4a6/test/fixtures/excel-windows-real.html",
+      "status": "upstream-documented-capture-anonymized",
+      "application": "Microsoft 365 Excel 16.0.20430.20092",
+      "environment": {
+        "os": "Windows 11, Korean locale",
+        "browser": "Chromium 141 (headed)",
+        "captureDate": "2026-10-01",
+        "transformation": "Upstream replaced username with user in temporary file URLs. This repository preserves upstream bytes including CRLF."
+      },
+      "losses": [
+        "Displayed values only; formulas, hidden rows and number format rules are absent. Class stylesheets and exact geometry are discarded. mso-ignore:colspan overflow is reconstructed as separate empty cells, preserving true merges."
+      ]
+    },
+    {
+      "file": "excel-windows-chromium.txt",
+      "sha256": "05cb30f423371028461b38903319585bb9fbc13e37333cd753f788a457485e9b",
+      "source": "https://github.com/fillddak/gridclip/blob/e6e315c6c46e3c7ff37ebf390dcc344643dcb4a6/test/fixtures/excel-windows-real.txt",
+      "status": "upstream-documented-capture-anonymized",
+      "application": "Microsoft 365 Excel 16.0.20430.20092",
+      "environment": {
+        "os": "Windows 11, Korean locale",
+        "browser": "Chromium 141 (headed)",
+        "captureDate": "2026-10-01",
+        "transformation": "Byte-identical to upstream text/plain and upstream-reported CF_UNICODETEXT."
+      },
+      "losses": [
+        "Plain text contains displayed values and tabs/newlines, no real merge information."
+      ]
+    },
+    {
+      "file": "google-docs-native-chrome.html",
+      "sha256": "08115fa55a4f3fa0c8bf26269ee52509dce4fef2a01394f064cbafdb45b21ea6",
+      "source": "Project-authored Google Docs native clipboard capture; no private document URL is stored.",
+      "status": "project-native-capture",
+      "application": "Google Docs web (rolling version unknown)",
+      "environment": {
+        "os": "macOS (version unknown)",
+        "browser": "Google Chrome (version unknown)",
+        "captureDate": "2026-11-23T08:03:38.605Z",
+        "transformation": "No payload edits. Three non-sensitive project-authored paragraphs and one bullet item, native Cmd+C in Google Docs; text/html and text/plain read through the clipboard interface. Private Google Docs internal-slice MIME excluded."
+      },
+      "license": "MIT, original project-authored sample content",
+      "losses": [
+        "Paragraphs, a semantic bullet list and supported inline styles survive. 11pt becomes 14.667px; browser/editor plain-text extraction need not reproduce clipboard block-separator newlines. Exact line spacing, margins, list indentation, ARIA and Docs service metadata are not persisted."
+      ]
+    },
+    {
+      "file": "google-docs-native-chrome.txt",
+      "sha256": "9ead5c4c56dad7ac99f66a9d7e3033a7f071e890a47f88ede10455d72817e8ee",
+      "source": "Project-authored Google Docs native clipboard capture; no private document URL is stored.",
+      "status": "project-native-capture",
+      "application": "Google Docs web (rolling version unknown)",
+      "environment": {
+        "os": "macOS (version unknown)",
+        "browser": "Google Chrome (version unknown)",
+        "captureDate": "2026-11-23T08:03:38.605Z",
+        "transformation": "No payload edits. Three non-sensitive project-authored paragraphs and one bullet item, native Cmd+C in Google Docs; text/html and text/plain read through the clipboard interface. Private Google Docs internal-slice MIME excluded."
+      },
+      "license": "MIT, original project-authored sample content",
+      "losses": [
+        "Paragraphs, a semantic bullet list and supported inline styles survive. 11pt becomes 14.667px; browser/editor plain-text extraction need not reproduce clipboard block-separator newlines. Exact line spacing, margins, list indentation, ARIA and Docs service metadata are not persisted."
+      ]
+    }
+  ]
+}

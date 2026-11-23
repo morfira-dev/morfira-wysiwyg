@@ -1,0 +1,4 @@
+Morfira Docs fixture
+Plain alpha beta
+Bold gamma
+List delta
