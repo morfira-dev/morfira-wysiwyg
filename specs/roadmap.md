@@ -283,3 +283,20 @@ VoiceOver/NVDA/JAWS/TalkBack require recorded manual sessions. Desktop engines,
 touch emulation and source review do not close that gate or establish WCAG
 conformance. Do not replace it with speculative feature expansion or claim a
 fully certified accessibility milestone.
+
+## Quote/list boundary deletion and reserve follow-up — 2026-11-23
+
+Implemented collapsed Backspace/Delete joins between adjacent ordinary quote/body
+leaves within one list item, including quote-child and quote-to-quote edges.
+Preserve left wrappers, actual surviving quote/branch identity and history; nested
+branches, other items, semantic/image/foreign/nested-quote shapes stay guarded.
+The old absolute-start Backspace unwrap/lift for quote-only items remains. Enter,
+selected replacement and clipboard scope are not broadened. See list-quote-input.md.
+
+Behavior-preserving refactors share fixed ordinary leaf metadata, text splitting,
+Range application, list body joins, image inspection mechanics and table-property
+metadata/validation while retaining distinct policies. All budgets pass, but
+standard plus table properties has only 39 gzip bytes of reserve. A substantial
+reserve is still not achieved; do not claim that priority fully closed. See
+bundle-reserve-next.md and the verification record. Real-device/AT verification
+and broader structural intervals remain separate work.

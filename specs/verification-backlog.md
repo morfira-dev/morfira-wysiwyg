@@ -1,5 +1,66 @@
 # Verification record
 
+## Quote/list boundary input and behavior-preserving reserve — 2026-11-23
+
+Native collapsed Backspace/Delete joins ordinary p/h leaves within a direct list
+quote and across adjacent body/quote or quote/quote edges of the same LI. Preserve
+the actual left leaf/wrapper, remaining quote bodies and branches, exact caret,
+next typing and one-step history. Branch, item, cell, semantic, foreign, image and
+nested quote boundaries retain their stated guards. Quote-only absolute-start
+Backspace still delegates to the existing unwrap/lift owner. An independent review
+caught LI-element offsets beside nested branches returning unowned; these now
+explicitly consume a no-op. Enter and the existing image-bearing quote regression
+are unchanged. Contracts: list-quote-input.md and bundle-reserve-next.md.
+
+Retained refactors: feature-owned table enums/options and ordered patch validators,
+cell-style/state projections, common image selection and ordinary-tree mechanics,
+shared post-focus checks and Range application, ordinary-body joining, canonical
+input leaf vocabulary and formatting text splitting. Different namespace/source,
+edit-vs-resize, mark-vs-style/link, frame ownership and invalidation policies remain
+separate. No dependencies, public API/schema changes, diagnostic shortening,
+compression/charset changes, feature flags or budget/profile changes were added.
+
+Final relevant built-artifact suite: **579/579 passed** in Chromium, Firefox and
+WebKit (193 cases per engine), covering new quote input and affected list native
+input, first-body Backspace, block boundaries, replacement/paste, inline formatting,
+empty owners, table properties/forms, image edit/alignment/proportions. Separate
+React StrictMode acceptance passed **3/3**, including actual-node/caret preservation
+through controlled feedback, typing/history, readonly/external replacement/dispose.
+An earlier targeted quote/repeated-paste run passed **114/114**; it is separate
+staged evidence, not an additional set of unique product behaviors. No full suite
+or full adapter/consumer matrix was run.
+
+Built RU/EN docs/examples passed **12/12** plus **1/1** for the new lazy homepage
+quote editor mount/collapse/remount. Buttons place a native caret; deletion is a
+real keyboard action. Package build/declarations, final types (including added
+React/home tests), project contracts, eight archive checks, selective-import guards
+and the focused actual-tarball UI/SSR smoke passed. Fresh task-owned Vite/preview
+servers were used after the final build. GitHub CI was not inspected, and no
+publication/deployment/push was performed by this stage.
+
+The first build caught a nullable fallback type in the new inspector; it was
+corrected before browser checks. A diagnostic joint build exceeded the table
+profile (80380 gzip). Further exact dedup reduced the final selected profile to
+79961. Smaller raw source did not always reduce gzip: the shared recursive-inline
+and detached-payload inspection candidates were discarded rather than retained
+for nominal source savings. No failure was hidden by changing guards/assertions.
+
+| Selected closure | Raw JS | gzip JS | Brotli JS | Raw CSS | gzip CSS | Brotli CSS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 105486 | 32868 | 28895 | 3397 | 1197 | 987 |
+| Standard ready | 233934 | 72638 | 61887 | 16581 | 4707 | 3904 |
+| Standard + table properties ready | 257359 | 79961 | 67491 | 16581 | 4707 | 3904 |
+| Extended ready | 290640 | 89488 | 75280 | 18046 | 5280 | 4355 |
+
+Compared with the preceding combined source, raw JS of the table profile fell
+1477 bytes but gzip grew 143 because the new behavior consumes the savings.
+Its remaining reserve is only **39 bytes** under 80000. All enforced guards pass;
+a useful 1–2KB reserve is not achieved and must not be advertised as complete.
+Core/standard/extended gzip deltas are +485/+359/+363 bytes; CSS is unchanged.
+Core's soft 80000-raw-byte target remains exceeded. Shared chunks count once;
+frameworks, maps, declarations, fonts and additional locales are excluded. These
+are transfer measurements, not runtime performance or device/AT certification.
+
 ## Accessibility and responsive UI — 2026-11-23
 
 Contracts: ui-accessibility.md and ui-responsive.md. Added delegated toolbar

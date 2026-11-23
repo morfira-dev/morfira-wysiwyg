@@ -1,8 +1,10 @@
-import { activeRange, placeCaret } from '../selection/index.js';
+import { applyNativeRange, activeRange, placeCaret } from '../selection/index.js';
+import { joinListBodies } from './join-bodies.js';
 import { finishSelectionReplacement } from '../input/index.js';
 import { inspectListItem, listBodyAt, listSelectionReplacement, normalizeListBodyRange } from './selection-boundaries.js';
 import { replaceListSelection } from './replace-selection.js';
 import { canEditFirstBodyBackspace, editFirstBodyBackspace } from './first-body-backspace.js';
+import { inspectListQuoteDelete, editListQuoteDelete } from './quote-boundary-delete.js';
 import type { WrappedListInputStatus } from './wrapped-input.types.js';
 
 const itemAt = (root: HTMLElement, node: Node): HTMLLIElement | undefined => {
@@ -23,6 +25,10 @@ const atBodyStart = (body: HTMLElement, range: Range): boolean => {
 /** Own only p/heading-shaped items; ordinary inline-list input stays unchanged. */
 export const inspectWrappedListInput = (root: HTMLElement, inputType: string): WrappedListInputStatus => {
   if (inputType !== 'insertParagraph' && inputType !== 'insertLineBreak' && inputType !== 'deleteContentBackward') return 'unowned';
+  if (inputType === 'deleteContentBackward') {
+    const quote = inspectListQuoteDelete(root, false);
+    if (quote) return quote === 'blocked' ? 'blocked' : 'eligible';
+  }
   const range = activeRange(root);
   if (!range) return 'unowned';
   const item = itemAt(root, range.startContainer);
@@ -64,6 +70,8 @@ const ensurePlaceholder = (body: HTMLElement): void => {
 
 /** Called only by the guarded cancelable-beforeinput transaction owner. */
 export const editWrappedListInput = (root: HTMLElement, inputType: string, prepareSplit?: (item: HTMLLIElement) => void): boolean => {
+  const quote = inputType === 'deleteContentBackward' ? inspectListQuoteDelete(root, false) : undefined;
+  if (quote) return editListQuoteDelete(quote);
   if (inspectWrappedListInput(root, inputType) !== 'eligible') return false;
   let range = activeRange(root)!;
   let boundary = inspectListItem(root, itemAt(root, range.startContainer)!)!;
@@ -78,15 +86,7 @@ export const editWrappedListInput = (root: HTMLElement, inputType: string, prepa
   if (inputType === 'deleteContentBackward') {
     if (body === boundary.body) return editFirstBodyBackspace(root, boundary, start);
     const previous = boundary.bodies[boundary.bodies.indexOf(body) - 1];
-    const empty = (node: HTMLElement) => !node.textContent && node.querySelectorAll('br').length <= 1;
-    for (const node of [previous, body]) {
-      if (empty(node)) for (const placeholder of node.querySelectorAll('br')) placeholder.remove();
-    }
-    const join = root.ownerDocument.createRange();
-    join.selectNodeContents(previous);
-    join.collapse(false);
-    previous.append(...body.childNodes);
-    body.remove();
+    const join = joinListBodies(previous, body);
     finishSelectionReplacement(previous, join);
     return true;
   }
@@ -113,9 +113,7 @@ export const editWrappedListInput = (root: HTMLElement, inputType: string, prepa
     if (!trailing.textContent && !trailing.querySelector('br')) lineBreak.after(root.ownerDocument.createElement('br'));
     caret.setStartAfter(lineBreak);
     caret.collapse(true);
-    const selection = root.ownerDocument.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(caret);
+    applyNativeRange(root.ownerDocument.getSelection(), caret);
     return true;
   }
 
@@ -138,9 +136,7 @@ export const editWrappedListInput = (root: HTMLElement, inputType: string, prepa
   else {
     caret.setStart(text, 0);
     caret.collapse(true);
-    const selection = root.ownerDocument.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(caret);
+    applyNativeRange(root.ownerDocument.getSelection(), caret);
   }
   return true;
 };

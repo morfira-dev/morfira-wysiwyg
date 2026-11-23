@@ -1,5 +1,18 @@
 # Testing and releases
 
+## Quote/list boundaries and bundle reserve — 23 November 2026
+
+Focused browser checks passed **579/579**, with a separate **3/3** React StrictMode
+case. Affected RU/EN examples passed **12/12** and the new homepage mount case
+**1/1**. Builds/types, archive/selective-import guards and focused tarball smoke
+passed. Full suites and GitHub CI were not run.
+
+[Quote input demo](/en/list-quote-input) shows native Backspace/Delete joins and
+branch barriers. All size guards pass: standard ready 72638 gzip JS bytes, standard
+with table properties 79961/80000 and extended 89488. The 39-byte reserve remains
+very tight; a substantial reserve is not achieved. No feature or validation was
+removed and no budget/compression setting changed.
+
 ## Accessibility and responsive UI — 23 November 2026
 
 The focused run passed **135/135** in Chromium, Firefox and WebKit; built RU/EN

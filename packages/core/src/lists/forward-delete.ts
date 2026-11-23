@@ -1,6 +1,8 @@
 import { activeRange } from '../selection/index.js';
+import { joinListBodies } from './join-bodies.js';
 import { finishSelectionReplacement } from '../input/index.js';
 import { inspectListItem, listBodyAt, normalizeListBodyRange } from './selection-boundaries.js';
+import { inspectListQuoteDelete, editListQuoteDelete } from './quote-boundary-delete.js';
 
 const isList = (node: Node): node is HTMLElement => node instanceof HTMLElement && (node.localName === 'ul' || node.localName === 'ol');
 
@@ -65,6 +67,7 @@ const removeBodyPlaceholder = (body: HTMLElement): void => {
 /** Only the validated cancelable beforeinput path calls this handler. */
 export const handlesListForwardDelete = (root: HTMLElement, inputType: string): boolean => {
   if (inputType !== 'deleteContentForward') return false;
+  if (inspectListQuoteDelete(root, true)) return true;
   const range = activeRange(root);
   if (!range?.collapsed) return false;
   const item = selectedItem(root, range);
@@ -85,6 +88,8 @@ export const handlesListForwardDelete = (root: HTMLElement, inputType: string): 
 
 /** Join one sibling pair inside the existing editor transaction; barriers are no-ops. */
 export const editListForwardDelete = (root: HTMLElement): boolean => {
+  const quote = inspectListQuoteDelete(root, true);
+  if (quote) return editListQuoteDelete(quote);
   const range = activeRange(root);
   if (!range?.collapsed) return false;
   const item = selectedItem(root, range);
@@ -96,13 +101,7 @@ export const editListForwardDelete = (root: HTMLElement): boolean => {
   if (!left || !current || !point || !(current === item ? atOwnEnd(item, range) : atBodyEnd(current, point))) return false;
   const following = left.bodies[left.bodies.indexOf(current) + 1];
   if (following) {
-    removeBodyPlaceholder(current);
-    removeBodyPlaceholder(following);
-    const join = root.ownerDocument.createRange();
-    join.selectNodeContents(current);
-    join.collapse(false);
-    current.append(...following.childNodes);
-    following.remove();
+    const join = joinListBodies(current, following);
     finishSelectionReplacement(current, join);
     return true;
   }
