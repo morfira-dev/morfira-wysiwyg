@@ -1,5 +1,19 @@
 # Verification record
 
+## CI Office capture expectation correction, 2026-11-23
+
+Release run `45200450333` at `13c3bdf` failed the same native Google Docs
+assertion in all three engines: the old assertion rejected every `line-height`,
+contradicting the implemented bounded paragraph text-layout contract. Build/static,
+both documentation shards and both installed-consumer profiles passed in that run.
+The replay now asserts the four imported paragraph values `1.38`, the unchanged
+following paragraph, and removal of unsupported source margins/padding and Docs
+metadata. Captured fixture bytes and runtime code are unchanged.
+
+Focused local validation on a fresh task-owned Vite server: **39/39** cases passed
+in Chromium, Firefox and WebKit across `office-corpus.spec.ts` and
+`text-layout.spec.ts` (16.8 seconds). No full suite or new CI run was performed.
+
 ## Extension blocks 4–7 — final focused evidence, 2026-11-23
 
 Implemented safe whole-document source editing, opt-in in-editor overlay node

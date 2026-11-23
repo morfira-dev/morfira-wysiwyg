@@ -152,7 +152,9 @@ test('fresh native Google Docs clipboard retains paragraphs, intentional bold an
   expect(await normal.evaluate((node) => (node as HTMLElement).style.fontSize)).toBe('14.667px');
   await expect(content.locator(':scope > strong')).toHaveCount(0);
   const html = await page.evaluate(() => window.editor.getHTML());
-  expect(html).not.toMatch(/docs-internal-guid|<meta|aria-level|role=|line-height|padding-inline/);
+  expect(html).not.toMatch(/docs-internal-guid|<meta|aria-level|role=|padding-inline|margin-top|margin-bottom/);
+  expect(await content.locator('p').evaluateAll((paragraphs) => paragraphs.map((node) => node.style.lineHeight)))
+    .toEqual(['1.38', '1.38', '1.38', '1.38', '']);
   await expect(content.locator(':scope > p').last()).toHaveText('Unchanged');
   expect(await page.evaluate(() => window.changes.filter((change) => change.source === 'user').length)).toBe(1);
   await page.evaluate(() => window.editor.undo());

@@ -158,6 +158,8 @@ paragraphs, explicit bold and one bullet item. Preserve raw HTML/plaintext bytes
 and hashes; exclude private document/account URLs and Docs internal-slice MIME.
 The manifest distinguishes this own capture from upstream Docs samples with
 undocumented capture methods. Replay acceptance covers semantic list/paragraph
-content, intentional bold versus neutral wrapper, canonical pt typography, known
+content, intentional bold versus neutral wrapper, canonical pt typography,
+bounded unitless paragraph line height (`1.38` in this capture) under the text-layout
+contract, removal of unsupported source margins and list padding, known
 plain-text block-separator losses and one-step selection/history restoration.
 This narrow fresh capture is not a cross-version Google Docs certification.
