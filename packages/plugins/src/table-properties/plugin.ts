@@ -6,10 +6,14 @@ import { sameTablePropertyTarget, tablePropertyTarget } from './target.js';
 import { cellBorderStyle, cellVerticalAlign, cellTextAlign, cellDirection, checkedTablePropertiesPatch, mixedCellValue, patchMargins, styleChanges, tableAlignment, tableWidth, writeStyle } from './values.js';
 import { applyTableSemantics, planTableSemantics, tableCaption, tableHeaders } from './semantics.js';
 import { rowMinHeightState, selectedPropertyRows } from './rows.js';
-import type { TablePropertiesRequest, TableSemanticsPlan } from './internal-types.js';
+import type { TablePropertiesRequest, TableSemanticsPlan, TableCellStylePair } from './internal-types.js';
 import type { TablePropertiesCommands, TablePropertiesPatch } from './types.js';
 
 const updateCommand = /* @__PURE__ */ createEditorCommand<TablePropertiesRequest>('table-properties.update');
+const cellStyles: readonly TableCellStylePair[] = [
+  ['cellPadding', 'padding'], ['cellBorderWidth', 'border-width'], ['cellBorderStyle', 'border-style'],
+  ['cellBackground', 'background-color'], ['cellBorder', 'border-color'], ['cellVerticalAlign', 'vertical-align'],
+];
 const changes = (target: TableSelectionState, patch: TablePropertiesPatch, semantics: TableSemanticsPlan): boolean => {
   if (semantics.cells.length || semantics.captionChanged) return true;
   if (patch.rowMinHeight !== undefined && selectedPropertyRows(target).some((row) => styleChanges(row, 'height', patch.rowMinHeight!))) return true;
@@ -21,11 +25,7 @@ const changes = (target: TableSelectionState, patch: TablePropertiesPatch, seman
   return target.cells.some((cell) => (patch.cellBackground !== undefined && styleChanges(cell, 'background-color', patch.cellBackground))
     || (patch.cellTextAlign !== undefined && styleChanges(cell, 'text-align', patch.cellTextAlign))
     || (patch.cellDirection !== undefined && (patch.cellDirection === false ? cell.hasAttribute('dir') : cell.getAttribute('dir') !== patch.cellDirection))
-    || (patch.cellPadding !== undefined && styleChanges(cell, 'padding', patch.cellPadding))
-    || (patch.cellBorderWidth !== undefined && styleChanges(cell, 'border-width', patch.cellBorderWidth))
-    || (patch.cellBorderStyle !== undefined && styleChanges(cell, 'border-style', patch.cellBorderStyle))
-    || (patch.cellBorder !== undefined && styleChanges(cell, 'border-color', patch.cellBorder))
-    || (patch.cellVerticalAlign !== undefined && styleChanges(cell, 'vertical-align', patch.cellVerticalAlign)));
+    || cellStyles.some(([field, property]) => field !== 'cellBackground' && patch[field] !== undefined && styleChanges(cell, property, patch[field]!)));
 };
 const apply = (editor: Editor, target: TableSelectionState, patch: TablePropertiesPatch, semantics: TableSemanticsPlan): void => {
   if (patch.rowMinHeight !== undefined)
@@ -43,12 +43,10 @@ const apply = (editor: Editor, target: TableSelectionState, patch: TableProperti
     if (patch.cellTextAlign !== undefined) writeStyle(cell, 'text-align', patch.cellTextAlign);
     if (patch.cellDirection === false) cell.removeAttribute('dir');
     else if (patch.cellDirection !== undefined) cell.setAttribute('dir', patch.cellDirection);
-    if (patch.cellPadding !== undefined) writeStyle(cell, 'padding', patch.cellPadding);
-    if (patch.cellBorderWidth !== undefined) writeStyle(cell, 'border-width', patch.cellBorderWidth);
-    if (patch.cellBorderStyle !== undefined) writeStyle(cell, 'border-style', patch.cellBorderStyle);
-    if (patch.cellBackground !== undefined) writeStyle(cell, 'background-color', patch.cellBackground);
-    if (patch.cellBorder !== undefined) writeStyle(cell, 'border-color', patch.cellBorder);
-    if (patch.cellVerticalAlign !== undefined) writeStyle(cell, 'vertical-align', patch.cellVerticalAlign);
+    for (const [field, property] of cellStyles) {
+      const value = patch[field];
+      if (value !== undefined) writeStyle(cell, property, value);
+    }
   }
   applyTableSemantics(editor, target, semantics);
 };
@@ -89,21 +87,23 @@ export const tableProperties = (): EditorPlugin => ({
       getState: () => {
         assertActive();
         const target = tablePropertyTarget(editor);
+        const fromCells = <Value extends string | false>(read: (cell: HTMLTableCellElement) => Value) =>
+          target ? mixedCellValue(target.cells, read) : false;
         return {
           disabled: !target || !editor.commands.getState(updateCommand).enabled,
-          cellTextAlign: target ? mixedCellValue(target.cells, cellTextAlign) : false,
-          cellDirection: target ? mixedCellValue(target.cells, cellDirection) : false,
-          cellPadding: target ? mixedCellValue(target.cells, (cell) => cell.style.padding || false) : false,
-          cellBorderWidth: target ? mixedCellValue(target.cells, (cell) => cell.style.borderWidth || false) : false,
-          cellBorderStyle: target ? mixedCellValue(target.cells, cellBorderStyle) : false,
+          cellTextAlign: fromCells(cellTextAlign),
+          cellDirection: fromCells(cellDirection),
+          cellPadding: fromCells((cell) => cell.style.padding || false),
+          cellBorderWidth: fromCells((cell) => cell.style.borderWidth || false),
+          cellBorderStyle: fromCells(cellBorderStyle),
           rowMinHeight: target ? rowMinHeightState(target) : false,
           ...(target ? tableHeaders(target.table) : { headerRow: false, headerColumn: false }),
           caption: target ? tableCaption(target.table) : false,
           width: target ? tableWidth(target.table) : false,
           alignment: target ? tableAlignment(target.table) : false,
-          cellBackground: target ? mixedCellValue(target.cells, (cell) => cell.style.backgroundColor || false) : false,
-          cellBorder: target ? mixedCellValue(target.cells, (cell) => cell.style.borderColor || false) : false,
-          cellVerticalAlign: target ? mixedCellValue(target.cells, cellVerticalAlign) : false,
+          cellBackground: fromCells((cell) => cell.style.backgroundColor || false),
+          cellBorder: fromCells((cell) => cell.style.borderColor || false),
+          cellVerticalAlign: fromCells(cellVerticalAlign),
         };
       },
     };

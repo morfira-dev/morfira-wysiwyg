@@ -1,4 +1,4 @@
-import { activeRange } from '../selection/index.js';
+import { applyNativeRange, activeRange } from '../selection/index.js';
 import { copyDirection } from '../document/direction.js';
 import { editListForwardDelete } from './forward-delete.js';
 import { inspectListItem } from './selection-boundaries.js';
@@ -48,9 +48,7 @@ const firstBodyBackspacePlan = (root: HTMLElement, boundary: ListItemBoundary): 
 export const canEditFirstBodyBackspace = (root: HTMLElement, boundary: ListItemBoundary): boolean => Boolean(firstBodyBackspacePlan(root, boundary));
 
 const selectRange = (root: HTMLElement, range: Range): void => {
-  const selection = root.ownerDocument.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(range);
+  applyNativeRange(root.ownerDocument.getSelection(), range);
 };
 
 /** Invoked only inside the cancelable-beforeinput transaction owner. */

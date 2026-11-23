@@ -2,6 +2,8 @@ import type { ImageValue, ImagePatch, ImageOptions, ImageCommands, ImageUploadPr
 import { imageAspectRatio, imageSizeSignature, ordinaryResizableImage, proportionalDimensions } from './resize.js';
 import { checkImageAlignment, readImageAlignment, writeImageAlignment } from './alignment.js';
 import { normalizeUploadProgress } from './upload-progress.js';
+import { selectedImageFromRange } from './selection.js';
+import { imageFigure } from './figure.js';
 
 import { sanitizeHTML } from '@morfira-dev/wysiwyg-core';
 import type { Editor, EditorPlugin, SelectionBookmark } from '@morfira-dev/wysiwyg-core';
@@ -49,26 +51,7 @@ const insertionRange = (editor: Editor): Range => {
     throw new RangeError('Insert an image within one block, outside captions.');
   return range;
 };
-const selectedImage = (editor: Editor): HTMLImageElement | undefined => {
-  const range = nativeRange(editor);
-  if (!range)
-    return;
-  const start = parentElement(range.startContainer);
-  const caption = start?.closest('figcaption');
-  if (range.collapsed && caption && editor.surface.contains(caption) && caption.parentElement?.querySelectorAll('img').length === 1)
-    return caption.parentElement?.querySelector('img') ?? undefined;
-  if (range.startContainer === range.endContainer && range.startContainer.nodeType === 1 && range.endOffset === range.startOffset + 1) {
-    const node = range.startContainer.childNodes[range.startOffset];
-    if (node instanceof HTMLImageElement)
-      return node;
-    if (node instanceof HTMLElement && node.localName === 'figure' && node.querySelectorAll('img').length === 1)
-      return node.querySelector('img')!;
-  }
-};
-const imageFigure = (image: HTMLImageElement): HTMLElement | undefined => {
-  const figure = image.parentElement;
-  return figure?.localName === 'figure' && figure.querySelectorAll('img').length === 1 && [...figure.children].every((child) => child === image || child.localName === 'figcaption') && [...figure.childNodes].every((child) => child.nodeType === 1 || !child.textContent?.trim()) ? figure : undefined;
-};
+const selectedImage = (editor: Editor): HTMLImageElement | undefined => selectedImageFromRange(editor.surface, nativeRange(editor));
 const readImage = (image: HTMLImageElement): ImageValue => ({
   src: image.getAttribute('src')!, alt: image.getAttribute('alt') ?? '',
   ...(image.hasAttribute('width') ? { width: Number(image.getAttribute('width')) } : {}),
@@ -76,13 +59,16 @@ const readImage = (image: HTMLImageElement): ImageValue => ({
   caption: imageFigure(image)?.querySelector('figcaption')?.textContent ?? '',
   ...(readImageAlignment(image) ? { alignment: readImageAlignment(image) } : {}),
 });
+const applyImageRange = (range: Range): void => {
+  const selection = document.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+};
 const selectNode = (editor: Editor, image: HTMLImageElement) => {
   const range = document.createRange();
   range.selectNode(image);
   editor.surface.focus({ preventScroll: true });
-  const selection = document.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(range);
+  applyImageRange(range);
 };
 const writeImage = (image: HTMLImageElement, value: ImageValue) => {
   if (image.getAttribute('src') !== value.src) image.setAttribute('src', value.src);
@@ -137,9 +123,7 @@ const insertFigure = (editor: Editor, range: Range, figure: HTMLElement) => {
   const caret = document.createRange();
   caret.selectNodeContents(next);
   caret.collapse(true);
-  const selection = document.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(caret);
+  applyImageRange(caret);
 };
 // Keep upload bookmarks independent of public text offsets (images have zero text length).
 const saveRange = (root: HTMLElement, range: Range): SelectionBookmark => {
@@ -154,9 +138,7 @@ const restoreRange = (root: HTMLElement, saved: SelectionBookmark) => {
   const range = document.createRange();
   range.setStart(resolve(saved.start), saved.startOffset);
   range.setEnd(resolve(saved.end), saved.endOffset);
-  const selection = document.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(range);
+  applyImageRange(range);
 };
 export const images = (options: ImageOptions = {}): EditorPlugin => {
   const maxFileSize = options.maxFileSize ?? 10 * 1024 * 1024;
@@ -178,6 +160,14 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
         const controller = pending;
         pending = undefined;
         controller?.abort();
+      };
+      const focusImage = (image: HTMLImageElement, previousRevision: number, unchanged: () => boolean, message: string): boolean => {
+        editor.surface.focus({ preventScroll: true });
+        active();
+        if (editor.isReadOnly() || composing) return false;
+        if (revision !== previousRevision || selectedImage(editor) !== image || !ordinaryResizableImage(editor.surface, image)
+          || !unchanged()) throw new RangeError(message);
+        return true;
       };
       const api: ImageCommands = {
         insert: (input) => {
@@ -265,11 +255,8 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
           if (readImageAlignment(image) === alignment || (alignment === false
             && !image.style.display && !image.style.marginLeft && !image.style.marginRight)) return;
           const previousRevision = revision;
-          editor.surface.focus({ preventScroll: true });
-          active();
-          if (editor.isReadOnly() || composing) return;
-          if (revision !== previousRevision || selectedImage(editor) !== image || !ordinaryResizableImage(editor.surface, image)
-            || image.getAttribute('style') !== style) throw new RangeError('Image selection changed before alignment.');
+          if (!focusImage(image, previousRevision, () => image.getAttribute('style') === style,
+            'Image selection changed before alignment.')) return;
           api.update({ alignment });
         },
         resize: (size) => {
@@ -282,18 +269,24 @@ export const images = (options: ImageOptions = {}): EditorPlugin => {
           if (before.width === dimensions.width && before.height === dimensions.height) return;
           const previousRevision = revision;
           const signature = imageSizeSignature(image);
-          editor.surface.focus({ preventScroll: true });
-          active();
-          if (editor.isReadOnly() || composing) return;
-          if (previousRevision !== revision || selectedImage(editor) !== image || !ordinaryResizableImage(editor.surface, image)
-            || imageSizeSignature(image) !== signature) throw new RangeError('Image selection changed before resizing.');
+          if (!focusImage(image, previousRevision, () => imageSizeSignature(image) === signature,
+            'Image selection changed before resizing.')) return;
           // One update keeps the actual IMG and rich caption in one history entry.
           api.update(dimensions);
         },
         remove: () => {
-          active(); if (editor.isReadOnly())
-            return; const image = selectedImage(editor); if (!image)
-            throw new Error('Select one image first.'); editor.transact(() => { const target = imageFigure(image) ?? image; const range = document.createRange(); range.setStartBefore(target); range.collapse(true); target.remove(); const selection = document.getSelection(); selection?.removeAllRanges(); selection?.addRange(range); });
+          active();
+          if (editor.isReadOnly()) return;
+          const image = selectedImage(editor);
+          if (!image) throw new Error('Select one image first.');
+          editor.transact(() => {
+            const target = imageFigure(image) ?? image;
+            const range = document.createRange();
+            range.setStartBefore(target);
+            range.collapse(true);
+            target.remove();
+            applyImageRange(range);
+          });
         },
         cancelUpload: cancel,
         isUploading: () => { active(); return Boolean(pending); },

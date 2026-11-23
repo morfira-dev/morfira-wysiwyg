@@ -1,4 +1,5 @@
 import type { ImageResize, ImageValue } from './types.js';
+import { imageFigure, ordinaryImageAncestors, ordinaryImageDescendants } from './figure.js';
 
 const dimension = (value: number): boolean => Number.isInteger(value) && value >= 1 && value <= 1000;
 
@@ -31,17 +32,5 @@ export const proportionalDimensions = (size: ImageResize, ratio: number | undefi
 
 export const ordinaryResizableImage = (root: HTMLElement, image: HTMLImageElement): boolean => {
   if (!root.contains(image) || image.ownerDocument !== root.ownerDocument) return false;
-  for (let node: Element | null = image; node; node = node.parentElement) {
-    if (node.namespaceURI !== 'http://www.w3.org/1999/xhtml') return false;
-    if (node === root) return true;
-    if (node.hasAttribute('data-mw-node')) return false;
-    if (node.localName === 'figure') {
-      if (image.parentElement !== node || node.querySelectorAll('img').length !== 1
-        || [...node.children].some((child) => child !== image && child.localName !== 'figcaption')
-        || [...node.childNodes].some((child) => child.nodeType !== 1 && Boolean(child.textContent?.trim()))) return false;
-      for (const child of node.querySelectorAll('*'))
-        if (child.namespaceURI !== 'http://www.w3.org/1999/xhtml' || child.hasAttribute('data-mw-node')) return false;
-    }
-  }
-  return false;
+  return ordinaryImageAncestors(root, image, (figure) => imageFigure(image, figure) === figure && ordinaryImageDescendants(figure));
 };

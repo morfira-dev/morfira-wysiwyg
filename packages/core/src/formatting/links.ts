@@ -1,6 +1,6 @@
 import type { DocumentSchema } from '../schema/types.js';
 import { normalizeLink, mergeLinkAttributes, transformInlineAttributes } from './inline-attributes.js';
-import { activeRange, readTextSelection, selectText, preserveRange } from '../selection/index.js';
+import { applyNativeRange, activeRange, readTextSelection, selectText, preserveRange } from '../selection/index.js';
 export const applyLink = (root: HTMLElement, value: unknown, schema: DocumentSchema): void => {
   const link = normalizeLink(value);
   const range = activeRange(root);
@@ -47,7 +47,5 @@ export const applyLink = (root: HTMLElement, value: unknown, schema: DocumentSch
   created.after(tail);
   range.setStart(tail, 0);
   range.collapse(true);
-  const native = root.ownerDocument.getSelection();
-  native?.removeAllRanges();
-  native?.addRange(range);
+  applyNativeRange(root.ownerDocument.getSelection(), range);
 };

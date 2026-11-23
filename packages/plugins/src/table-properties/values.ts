@@ -1,5 +1,7 @@
 import type { TableAlignment, TableCellVerticalAlign, TableCellBorderStyle, TableCellTextAlign, TableCellDirection, TablePropertiesPatch } from './types.js';
+import type { TablePropertyValidators } from './internal-types.js';
 import { checkedRowMinHeight } from './rows.js';
+import { alignments, verticalAlignments, textAlignments, directions, borderStyles } from './choices.js';
 
 const widthValue = (value: unknown): string | false => {
   if (value === false) return false;
@@ -9,25 +11,13 @@ const widthValue = (value: unknown): string | false => {
     throw new RangeError('Table width must be 40–4000px or 1–100%.');
   return value;
 };
-const alignmentValue = (value: unknown): TableAlignment | false => {
-  if (value !== false && value !== 'left' && value !== 'center' && value !== 'right')
-    throw new TypeError('Table alignment must be left, center, right or false.');
-  return value;
-};
-const verticalValue = (value: unknown): TableCellVerticalAlign | false => {
-  if (value !== false && value !== 'top' && value !== 'middle' && value !== 'bottom')
-    throw new TypeError('Cell vertical alignment must be top, middle, bottom or false.');
-  return value;
-};
-const textAlignValue = (value: unknown): TableCellTextAlign | false => {
-  if (value !== false && value !== 'left' && value !== 'center' && value !== 'right' && value !== 'justify')
-    throw new TypeError('Cell text alignment must be left, center, right, justify or false.');
-  return value;
-};
-const directionValue = (value: unknown): TableCellDirection | false => {
-  if (value !== false && value !== 'ltr' && value !== 'rtl')
-    throw new TypeError('Cell direction must be ltr, rtl or false.');
-  return value;
+const enumValue = <Value extends string>(value: unknown, choices: readonly Value[]): Value | false =>
+  choices.includes(value as Value) ? value as Value : false;
+const checkedEnumValue = <Value extends string>(value: unknown, choices: readonly Value[], message: string): Value | false => {
+  if (value === false) return false;
+  const result = enumValue(value, choices);
+  if (result === false) throw new TypeError(message);
+  return result;
 };
 const cellLengthValue = (value: unknown, maximum: number): string | false => {
   if (value === false) return false;
@@ -35,15 +25,7 @@ const cellLengthValue = (value: unknown, maximum: number): string | false => {
     throw new TypeError(`Cell length must be a canonical integer from 0px to ${maximum}px or false.`);
   return value;
 };
-export const cellBorderStyle = (cell: HTMLTableCellElement): TableCellBorderStyle | false => {
-  const style = cell.style.borderStyle;
-  return style === 'solid' || style === 'dashed' || style === 'dotted' || style === 'double' || style === 'none' ? style : false;
-};
-const borderStyleValue = (value: unknown): TableCellBorderStyle | false => {
-  if (value !== false && value !== 'solid' && value !== 'dashed' && value !== 'dotted' && value !== 'double' && value !== 'none')
-    throw new TypeError('Unsupported cell border style.');
-  return value;
-};
+export const cellBorderStyle = (cell: HTMLTableCellElement): TableCellBorderStyle | false => enumValue(cell.style.borderStyle, borderStyles);
 const colorValue = (value: unknown, document: Document): string | false => {
   if (value === false) return false;
   if (typeof value !== 'string' || !value.length || value.length > 100)
@@ -58,39 +40,50 @@ const colorValue = (value: unknown, document: Document): string | false => {
   return style.color;
 };
 
+const headerValue = (value: unknown): boolean => {
+  if (typeof value !== 'boolean') throw new TypeError('Table header axes must be boolean.');
+  return value;
+};
+const captionValue = (caption: unknown): string | false => {
+  if (caption !== false && (typeof caption !== 'string' || caption.length > 5000))
+    throw new TypeError('Table caption must be text of at most 5000 characters or false.');
+  return caption === '' ? false : caption;
+};
+
+// Insertion order preserves validation/getter order before target lookup.
+const propertyValidators: TablePropertyValidators = {
+  cellTextAlign: (value) => checkedEnumValue(value, textAlignments, 'Cell text alignment must be left, center, right, justify or false.'),
+  cellDirection: (value) => checkedEnumValue(value, directions, 'Cell direction must be ltr, rtl or false.'),
+  cellPadding: (value) => cellLengthValue(value, 48),
+  cellBorderWidth: (value) => cellLengthValue(value, 12),
+  cellBorderStyle: (value) => checkedEnumValue(value, borderStyles, 'Unsupported cell border style.'),
+  rowMinHeight: checkedRowMinHeight,
+  headerRow: headerValue,
+  headerColumn: headerValue,
+  caption: captionValue,
+  width: widthValue,
+  alignment: (value) => checkedEnumValue(value, alignments, 'Table alignment must be left, center, right or false.'),
+  cellBackground: colorValue,
+  cellBorder: colorValue,
+  cellVerticalAlign: (value) => checkedEnumValue(value, verticalAlignments, 'Cell vertical alignment must be top, middle, bottom or false.'),
+};
+
 /** Copy and validate the entire patch before target lookup or entering a transaction. */
 export const checkedTablePropertiesPatch = (input: unknown, document: Document): TablePropertiesPatch => {
   if (!input || typeof input !== 'object' || Array.isArray(input)
       || ![Object.prototype, null].includes(Object.getPrototypeOf(input)))
     throw new TypeError('Table properties must be a plain patch object.');
-  const fields = ['width', 'alignment', 'cellBackground', 'cellBorder', 'cellVerticalAlign', 'cellTextAlign', 'cellDirection', 'headerRow', 'headerColumn', 'caption', 'rowMinHeight', 'cellPadding', 'cellBorderWidth', 'cellBorderStyle'];
-  if (Reflect.ownKeys(input).some((key) => typeof key !== 'string' || !fields.includes(key)))
+  if (Reflect.ownKeys(input).some((key) => typeof key !== 'string' || !Object.hasOwn(propertyValidators, key)))
     throw new TypeError('Unknown table property.');
   const patch = input as Record<string, unknown>;
-  const result: TablePropertiesPatch = {};
-  if (Object.hasOwn(patch, 'cellTextAlign')) result.cellTextAlign = textAlignValue(patch.cellTextAlign);
-  if (Object.hasOwn(patch, 'cellDirection')) result.cellDirection = directionValue(patch.cellDirection);
-  if (Object.hasOwn(patch, 'cellPadding')) result.cellPadding = cellLengthValue(patch.cellPadding, 48);
-  if (Object.hasOwn(patch, 'cellBorderWidth')) result.cellBorderWidth = cellLengthValue(patch.cellBorderWidth, 12);
-  if (Object.hasOwn(patch, 'cellBorderStyle')) result.cellBorderStyle = borderStyleValue(patch.cellBorderStyle);
-  if (Object.hasOwn(patch, 'rowMinHeight')) result.rowMinHeight = checkedRowMinHeight(patch.rowMinHeight);
-  for (const key of ['headerRow', 'headerColumn'] as const) {
+  const result: Record<string, unknown> = {};
+  for (const [key, validate] of Object.entries(propertyValidators)) {
     if (!Object.hasOwn(patch, key)) continue;
-    if (typeof patch[key] !== 'boolean') throw new TypeError('Table header axes must be boolean.');
-    result[key] = patch[key];
+    const value = validate(patch[key], document);
+    // Header axes historically read an accessor again after its boolean check.
+    result[key] = key === 'headerRow' || key === 'headerColumn' ? patch[key] : value;
   }
-  if (Object.hasOwn(patch, 'caption')) {
-    const caption = patch.caption;
-    if (caption !== false && (typeof caption !== 'string' || caption.length > 5000))
-      throw new TypeError('Table caption must be text of at most 5000 characters or false.');
-    result.caption = caption === '' ? false : caption;
-  }
-  if (Object.hasOwn(patch, 'width')) result.width = widthValue(patch.width);
-  if (Object.hasOwn(patch, 'alignment')) result.alignment = alignmentValue(patch.alignment);
-  if (Object.hasOwn(patch, 'cellBackground')) result.cellBackground = colorValue(patch.cellBackground, document);
-  if (Object.hasOwn(patch, 'cellBorder')) result.cellBorder = colorValue(patch.cellBorder, document);
-  if (Object.hasOwn(patch, 'cellVerticalAlign')) result.cellVerticalAlign = verticalValue(patch.cellVerticalAlign);
-  return result;
+  return result as TablePropertiesPatch;
 };
 
 export const tableWidth = (table: HTMLTableElement): string | false => {
@@ -107,18 +100,9 @@ export const tableAlignment = (table: HTMLTableElement): TableAlignment | false 
   if (marginLeft === 'auto' && marginRight === '0px') return 'right';
   return false;
 };
-export const cellVerticalAlign = (cell: HTMLTableCellElement): TableCellVerticalAlign | false => {
-  const value = cell.style.verticalAlign;
-  return value === 'top' || value === 'middle' || value === 'bottom' ? value : false;
-};
-export const cellTextAlign = (cell: HTMLTableCellElement): TableCellTextAlign | false => {
-  const value = cell.style.textAlign;
-  return value === 'left' || value === 'center' || value === 'right' || value === 'justify' ? value : false;
-};
-export const cellDirection = (cell: HTMLTableCellElement): TableCellDirection | false => {
-  const value = cell.getAttribute('dir');
-  return value === 'ltr' || value === 'rtl' ? value : false;
-};
+export const cellVerticalAlign = (cell: HTMLTableCellElement): TableCellVerticalAlign | false => enumValue(cell.style.verticalAlign, verticalAlignments);
+export const cellTextAlign = (cell: HTMLTableCellElement): TableCellTextAlign | false => enumValue(cell.style.textAlign, textAlignments);
+export const cellDirection = (cell: HTMLTableCellElement): TableCellDirection | false => enumValue(cell.getAttribute('dir'), directions);
 export const mixedCellValue = <T extends string | false>(cells: readonly HTMLTableCellElement[], read: (cell: HTMLTableCellElement) => T): T | 'mixed' => {
   const first = read(cells[0]);
   return cells.some((cell) => read(cell) !== first) ? 'mixed' : first;

@@ -1,3 +1,4 @@
+import { propertyChoices, propertyChoiceValue } from './choices.js';
 import type { TablePropertiesPatch } from '../../table-properties/types.js';
 import type { TablePropertiesFormField, TablePropertiesFormValues } from './types.js';
 
@@ -10,12 +11,8 @@ export const checkedFormValues = (input: Partial<TablePropertiesFormValues>): Pa
       throw new TypeError('Unknown table property field.');
     const value = input[key as TablePropertiesFormField];
     if (typeof value !== 'string' || value.length > (key === 'caption' ? 5000 : 100)) throw new TypeError('Property form values must be bounded strings.');
-    if (key === 'alignment' && !['', 'left', 'center', 'right'].includes(value)) throw new TypeError('Unsupported table placement.');
-    if (key === 'cellVerticalAlign' && !['', 'top', 'middle', 'bottom'].includes(value)) throw new TypeError('Unsupported cell alignment.');
-    if (key === 'cellTextAlign' && !['', 'left', 'center', 'right', 'justify'].includes(value)) throw new TypeError('Unsupported cell text alignment.');
-    if (key === 'cellDirection' && !['', 'ltr', 'rtl'].includes(value)) throw new TypeError('Unsupported cell direction.');
-    if (key === 'cellBorderStyle' && !['', 'solid', 'dashed', 'dotted', 'double', 'none'].includes(value)) throw new TypeError('Unsupported cell border style.');
-    if ((key === 'headerRow' || key === 'headerColumn') && !['', 'true'].includes(value)) throw new TypeError('Unsupported table header choice.');
+    const choice = propertyChoices[key as TablePropertiesFormField];
+    if (choice && !choice[0].some((label) => propertyChoiceValue(label) === value)) throw new TypeError(choice[1]);
     return [key, value];
   });
   return Object.fromEntries(entries);

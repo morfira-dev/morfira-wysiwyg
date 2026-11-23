@@ -1,7 +1,8 @@
+import { ordinaryLeafTags as leafTags, ordinaryLeafSelector } from './leaf-tags.js';
 import { inlineSourceChildren } from './inline-source.js';
 import type { SelectionReplacement } from './internal-types.js';
 
-const leafTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
+
 
 const ordinaryLeaf = (node: Node): node is HTMLElement => node instanceof HTMLElement
   && leafTags.has(node.localName)
@@ -19,8 +20,8 @@ const rootChild = (root: HTMLElement, leaf: HTMLElement): HTMLElement | undefine
 
 /** Native-only bounded interval. Paste retains the ordinary sibling classifier. */
 export const quoteSelectionReplacement = (root: HTMLElement, range: Range): SelectionReplacement | undefined => {
-  const first = (range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement)?.closest('p,h1,h2,h3,h4,h5,h6');
-  const last = (range.endContainer.nodeType === 1 ? range.endContainer as Element : range.endContainer.parentElement)?.closest('p,h1,h2,h3,h4,h5,h6');
+  const first = (range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement)?.closest(ordinaryLeafSelector);
+  const last = (range.endContainer.nodeType === 1 ? range.endContainer as Element : range.endContainer.parentElement)?.closest(ordinaryLeafSelector);
   if (!first || !last || !ordinaryLeaf(first) || !ordinaryLeaf(last) || first === last) return;
   const start = rootChild(root, first);
   const end = rootChild(root, last);

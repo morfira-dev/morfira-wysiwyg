@@ -131,6 +131,48 @@ test('empty and idempotent patches preserve redo and pending caret formatting', 
   })).toEqual({ unchanged: true, redo: true, bold: true });
 });
 
+test('patch validation failures preserve selection and history before any property mutation', async ({ page }) => {
+  await initialize(page);
+  const result = await page.evaluate(() => {
+    const editor = window.editor;
+    const api = window.tablePropertiesAPI;
+    // Retain a real redo entry so a failed patch cannot silently clear history.
+    api.update({ width: '60%' });
+    editor.undo();
+    const text = editor.surface.querySelector('strong')!.firstChild!;
+    const native = document.getSelection()!;
+    native.setBaseAndExtent(text, 4, text, 1);
+    window.propertiesTableAPI.select({ row: 0, column: 0 }, { row: 0, column: 1 });
+    const original = editor.getHTML();
+    const selected = window.propertiesSelection()!;
+    const before = { undo: editor.canUndo(), redo: editor.canRedo(), changes: window.changes.length };
+    const untouched = () => editor.getHTML() === original && editor.canUndo() === before.undo
+      && editor.canRedo() === before.redo && window.changes.length === before.changes
+      && native.anchorNode === text && native.focusNode === text && native.anchorOffset === 4 && native.focusOffset === 1
+      && window.propertiesSelection()?.cells.every((cell, index) => cell === selected.cells[index]) === true
+      && window.propertiesSelection()?.cells.length === selected.cells.length;
+    const failure = new Error('Application property getter failed.');
+    const throwing = { cellPadding: '8px' };
+    Object.defineProperty(throwing, 'width', { enumerable: true, get: () => { throw failure; } });
+    let getterFailure = false;
+    try { api.update(throwing); }
+    catch (error) { getterFailure = error === failure; }
+    const afterGetter = untouched();
+    let reads = 0;
+    const unknownFailures = ['unknown', Symbol('unknown')].map((key) => {
+      const patch = Object.create(null);
+      Object.defineProperty(patch, 'cellPadding', { enumerable: true, get: () => { reads++; return '8px'; } });
+      Object.defineProperty(patch, key, { enumerable: true, value: 'ignored' });
+      let rejected = false;
+      try { api.update(patch); }
+      catch (error) { rejected = error instanceof TypeError; }
+      return rejected && untouched();
+    });
+    return { getterFailure, afterGetter, unknownFailures, reads, redo: editor.canRedo() };
+  });
+  expect(result).toEqual({ getterFailure: true, afterGetter: true, unknownFailures: [true, true], reads: 0, redo: true });
+});
+
 test('invalid complete patches throw before eligibility and never partly apply during read-only or missing selection', async ({ page }) => {
   await initialize(page);
   expect(await page.evaluate(() => {

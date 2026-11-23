@@ -13,3 +13,5 @@ export interface TablePropertiesFormControl {
   readonly caption: HTMLSpanElement;
   readonly input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 }
+
+export type TablePropertyChoice = readonly [labels: readonly string[], error: string];

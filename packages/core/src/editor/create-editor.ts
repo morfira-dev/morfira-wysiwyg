@@ -6,7 +6,7 @@ import type { EditorTransactionOptions } from '../positions/types.js';
 import { createSelectionHandleRegistry } from '../selection/handles/index.js';
 import { createDocumentSchema } from '../schema/index.js';
 import { createCommandRegistry } from '../commands/index.js';
-import { activeRange, bookmark, placeCaret, rangeFromBookmark, readTextSelection, restoreBookmark, selectText } from '../selection/index.js';
+import { applyNativeRange, activeRange, bookmark, placeCaret, rangeFromBookmark, readTextSelection, restoreBookmark, selectText } from '../selection/index.js';
 import type { SelectionBookmark } from '../selection/index.js';
 import {
   editListInput, handlesListInput, indentList, listState, selectedBlocks,
@@ -86,9 +86,7 @@ const insertFragment = (root: HTMLElement, fragment: DocumentFragment): void => 
   const next = document.createRange();
   next.setStartAfter(last);
   next.collapse(true);
-  const selection = document.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(next);
+  applyNativeRange(document.getSelection(), next);
   // Capture a stable text boundary before history serializes adjacent/empty Text nodes.
   if (!hasBlocks && block && root.contains(block)) block.normalize();
 };

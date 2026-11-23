@@ -1,11 +1,12 @@
+import { ordinaryLeafTags as blockTags, ordinaryLeafSelector } from './leaf-tags.js';
 import { inlineSourceChildren as inlineTree } from './inline-source.js';
-import { activeRange, placeCaret } from '../selection/index.js';
+import { applyNativeRange, activeRange, placeCaret } from '../selection/index.js';
 import { copyDirection } from '../document/direction.js';
 
-const blockTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
+
 const parentOf = (node: Node): Element | null => node.nodeType === 1 ? node as Element : node.parentElement;
 const editableBlock = (root: HTMLElement, node: Node): HTMLElement | undefined => {
-  const block = parentOf(node)?.closest<HTMLElement>('p,h1,h2,h3,h4,h5,h6');
+  const block = parentOf(node)?.closest<HTMLElement>(ordinaryLeafSelector);
   if (!(block instanceof HTMLElement) || block.namespaceURI !== 'http://www.w3.org/1999/xhtml' || !root.contains(block) || block.closest('li,figure,pre') || !inlineTree(block)) return;
   const parent = block.parentElement;
   if (parent !== root && !['blockquote', 'td', 'th'].includes(parent?.localName ?? '')) return;
@@ -98,9 +99,7 @@ export const editBlockInput = (root: HTMLElement, inputType: string): void => {
     const caret = document.createRange();
     caret.setStartAfter(lineBreak);
     caret.collapse(true);
-    const selection = document.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(caret);
+    applyNativeRange(document.getSelection(), caret);
     return;
   }
   const forward = inputType === 'deleteContentForward';
@@ -117,7 +116,5 @@ export const editBlockInput = (root: HTMLElement, inputType: string): void => {
   right.remove();
   if (!left.childNodes.length) left.append(document.createElement('br'));
   left.normalize();
-  const selection = document.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(join);
+  applyNativeRange(document.getSelection(), join);
 };

@@ -21,3 +21,11 @@ export interface TablePropertiesRequest {
   readonly patch: TablePropertiesPatch;
   readonly expected: TableSelectionState;
 }
+
+export type TableCellStyleField = 'cellPadding' | 'cellBorderWidth' | 'cellBorderStyle' | 'cellBackground' | 'cellBorder' | 'cellVerticalAlign';
+export type TableCellStylePair = readonly [field: TableCellStyleField, property: string];
+
+export type TablePropertyValidators = {
+  readonly [Field in keyof Required<TablePropertiesPatch>]:
+    (value: unknown, document: Document) => Required<TablePropertiesPatch>[Field];
+};

@@ -3,8 +3,8 @@ export type { LinkFormat } from './inline-attributes.types.js';
 import { validateDocument } from '../document/index.js';
 import { normalizeFontFamily } from '../document/font-family.js';
 import type { DocumentNode, EditorDocument, ElementNode } from '../document/index.js';
+import { inlineBlockTags, splitSelectedText } from './inline-pieces.js';
 export const inlineStyles: Record<string, string> = { color: 'color', background: 'background-color', fontFamily: 'font-family', fontSize: 'font-size' };
-const blocks = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup', 'figure', 'figcaption']);
 const checkedAttributes = (tag: 'span' | 'a', attributes: Attributes): Attributes => (validateDocument({ version: 1, children: [{ type: 'element', tag, attributes, children: [] }] }).children[0] as ElementNode).attributes;
 export const normalizeInlineStyle = (name: string, value: unknown): string | false => {
   if (value === false)
@@ -97,7 +97,7 @@ const compact = (nodes: DocumentNode[]): DocumentNode[] => {
     const previous = result.at(-1);
     if (next.type === 'text' && previous?.type === 'text')
       previous.text += next.text;
-    else if (next.type === 'element' && previous?.type === 'element' && !blocks.has(next.tag) && !next.attributes['data-mw-node'] && !['img', 'br', 'hr'].includes(next.tag) && previous.tag === next.tag && equalAttributes(previous.attributes, next.attributes))
+    else if (next.type === 'element' && previous?.type === 'element' && !inlineBlockTags.has(next.tag) && !next.attributes['data-mw-node'] && !['img', 'br', 'hr'].includes(next.tag) && previous.tag === next.tag && equalAttributes(previous.attributes, next.attributes))
       previous.children = compact([...previous.children, ...next.children]);
     else
       result.push(next);
@@ -117,22 +117,19 @@ export const transformInlineAttributes = (document: EditorDocument, from: number
     if (node.type === 'text') {
       const start = position;
       position += node.text.length;
-      const left = Math.max(0, Math.min(node.text.length, from - start));
-      const right = Math.max(left, Math.min(node.text.length, to - start));
-      return [[0, left, false], [left, right, true], [right, node.text.length, false]].flatMap(([begin, end, selected]) => {
-        const text = node.text.slice(begin as number, end as number);
-        return text ? [{ node: { type: 'text', text } as DocumentNode, selected: Boolean(selected), link: inheritedLink }] : [];
-      });
+      return splitSelectedText(node.text, start, from, to, (text, selected) => ({
+        node: { type: 'text', text } as DocumentNode, selected, link: inheritedLink,
+      }));
     }
     const link = operation.kind === 'link' && node.tag === 'a' ? node.attributes : inheritedLink;
-    if (!node.children.length && (blocks.has(node.tag) || node.tag === 'hr' || node.tag === 'col' || node.attributes['data-mw-node']))
+    if (!node.children.length && (inlineBlockTags.has(node.tag) || node.tag === 'hr' || node.tag === 'col' || node.attributes['data-mw-node']))
       return [{ node, selected: false }];
     if (!node.children.length)
       return [{ node, selected: position >= from && position < to, link }];
     const children = node.children.flatMap((child) => visit(child, link));
     if (operation.kind === 'link' && node.tag === 'a')
       return children;
-    if (blocks.has(node.tag) || node.attributes['data-mw-node'])
+    if (inlineBlockTags.has(node.tag) || node.attributes['data-mw-node'])
       return [{ node: { ...node, children: wrap(children) }, selected: false }];
     return groupPieces(children).flatMap<Piece>((group) => {
       const attrs = operation.kind === 'style' && group.selected ? withoutProperty(node.attributes, operation.property) : node.attributes;

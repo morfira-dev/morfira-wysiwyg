@@ -1,12 +1,13 @@
+import { ordinaryLeafTags as leafTags, ordinaryLeafSelector } from './leaf-tags.js';
 import { inlineSourceChildren as inlineTree } from './inline-source.js';
-import { activeRange } from '../selection/index.js';
+import { applyNativeRange, activeRange } from '../selection/index.js';
 import { quoteSelectionReplacement } from './quote-selection.js';
 import type { SelectionReplacement, CutSelectionReplacement } from './internal-types.js';
 
-const leafTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
+
 const ordinaryLeaf = (root: HTMLElement, node: Node): HTMLElement | undefined => {
   const parent = node.nodeType === 1 ? node as Element : node.parentElement;
-  const leaf = parent?.closest<HTMLElement>('p,h1,h2,h3,h4,h5,h6');
+  const leaf = parent?.closest<HTMLElement>(ordinaryLeafSelector);
   if (!(leaf instanceof HTMLElement) || !root.contains(leaf) || leaf.hasAttribute('data-mw-node') || leaf.closest('li,figure,pre') || !inlineTree(leaf)) return;
   if (leaf.parentElement !== root && !['blockquote', 'td', 'th'].includes(leaf.parentElement?.localName ?? '')) return;
   return leaf;
@@ -91,9 +92,7 @@ export const ensureReplacementPlaceholder = (leaf: HTMLElement, caret: Range): v
 export const finishSelectionReplacement = (leaf: HTMLElement, caret: Range): void => {
   ensureReplacementPlaceholder(leaf, caret);
   leaf.normalize();
-  const selection = leaf.ownerDocument.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(caret);
+  applyNativeRange(leaf.ownerDocument.getSelection(), caret);
 };
 
 /** Replace an accepted native leaf interval inside the editor's validated transaction. */

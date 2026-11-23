@@ -9,6 +9,7 @@ import { listenToUI } from '../shared/events.js';
 import { ordinaryTableRange } from '../shared/table-selection.js';
 import { tablePropertiesFormMessages } from './messages.js';
 import { checkedFormValues, propertyFields, propertyPatch } from './values.js';
+import { propertyChoices, propertyChoiceValue } from './choices.js';
 import type { TablePropertiesFormControl, TablePropertiesFormTarget } from './internal-types.js';
 import type { TablePropertiesFormController, TablePropertiesFormField, TablePropertiesFormMessageKey, TablePropertiesFormOptions, TablePropertiesFormValues } from './types.js';
 
@@ -33,12 +34,7 @@ export const createTablePropertiesForm = (host: HTMLElement, editor: Editor, opt
   const controls: TablePropertiesFormControl[] = propertyFields.map((key) => {
     const field = createUIElement(document, 'label');
     const caption = createUIElement(document, 'span');
-    const choice = key === 'alignment' ? ['reset', 'left', 'center', 'right']
-      : key === 'cellTextAlign' ? ['reset', 'left', 'center', 'right', 'justify']
-        : key === 'cellDirection' ? ['reset', 'ltr', 'rtl']
-          : key === 'cellVerticalAlign' ? ['reset', 'top', 'middle', 'bottom']
-            : key === 'cellBorderStyle' ? ['reset', 'solid', 'dashed', 'dotted', 'double', 'none']
-              : key === 'headerRow' || key === 'headerColumn' ? ['off', 'on'] : undefined;
+    const choice = propertyChoices[key]?.[0];
     const input = choice ? createUIElement(document, 'select')
       : key === 'caption' ? createUIElement(document, 'textarea') : createUIElement(document, 'input');
     if (input instanceof document.defaultView!.HTMLInputElement) input.maxLength = 100;
@@ -52,7 +48,7 @@ export const createTablePropertiesForm = (host: HTMLElement, editor: Editor, opt
       input.append(mixed);
       for (const value of choice) {
         const option = createUIElement(document, 'option');
-        option.value = value === 'reset' || value === 'off' ? '' : value === 'on' ? 'true' : value;
+        option.value = propertyChoiceValue(value);
         option.dataset.mwPropertyLabel = value;
         input.append(option);
       }

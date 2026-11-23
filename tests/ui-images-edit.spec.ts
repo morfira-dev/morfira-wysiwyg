@@ -208,3 +208,31 @@ test('mode validation leaves the host untouched and edit-form disposal cannot ca
     return { rejected, empty, stillUploading, result };
   })).toEqual({ rejected: true, empty: true, stillUploading: true, result: false });
 });
+
+test('ordinary complex figures allow edit-only metadata while resize and alignment retain strict figure guards', async ({ page }) => {
+  const value = '<figure><p>Intro</p><img src="/logo.svg" alt="Original" width="80" height="60"><figcaption><strong>Rich</strong> caption</figcaption></figure><p>Tail</p>';
+  const before = await initialize(page, value);
+  const rejected = await page.evaluate(() => {
+    const failures: string[] = [];
+    for (const operation of [() => window.imageEditAPI.resize({ width: 120 }), () => window.imageEditAPI.align('center')]) {
+      try { operation(); failures.push('accepted'); }
+      catch (error) { failures.push(error instanceof RangeError ? error.message : 'unexpected error'); }
+    }
+    return { failures, html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.length };
+  });
+  expect(rejected).toEqual({
+    failures: ['Select one ordinary image to resize.', 'Select one ordinary image to align.'],
+    html: before, undo: false, changes: 0,
+  });
+  await expect(form(page).getByRole('button', { name: 'Update image', exact: true })).toBeEnabled();
+  await expect(form(page).getByRole('group', { name: 'Image alignment', exact: true }).getByRole('button', { name: 'Center image', exact: true })).toBeDisabled();
+  await form(page).getByLabel('Alt', { exact: true }).fill('Complex figure edited');
+  await form(page).getByRole('button', { name: 'Update image', exact: true }).click();
+  await expect(content(page).locator('img')).toHaveAttribute('alt', 'Complex figure edited');
+  await expect(content(page).locator('figure > p')).toHaveText('Intro');
+  await expect(content(page).locator('figcaption strong')).toHaveText('Rich');
+  await expect(content(page).locator('figcaption')).toHaveText('Rich caption');
+  expect(await page.evaluate(() => ({ changes: window.changes.length, undo: window.editor.canUndo() }))).toEqual({ changes: 1, undo: true });
+  await page.evaluate(() => window.editor.undo());
+  expect(await page.evaluate(() => ({ html: window.editor.getHTML(), undo: window.editor.canUndo() }))).toEqual({ html: before, undo: false });
+});

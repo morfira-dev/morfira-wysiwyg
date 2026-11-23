@@ -3,6 +3,8 @@ import type { Editor } from '@morfira-dev/wysiwyg-core';
 import { imageCommands } from '../../images/index.js';
 import { readImageAlignment } from '../../images/alignment.js';
 import { ordinaryResizableImage } from '../../images/resize.js';
+import { selectedImageFromRange } from '../../images/selection.js';
+import { ordinaryImageAncestors, ordinaryImageDescendants } from '../../images/figure.js';
 import type { ImagePatch, ImageValue } from '../../images/types.js';
 import { createFormSelection } from '../shared/selection.js';
 import { createFormInput, createUIButton, createUIElement, createUIStatus } from '../shared/elements.js';
@@ -19,17 +21,6 @@ const checkedValues = (values: Partial<ImageFormValues>): Partial<ImageFormValue
   if (entries.some(([key, value]) => !fields.includes(key as ImageFormField) || typeof value !== 'string')) throw new TypeError('Image form values must contain known string fields.');
   return Object.fromEntries(entries);
 };
-const selectedImage = (editor: Editor, range: Range | undefined): HTMLImageElement | undefined => {
-  if (!range) return;
-  const start = range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement;
-  const caption = start?.closest('figcaption');
-  if (range.collapsed && caption && editor.surface.contains(caption) && caption.parentElement?.querySelectorAll('img').length === 1) return caption.parentElement.querySelector('img') ?? undefined;
-  if (range.startContainer !== range.endContainer || range.startContainer.nodeType !== 1 || range.endOffset !== range.startOffset + 1) return;
-  const node = range.startContainer.childNodes[range.startOffset];
-  if (node instanceof HTMLImageElement) return node;
-  if (node instanceof HTMLElement && node.localName === 'figure' && node.querySelectorAll('img').length === 1) return node.querySelector('img') ?? undefined;
-};
-
 export const createImageFormBase = (host: HTMLElement, editor: Editor, options: ImageFormOptions = {}, createUploadUI?: ImageUploadUIFactory): ImageFormBaseController => {
   if (editor.surface.contains(host)) throw new Error('Mount image forms outside persisted editor content.');
   const mode = options.mode === undefined ? 'all' : options.mode;
@@ -94,23 +85,14 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
   const ordinaryImage = (image: HTMLImageElement): boolean => {
     if (!editor.surface.contains(image)) return false;
     const figure = image.closest('figure');
-    if (figure && editor.surface.contains(figure)) {
-      for (const owned of figure.querySelectorAll('*')) {
-        if (owned.namespaceURI !== 'http://www.w3.org/1999/xhtml' || owned.hasAttribute('data-mw-node')) return false;
-      }
-    }
-    for (let node: Element | null = image; node; node = node.parentElement) {
-      if (node.namespaceURI !== 'http://www.w3.org/1999/xhtml') return false;
-      if (node !== editor.surface && node.hasAttribute('data-mw-node')) return false;
-      if (node === editor.surface) return true;
-    }
-    return false;
+    if (figure && editor.surface.contains(figure) && !ordinaryImageDescendants(figure)) return false;
+    return ordinaryImageAncestors(editor.surface, image);
   };
   const getValues = (): ImageFormValues => ({ src: inputs.src.value, alt: inputs.alt.value, width: inputs.width.value, height: inputs.height.value, caption: inputs.caption.value });
   const updateAlignment = () => {
     const image = alignmentTarget;
     const eligible = image && ordinaryResizableImage(editor.surface, image)
-      && selectedImage(editor, selection.peek()) === image;
+      && selectedImageFromRange(editor.surface, selection.peek()) === image;
     const current = eligible ? readImageAlignment(image) : undefined;
     for (const [index, button] of alignmentButtons.entries()) {
       const choice = alignmentChoices[index];
@@ -170,7 +152,7 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
   const refresh = () => {
     if (disposed || restoring) return;
     selection.capture();
-    let image = selectedImage(editor, selection.peek());
+    let image = selectedImageFromRange(editor.surface, selection.peek());
     if (mode === 'edit' && image && !ordinaryImage(image)) image = undefined;
     const focused = form.contains(document.activeElement);
     if (mode === 'edit') {
@@ -202,7 +184,7 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
     if (disposed || editor.isReadOnly() || uploading() || (composing && sizeLock.isLocked()) || (mode === 'edit' && (composing || operation === 'insert'))) return;
     const target = mode === 'edit' ? editTarget : undefined;
     const locked = sizeLock.isLocked();
-    const resizeTarget = locked ? selectedImage(editor, selection.peek()) : undefined;
+    const resizeTarget = locked ? selectedImageFromRange(editor.surface, selection.peek()) : undefined;
     const revision = apiRevision;
     const draft = getValues();
     if (mode === 'edit' && (!target || !ordinaryImage(target))) {
@@ -215,9 +197,9 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
     finally { restoring = false; }
     if (disposed) return;
     if (!restored || editor.isReadOnly() || (composing && sizeLock.isLocked())
-      || (locked && (apiRevision !== revision || !resizeTarget || selectedImage(editor, selection.peek()) !== resizeTarget))
+      || (locked && (apiRevision !== revision || !resizeTarget || selectedImageFromRange(editor.surface, selection.peek()) !== resizeTarget))
       || (mode === 'edit' && (composing || apiRevision !== revision
-      || editTarget !== target || !target || !ordinaryImage(target) || selectedImage(editor, selection.peek()) !== target))) {
+      || editTarget !== target || !target || !ordinaryImage(target) || selectedImageFromRange(editor.surface, selection.peek()) !== target))) {
       setStatus('ui.images.selection', true);
       return;
     }
@@ -225,7 +207,7 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
       if (operation === 'insert') api.insert(value());
       else if (operation === 'update') {
         const currentDraft = mode === 'edit' || locked ? draft : getValues();
-        sizeLock.validate(selectedImage(editor, selection.peek()), currentDraft);
+        sizeLock.validate(selectedImageFromRange(editor.surface, selection.peek()), currentDraft);
         const patch: ImagePatch = {
           ...value(currentDraft),
           width: currentDraft.width === '' ? null : Number(currentDraft.width),
@@ -247,11 +229,11 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
     const target = alignmentTarget;
     if (disposed || editor.isReadOnly() || composing || uploading() || !target
       || !ordinaryResizableImage(editor.surface, target)
-      || selectedImage(editor, selection.peek()) !== target) return;
+      || selectedImageFromRange(editor.surface, selection.peek()) !== target) return;
     const native = document.getSelection();
     const nativeRange = native?.rangeCount ? native.getRangeAt(0) : undefined;
     if (nativeRange && (editor.surface.contains(nativeRange.startContainer) || editor.surface.contains(nativeRange.endContainer))
-      && selectedImage(editor, nativeRange) !== target) {
+      && selectedImageFromRange(editor.surface, nativeRange) !== target) {
       setStatus('ui.images.selection', true);
       return;
     }
@@ -260,7 +242,7 @@ export const createImageFormBase = (host: HTMLElement, editor: Editor, options: 
       const native = document.getSelection();
       return !disposed && !editor.isReadOnly() && !composing && !uploading()
         && documentRevision === revision && ordinaryResizableImage(editor.surface, target)
-        && selectedImage(editor, native?.rangeCount ? native.getRangeAt(0) : undefined) === target;
+        && selectedImageFromRange(editor.surface, native?.rangeCount ? native.getRangeAt(0) : undefined) === target;
     };
     restoring = true;
     try {

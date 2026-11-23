@@ -1,9 +1,10 @@
+import { ordinaryLeafTags as leafTags } from './leaf-tags.js';
 import { selectionReplacement, cutSelectionReplacement, ensureReplacementPlaceholder, finishSelectionReplacement } from './replace-selection.js';
 import { insertInlineFragment } from './inline-fragment.js';
 import { ensureBodyPlaceholder, insertReplacementBlocks } from './replacement-blocks.js';
 
 const inlineTags = new Set(['strong', 'em', 'u', 's', 'sub', 'sup', 'a', 'span', 'code', 'br', 'img']);
-const leafTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
+
 const blockTags = new Set([...leafTags, 'blockquote', 'pre', 'hr', 'ul', 'ol', 'table', 'figure']);
 const inlineNode = (node: Node): boolean => node.nodeType === 3 || (node instanceof HTMLElement && inlineTags.has(node.localName));
 const ordinaryPayloadLeaf = (node: Node): node is HTMLElement => node instanceof HTMLElement && leafTags.has(node.localName) && !node.hasAttribute('data-mw-node') && [...node.childNodes].every(inlineNode);

@@ -1,7 +1,7 @@
 import type { DocumentNode, DocumentTag, EditorDocument, ElementNode } from '../document/index.js';
 import type { InlineGroup, Piece } from './types.js';
 
-const blockTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup', 'figure', 'figcaption']);
+import { inlineBlockTags, splitSelectedText } from './inline-pieces.js';
 
 const textLength = (node: DocumentNode): number => node.type === 'text'
   ? node.text.length
@@ -13,14 +13,9 @@ export const inlineDocument = (value: EditorDocument, from: number, to: number, 
     if (node.type === 'text') {
       const start = position;
       position += node.text.length;
-      const left = Math.max(0, Math.min(node.text.length, from - start));
-      const right = Math.max(left, Math.min(node.text.length, to - start));
-      return [[0, left, false], [left, right, true], [right, node.text.length, false]].flatMap(([begin, end, selected]) => {
-        const text = node.text.slice(begin as number, end as number);
-        if (!text)
-          return [];
+      return splitSelectedText(node.text, start, from, to, (text, selected) => {
         const leaf: DocumentNode = { type: 'text', text };
-        return [{ node: selected && enabled ? { type: 'element', tag, attributes: {}, children: [leaf] } as ElementNode : leaf, selected: Boolean(selected) }];
+        return { node: selected && enabled ? { type: 'element', tag, attributes: {}, children: [leaf] } as ElementNode : leaf, selected };
       });
     }
     // Descendants already inherit this mark. Keep their validated wrapper shape unchanged.
@@ -29,7 +24,7 @@ export const inlineDocument = (value: EditorDocument, from: number, to: number, 
       return [{ node, selected: false }];
     }
     const children = node.children.flatMap(visit);
-    if (blockTags.has(node.tag) || node.attributes['data-mw-node'])
+    if (inlineBlockTags.has(node.tag) || node.attributes['data-mw-node'])
       return [{ node: { ...node, children: children.map((piece) => piece.node) }, selected: false }];
     if (!children.length)
       return [{ node, selected: false }];

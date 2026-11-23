@@ -1,5 +1,5 @@
 export { inspectWrappedListInput, editWrappedListInput } from './wrapped-input.js';
-import { activeRange, placeCaret, preserveRange } from '../selection/index.js';
+import { applyNativeRange, activeRange, placeCaret, preserveRange } from '../selection/index.js';
 import { normalizeListMarker } from '../document/list-marker.js';
 import { copyDirection } from '../document/direction.js';
 export { handlesListForwardDelete, editListForwardDelete } from './forward-delete.js';
@@ -279,9 +279,7 @@ export const editListInput = (root: HTMLElement, inputType: string, prepareSplit
       const caret = document.createRange();
       caret.setStart(first, 0);
       caret.collapse(true);
-      const selection = document.getSelection();
-      selection?.removeAllRanges();
-      selection?.addRange(caret);
+      applyNativeRange(document.getSelection(), caret);
     }
     else
       placeCaret(next.querySelector<HTMLElement>('p,h1,h2,h3,h4,h5,h6,pre') ?? next);
@@ -294,9 +292,7 @@ export const editListInput = (root: HTMLElement, inputType: string, prepareSplit
       br.after(document.createElement('br'));
     range.setStartAfter(br);
     range.collapse(true);
-    const selection = document.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
+    applyNativeRange(document.getSelection(), range);
   }
   else {
     const previous = item.previousElementSibling as HTMLLIElement | null;
@@ -332,8 +328,6 @@ export const editListInput = (root: HTMLElement, inputType: string, prepareSplit
     caret.setStartBefore(marker);
     caret.collapse(true);
     marker.remove();
-    const selection = document.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(caret);
+    applyNativeRange(document.getSelection(), caret);
   }
 };

@@ -1,5 +1,11 @@
 import type { TextSelection, SelectionBookmark } from './types.js';
 export type { TextSelection, SelectionBookmark } from './types.js';
+
+/** Apply an already-owned Range; callers keep focus, validation and direction. */
+export const applyNativeRange = (selection: Selection | null, range: Range): void => {
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+};
 export const activeRange = (root: HTMLElement): Range | undefined => {
   const selection = root.ownerDocument.getSelection();
   if (!selection?.rangeCount)
@@ -92,17 +98,13 @@ export const selectText = (root: HTMLElement, index: number, length = 0): void =
   range.setStart(start, startOffset);
   range.setEnd(end, endOffset);
   root.focus({ preventScroll: true });
-  const selection = root.ownerDocument.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(range);
+  applyNativeRange(root.ownerDocument.getSelection(), range);
 };
 export const placeCaret = (element: HTMLElement, end = false): void => {
   const range = element.ownerDocument.createRange();
   range.selectNodeContents(element);
   range.collapse(!end);
-  const selection = element.ownerDocument.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(range);
+  applyNativeRange(element.ownerDocument.getSelection(), range);
 };
 /** Keep actual DOM positions while moving blocks, including empty list items. */
 export const preserveRange = (root: HTMLElement, mutate: () => void): void => {
@@ -135,10 +137,7 @@ export const preserveRange = (root: HTMLElement, mutate: () => void): void => {
       root.normalize();
       if (backward)
         native.setBaseAndExtent(next.endContainer, next.endOffset, next.startContainer, next.startOffset);
-      else {
-        native.removeAllRanges();
-        native.addRange(next);
-      }
+      else applyNativeRange(native, next);
     }
   }
   finally {
