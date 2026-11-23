@@ -1,5 +1,17 @@
 # Testing and releases
 
+## Focused SDK verification — 23 November 2026
+
+The new `editor.selection` API and link-form integration passed **156/156** focused
+checks in Chromium, Firefox and WebKit. RU/EN SDK examples and affected forms
+passed **12/12** in Chromium. Builds, types, archives, tree shaking and size guards
+passed; a separate actual-tarball consumer verified public types and behavior.
+Core overhead is **904 gzip bytes**, with no new runtime dependencies.
+
+This is the current stage's focused run, not a repeat of the full suite below.
+General node views, decorations and position mapping are not implemented yet.
+
+
 ## Complete local verification — 20 November 2026
 
 The fresh local run passed **4714 editor/adapter executions** in Chromium,

@@ -87,6 +87,24 @@ try {
       await page.goto(`${server.url}/index.html`);
       const content = page.locator('.mw-content');
       await expect(content).toHaveText('AB');
+      assert.deepEqual(await page.evaluate(() => {
+        const editor = window.morfiraOptionalUI.editor;
+        editor.setSelection(0, 1);
+        const handle = editor.selection.capture();
+        if (!handle) throw new Error('Installed selection SDK did not capture.');
+        const field = document.createElement('input');
+        document.body.append(field);
+        field.focus();
+        const range = editor.selection.getRange(handle);
+        range?.collapse(false);
+        const restored = editor.selection.restore(handle);
+        const selection = editor.getSelection();
+        editor.selection.release(handle);
+        const released = editor.selection.isCurrent(handle);
+        field.remove();
+        editor.setSelection(1);
+        return { restored, selection, released, undo: editor.canUndo() };
+      }), { restored: true, selection: { index: 0, length: 1 }, released: false, undo: false });
       await page.getByRole('button', { name: /Consumer euro/ }).click();
       await expect(content).toHaveText('A€B');
       assert.equal(await page.evaluate(() => window.morfiraOptionalUI.saveState.getState().dirty), true);
@@ -257,7 +275,7 @@ try {
   finally {
     await server.close();
   }
-  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, literal insertion/Undo, preview, save state, fullscreen/Escape, merged-cell typography, email completion, print/outline, text move/Undo, mixed-link/caption contexts, floating link/table panels, image/symbol dialogs, nonmodal search/replace and cleanup (Chromium only).');
+  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, revision-bound selection handles, literal insertion/Undo, preview, save state, fullscreen/Escape, merged-cell typography, email completion, print/outline, text move/Undo, mixed-link/caption contexts, floating link/table panels, image/symbol dialogs, nonmodal search/replace and cleanup (Chromium only).');
 }
 finally {
   await rm(temporary, { recursive: true, force: true });

@@ -1,112 +1,77 @@
-# Next plugin SDK proposal: revision-bound selection handles
+# Plugin SDK: revision-bound selection handles
 
-Status: **unimplemented design proposal**, recorded on 2026-11-20. This is not an
-accepted public API, an implementation commitment or evidence of runtime support.
-The implemented contract remains [plugin-sdk.md](plugin-sdk.md). Names, placement,
-size expectations and invalidation details below need acceptance before runtime
-or public declarations change.
+Status: **accepted implementation contract — 2026-11-23**. The next SDK block
+adds revision-bound selection handles and adopts them in the link form. Runtime
+and package evidence must be recorded separately in verification-backlog.md.
+The phase-1 schema/command contract remains [plugin-sdk.md](plugin-sdk.md).
 
-## Problem and candidate scope
+## Accepted public contract
 
-Plugins currently combine public UTF-16 text offsets, path-based selection
-bookmarks and live DOM Ranges with their own revision/target guards. Text offsets
-cannot distinguish every empty-block or BR position, paths can resolve to new
-nodes after replacement, and live Ranges adjust automatically when DOM changes.
-None of these observations is independent authority to execute a future edit.
+`editor.selection: EditorSelectionHandles` exposes `capture()`,
+`isCurrent(handle)`, `getRange(handle)`, `restore(handle)` and `release(handle)`.
+Export the opaque `EditorSelectionHandle` and `EditorSelectionHandles` types
+through the existing core/facade entrypoints. Capture returns undefined without
+one valid native range owned wholly by the connected editor. Handles are frozen
+opaque identities; foreign/forged/released/stale handles refuse observational
+queries/restoration without throwing or mutating content/history. getRange returns
+an observational clone and cannot be used to change internal boundary authority.
+isCurrent/getRange may observe an unchanged target inside a synchronous transaction;
+capture/restore refuse there. Actual DOM mutation invalidates the observed target.
 
-A candidate next SDK step is an opaque selection handle owned by one editor and
-one unchanged document revision. It could capture actual boundary nodes/offsets
-and direction, report whether those points are still current, provide bounded
-observational geometry, and explicitly restore the selection. Public spelling,
-the owning entrypoint and whether geometry belongs in core remain undecided.
+Capture preserves actual boundary nodes, offsets and direction, including BR,
+empty-block and element child-index boundaries. Selection-only changes do not
+invalidate document currentness. This is not authority to apply an old draft:
+consumers separately check semantic targets, newer selection intent, read-only,
+composition, dismissal and lifecycle before executing existing guarded commands.
 
-This proposal does **not** map positions through edits, keep targets alive across
-undo/redo, add persistent node IDs or generic atoms, register node views or
-decorations, introduce custom content models, or replace the editing engine.
-Later mapped selections need an explicit operation-mapping contract; they cannot
-be inferred from a handle that rejects stale targets.
+Any committed content change, external replacement with different actual nodes,
+undo/redo that changes content, rollback rebuilding nodes, or pending observed
+subtree mutation invalidates handles. Freshness checks drain MutationObserver
+records synchronously, including replacement with identical HTML before observer
+delivery; comparing serialized HTML alone is insufficient. A capture made while
+uncommitted DOM mutations are pending refuses. Same-value controlled feedback
+preserves handles only when it retains the original document nodes. Direct DOM
+mutation is trusted application code, but observed changes fail closed; this API
+does not authorize or sanitize direct DOM changes. Detachment/replacement and
+invalid boundary offsets also refuse.
 
-## Ownership and invalidation decisions
+Composition start invalidates existing captures and capture/restore refuse during
+composition. Read-only permits observational capture/restoration, never mutation.
+restore makes no explicit focus call; browser-native Selection assignment can
+still focus a contenteditable. Revalidate after assignment and any synchronous
+application callbacks; reject changed/destroyed targets and do not overwrite a
+new application-selected range. Invalid calls do not deliberately change focus,
+selection or history; browser/application side effects during an attempted valid
+restore are not rolled back as document edits.
 
-- Handles are immutable opaque identities, branded per editor. Foreign, forged,
-  disposed and stale handles refuse without changing document, history or the
-  current selection. Exposing a clone of observational data must not permit
-  callers to rewrite internal boundary authority.
-- A committed content edit, external document replacement, undo/redo, destruction
-  or replacement/detachment of a captured boundary invalidates the handle.
-  Equal serialized HTML does not prove identity: new DOM with identical markup
-  must not silently retarget the capture. Same-value controlled feedback may
-  preserve it only when the editor actually retains the document and nodes.
-- Capturing/restoring around failed transactions needs an explicit policy. If
-  rollback rebuilds nodes, an old handle must invalidate even when HTML and
-  logical bookmark are restored. No promise to survive a rollback is proposed.
-- Selection-only changes need a documented distinction between document validity
-  and user intent. A handle may still describe unchanged nodes after focus moves,
-  but an application action must separately revalidate its intended target. A
-  generic restore must never become implicit permission to mutate that target.
-- Native input/composition, pending uncommitted DOM edits and trusted direct DOM
-  mutation require a synchronous freshness policy. Comparing only serialized
-  HTML or waiting for a MutationObserver callback is insufficient for immediate
-  callback-time replacement. Choose explicit boundary checks/dirty tracking;
-  document what trusted application mutation remains outside guarantees.
-- Read-only and composition continue to gate user editing and commands. Decide
-  whether observational restoration itself is allowed while read-only; do not
-  silently turn it into an editing bypass. Revalidate after focus listeners,
-  since they may replace content, change selection or destroy the editor.
+release is idempotent and clears retained boundary references. Automatic
+invalidation clears references for all active handles; destruction disconnects
+observers and releases state. Keep no strong registry of expired handles and no
+global mutable editor registry. Install mutation tracking lazily when captures
+need it; do not impose full-document serialization on every selection query.
 
-## Node retention and lifecycle tradeoffs
+The first consumer is only the reusable link form: replace its remembered live
+Range authority with handles while retaining anchor/selected-text guards, draft
+recovery, focus-time revalidation and existing undo/read-only behavior. Other
+forms retain their contracts until separately adopted. Add a public plugin-author
+example, focused three-engine regressions, actual-tarball type/runtime smoke,
+selective-import verification and raw/gzip/Brotli measurements.
 
-Storing actual nodes provides identity evidence but can retain detached subtrees
-when an application keeps an expired handle. A registry of strong references can
-retain every capture until editor destruction. Live Ranges also adjust with edits
-and retain DOM; weak references alone cannot establish revision validity.
+No persisted schema change, runtime dependency, node views, general atoms,
+decorations or position mapping is included. These remain subsequent SDK blocks.
 
-Choose a bounded ownership policy before implementation: explicit idempotent
-release, automatic invalidation that clears node references, or a combination.
-Invalidation must release references without retaining every dead handle in an
-editor-owned set. Destroy must release subscriptions and references; retained
-external handles must stay inert. Do not introduce a global editor/handle registry.
-An async callback may observe a released handle but cannot revive it.
+## Acceptance and limits
 
-The first real consumer should be one existing contextual form, replacing a
-specific duplicated target guard while preserving its stricter semantic target,
-focus, read-only, dismissal and cleanup rules. Do not rewrite every optional UI
-module merely to demonstrate adoption.
+Use representative Chromium, Firefox and WebKit scenarios for exact forward and
+backward selection restoration, empty/BR/element boundaries, isolation and forged
+tokens, observational clones, same-value feedback, synchronous identical-markup
+replacement, native input/composition, rollback, history, release and destruction.
+Exercise focus callbacks that replace content, select a newer target or destroy
+an editor; assert refusal and preserved content/history rather than implementation
+layout. The link form retains its existing semantic and draft-recovery matrix.
 
-## Acceptance proposal
-
-Use representative Chromium, Firefox and WebKit cases rather than a Cartesian
-matrix. Assert actual document/selection/history results and side-effect-free
-refusal, including:
-
-1. Forward/backward captures at text, BR, empty-block and node-index boundaries;
-   exact restoration without normalizing structure or changing history.
-2. Two editors, fabricated/foreign handles, disposal and retained expired handles.
-3. Same-value controlled feedback versus explicit replacement with identical HTML
-   but different nodes; removed or replaced endpoint nodes and shifted offsets.
-4. Input, composition, undo/redo and both successful and rolled-back transactions;
-   pending native mutation and the documented trusted-direct-DOM policy.
-5. Focus-time callbacks changing content/intent/read-only or destroying the editor;
-   validate before and after focus and preserve rejected current selection.
-6. One real contextual-form action with exact target/history restoration and
-   lifecycle cleanup; no implied support for unsupported structural selections.
-7. Focused public type and installed-tarball smoke, selective imports and safe SSR
-   import. Internal bookmarks/ranges must not accidentally become exported API.
-
-Retention tests should verify explicit release/invalidation behavior. Heap or GC
-observations, if collected, are separate bounded measurements, not proof that all
-browser objects are collected or that the editor is globally leak-free.
-
-## Packaging and evidence
-
-No runtime dependency, persisted schema change, CSS or eager optional-plugin
-import is proposed. Measure raw minified JS, gzip and Brotli for core and affected
-selected profiles, counting shared chunks once. Roughly 1–2 KB gzip is an initial
-engineering expectation, **not a new enforced guard or measured result**. Existing
-product and profile budgets remain unchanged; implementation should justify its
-cost before revising scope or guards.
-
-No code, tests, bundle measurements or browser evidence accompany this design
-proposal. Update it to an accepted contract only after the unresolved freshness,
-intent and retention decisions are settled. Keep actual validation in
-[verification-backlog.md](verification-backlog.md).
+The initial 1–2 KB gzip engineering expectation is not a new guard or a measured
+result. Measure the actual core and affected selected-profile overhead, count
+shared chunks once, preserve existing budgets and record evidence honestly.
+Runtime behavior and docs tests do not establish complete accessibility or memory
+leak freedom. No heap/GC claims follow from checking explicit disposal.

@@ -2,6 +2,14 @@
 
 Status: phase 1 implementation contract. Existing editor methods and schema-v1 documents remain supported. This is the first vertical slice of the revised roadmap, not a new immutable editing engine or full custom-node-view system.
 
+## Follow-up selection contract
+
+Revision-bound `editor.selection` handles follow [plugin-sdk-next.md](plugin-sdk-next.md).
+This additive layer retains actual DOM points for an unchanged document and is
+adopted by the link form. It does not implement position mapping, node views,
+general atoms or decorations; the phase-1 schema and command contract below stays
+compatible. Current executed evidence belongs in verification-backlog.md.
+
 ## Phase 1 scope
 
 - Declarative per-instance schema contributions are available as `EditorPlugin.schema?: readonly SchemaContribution[]` and `EditorOptions.schema?: readonly SchemaContribution[]`. Compile all contributions before parsing initial HTML and before plugin setup. Definitions are copied/validated; duplicate names or conflicting definitions fail before mounting or setup. No global mutable schema exists.

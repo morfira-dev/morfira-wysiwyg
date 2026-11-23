@@ -2,6 +2,7 @@ import { createPreviewUI } from '@morfira-dev/wysiwyg/ui/preview';
 import { saveState, saveStateCommands } from '@morfira-dev/wysiwyg/plugins/save-state';
 import { createSaveStateUI } from '@morfira-dev/wysiwyg/ui/save-state';
 import { createEditor } from '@morfira-dev/wysiwyg';
+import type { EditorSelectionHandle, EditorSelectionHandles } from '@morfira-dev/wysiwyg';
 import { createSpecialCharacterUI } from '@morfira-dev/wysiwyg/ui/special-characters';
 import { createFullscreenUI } from '@morfira-dev/wysiwyg/ui/fullscreen';
 import { autolink } from '@morfira-dev/wysiwyg/plugins/autolink';
@@ -31,6 +32,10 @@ let saveCalls = 0;
 const editor = createEditor(editorHost, { locale: 'en', value: '<p>AB</p>', plugins: [saveState({ save: () => { saveCalls++; } })] });
 editor.focus();
 editor.setSelection(1);
+// Compile against actual facade declarations, including the opaque token export.
+const selectionHandles: EditorSelectionHandles = editor.selection;
+const initialSelection: EditorSelectionHandle | undefined = selectionHandles.capture();
+if (initialSelection) selectionHandles.release(initialSelection);
 const characters = createSpecialCharacterUI(characterHost, editor, {
   characters: [{ id: 'consumer-euro', text: '€', label: 'Consumer euro' }],
 });

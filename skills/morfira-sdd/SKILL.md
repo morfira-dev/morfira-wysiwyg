@@ -48,6 +48,14 @@ glyphs are not advertised as native focusable checkboxes or complete accessibili
 
 For plugin SDK work, follow `specs/plugin-sdk.md` before implementation. Its first slice is per-instance typed commands and declarative semantic schema extensions over existing safe schema-v1 wrappers; mapped structural selection, custom node views, generic atoms/decorations and a new editing engine remain later work; mention-specific atomic behavior follows its independent contract. Preserve validation, initial-import ordering, history and plugin cleanup without silently changing stored documents.
 
+Revision-bound selection handles follow `specs/plugin-sdk-next.md`: exact DOM
+points, per-editor opaque ownership, synchronous stale-target refusal, explicit
+release and lifecycle cleanup. They do not map positions through edits or replace
+consumer intent/semantic checks and guarded commands. The link form is the first
+consumer; do not silently migrate unrelated forms. Active competitor comparisons
+use TinyMCE, CKEditor 5 and notectl; retain Quill comparisons only as historical
+evidence.
+
 The user's original product limits are gzip: core 200000 gzip JS bytes and optional entries/tables 150000 gzip JS bytes. Keep the separate adapter guard of 10000 raw JS bytes, explicit small-feature raw guards, and the soft core optimization target of 80000 minified bytes. Measured headless and ready standard profiles enforce 80000 gzip JS bytes; extended profiles enforce 110000 gzip JS bytes. Their previous raw JS caps are retired; each standard/extended profile still enforces 20000 minified CSS bytes. Minimal is measured without an additional preset guard. See `specs/editor-presets.md` P4 for the user-directed policy reason and selected closures. Count shared chunks once; report raw/gzip/Brotli/CSS independently, optional fonts/locales separately and exclude framework runtimes. Compare competitors only using equivalent feature profiles and compression.
 
 For changed behavior, add tests that demonstrate document content, selection, history, or lifecycle results. Use real browser tests for Selection/Range and input behavior. Include malformed imported data and merged-table cases when those contracts change. Keep the public subpath imports stable unless a breaking change is explicitly required.

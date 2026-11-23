@@ -27,6 +27,7 @@
 | `setJSON(document)` | Validate schema before replacing content |
 | `getSelection()` | `{ index, length }` text offsets, or undefined outside the surface |
 | `setSelection(index, length?)` | Select text; nonnegative integer offsets |
+| `selection.capture() / isCurrent(handle) / getRange(handle) / restore(handle) / release(handle)` | Revision-bound selection handles for external UI; [contract](/en/plugin-sdk#remembered-selections-for-external-ui) |
 | `getFormats(range?)` | Formats at selection start, `mixed`, list depth and indentation availability |
 | `format(name, value)` | Undoable user-format command |
 | `insertHTML(html)` | Validated paste-like replacement of the current selection |

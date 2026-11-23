@@ -1,6 +1,6 @@
 import { localize } from '@morfira-dev/wysiwyg-core';
 import type { Editor } from '@morfira-dev/wysiwyg-core';
-import { createFormSelection } from '../shared/selection.js';
+import { createLinkFormSelection } from './form-selection.js';
 import { createFormInput, createUIButton, createUIElement, createUIStatus } from '../shared/elements.js';
 import { listenToUI } from '../shared/events.js';
 import { linkFormMessages } from './messages.js';
@@ -75,7 +75,7 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
   fields.append(actions);
   const status = createUIStatus(document, 'mw-form-status');
   element.append(fields, status);
-  const selection = createFormSelection(editor);
+  const selection = createLinkFormSelection(editor);
   let boundRange = selection.peek();
   let boundAnchor = anchorScope && boundRange ? linkRangeAnchor(editor.surface, boundRange) : undefined;
   let invalidated = false;

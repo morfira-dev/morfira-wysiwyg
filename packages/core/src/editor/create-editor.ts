@@ -1,3 +1,4 @@
+import { createSelectionHandleRegistry } from '../selection/handles/index.js';
 import { createDocumentSchema } from '../schema/index.js';
 import { createCommandRegistry } from '../commands/index.js';
 import { activeRange, bookmark, placeCaret, rangeFromBookmark, readTextSelection, restoreBookmark, selectText } from '../selection/index.js';
@@ -177,6 +178,23 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     }
   };
   let current = capture();
+  const selectionHandles = createSelectionHandleRegistry({
+    surface,
+    isAvailable: () => !destroyed && !composing && !pendingInput,
+    canRestore: () => !transactionDepth,
+    // Normalize only at capture; queries never serialize the document. Runtime
+    // presentation attributes need not match the persisted document snapshot.
+    canCapture: () => {
+      if (transactionDepth)
+        return false;
+      try {
+        return htmlSnapshots.read() === current.html;
+      }
+      catch {
+        return false;
+      }
+    },
+  });
   let lastSelection = current.selection;
   const clearCompositionTail = () => {
     compositionTail = undefined;
@@ -195,13 +213,17 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       restoreBookmark(surface, before.selection);
       restoreTyping(before);
       current = capture();
+      selectionHandles.invalidate();
+      selectionHandles.synchronize();
       lastSelection = current.selection;
     }
   };
   const restoreCurrentDOM = () => {
+    selectionHandles.invalidate();
     surface.innerHTML = current.html;
     ensureDocument(surface);
     restoreBookmark(surface, current.selection);
+    selectionHandles.synchronize();
   };
   const notifySelection = () => {
     if (destroyed)
@@ -242,10 +264,12 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     if (ensureDocument(surface) && selection)
       selectText(surface, selection.index, selection.length);
     const after = capture();
+    selectionHandles.synchronize();
     if (after.html === before.html) {
       current = after;
       return false;
     }
+    selectionHandles.invalidate();
     const now = Date.now();
     const grouped = inputType === lastInputType && ['insertText', 'deleteContentBackward', 'deleteContentForward'].includes(inputType) && now - lastInputTime < 600 && before.selection && current.selection && JSON.stringify(before.selection) === JSON.stringify(current.selection);
     if (!grouped) {
@@ -264,6 +288,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       emit('user');
   };
   const restore = (snapshot: Snapshot) => {
+    selectionHandles.invalidate();
     clearTyping();
     surface.innerHTML = snapshot.html;
     ensureDocument(surface);
@@ -271,6 +296,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     restoreBookmark(surface, snapshot.selection);
     restoreTyping(snapshot);
     current = capture();
+    selectionHandles.synchronize();
     lastSelection = current.selection;
     lastInputTime = 0;
     emit('user');
@@ -357,11 +383,13 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       changed = commitMutation(before, inputType);
     }
     catch (error) {
+      selectionHandles.invalidate();
       surface.innerHTML = before.html;
       ensureDocument(surface);
       restoreBookmark(surface, before.selection);
       restoreTyping(before);
       current = capture();
+      selectionHandles.synchronize();
       lastSelection = previousSelection;
       pendingInput = previousPendingInput;
       undoStack.splice(0, undoStack.length, ...previousUndo);
@@ -415,7 +443,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     }, '', origin);
   };
   const editor: Editor = {
-    element: container, surface, events, schema, commands: registry.commands,
+    element: container, surface, events, schema, commands: registry.commands, selection: selectionHandles.selection,
     getLocale: () => {
       assertActive();
       return { locale: locale.locale, translations: { ...locale.translations } };
@@ -441,6 +469,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       if (content === editor.getHTML())
         return;
       cancelComposition(false);
+      selectionHandles.invalidate();
       clearTyping();
       surface.innerHTML = content;
       ensureDocument(surface);
@@ -449,6 +478,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       lastInputTime = 0;
       lastSelection = undefined;
       current = capture();
+      selectionHandles.synchronize();
       emit('api');
     },
     setJSON: (value) => {
@@ -568,6 +598,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       rejectDuringTransaction('destroy');
       cancelComposition(false);
       destroyed = true;
+      selectionHandles.destroy();
       const failures: unknown[] = [];
       try {
         eventHub.destroy();
@@ -739,6 +770,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     commit(before, event.inputType);
   });
   listen('compositionstart', () => {
+    selectionHandles.invalidate();
     if (readOnly) {
       canceledComposition = true;
       return;

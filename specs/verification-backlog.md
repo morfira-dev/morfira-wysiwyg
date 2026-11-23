@@ -1,5 +1,49 @@
 # Verification record
 
+## Revision-bound selection SDK and link-form adoption — 2026-11-23
+
+Implemented editor.selection capture/isCurrent/getRange/restore/release under
+plugin-sdk-next.md. Opaque per-editor tokens retain exact boundary points and
+direction; lazy mutation tracking rejects stale/same-markup replacements
+synchronously, invalidation/release clears node references, and composition and
+transaction guards retain command ownership. Observational queries remain usable
+inside unchanged synchronous transactions; capture/restore refuse there. The link
+form is the first consumer. A RU/EN plugin-author live example demonstrates an
+external field, guarded command, undo and refusal after document replacement.
+
+Executed on the final runtime:
+
+- pnpm run build passed package/declaration/Angular builds and every existing size
+  guard. pnpm run typecheck passed TS/Svelte/Vue; check:project passed ownership,
+  arrow/type-layout, MIT and dependency guards.
+- Focused editor acceptance: 156/156 passed, 49.7 seconds, Chromium/Firefox/WebKit,
+  three workers. This includes 11 new SDK cases × 3 engines, link forms/contextual
+  links and existing typed-command regressions. No skips/retries were added.
+- The first editor attempt was interrupted after finding two Chromium anchor-link
+  integration failures. The cause was observational lookup refusing inside the
+  command transaction. Splitting observation from capture/restore guards fixed it;
+  the final complete selected run above passed without weakening assertions.
+- Focused RU/EN docs: 12/12 passed, 9.4 seconds, Chromium, including the new demo,
+  existing SDK guide and affected link/form controls. docs:build:site passed.
+- package:check passed all eight archive exports/declarations/MIT boundaries;
+  check:tree-shaking passed all selected import guards.
+- consumers:optional-ui passed strict declarations and browser behavior from actual
+  core/plugins/facade tarballs, including public handle types, exact restoration,
+  clone isolation, release/history neutrality and the existing UI smoke. SSR
+  imports passed; this is Chromium-only, not the full installed-adapter matrix.
+
+Final size-report.json JS bytes (raw / gzip / Brotli): core 98455 / 30562 / 26917;
+standard-ready 236939 / 70659 / 60217; extended-ready 293937 / 87266 / 73471.
+Compared with the preceding HEAD report, gzip changes are +904 / +1187 / +1204
+bytes. CSS remains unchanged; no runtime dependency or schema revision was added.
+
+No complete editor/docs suite, complete adapter consumer matrices, performance
+benchmark, real-device IME/screen-reader audit, GitHub CI or publication was run
+for this stage. The previous full verification below belongs to its earlier
+source snapshot. No position mapping, node views, generic atoms or decorations
+are claimed. Logs: /tmp/morfira-sdk-{editor-final,docs,consumer,build,types}-20261123.log.
+
+
 ## Full local pre-release verification — 2026-11-20
 
 The user explicitly requested a fresh complete local run and local commits.

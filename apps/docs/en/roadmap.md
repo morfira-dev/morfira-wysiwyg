@@ -8,6 +8,8 @@ Supported list and quote operations and their boundaries are described in the [A
 
 ## Implemented
 
+[Remembered plugin selection](/en/plugin-sdk#remembered-selections-for-external-ui) adds `editor.selection`: opaque targets with exact DOM boundaries and refusal after document changes. The link form adopts this mechanism. This is one SDK stage; position mapping, node views and general decorations remain follow-ups. The project's active comparison targets are TinyMCE, CKEditor 5 and notectl.
+
 [Persistent mention IDs](/en/persistent-mentions) are implemented as explicit `persistent: true` over schema-v1 semantic spans. HTML/JSON and history retain IDs; text stays editable, with no atom contract. The demo includes actual menu selection, ID inspection and current HTML/JSON checks. Current browser/example execution results and their limits are recorded under [testing](/en/testing).
 
 [Contextual link actions](/en/contextual-links) support a caret or text range within one ordinary anchor, plus bounded mixed/cross-anchor selections in one ordinary text flow. Whole-anchor mode edits/removes the entire link; mixed selection mode applies changes only to selected fragments and has no ambiguous Open URL. Cross-block and protected contexts remain outside this profile. Current execution evidence is recorded under [testing](/en/testing).

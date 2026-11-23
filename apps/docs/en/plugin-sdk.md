@@ -1,5 +1,6 @@
 <script setup>
 import PluginSDKExample from '../.vitepress/theme/PluginSDKExample.vue';
+import SelectionHandleExample from '../.vitepress/theme/SelectionHandleExample.vue';
 </script>
 
 # Plugin SDK and extensible schema
@@ -170,3 +171,42 @@ The core import loads no optional plugins/UI or framework runtime. CSS imports s
 Phase 1 validates node identity and attributes; arbitrary per-node child/content rules cannot yet be registered.
 
 For post-input extension observers, see [controlled input commit receipts](/en/events#controlled-input-commit-receipts): `EditorInputCommit` covers only validated controlled Enter/clipboard paths, not arbitrary input or a cancellable transform. Follow-up commands remain separate history operations.
+
+## Remembered selections for external UI
+
+`editor.selection` provides opaque `EditorSelectionHandle` values for one unchanged document revision. They are useful when a form temporarily moves focus away from the editor. Unlike text offsets, a handle remembers actual DOM boundaries and direction, including an empty block and positions next to a `br`.
+
+<SelectionHandleExample />
+
+| Method | Result |
+| --- | --- |
+| `capture()` | A new handle for the current selection, or `undefined` when capture is unavailable |
+| `isCurrent(handle)` | Whether the target belongs to this editor and remains current |
+| `getRange(handle)` | A new observational `Range` clone, or `undefined`; changing the clone cannot redirect the handle |
+| `restore(handle)` | Restores exact boundaries and direction; returns `false` on refusal |
+| `release(handle)` | Releases the target; repeated calls are safe |
+
+```ts
+import type { Editor, EditorSelectionHandle } from '@morfira-dev/wysiwyg';
+
+const rememberTarget = (editor: Editor): EditorSelectionHandle | undefined =>
+  editor.selection.capture();
+
+const cancelTarget = (editor: Editor, target: EditorSelectionHandle) => {
+  editor.selection.release(target);
+};
+```
+
+For a deferred action, keep the handle until the form closes and release it in `finally` or cleanup. Before execution, validate **both document freshness and user intent**. Moving the selection alone does not expire a handle: this permits external-form interaction, but does not authorize returning users to an old range after they select a new target. The demo separately compares active selection DOM boundaries; a larger application may use its own request number or form generation.
+
+For an action from an external field, the demo first restores the remembered boundaries, then separately calls `editor.focus()` and rechecks the handle and exact selection. This avoids a browser-created default caret replacing the intended range during focus. An application focus listener can still replace content, choose another target, or enable read-only; a newer target is not overwritten by another restoration. Execute an ordinary typed command only after successful restoration and those checks. `restore` **does not explicitly call `focus()`**, although the browser may focus contenteditable while assigning native Selection; the SDK rechecks the target after that operation. Observational restoration is allowed in read-only and does not bypass command mutation guards.
+
+### Freshness and security
+
+- Content edits, external replacement, undo/redo, rollback that rebuilds DOM, and composition start expire previous targets. Same-value controlled feedback preserves a handle only when the DOM is actually retained.
+- Pending native mutation is detected synchronously, including before a `MutationObserver` callback. Replacing nodes with identical HTML does not preserve a target. Capture during pending change, a transaction, or composition is refused.
+- Foreign, fabricated, released, and stale handles refuse without targeting a similar node. `getRange` returns `undefined`, checks/restoration return `false`; cleanup remains safe after editor destruction.
+- A handle temporarily retains DOM boundaries. Release it when the form closes; invalidation and editor destruction clear internal references. Do not use handles as persistent IDs, serialize them, or pass them between editors.
+- Direct DOM mutation is trusted application code, not a sandbox. Use transactions and validated HTML/JSON APIs for changes. A handle does not authorize backend requests or establish input safety.
+
+This slice **does not map positions through edits**, add a general atom/node-view/decorations SDK, or broaden supported structural operations. A remembered `Range` is an observation, not permission to bypass command validation. Actual executed checks are recorded in [testing](/en/testing); API examples alone are not browser verification evidence.

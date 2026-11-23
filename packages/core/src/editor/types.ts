@@ -1,3 +1,4 @@
+import type { EditorSelectionHandles } from '../selection/handles/types.js';
 import type { DocumentSchema, SchemaContribution } from '../schema/types.js';
 import type { EditorCommands } from '../commands/types.js';
 import type { EditorDocument } from '../document/index.js';
@@ -32,6 +33,7 @@ export interface Editor {
   readonly events: EditorEvents;
   readonly schema: DocumentSchema;
   readonly commands: EditorCommands;
+  readonly selection: EditorSelectionHandles;
   getLocale(): EditorLocale;
   setLocale(locale: string, translations?: EditorTranslations): void;
   getHTML(): string;

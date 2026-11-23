@@ -25,6 +25,30 @@ const initialize = async (page: Page, html: string, index = 0, length = 0) => {
 
 const currentHTML = (page: Page) => page.evaluate(() => window.editor.getHTML());
 
+test('link draft refuses identical-markup DOM replacement before the observer callback', async ({ page }) => {
+  await initialize(page, '<p>First target</p>', 0, 5);
+  await page.getByLabel('Link URL', { exact: true }).fill('https://example.com/stale');
+  const result = await page.evaluate(() => {
+    const root = window.editor.surface;
+    root.innerHTML = root.innerHTML;
+    const create = [...document.querySelectorAll<HTMLButtonElement>('.mw-link-form button')]
+      .find((button) => button.textContent === 'Create link');
+    create?.click();
+    return { html: window.editor.getHTML(), undo: window.editor.canUndo(), changes: window.changes.length };
+  });
+  expect(result).toEqual({ html: '<p>First target</p>', undo: false, changes: 0 });
+  await expect(page.locator('.mw-link-form [role="status"]')).not.toBeEmpty();
+  // A fresh, explicit selection can bind a new draft after the rejected action.
+  await page.evaluate(() => {
+    // Trusted direct DOM writes must be synchronized through the editor first.
+    window.editor.transact(() => {});
+    window.editor.setSelection(6, 6);
+    window.editor.getPlugin<LinkFormController>('test-link-form')!.refresh();
+  });
+  await page.getByRole('button', { name: 'Create link', exact: true }).click();
+  await expect(page.locator('.mw-content a')).toHaveText('target');
+});
+
 test('link form applies metadata to rich selected text after inputs take focus and preserves history', async ({ page }) => {
   const original = '<p>A<strong>word</strong>Z</p>';
   await initialize(page, original, 1, 4);

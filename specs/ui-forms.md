@@ -97,3 +97,15 @@ The query field advertises `aria-keyshortcuts="Enter Shift+Enter"` and a localiz
 ## Immediate image placement controls
 
 The image form in all/edit modes exposes localized left/center/right/reset buttons under [image-alignment.md](image-alignment.md). They apply imageCommands.align immediately to the remembered ordinary image with post-focus revision/identity checks, independently of the string drafts and existing ImageFormValues shape. Read-only, composition, upload and missing/ineligible selection disable and guard actions. Preserve draft values, rich caption, target identity, one-step history and cleanup. Contextual image properties inherit the same controls by reusing the edit-only form; no independent engine or preset dependency is introduced.
+
+## Link-form selection SDK adoption — 2026-11-23
+
+The link form alone uses editor.selection revision-bound handles under
+plugin-sdk-next.md instead of treating a remembered live Range as authority.
+Keep the existing FormSelection internal shape, anchor/selected-text semantics,
+focus-time intent checks, correctable invalid drafts and one-step history.
+Synchronous document mutation/replacement with identical markup invalidates a
+draft target before submission; getRange returns only an observational clone.
+Release old captures on recapture, API invalidation and disposal. Stage and focus
+restoration suppress incidental recapture, then revalidate before mutation.
+Other forms retain their current ownership contracts.

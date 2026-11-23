@@ -27,6 +27,7 @@
 | `setJSON(document)` | Проверка схемы до изменения документа |
 | `getSelection()` | Текстовые смещения `{ index, length }` или undefined вне области ввода |
 | `setSelection(index, length?)` | Выделение текста; неотрицательные целые смещения |
+| `selection.capture() / isCurrent(handle) / getRange(handle) / restore(handle) / release(handle)` | Выделение одной ревизии для внешнего UI; [контракт](/plugin-sdk#сохранённое-выделение-для-внешнего-ui) |
 | `getFormats(range?)` | Форматы в начале выделения, `mixed`, глубина и доступность отступов |
 | `format(name, value)` | Форматирование с историей |
 | `insertHTML(html)` | Проверенная вставка вместо выделения |

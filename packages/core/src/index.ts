@@ -17,3 +17,5 @@ export { createDocumentSchema } from './schema/index.js';
 export type { DocumentSchema, SchemaNodeSpec, SchemaAttributesSpec, SchemaContribution, SchemaAttributeSpec, SchemaTextContentSpec } from './schema/types.js';
 export { createEditorCommand } from './commands/index.js';
 export type { EditorCommand, EditorCommandDefinition, EditorCommandState, EditorCommands } from './commands/types.js';
+
+export type { EditorSelectionHandle, EditorSelectionHandles } from './selection/handles/types.js';
