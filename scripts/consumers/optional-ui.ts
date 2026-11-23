@@ -30,6 +30,18 @@ try {
     assert.equal(typeof nodeExtension, 'function');
     assert.equal(typeof createNodeViews, 'function');
     assert.equal(typeof createDecorations, 'function');
+    const { media, mediaCommands, parseMediaURL } = await import('@morfira-dev/wysiwyg/plugins/media');
+    const { createMediaForm, createMediaView } = await import('@morfira-dev/wysiwyg/ui/media');
+    const { formulas, formulaCommands, parseFormula, renderFormula } = await import('@morfira-dev/wysiwyg/plugins/formula');
+    const { createFormulaForm, createFormulaView } = await import('@morfira-dev/wysiwyg/ui/formula');
+    assert.equal(typeof media().setup, 'function');
+    assert.equal(typeof mediaCommands, 'function');
+    assert.equal(parseMediaURL('https://youtu.be/dQw4w9WgXcQ').id, 'dQw4w9WgXcQ');
+    assert.equal(typeof formulas().setup, 'function');
+    assert.equal(typeof formulaCommands, 'function');
+    assert.ok(parseFormula('x^2'));
+    assert.equal(typeof renderFormula, 'function');
+    for (const factory of [createMediaForm, createMediaView, createFormulaForm, createFormulaView]) assert.equal(typeof factory, 'function');
     const { createFullscreenUI } = await import('@morfira-dev/wysiwyg/ui/fullscreen');
     const { createSpecialCharacterUI } = await import('@morfira-dev/wysiwyg/ui/special-characters');
     const { createPreviewUI } = await import('@morfira-dev/wysiwyg/ui/preview');
@@ -72,7 +84,7 @@ try {
     assert.ok(!input.includes('/packages/') && !input.startsWith('packages/'), `Unexpected workspace source or artifact alias: ${input}`);
   }
   const stylesheet = await build({
-    stdin: { contents: "@import '@morfira-dev/wysiwyg/style.css'; @import '@morfira-dev/wysiwyg/ui/special-characters.css'; @import '@morfira-dev/wysiwyg/ui/fullscreen.css'; @import '@morfira-dev/wysiwyg/ui/preview.css'; @import '@morfira-dev/wysiwyg/ui/save-state.css'; @import '@morfira-dev/wysiwyg/ui/print.css'; @import '@morfira-dev/wysiwyg/ui/outline.css'; @import '@morfira-dev/wysiwyg/ui/forms.css'; @import '@morfira-dev/wysiwyg/ui/editor.css'; @import '@morfira-dev/wysiwyg/ui/table-picker.css'; @import '@morfira-dev/wysiwyg/ui/contextual-link.css'; @import '@morfira-dev/wysiwyg/ui/contextual-image.css';", resolveDir: temporary, loader: 'css' },
+    stdin: { contents: "@import '@morfira-dev/wysiwyg/style.css'; @import '@morfira-dev/wysiwyg/ui/special-characters.css'; @import '@morfira-dev/wysiwyg/ui/fullscreen.css'; @import '@morfira-dev/wysiwyg/ui/preview.css'; @import '@morfira-dev/wysiwyg/ui/save-state.css'; @import '@morfira-dev/wysiwyg/ui/print.css'; @import '@morfira-dev/wysiwyg/ui/outline.css'; @import '@morfira-dev/wysiwyg/ui/forms.css'; @import '@morfira-dev/wysiwyg/ui/editor.css'; @import '@morfira-dev/wysiwyg/ui/table-picker.css'; @import '@morfira-dev/wysiwyg/ui/contextual-link.css'; @import '@morfira-dev/wysiwyg/ui/contextual-image.css'; @import '@morfira-dev/wysiwyg/ui/media.css'; @import '@morfira-dev/wysiwyg/ui/formula.css';", resolveDir: temporary, loader: 'css' },
     bundle: true, minify: true, write: false, logLevel: 'silent',
   });
   const site = join(temporary, 'site');
@@ -91,6 +103,8 @@ try {
       await page.goto(`${server.url}/index.html`);
       const content = page.locator('.mw-content');
       await expect(content).toHaveText('AB');
+      assert.deepEqual(await page.evaluate(() => window.morfiraOptionalUI.exerciseMediaFormula()),
+        { media: true, formula: true, undo: true, dialogs: true, css: true, inert: true });
       assert.deepEqual(await page.evaluate(() => window.morfiraOptionalUI.exerciseSDK()),
         { mapped: true, nodeText: 'Updated', views: 1, readonly: true, clean: true });
       assert.deepEqual(await page.evaluate(() => {
@@ -281,7 +295,7 @@ try {
   finally {
     await server.close();
   }
-  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, revision-bound selection handles, literal insertion/Undo, preview, save state, fullscreen/Escape, merged-cell typography, email completion, print/outline, text move/Undo, mixed-link/caption contexts, floating link/table panels, image/symbol dialogs, nonmodal search/replace and cleanup (Chromium only).');
+  console.log('Focused optional UI archive consumer passed: SSR import, public JS/CSS, inert media/formula imports and semantic views/dialogs/Undo, revision-bound selection handles, literal insertion/Undo, preview, save state, fullscreen/Escape, merged-cell typography, email completion, print/outline, text move/Undo, mixed-link/caption contexts, floating link/table panels, image/symbol dialogs, nonmodal search/replace and cleanup (Chromium only).');
 }
 finally {
   await rm(temporary, { recursive: true, force: true });

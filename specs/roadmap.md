@@ -4,7 +4,7 @@ Status: revised development plan. SDK phase 1, P1–P3 behavior presets, U1/U2 m
 
 Morfira is an independently implemented strict-TypeScript editor under MIT. The product target is a ready everyday-authoring experience close to mature editors in common tasks, with measurable improvements in selected bundle size, extension contracts, UI and documentation. CKEditor, TinyMCE and notectl are comparison references, not implementations to copy. Feature-for-feature enterprise or office-suite parity is not required. Heavy conversion, collaboration and processing remain optional integrations for explicitly requested use cases, outside core. Core/plugins retain zero runtime dependencies; adapters use optional framework peers.
 
-Current 2026-11-23 SDK stage: revision-bound `editor.selection` handles and link-form adoption are implemented and focused-verified (156 editor / 12 docs checks); see [the contract](plugin-sdk-next.md) and [verification record](verification-backlog.md). Node views, general atoms/decorations and mapped positions remain future stages.
+Current 2026-11-23 SDK stage: revision-bound `editor.selection` handles and link-form adoption are implemented and focused-verified (156 editor / 12 docs checks); see [the contract](plugin-sdk-next.md) and [verification record](verification-backlog.md). The subsequent optional SDK adds bounded semantic atoms, external-host node views, CSS Highlight decorations and explicit transaction maps; see the optional SDK section below for its limits.
 
 Every milestone follows specification → implementation → browser acceptance → size measurement → RU/EN documentation. Test a defined task/profile before claiming an advantage; smaller JavaScript does not prove faster input, lower history memory, complete accessibility or better compatibility.
 
@@ -236,3 +236,26 @@ Local raw-MIME capture/export helps extend the corpus without executing source
 HTML or uploading it. These fixtures and three-engine replay are not a full
 current Word/Excel/Docs/browser/device compatibility certification; see
 office-paste.md and the verification record.
+
+## Optional media/formulas and extended Markdown — 2026-11-23
+
+Blocks 3 and 4 add independently imported zero-runtime-dependency features:
+
+- `/plugins/media` and `/ui/media`: validated YouTube/public Vimeo references,
+  modal editing and external consent-owned playback. No arbitrary embeds,
+  persisted iframe, thumbnail request or network access before explicit Load.
+- `/plugins/formula` and `/ui/formula`: bounded original TeX-like parser, semantic
+  inline source atoms, modal editing and external native MathML. This is not
+  full LaTeX, editable in-document MathML or a remote rendering integration.
+- `/codecs/markdown`: reference links, setext headings, indented code, bounded
+  entities, safe angle autolinks and improved emphasis. Task metadata and column
+  alignment are opt-in. Raw HTML stays literal; full CommonMark/GFM conformance,
+  complex table serialization and arbitrary extension-node conversion are not
+  claimed.
+
+Specs: media.md, formulas.md and markdown-codec.md. RU/EN examples and lazy
+homepage demos explicitly select each optional dependency. Core and ready
+presets do not install media/formula. Validation and raw/gzip/Brotli/CSS evidence
+belong to verification-backlog.md. The next product gaps remain accessibility
+and real-device evidence, followed by consistent responsive UI/focus behavior;
+this stage does not certify those areas or authorize publication.

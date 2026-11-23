@@ -36,7 +36,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     const pickerCSS = await readFile(`${path}/ui/table-picker.css`);
     report['ui-table-picker.css'] = { raw: pickerCSS.length, gzip: gzipSync(pickerCSS).length, brotli: brotliCompressSync(pickerCSS).length };
     if (pickerCSS.length > 2000) { console.error('table-picker: exceeds 2000 raw CSS byte budget'); failed = true; }
-    for (const [feature, budget] of [['preview', 3000], ['save-state', 2000], ['print', 4000], ['outline', 3000]] as const) {
+    for (const [feature, budget] of [['media', 5000], ['formula', 5000], ['preview', 3000], ['save-state', 2000], ['print', 4000], ['outline', 3000]] as const) {
       const css = await readFile(`${path}/ui/${feature}.css`);
       report[`ui-${feature}.css`] = { raw: css.length, gzip: gzipSync(css).length, brotli: brotliCompressSync(css).length };
       if (css.length > budget) { console.error(`${feature}: exceeds ${budget} raw CSS byte budget`); failed = true; }
@@ -66,7 +66,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     report['ui-search-highlights.css'] = { raw: searchCSS.length, gzip: gzipSync(searchCSS).length, brotli: brotliCompressSync(searchCSS).length };
     if (searchCSS.length > 1500) { console.error('search highlights: exceeds 1500 raw CSS byte budget'); failed = true; }
     const editorCSS = await readFile(`${path}/ui/editor.css`); report['ui-editor.css'] = { raw: editorCSS.length, gzip: gzipSync(editorCSS).length, brotli: brotliCompressSync(editorCSS).length };
-    for (const entry of ['sdk', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/special-characters', 'ui/fullscreen', 'ui/preview', 'ui/save-state', 'ui/print', 'ui/outline', 'text-drop', 'save-state', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/search-highlights']) {
+    for (const entry of ['media', 'formula', 'ui/media', 'ui/formula', 'sdk', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/special-characters', 'ui/fullscreen', 'ui/preview', 'ui/save-state', 'ui/print', 'ui/outline', 'text-drop', 'save-state', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/search-highlights']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].gzip > 150_000) { console.error(`${entry}: exceeds 150000 byte gzip JS budget`); failed = true; }
@@ -142,6 +142,28 @@ for (const [entry, symbol, label, budget] of [['ui/preview', 'createPreviewUI', 
   const buffer = result.outputFiles[0].contents;
   report[`${label}-standalone.js`] = { raw: buffer.length, gzip: gzipSync(buffer).length, brotli: brotliCompressSync(buffer).length };
   if (report[`${label}-standalone.js`].gzip > budget) { console.error(`${label}: exceeds ${budget} gzip JS byte budget`); failed = true; }
+}
+// Optional plugins/UI include their selected SDK and validation dependency closure.
+for (const [entry, label] of [['plugins/media', 'media'], ['plugins/formula', 'formula'], ['ui/media', 'media-ui'], ['ui/formula', 'formula-ui']] as const) {
+  const result = await build({
+    stdin: { contents: `import * as feature from '@morfira-dev/wysiwyg/${entry}'; globalThis.__morfiraOptional = feature;`, resolveDir: process.cwd(), loader: 'ts' },
+    bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
+    target: 'es2022', tsconfigRaw: { compilerOptions: {} }, logLevel: 'silent',
+  });
+  const buffer = result.outputFiles[0].contents;
+  report[`${label}-standalone.js`] = { raw: buffer.length, gzip: gzipSync(buffer).length, brotli: brotliCompressSync(buffer).length };
+  if (report[`${label}-standalone.js`].gzip > 150000) { console.error(`${label}: exceeds 150000 gzip JS byte budget`); failed = true; }
+}
+// Ready optional slices retain plugin and UI exports together; shared code counts once.
+for (const [feature, ui] of [['media', 'media'], ['formula', 'formula']] as const) {
+  const result = await build({
+    stdin: { contents: `import * as plugin from '@morfira-dev/wysiwyg/plugins/${feature}'; import * as ui from '@morfira-dev/wysiwyg/ui/${ui}'; globalThis.__morfiraOptionalReady = { plugin, ui };`, resolveDir: process.cwd(), loader: 'ts' },
+    bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
+    target: 'es2022', tsconfigRaw: { compilerOptions: {} }, logLevel: 'silent',
+  });
+  const buffer = result.outputFiles[0].contents;
+  report[`${feature}-with-ui.js`] = { raw: buffer.length, gzip: gzipSync(buffer).length, brotli: brotliCompressSync(buffer).length };
+  if (report[`${feature}-with-ui.js`].gzip > 150000) { console.error(`${feature}: exceeds 150000 gzip JS byte budget`); failed = true; }
 }
 // Consumer profiles retain the actual public factories and bundle their shared JS once.
 // Runtime feature flags are deliberately not used as a tree-shaking claim.

@@ -1,3 +1,7 @@
+import { media, mediaCommands, parseMediaURL } from '@morfira-dev/wysiwyg/plugins/media';
+import { createMediaForm, createMediaView } from '@morfira-dev/wysiwyg/ui/media';
+import { formulas, formulaCommands, parseFormula, renderFormula } from '@morfira-dev/wysiwyg/plugins/formula';
+import { createFormulaForm, createFormulaView } from '@morfira-dev/wysiwyg/ui/formula';
 import { createPreviewUI } from '@morfira-dev/wysiwyg/ui/preview';
 import { saveState, saveStateCommands } from '@morfira-dev/wysiwyg/plugins/save-state';
 import { createSaveStateUI } from '@morfira-dev/wysiwyg/ui/save-state';
@@ -51,6 +55,54 @@ let readingHost: HTMLElement | undefined;
 let floating: FloatingProbe | undefined;
 let floatingHost: HTMLElement | undefined;
 const probe: OptionalUIProbe = {
+  exerciseMediaFormula: () => {
+    const workspace = document.createElement('section');
+    const host = document.createElement('div');
+    const external = document.createElement('div');
+    workspace.append(host, external);
+    document.body.append(workspace);
+    const instance = createEditor(host, { locale: 'en', plugins: [media(), formulas()],
+      value: '<figure data-mw-node="morfira:media" data-provider="youtube" data-video-id="dQw4w9WgXcQ">Archive video</figure><p><span data-mw-node="morfira:formula">x^2</span></p>' });
+    const videoView = createMediaView(external, instance);
+    const videoForm = createMediaForm(external, instance);
+    const mathView = createFormulaView(external, instance);
+    const mathForm = createFormulaForm(external, instance);
+    try {
+      const video = instance.surface.querySelector<HTMLElement>('figure')!;
+      const canonical = parseMediaURL('https://youtu.be/dQw4w9WgXcQ');
+      const mediaReady = mediaCommands(instance).get(video)?.url === canonical.url
+        && external.querySelector('.mw-media-card')?.textContent?.includes('Archive video') === true;
+      const formula = instance.surface.querySelector<HTMLElement>('[data-mw-node="morfira:formula"]')!;
+      parseFormula('x^3');
+      const rendered = renderFormula(document, 'x^3');
+      const updated = formulaCommands(instance).update(formula, 'x^3');
+      const formulaReady = updated && rendered.namespaceURI === 'http://www.w3.org/1998/Math/MathML'
+        && external.querySelector('.mw-formula-view math')?.getAttribute('aria-label') === 'x^3';
+      instance.undo();
+      const undo = instance.getHTML().includes('>x^2</span>');
+      instance.setSelection(0);
+      videoForm.open();
+      const mediaDialog = videoForm.isOpen();
+      videoForm.close();
+      instance.setSelection(0);
+      mathForm.open();
+      mathForm.setSource('x^2');
+      const dialogs = mediaDialog && mathForm.isOpen() && mathForm.getSource() === 'x^2';
+      mathForm.close();
+      const mediaStyle = getComputedStyle(videoView.element).display === 'grid';
+      const formulaStyle = getComputedStyle(external.querySelector<HTMLElement>('.mw-formula-view')!).overflow === 'auto';
+      return { media: mediaReady, formula: formulaReady, undo, dialogs, css: mediaStyle && formulaStyle,
+        inert: external.querySelectorAll('iframe').length === 0 && !/iframe|<math/.test(instance.getHTML()) };
+    }
+    finally {
+      mathForm.destroy();
+      mathView.destroy();
+      videoForm.destroy();
+      videoView.destroy();
+      instance.destroy();
+      workspace.remove();
+    }
+  },
   exerciseSDK: () => {
     const workspace = document.createElement('section');
     const host = document.createElement('div');

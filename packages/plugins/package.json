@@ -202,7 +202,25 @@
     "./sdk": {
       "types": "./dist/sdk/index.d.ts",
       "import": "./dist/sdk.js"
-    }
+    },
+    "./media": {
+      "types": "./dist/media/index.d.ts",
+      "import": "./dist/media.js"
+    },
+    "./ui/media": {
+      "types": "./dist/ui/media/index.d.ts",
+      "import": "./dist/ui/media.js"
+    },
+    "./ui/media.css": "./dist/ui/media.css",
+    "./formula": {
+      "types": "./dist/formula/index.d.ts",
+      "import": "./dist/formula.js"
+    },
+    "./ui/formula": {
+      "types": "./dist/ui/formula/index.d.ts",
+      "import": "./dist/ui/formula.js"
+    },
+    "./ui/formula.css": "./dist/ui/formula.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.12.0"

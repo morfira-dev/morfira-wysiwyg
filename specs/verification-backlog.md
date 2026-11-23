@@ -1,5 +1,55 @@
 # Verification record
 
+## Optional media, formulas and extended Markdown — 2026-11-23
+
+Block 3 implements independent media/formula plugins and native modal forms,
+external consent-owned video cards and external MathML views. Block 4 expands
+inert Markdown with references, setext, indented code, entities, angle autolinks,
+improved emphasis and opt-in tasks/table alignment. Contracts: media.md,
+formulas.md, markdown-codec.md. No core/preset feature imports were added.
+
+Final focused editor run: **67 passed, 2 skipped** across Chromium, Firefox and
+WebKit (69 scheduled). The two intentional skips are the existing single-artifact
+DOM-free Node codec process check outside Chromium; no browser behavior case is
+skipped. The first run found canonical adjacent-text fragmentation after rejected
+Markdown URLs; inline text normalization fixed it without weakening the roundtrip
+assertion. Independent source review found effectively empty nested formula
+arguments; literal-leaf accounting and existing parser regressions now reject
+those inputs. The final run includes both fixes.
+
+Final focused built-site coverage: **8/8 Chromium checks**, covering RU/EN guides,
+modal insert/edit/cancel, external formula presentation, explicit intercepted
+media Load/Unload and lazy homepage mount/unmount/remount. Provider responses are
+intercepted; actual provider playback and privacy certification are not claimed.
+Package build/declarations, TypeScript/Svelte/Vue diagnostics, project contracts,
+eight archive boundaries, selective-import guards, all active size budgets and
+focused actual-tarball optional UI/SSR smoke passed. Full editor/docs suites,
+installed adapter matrices, GitHub CI and publication were not run.
+
+| Selected public dependency closure | Raw JS | gzip JS | Brotli JS |
+| --- | ---: | ---: | ---: |
+| Core | 103768 | 32383 | 28451 |
+| Standard ready | 233311 | 72268 | 61475 |
+| Standard + table properties ready | 258819 | 79812 | 67368 |
+| Extended ready | 290017 | 89120 | 74885 |
+| Media plugin alone | 35677 | 12123 | 10897 |
+| Media plugin + UI | 46665 | 15846 | 14145 |
+| Formula plugin alone | 36716 | 12699 | 11449 |
+| Formula plugin + UI | 45504 | 15809 | 14055 |
+| Markdown standalone | 37974 | 13343 | 11919 |
+
+Media CSS is 1236 raw / 390 gzip / 311 Brotli bytes; formula CSS is 1172 /
+435 / 358. Core remains byte-identical to the preceding measurement; the
+80000-raw-byte core development target remains exceeded. All enforced budgets
+pass without increases; the table-properties standard profile still has only
+188 gzip bytes of reserve. Optional closures include selected SDK/codec helpers,
+count shared JavaScript once, exclude an editor instance/framework runtime,
+and must not be added arithmetically to ready profiles as exact incremental cost.
+Framework runtimes, maps, declarations, fonts and additional locales are excluded.
+
+This closes these bounded product slices, not full LaTeX, arbitrary iframe HTML,
+in-document rich node views, full CommonMark/GFM or enterprise editor parity.
+
 ## Office capture corpus, normalization and local replay — 2026-11-23
 
 Added byte/source-pinned MIT clipboard data under tests/fixtures/office: two

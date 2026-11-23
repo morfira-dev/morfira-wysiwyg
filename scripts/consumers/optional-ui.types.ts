@@ -25,6 +25,7 @@ export interface ReadingProbe {
 }
 
 export interface OptionalUIProbe {
+  exerciseMediaFormula(): { media: boolean; formula: boolean; undo: boolean; dialogs: boolean; css: boolean; inert: boolean };
   exerciseSDK(): { mapped: boolean; nodeText: string; views: number; readonly: boolean; clean: boolean };
   editor: Editor;
   preview: PreviewUIController;
