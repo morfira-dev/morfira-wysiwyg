@@ -72,3 +72,8 @@ References: [W3C contrast minimum](https://www.w3.org/WAI/WCAG22/Understanding/c
 [W3C toolbar guidance](https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/).
 These are design/acceptance references; focused automated coverage is not WCAG
 conformance or assistive-technology certification.
+
+
+## Availability policy — 2026-11-23
+
+Physical-device and assistive-technology sessions are unavailable by user decision. Retain their unverified status as an evidence limitation; they are not planned follow-up work or a release gate, and must not be recommended unless the user reopens the scope.

@@ -98,7 +98,7 @@ Real P1–P3 entries and profile guards now exist; the activation and accounting
 ## Size accounting and targets
 
 - User-directed product limits are core 200000 gzip JS bytes and optional/table entries 150000 gzip JS bytes. Each adapter retains its separate 10000 raw JS byte guard. The working core target is 80000 minified bytes, a soft optimization goal.
-- Standard guard: 80000 gzip JS bytes, plus at most 20000 raw CSS bytes. Extended guard: 110000 gzip JS bytes and 20000 raw CSS bytes. Raw JS remains measured but no longer has a profile cap. These active guards follow the P4 policy below.
+- Standard guard: 90000 gzip JS bytes, plus at most 20000 raw CSS bytes. Extended guard: 110000 gzip JS bytes and 20000 raw CSS bytes. Raw JS remains measured but no longer has a profile cap. These active guards follow the P4 policy below.
 - Measure minified raw JS, gzip, Brotli and CSS separately for each entry and a deduplicated selected closure. Headless and ready-UI profiles must be separate. Do not add independent per-entry totals that count shared chunks twice.
 - Include core, selected plugin implementations, UI/forms/icons and any required helper chunks in the chosen profile. Report optional locale alternatives, fonts/media and separately lazy-loaded modules outside the initial closure, with their own sizes and load triggers. Framework runtimes, source maps and declarations are excluded.
 - A feature being hidden or disabled at runtime does not establish tree-shaking. Verify actual built public imports exclude unrelated implementations and mandatory CSS.
@@ -122,14 +122,14 @@ The first release uses responsive wrapping by default. The U3a contract in `edit
 
 The first implemented presets and ready UI have been measured through bundled public facade imports. This establishes the previously proposed limits as active guards in `scripts/size.ts` for both headless and ready standard/extended profiles:
 
-- Standard: at most 80000 gzip JS bytes and 20000 raw CSS bytes.
+- Standard: at most 90000 gzip JS bytes and 20000 raw CSS bytes.
 - Extended: at most 110000 gzip JS bytes and 20000 raw CSS bytes.
 
 The product reason is to preserve the lightweight envelope now demonstrated by real usable compositions as subsequent capabilities are added. Each JS profile bundles core, its preset and its applicable ready-UI factory once; required CSS is an explicit deduplicated list. Minified/gzip/Brotli results remain separate, framework runtimes/fonts/source maps/declarations remain excluded, and no runtime feature flag is counted as tree-shaking. Minimal remains reported without a new profile guard. The gzip clarification below governs current core/table/profile guards; adapters retain their independent raw guard. P4 does not imply contextual bubbles or later SDK phases are complete.
 
 ### User-directed gzip policy clarification
 
-The user explicitly clarified that the original 200 kB core and roughly 100–150 kB additional-module envelopes refer to gzip transfer size. Therefore core and optional-entry/table guards use gzip, and the former 200000/350000 raw JS profile caps are retired. The initial standard/extended guards were 65000/110000 gzip bytes. The user-directed standard revision below changes only standard to 80000 bytes; extended remains 110000 bytes, below the broader product ceilings. Adapter and feature-specific raw guards and raw CSS guards are independent engineering limits and remain unchanged. Continue reporting minified JS, gzip, Brotli and CSS, counting shared emitted files once per selected closure; compressed entry sizes sum the actual emitted compressed files. Historical verification records retain the policy used for those historical runs. Smaller-than-competitor claims require equivalent feature profiles and compression evidence, not a comparison with full vendor distributions.
+The user explicitly clarified that the original 200 kB core and roughly 100–150 kB additional-module envelopes refer to gzip transfer size. Therefore core and optional-entry/table guards use gzip, and the former 200000/350000 raw JS profile caps are retired. The initial standard/extended guards were 65000/110000 gzip bytes. The historical 2026-11-18 revision raised Standard to 80000 bytes; the current 2026-11-23 revision below raises it to 90000 bytes. Extended remains 110000 bytes, below the broader product ceilings. Adapter and feature-specific raw guards and raw CSS guards are independent engineering limits and remain unchanged. Continue reporting minified JS, gzip, Brotli and CSS, counting shared emitted files once per selected closure; compressed entry sizes sum the actual emitted compressed files. Historical verification records retain the policy used for those historical runs. Smaller-than-competitor claims require equivalent feature profiles and compression evidence, not a comparison with full vendor distributions.
 
 ### User-directed standard reserve — 2026-11-18
 
@@ -142,13 +142,13 @@ Extended remains 110000 gzip JS bytes; core remains 200000 gzip JS bytes; option
 Standard and extended presets include the small `horizontalRule()` behavior by default, after autolink and before application plugins. `horizontalRule?: boolean` accepts false to omit its instance; other runtime values reject before creating an editor. Minimal stays unchanged. As with existing presets, a runtime opt-out does not remove static imports: consumers needing a narrower graph use selective entries. The public behavior entry is `/plugins/horizontal-rule`; it requires no additional stylesheet. Scope follows `horizontal-rule.md`, including same-block root P/H targets and disabled nested/semantic targets. Profile budgets stay unchanged and must include the additional selected capability once.
 
 
-The separately measured `standard-contextual-link-ready` selection adds only `createContextualLinkUI` and its explicit stylesheet to standard ready. Its shared link form is counted once; it keeps the same 80000 gzip JS / 20000 raw CSS guard. It does not combine every optional feature or install the UI implicitly. The standalone contextual-link closure is guarded at 16000 gzip JS bytes and its extra CSS at 3000 raw bytes.
+The separately measured `standard-contextual-link-ready` selection adds only `createContextualLinkUI` and its explicit stylesheet to standard ready. Its shared link form is counted once; it keeps the same 90000 gzip JS / 20000 raw CSS guard. It does not combine every optional feature or install the UI implicitly. The standalone contextual-link closure is guarded at 16000 gzip JS bytes and its extra CSS at 3000 raw bytes.
 
 
-The independent `standard-contextual-image-ready` selection adds only createContextualImageUI and its explicit CSS to standard ready. Shared images/form code counts once, and edit-only mode remains a runtime option rather than a tree-shaking claim. Keep 80000 gzip JS / 20000 raw CSS; the standalone entry guard is 16000 gzip JS and its added stylesheet 3000 raw bytes. Other optional-UI combinations require their own measurements.
+The independent `standard-contextual-image-ready` selection adds only createContextualImageUI and its explicit CSS to standard ready. Shared images/form code counts once, and edit-only mode remains a runtime option rather than a tree-shaking claim. Keep 90000 gzip JS / 20000 raw CSS; the standalone entry guard is 16000 gzip JS and its added stylesheet 3000 raw bytes. Other optional-UI combinations require their own measurements.
 
 
-The independent `standard-contextual-table-ready` selection adds only `createContextualTableUI` and its explicit stylesheet to standard ready. Shared grid/table/selection code counts once. `getTableSelection` is a separate selective export rather than a method retained by every table command instance. Presets do not mount contextual controls. Keep the current 80000 gzip JS / 20000 raw CSS profile guards, and standalone 16000 gzip JS / 3000 raw CSS guards. The all-optional-context-UI combination is not represented by this profile.
+The independent `standard-contextual-table-ready` selection adds only `createContextualTableUI` and its explicit stylesheet to standard ready. Shared grid/table/selection code counts once. `getTableSelection` is a separate selective export rather than a method retained by every table command instance. Presets do not mount contextual controls. Keep the current 90000 gzip JS / 20000 raw CSS profile guards, and standalone 16000 gzip JS / 3000 raw CSS guards. The all-optional-context-UI combination is not represented by this profile.
 
 
 The 2026-11-16 structural optimization under bundle-optimization.md preserves every profile factory and capability. Largest standard is 64482 gzip JS bytes (previously 64999), leaving 518 bytes under the unchanged 65000 guard; standard ready is 59394 gzip bytes. This is a modest measured reduction, not the original 2000-byte reserve aim. CSS/compression/charset/profile boundaries and tests are unchanged. Actual validation belongs to verification-backlog.md.
@@ -159,18 +159,18 @@ Extended mention configuration forwards the public `persistent` and `atomic` fla
 
 ## Independently selected special-character UI
 
-The `standard-special-characters-ready` profile adds only `createSpecialCharacterUI` and its explicit stylesheet to the standard ready closure. Shared JavaScript is counted once. Keep the existing 80000 gzip JS / 20000 raw CSS guard; the standalone public panel closure is separately guarded at 12000 gzip JS and 3000 raw CSS bytes. Neither standard nor extended installs this UI implicitly. Actual measurements and validation belong to verification-backlog.md.
+The `standard-special-characters-ready` profile adds only `createSpecialCharacterUI` and its explicit stylesheet to the standard ready closure. Shared JavaScript is counted once. Keep the existing 90000 gzip JS / 20000 raw CSS guard; the standalone public panel closure is separately guarded at 12000 gzip JS and 3000 raw CSS bytes. Neither standard nor extended installs this UI implicitly. Actual measurements and validation belong to verification-backlog.md.
 
 ## Independently selected fullscreen UI
 
-The `standard-fullscreen-ready` profile adds only `createFullscreenUI` and its explicit CSS to standard ready, with shared JS counted once. Keep 80000 gzip JS / 20000 raw CSS for this selected closure, and 8000 gzip JS / 2000 raw CSS for the standalone fullscreen entry. There is no implicit fullscreen control in presets and no additional framework/DOM mount. Current measurements belong to verification-backlog.md.
+The `standard-fullscreen-ready` profile adds only `createFullscreenUI` and its explicit CSS to standard ready, with shared JS counted once. Keep 90000 gzip JS / 20000 raw CSS for this selected closure, and 8000 gzip JS / 2000 raw CSS for the standalone fullscreen entry. There is no implicit fullscreen control in presets and no additional framework/DOM mount. Current measurements belong to verification-backlog.md.
 
 ## Independently selected preview and save state
 
 The `standard-preview-ready`, `standard-save-state-ready`, and combined
 `standard-authoring-ready` profiles add only the explicitly selected preview UI,
 application-owned save-state behavior and save-state UI to standard ready. Count
-shared JS once, and retain 80000 gzip JS / 20000 raw CSS. Neither capability is
+shared JS once, and retain 90000 gzip JS / 20000 raw CSS. Neither capability is
 installed by presets. Standalone preview and save-state UI use 12000 gzip JS;
 headless save-state uses 8000 gzip JS; CSS guards are 3000/2000 raw bytes respectively.
 Actual validation and measurements belong to verification-backlog.md.
@@ -194,7 +194,7 @@ record, rather than the historical sizes above.
 The `standard-print-ready`, `standard-outline-ready` and combined
 `standard-reading-ready` profiles add only createPrintUI/createOutlineUI and their
 explicit stylesheets to standard ready, counting shared JS once. No core or
-default preset installs either tool. Existing standard guards remain 80000 gzip
+default preset installs either tool. Existing standard guards remain 90000 gzip
 JS / 20000 raw CSS. Standalone public print closure uses 12000 gzip JS / 4000 raw
 CSS guards, outline uses 10000 gzip JS / 3000 raw CSS. Print includes its required
 safe snapshot builder, while outline never retains the document serializer.
@@ -205,7 +205,24 @@ Actual measurements and verification belong to verification-backlog.md.
 The standard-text-drop-ready profile retains textDrop and the standard ready
 factories through their built public imports. It does not install text drag/drop
 by default or add CSS. Shared JS is counted once and the selected profile keeps
-80000 gzip JS / 20000 raw CSS. The standalone public plugin closure has a 15000
+90000 gzip JS / 20000 raw CSS. The standalone public plugin closure has a 15000
 gzip JS guard, including any required core helpers. Runtime enabled:false is a
 preference rather than a claim that the import graph disappears. Current bounds
 and actual browser/archive evidence belong to text-drop.md and verification-backlog.md.
+
+
+### User-directed Standard allowance — 2026-11-23
+
+The user explicitly set Standard to **90000 gzip JS bytes**, superseding the
+2026-11-18 80000-byte revision for every measured headless/ready Standard
+composition. Product reason: preserve useful functionality and maintainable code
+without further low-yield refactoring for individual bytes. The last measured
+Standard-with-table-properties composition is 79961 bytes, leaving **10039 bytes**
+of allowance under this policy. This is arithmetic over the existing measurement,
+not a new bundle measurement or a retroactive pass for historical failed builds.
+
+Extended stays 110000 gzip, core 200000 gzip, optional/table entries 150000 gzip,
+adapters 10000 raw and profile CSS 20000 raw. The core 80000-raw soft target is
+unchanged. Runtime dependencies, selective imports, accounting and compression
+settings remain unchanged; new functionality still needs focused tests and size
+reporting. Historical results retain their original limits.

@@ -56,7 +56,7 @@ consumer; do not silently migrate unrelated forms. Active competitor comparisons
 use TinyMCE, CKEditor 5 and notectl; retain Quill comparisons only as historical
 evidence.
 
-The user's original product limits are gzip: core 200000 gzip JS bytes and optional entries/tables 150000 gzip JS bytes. Keep the separate adapter guard of 10000 raw JS bytes, explicit small-feature raw guards, and the soft core optimization target of 80000 minified bytes. Measured headless and ready standard profiles enforce 80000 gzip JS bytes; extended profiles enforce 110000 gzip JS bytes. Their previous raw JS caps are retired; each standard/extended profile still enforces 20000 minified CSS bytes. Minimal is measured without an additional preset guard. See `specs/editor-presets.md` P4 for the user-directed policy reason and selected closures. Count shared chunks once; report raw/gzip/Brotli/CSS independently, optional fonts/locales separately and exclude framework runtimes. Compare competitors only using equivalent feature profiles and compression.
+The user's original product limits are gzip: core 200000 gzip JS bytes and optional entries/tables 150000 gzip JS bytes. Keep the separate adapter guard of 10000 raw JS bytes, explicit small-feature raw guards, and the soft core optimization target of 80000 minified bytes. Measured headless and ready standard profiles enforce 90000 gzip JS bytes; extended profiles enforce 110000 gzip JS bytes. Their previous raw JS caps are retired; each standard/extended profile still enforces 20000 minified CSS bytes. Minimal is measured without an additional preset guard. See `specs/editor-presets.md` P4 for the user-directed policy reason and selected closures. Count shared chunks once; report raw/gzip/Brotli/CSS independently, optional fonts/locales separately and exclude framework runtimes. Compare competitors only using equivalent feature profiles and compression.
 
 For changed behavior, add tests that demonstrate document content, selection, history, or lifecycle results. Use real browser tests for Selection/Range and input behavior. Include malformed imported data and merged-table cases when those contracts change. Keep the public subpath imports stable unless a breaking change is explicitly required.
 
@@ -77,3 +77,5 @@ cleanup. Optional SDK modules must stay outside core/preset graphs. External-hos
 node views are not editable contentDOM, and native highlight ranges are not
 widget decorations. Office corpus provenance follows specs/office-paste.md; keep
 raw captured bytes/hashes/licenses, native captures and upstream samples distinct.
+
+Physical-device and assistive-technology checks are currently unavailable by the user decision of 2026-11-23. Record the evidence limitation honestly; do not propose them as follow-up tasks unless the user reopens that scope.

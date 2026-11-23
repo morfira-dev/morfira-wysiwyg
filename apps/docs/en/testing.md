@@ -1,5 +1,13 @@
 # Testing and releases
 
+## Current budget policy — 23 November 2026
+
+After the runs recorded below, the user raised Standard to **90000 gzip JS bytes**.
+The last measured maximum of 79961 leaves **10039 bytes** of allowance. This changes
+the guard, not the bundle or test evidence. Historical results retain their original
+limits. Physical devices and screen readers are unavailable; this is an evidence
+limitation, not a next task or release requirement.
+
 ## Quote/list boundaries and bundle reserve — 23 November 2026
 
 Focused browser checks passed **579/579**, with a separate **3/3** React StrictMode

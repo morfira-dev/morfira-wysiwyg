@@ -142,3 +142,8 @@ The separate [table panel](/en/contextual-tables) provides eight row/column/merg
 A separate [Markdown import/export codec](/en/markdown-codec) is implemented locally with bounded syntax, safe JSON and explicit formatting loss. Full CommonMark/GFM conformance is not claimed. Current browser/example execution results and their limits are recorded under [testing](/en/testing).
 
 Non-persisted [search highlights](/en/search-highlights) are implemented locally through an independent optional module. Native feature detection, document/registry ownership and CSS-variable styling are specified; browser/visual runs remain pending and are recorded separately.
+
+
+## Current scope decision — 23 November 2026
+
+Standard budget is now 90000 gzip JS bytes (last measured 79961; allowance 10039). Physical-device and screen-reader checks are unavailable and recorded solely as unverified evidence limits, not next tasks or a release gate. Future work focuses on editing contracts and optional lightweight functionality.

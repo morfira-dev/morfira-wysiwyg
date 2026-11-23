@@ -95,3 +95,12 @@ No limit/profile/charset/compressor change or feature/security-check removal is
 used to pass. Final measured raw/gzip/Brotli/CSS and executed focused results are
 recorded in verification-backlog.md. Shared enum data remains feature-owned under
 table-properties and is reused by command validation, state readers and UI.
+
+
+## Superseding budget policy — 2026-11-23
+
+The subsequent user-approved Standard guard is 90000 gzip JS bytes. The final
+79961-byte composition therefore leaves 10039 bytes of allowance. Historical
+39-byte reserve statements describe the previous 80000-byte guard; additional
+byte-level reserve refactoring is no longer a next priority. No runtime feature,
+compression setting or historical validation result changes with this decision.

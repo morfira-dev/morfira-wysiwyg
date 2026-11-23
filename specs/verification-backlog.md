@@ -1,5 +1,18 @@
 # Verification record
 
+## User-directed budget and evidence policy — 2026-11-23
+
+Standard guard changes from 80000 to 90000 gzip JS bytes by explicit user request.
+The existing measured largest Standard profile remains 79961 bytes; allowance is
+10039 bytes. No runtime code or compression/accounting changes. Historical runs
+and failures retain the guards used at that time. Physical-device/AT checks are
+unavailable, retained as unverified evidence limits and removed from proposed
+next tasks/release gates unless explicitly reopened by the user.
+
+Validation for this policy-only change: `pnpm run check:project` passed;
+`git diff --check` passed. No runtime build, new compression measurement, browser
+suite or GitHub CI run was performed for the guard/documentation update.
+
 ## Quote/list boundary input and behavior-preserving reserve — 2026-11-23
 
 Native collapsed Backspace/Delete joins ordinary p/h leaves within a direct list

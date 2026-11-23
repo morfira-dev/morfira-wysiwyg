@@ -57,3 +57,8 @@ HTML/history remain unchanged by presentation. Coarse-pointer form action/checkb
 label and contextual action heights meet the defined minimum. Forced-colors
 keyboard focus has an explicit nonzero visible outline. CSS remains opt-in and
 within existing per-profile 20000-byte caps; report actual measurements separately.
+
+
+## Availability policy — 2026-11-23
+
+Physical-device and assistive-technology sessions are unavailable by user decision. Retain their unverified status as an evidence limitation; they are not planned follow-up work or a release gate, and must not be recommended unless the user reopens the scope.

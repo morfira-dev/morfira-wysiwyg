@@ -159,7 +159,7 @@ The local first-body Backspace extension joins a previous item's final body or r
 6. **External paste compatibility — bounded normalization implemented locally.** [office-paste.md](office-paste.md) covers inline Word list metadata and recognized labels, neutral Google Docs wrappers, bounded explicit inline point-size conversion to CSS pixels, and existing semantic HTML/TSV table import. Point-size conversion uses the inert HTML traversal, preserving declaration order; it does not evaluate stylesheets or broaden direct JSON units. The shared HTML codec applies the same rules to clipboard and API imports; JSON remains unchanged. Representative authored fixtures and bilingual demo controls do not constitute real clipboard captures or application-version verification. Maintain real Word, Excel, Google Docs, LibreOffice and browser fixtures as a follow-up support matrix; stylesheet evaluation, formula import and arbitrary Office fidelity remain outside this slice. Sanitization alone is not evidence of Office fidelity.
 7. **Markdown, persistent mentions and search.** The independently imported Markdown codec is implemented locally under `markdown-codec.md`, with explicit bounded syntax and loss/refusal rules; current runtime verification remains separate in `verification-backlog.md`. Opt-in identity-bearing editable mention references are implemented locally under `persistent-mentions.md`; runtime verification is pending separately. Bounded atomic mention navigation/deletion is implemented locally under `atomic-mentions.md`, without a general atom/mapped-selection SDK; runtime verification remains pending. Opt-in non-persisted highlighting of all search matches is implemented locally under `search-highlights.md` using feature-detected native CSS highlights; runtime/paint verification remains pending separately. Use the shared command registry for slash actions. Acceptance includes codec fixtures, stable identity/history and no metadata/decorations leaking into exported content unintentionally.
 8. **Optional advanced authoring.** Add provider-registry video embeds with click-to-load, a separately imported formula module with a documented format/native MathML scope, and content/print layouts. Specialized resources remain opt-in and separately measured. DOCX/PDF conversion, review and collaboration need their own requested integration scope and size/architecture assessment; they are not implied core work.
-9. **Continuous security acceptance, documentation, accessibility and performance.** Maintain HTML/JSON reconstruction and bounded-resource defenses, inert string serialization, trusted-plugin boundaries and image/UI lifecycle guards under [security.md](security.md). Every relevant change needs threat-specific regression coverage and actual verification evidence; passing tests do not constitute complete security certification. Preserve server-validation, contextual-embedding, upload/auth and CSP/Trusted Types limitations in the RU/EN security guides. Each earlier milestone updates RU/EN API, working examples, limits, migrations and bundle reports. Expand plugin-author guides, five-wrapper/SSR/controlled-value recipes, CSP and storage/upload guidance. Maintain visual, keyboard, contrast, zoom, reduced-motion and real screen-reader/device checks. Benchmark identical document/task profiles with explicit input, operation, history-memory and cleanup definitions. This work is continuous, not postponed until all features ship.
+9. **Continuous security acceptance, documentation, accessibility and performance.** Maintain HTML/JSON reconstruction and bounded-resource defenses, inert string serialization, trusted-plugin boundaries and image/UI lifecycle guards under [security.md](security.md). Every relevant change needs threat-specific regression coverage and actual verification evidence; passing tests do not constitute complete security certification. Preserve server-validation, contextual-embedding, upload/auth and CSP/Trusted Types limitations in the RU/EN security guides. Each earlier milestone updates RU/EN API, working examples, limits, migrations and bundle reports. Expand plugin-author guides, five-wrapper/SSR/controlled-value recipes, CSP and storage/upload guidance. Maintain available visual, keyboard, contrast, zoom and reduced-motion checks. Unavailable physical-device/screen-reader environments remain explicit evidence limitations under the current policy, not proposed follow-up sessions. Benchmark identical document/task profiles with explicit input, operation, history-memory and cleanup definitions. This work is continuous, not postponed until all features ship.
 
 Standalone `autolink()` is implemented locally through `/plugins/autolink` for native Space, controlled Enter and one whitespace-free plain-text clipboard URL at a collapsed caret; final verification of this bounded extension passed as recorded in `verification-backlog.md`. Shift+Enter, uncontrolled native Enter, HTML/multiline clipboard content, selected replacement and API/import paths remain excluded. HTML/multiline/email completion is considered only through a separate explicit specification, not a promise to handle all input. It is included by default in the implemented standard/extended presets; a runtime disable flag does not remove its static import graph. Contract: `specs/autolink.md`.
 
@@ -175,7 +175,7 @@ All sizes below are decimal bytes. Raw means minified JavaScript/CSS, not packag
 | Core | 200000 gzip JS bytes | User-directed product hard guard |
 | Table / optional entry | 150000 gzip JS bytes | User-directed product hard guard |
 | Each adapter | 10000 raw JS bytes | Existing enforced hard guard, framework excluded |
-| Standard editor with selected plugins/UI | 80000 gzip JS bytes | Active measured-profile guard, headless and ready |
+| Standard editor with selected plugins/UI | 90000 gzip JS bytes | Active measured-profile guard, headless and ready |
 | Extended selection | 110000 gzip JS bytes | Active measured-profile guard, headless and ready |
 | Standard/extended CSS | 20000 raw CSS bytes | Active selected-profile guard, headless and ready |
 
@@ -277,12 +277,11 @@ Contract: ui-responsive.md. A RU/EN public-API laboratory demonstrates width,
 density, locale and read-only; docs styles are isolated from its editor headings.
 
 Final focused evidence is in verification-backlog.md. These bounded implementation
-slices are complete locally, but the real-device/assistive-technology gate of
-block 5 remains open: physical iOS/Android, OS keyboards/IME, native zoom and
-VoiceOver/NVDA/JAWS/TalkBack require recorded manual sessions. Desktop engines,
-touch emulation and source review do not close that gate or establish WCAG
-conformance. Do not replace it with speculative feature expansion or claim a
-fully certified accessibility milestone.
+slices are complete locally. Physical iOS/Android, OS keyboards/IME, native zoom
+and VoiceOver/NVDA/JAWS/TalkBack remain unverified because these environments are
+unavailable. They are evidence limitations, not scheduled work or release gates
+under the current user policy below. Desktop engines, touch emulation and source
+review do not establish real-device coverage or WCAG conformance.
 
 ## Quote/list boundary deletion and reserve follow-up — 2026-11-23
 
@@ -299,4 +298,19 @@ metadata/validation while retaining distinct policies. All budgets pass, but
 standard plus table properties has only 39 gzip bytes of reserve. A substantial
 reserve is still not achieved; do not claim that priority fully closed. See
 bundle-reserve-next.md and the verification record. Real-device/AT verification
-and broader structural intervals remain separate work.
+remains an unavailable-evidence limitation; broader structural intervals remain
+separate work.
+
+
+## Current policy — 2026-11-23
+
+Standard is user-approved at 90000 gzip JS bytes; the last measured largest
+Standard composition (79961) has 10039 bytes of allowance. Further byte-level
+reserve work is no longer a next priority. Keep all other guards and measurements
+unchanged; see editor-presets.md. Earlier reserve statements are historical.
+
+Physical-device and assistive-technology verification is unavailable to the owner.
+Record it as a separate unverified-evidence limitation, not a proposed task,
+schedule or release prerequisite. Do not recommend it again unless the user
+explicitly reopens that scope. Automated desktop/touch-emulated evidence remains
+valid only for its actual scope; no device/AT/WCAG certification is implied.

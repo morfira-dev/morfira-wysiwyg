@@ -241,7 +241,7 @@ for (const profile of ['minimal', 'standard', 'extended']) {
     report[`${name}.css`] = css.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
     if (profile !== 'minimal') {
       // The first real presets now establish these measured product-profile guards.
-      const budget = profile === 'standard' ? 80000 : 110000;
+      const budget = profile === 'standard' ? 90000 : 110000;
       const javascriptSize = report[`${name}.js`];
       const stylesheetSize = report[`${name}.css`];
       if (javascriptSize.gzip > budget || stylesheetSize.raw > 20000) {
