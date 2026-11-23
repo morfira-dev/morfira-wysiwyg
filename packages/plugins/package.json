@@ -251,7 +251,12 @@
     },
     "./ui/text-layout.css": "./dist/ui/text-layout.css",
     "./ui/format-painter.css": "./dist/ui/format-painter.css",
-    "./ui/code-blocks.css": "./dist/ui/code-blocks.css"
+    "./ui/code-blocks.css": "./dist/ui/code-blocks.css",
+    "./ui/source": {
+      "types": "./dist/ui/source/index.d.ts",
+      "import": "./dist/ui/source.js"
+    },
+    "./ui/source.css": "./dist/ui/source.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.14.0"

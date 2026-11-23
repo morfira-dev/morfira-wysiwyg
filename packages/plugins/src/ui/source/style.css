@@ -1,0 +1,40 @@
+.mw-source {
+  box-sizing: border-box;
+  width: min(56rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--mw-border, #d0d5dd);
+  border-radius: var(--mw-radius, .5rem);
+  background: var(--mw-bg, #fff);
+  color: var(--mw-text, #202b40);
+  font: inherit;
+  &::backdrop { background: #0006; }
+  & label { display: grid; gap: .35rem; margin-block-end: .75rem; }
+  & textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: .5rem;
+    border: 1px solid var(--mw-border, #d0d5dd);
+    border-radius: .25rem;
+    color: inherit;
+    background: var(--mw-control-bg, #f5f7fb);
+    font: .875rem/1.5 monospace;
+    resize: vertical;
+  }
+  & button {
+    min-height: 2.25rem;
+    padding: .35rem .65rem;
+    border: 1px solid var(--mw-border, #d0d5dd);
+    border-radius: .25rem;
+    font: inherit;
+    color: inherit;
+    background: var(--mw-control-bg, #f5f7fb);
+  }
+  & :is(button, textarea):focus-visible { outline: 2px solid var(--mw-accent, #4269dc); outline-offset: 2px; }
+  & :disabled { opacity: .5; }
+  & .mw-source-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+  & .mw-source-status { overflow-wrap: anywhere; font-size: .875rem; }
+}
+@media(pointer: coarse) { .mw-source button { min-height: 44px; } }

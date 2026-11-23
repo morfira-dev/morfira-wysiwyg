@@ -99,3 +99,14 @@ using the setter without expiring an otherwise valid explicit text map. Arbitrar
 application changes to contenteditable still invalidate. Exact DOM selection
 handles retain their stricter mutation invalidation and are not preserved by this
 text-coordinate accounting method.
+
+
+## Explicit pending-format reset
+
+`EditorTransactionOptions.resetTyping?: boolean` clears pending caret formatting
+after capturing the pre-edit history snapshot and before invoking the callback.
+Undo can therefore restore the previous pending formats. It is orthogonal to
+text/structural mapping and creates no history entry by itself; false preserves
+the existing behavior. Reject nonboolean values and nested transaction options
+under the existing conservative nesting rule. The source editor uses true for
+whole-document replacement; it does not broaden source/import trust boundaries.

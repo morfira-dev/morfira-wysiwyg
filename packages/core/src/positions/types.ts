@@ -12,6 +12,8 @@ export interface TextMappingStep {
 
 export interface EditorTransactionOptions {
   readonly mapping?: readonly TextMappingStep[];
+  /** Clear pending caret formats after the history snapshot, before mutation. */
+  readonly resetTyping?: boolean;
 }
 
 export interface EditorMappedPosition {

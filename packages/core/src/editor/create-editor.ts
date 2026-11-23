@@ -417,13 +417,15 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     let changed = false;
     try {
       if (transactionOptions !== undefined && (!transactionOptions || typeof transactionOptions !== 'object'
-        || Array.isArray(transactionOptions) || Object.keys(transactionOptions).some((key) => key !== 'mapping')))
+        || Array.isArray(transactionOptions) || Object.keys(transactionOptions).some((key) => key !== 'mapping' && key !== 'resetTyping')))
         throw new TypeError('Unsupported transaction options.');
+      if (transactionOptions?.resetTyping !== undefined && typeof transactionOptions.resetTyping !== 'boolean')
+        throw new TypeError('resetTyping must be boolean.');
       const mapping = transactionOptions?.mapping === undefined ? undefined
         : prepareTextMapping(transactionOptions.mapping, surface.textContent ?? '');
       // A replacement can return to the old text offset without a selectionchange flush.
       const initialRange = activeRange(surface);
-      if (initialRange && !initialRange.collapsed) clearTyping();
+      if (transactionOptions?.resetTyping || initialRange && !initialRange.collapsed) clearTyping();
       invoke();
       if (transactionFailed)
         throw transactionError;

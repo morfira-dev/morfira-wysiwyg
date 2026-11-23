@@ -16,6 +16,7 @@ const owner = (path: string): string | undefined => {
 };
 const cases = [
   ...[
+    ['ui/source', 'createSourceEditor', 'ui/source', ['ui/source', 'ui/shared']],
     ['plugins/block-navigation', 'blockNavigation', 'block-navigation', ['block-navigation']],
     ['plugins/text-layout', 'textLayout', 'text-layout', ['text-layout']],
     ['plugins/format-painter', 'formatPainter', 'format-painter', ['format-painter', 'text-layout']],

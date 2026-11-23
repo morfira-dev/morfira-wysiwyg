@@ -238,3 +238,15 @@ under the current 90000 gzip JS / 20000 raw CSS Standard guard. Presets do not
 install these modules implicitly. It does not include every other optional UI
 composition, table-properties form, fonts or contextual panels. Runtime opt-out
 is not tree-shaking; actual evidence belongs to verification-backlog.md.
+
+
+## Independent source editing and SDK views/mapping — 2026-11-23
+
+The standard-source-ready profile selects only createSourceEditor and its explicit
+CSS with standard ready under 90000 gzip JS / 20000 raw CSS. Source behavior is
+optional UI, not a preset feature. Its standalone JavaScript uses the 150000 gzip
+product guard and stylesheet 3000 raw bytes. Optional SDK inline views and
+structuralCommands are measured through selective imports and the retained /sdk
+closure, outside all core/preset dependency graphs. Structural coordinate support
+and resetTyping have additive core contracts, whose actual shared overhead is
+reported separately. The all-authoring-tools profile remains unchanged in scope.

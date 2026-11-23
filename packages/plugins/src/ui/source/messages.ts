@@ -1,0 +1,28 @@
+export const sourceEditorMessages = {
+  en: {
+    'ui.source.title': 'HTML source',
+    'ui.source.draft': 'HTML draft',
+    'ui.source.preview': 'Normalized HTML',
+    'ui.source.check': 'Check HTML',
+    'ui.source.apply': 'Apply HTML',
+    'ui.source.cancel': 'Cancel',
+    'ui.source.pending': 'Check HTML or Apply to normalize this draft. The document is unchanged.',
+    'ui.source.normalized': 'The preview contains supported markup. Tags, attributes, styles or serialization may have changed; this is not a complete diff.',
+    'ui.source.unchanged': 'The draft already matches the supported serialized markup.',
+    'ui.source.invalid': 'This HTML exceeds document limits or cannot be accepted. The document is unchanged.',
+    'ui.source.stale': 'The document or selection changed. Reopen source editing for the current document.',
+  },
+  ru: {
+    'ui.source.title': 'HTML-исходник',
+    'ui.source.draft': 'Черновик HTML',
+    'ui.source.preview': 'Нормализованный HTML',
+    'ui.source.check': 'Проверить HTML',
+    'ui.source.apply': 'Применить HTML',
+    'ui.source.cancel': 'Отмена',
+    'ui.source.pending': 'Проверьте HTML или примените его для нормализации. Документ не изменён.',
+    'ui.source.normalized': 'Предпросмотр содержит поддерживаемую разметку. Теги, атрибуты, стили или сериализация могли измениться; это не полный diff.',
+    'ui.source.unchanged': 'Черновик уже соответствует поддерживаемой сериализации разметки.',
+    'ui.source.invalid': 'HTML превышает лимиты документа или не может быть принят. Документ не изменён.',
+    'ui.source.stale': 'Документ или выделение изменились. Откройте исходник текущего документа заново.',
+  },
+} as const;
