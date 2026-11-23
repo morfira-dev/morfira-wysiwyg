@@ -144,7 +144,7 @@ for (const [entry, symbol, label, budget] of [['ui/preview', 'createPreviewUI', 
   if (report[`${label}-standalone.js`].gzip > budget) { console.error(`${label}: exceeds ${budget} gzip JS byte budget`); failed = true; }
 }
 // Optional plugins/UI include their selected SDK and validation dependency closure.
-for (const [entry, label] of [['plugins/media', 'media'], ['plugins/formula', 'formula'], ['ui/media', 'media-ui'], ['ui/formula', 'formula-ui'], ['plugins/block-navigation', 'block-navigation'], ['plugins/text-layout', 'text-layout'], ['plugins/format-painter', 'format-painter'], ['ui/text-layout', 'text-layout-ui'], ['ui/format-painter', 'format-painter-ui']] as const) {
+for (const [entry, label] of [['plugins/media', 'media'], ['plugins/formula', 'formula'], ['ui/media', 'media-ui'], ['ui/formula', 'formula-ui'], ['plugins/block-navigation', 'block-navigation'], ['plugins/text-layout', 'text-layout'], ['plugins/format-painter', 'format-painter'], ['plugins/code-blocks', 'code-blocks'], ['ui/text-layout', 'text-layout-ui'], ['ui/format-painter', 'format-painter-ui'], ['ui/code-blocks', 'code-blocks-ui']] as const) {
   const result = await build({
     stdin: { contents: `import * as feature from '@morfira-dev/wysiwyg/${entry}'; globalThis.__morfiraOptional = feature;`, resolveDir: process.cwd(), loader: 'ts' },
     bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
@@ -155,7 +155,7 @@ for (const [entry, label] of [['plugins/media', 'media'], ['plugins/formula', 'f
   if (report[`${label}-standalone.js`].gzip > 150000) { console.error(`${label}: exceeds 150000 gzip JS byte budget`); failed = true; }
 }
 // Ready optional slices retain plugin and UI exports together; shared code counts once.
-for (const [feature, ui] of [['media', 'media'], ['formula', 'formula'], ['text-layout', 'text-layout'], ['format-painter', 'format-painter']] as const) {
+for (const [feature, ui] of [['media', 'media'], ['formula', 'formula'], ['text-layout', 'text-layout'], ['format-painter', 'format-painter'], ['code-blocks', 'code-blocks']] as const) {
   const result = await build({
     stdin: { contents: `import * as plugin from '@morfira-dev/wysiwyg/plugins/${feature}'; import * as ui from '@morfira-dev/wysiwyg/ui/${ui}'; globalThis.__morfiraOptionalReady = { plugin, ui };`, resolveDir: process.cwd(), loader: 'ts' },
     bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
@@ -165,8 +165,8 @@ for (const [feature, ui] of [['media', 'media'], ['formula', 'formula'], ['text-
   report[`${feature}-with-ui.js`] = { raw: buffer.length, gzip: gzipSync(buffer).length, brotli: brotliCompressSync(buffer).length };
   if (report[`${feature}-with-ui.js`].gzip > 150000) { console.error(`${feature}: exceeds 150000 gzip JS byte budget`); failed = true; }
 }
-// Explicit optional authoring UI stylesheet guards.
-for (const feature of ['text-layout', 'format-painter']) {
+// Authoring UI styles remain separate from JavaScript and presets.
+for (const feature of ['text-layout', 'format-painter', 'code-blocks']) {
   const buffer = await readFile(`packages/plugins/dist/ui/${feature}.css`);
   report[`${feature}-ui.css`] = { raw: buffer.length, gzip: gzipSync(buffer).length, brotli: brotliCompressSync(buffer).length };
   if (buffer.length > 3000) { console.error(`${feature}: exceeds 3000 raw CSS byte optional-UI budget`); failed = true; }
@@ -176,8 +176,9 @@ for (const feature of ['text-layout', 'format-painter']) {
 for (const profile of ['minimal', 'standard', 'extended']) {
   const preset = ({ minimal: 'createMinimalPreset', standard: 'createStandardPreset', extended: 'createExtendedPreset' } as Record<string, string>)[profile];
   const ui = ({ minimal: 'createEditorUI', standard: 'createStandardEditorUI', extended: 'createExtendedEditorUI' } as Record<string, string>)[profile];
-  for (const variant of ['headless', 'ready', ...(profile !== 'minimal' ? ['table-properties-ready'] : []), ...(profile === 'standard' ? ['search-highlights-ready', 'special-characters-ready', 'fullscreen-ready', 'preview-ready', 'save-state-ready', 'authoring-ready', 'print-ready', 'outline-ready', 'reading-ready', 'text-drop-ready', 'table-picker-ready', 'image-input-ready', 'table-picker-image-input-ready', 'fonts-ready', 'list-properties-ready', 'fonts-list-properties-ready', 'text-direction-ready', 'fonts-list-properties-text-direction-ready', 'contextual-ready', 'contextual-link-ready', 'contextual-image-ready', 'image-resize-ready', 'contextual-table-ready', 'fonts-list-properties-text-direction-contextual-ready'] : [])]) {
+  for (const variant of ['headless', 'ready', ...(profile !== 'minimal' ? ['table-properties-ready'] : []), ...(profile === 'standard' ? ['authoring-tools-ready', 'search-highlights-ready', 'special-characters-ready', 'fullscreen-ready', 'preview-ready', 'save-state-ready', 'authoring-ready', 'print-ready', 'outline-ready', 'reading-ready', 'text-drop-ready', 'table-picker-ready', 'image-input-ready', 'table-picker-image-input-ready', 'fonts-ready', 'list-properties-ready', 'fonts-list-properties-ready', 'text-direction-ready', 'fonts-list-properties-text-direction-ready', 'contextual-ready', 'contextual-link-ready', 'contextual-image-ready', 'image-resize-ready', 'contextual-table-ready', 'fonts-list-properties-text-direction-contextual-ready'] : [])]) {
     const ready = variant !== 'headless';
+    const withAuthoringTools = variant === 'authoring-tools-ready';
     const withTextDrop = variant === 'text-drop-ready';
     const withPrint = variant === 'print-ready' || variant === 'reading-ready';
     const withOutline = variant === 'outline-ready' || variant === 'reading-ready';
@@ -213,6 +214,9 @@ for (const profile of ['minimal', 'standard', 'extended']) {
     if (withTableProperties) {
       contents += `import { tableProperties } from '@morfira-dev/wysiwyg/plugins/table-properties'; import { createTablePropertiesForm } from '@morfira-dev/wysiwyg/ui/table-properties'; globalThis.__morfiraPropertiesProfile = (host, toolbarHost, propertiesHost) => { const editor = createEditor(host, ${preset}({ plugins: [tableProperties()] })); const ui = ${ui}(toolbarHost, editor); const properties = createTablePropertiesForm(propertiesHost, editor); return { editor, ui, properties }; };`;
     }
+    if (withAuthoringTools) {
+      contents += `import { blockNavigation } from '@morfira-dev/wysiwyg/plugins/block-navigation'; import { textLayout } from '@morfira-dev/wysiwyg/plugins/text-layout'; import { formatPainter } from '@morfira-dev/wysiwyg/plugins/format-painter'; import { codeBlocks } from '@morfira-dev/wysiwyg/plugins/code-blocks'; import { createTextLayoutUI } from '@morfira-dev/wysiwyg/ui/text-layout'; import { createFormatPainterUI } from '@morfira-dev/wysiwyg/ui/format-painter'; import { createCodeBlockForm, createCodeBlockView } from '@morfira-dev/wysiwyg/ui/code-blocks'; globalThis.__morfiraAuthoringTools = (host, toolbarHost, layoutHost, painterHost, codeHost, viewHost, highlight) => { const editor = createEditor(host, ${preset}({ plugins: [blockNavigation(), textLayout(), formatPainter(), codeBlocks()] })); return { editor, ui: ${ui}(toolbarHost, editor), layout: createTextLayoutUI(layoutHost, editor), painter: createFormatPainterUI(painterHost, editor), code: createCodeBlockForm(codeHost, editor), view: createCodeBlockView(viewHost, editor, { highlight }) }; };`;
+    }
     const bundled = await build({
       stdin: { contents, resolveDir: process.cwd(), sourcefile: 'profile-consumer.ts', loader: 'ts' },
       bundle: true, treeShaking: true, minify: true, charset: 'utf8', write: false, metafile: true,
@@ -227,6 +231,7 @@ for (const profile of ['minimal', 'standard', 'extended']) {
       '@morfira-dev/wysiwyg/style.css',
       ...(profile !== 'minimal' ? ['@morfira-dev/wysiwyg/plugins/tables.css'] : []),
       ...(ready ? ['@morfira-dev/wysiwyg/ui/editor.css'] : []),
+      ...(withAuthoringTools ? ['@morfira-dev/wysiwyg/ui/text-layout.css', '@morfira-dev/wysiwyg/ui/format-painter.css', '@morfira-dev/wysiwyg/ui/code-blocks.css'] : []),
       ...(withSearchHighlights ? ['@morfira-dev/wysiwyg/ui/search-highlights.css'] : []),
       ...(withSpecialCharacters ? ['@morfira-dev/wysiwyg/ui/special-characters.css'] : []),
       ...(withFullscreen ? ['@morfira-dev/wysiwyg/ui/fullscreen.css'] : []),

@@ -19,6 +19,31 @@ size guards passed. Core / standard-ready / extended-ready are 29658 / 69472 /
 historical checkpoints and are superseded for this tested source by the latest
 verification record. No remote CI or publication result is implied.
 
+## Implemented authoring blocks 1–3 — 2026-11-23
+
+The user selected the next three concrete authoring blocks for parallel
+implementation, with local per-block commits and no push:
+
+1. Optional root object navigation: exact image/HR/media node selection, gap
+   paragraphs, two-step deletion and history. Contract: block-navigation.md.
+2. Optional bounded paragraph line height/spacing plus an independent inline
+   format painter. Contracts: text-layout.md and format-painter.md. Only the
+   numeric paragraph declarations add shared codec persistence; presets stay
+   unchanged.
+3. Optional semantic code blocks and reusable insertion/editing UI, preserving
+   literal source and language metadata; optional application-owned async
+   highlighting stays outside stored content. Contract: code-blocks.md.
+
+Add public exports, explicit CSS, RU/EN examples and lazy homepage demonstrations.
+Measure raw/gzip/Brotli JS and separate CSS for each selected module, with no
+runtime dependencies or implicit preset imports. Standalone optional entries
+retain the 150000 gzip JS product guard; each new UI stylesheet has a 3000 raw
+byte guard to keep these compact controls bounded. The bounded implementations and staged focused validation are complete locally.
+The joint profile uses 83305 gzip JS / 19913 raw CSS bytes. Actual three-engine,
+docs, archive and build/size evidence belongs to verification-backlog.md. Do not run
+full suites or monitor CI by default. Physical-device/AT environments remain
+unavailable evidence limitations, not proposed next work.
+
 ## Implemented baseline
 
 - Versioned schema-v1 HTML/JSON boundaries, formatting, selection, bounded history, synchronous composable transactions and instance-local typed events. Contracts: `editor.md`, `transactions.md`, `events.md`.

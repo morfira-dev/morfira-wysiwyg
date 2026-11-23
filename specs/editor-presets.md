@@ -226,3 +226,15 @@ adapters 10000 raw and profile CSS 20000 raw. The core 80000-raw soft target is
 unchanged. Runtime dependencies, selective imports, accounting and compression
 settings remain unchanged; new functionality still needs focused tests and size
 reporting. Historical results retain their original limits.
+
+
+## Independently selected authoring tools — 2026-11-23
+
+The standard-authoring-tools-ready profile selects blockNavigation, textLayout,
+formatPainter and codeBlocks with standard ready, plus their explicit layout,
+painter and code form/view UI. Highlight grammars are application-owned and
+excluded. It measures public factories, shared JavaScript once and explicit CSS,
+under the current 90000 gzip JS / 20000 raw CSS Standard guard. Presets do not
+install these modules implicitly. It does not include every other optional UI
+composition, table-properties form, fonts or contextual panels. Runtime opt-out
+is not tree-shaking; actual evidence belongs to verification-backlog.md.

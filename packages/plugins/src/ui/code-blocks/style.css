@@ -1,0 +1,112 @@
+.mw-code-form,
+.mw-code-view {
+  border: 1px solid var(--mw-border,#d0d5dd);
+}
+.mw-code-form {
+  box-sizing: border-box;
+  width: min(44rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: var(--mw-dialog-padding,1.25rem);
+  border-radius: var(--mw-radius,12px);
+  background: var(--mw-surface,#fff);
+  color: var(--mw-text,#17202a);
+  &::backdrop {
+    background: var(--mw-dialog-backdrop,#17202a66);
+  }
+  & label {
+    display: grid;
+    gap: .4rem;
+    margin-block-end: .8rem;
+    min-width: 0;
+  }
+  & textarea,
+  & select,
+  & button {
+    border: 1px solid var(--mw-border,#d0d5dd);
+    border-radius: var(--mw-control-radius,6px);
+    background: var(--mw-surface,#fff);
+    color: inherit;
+    font: inherit;
+  }
+  & textarea,
+  & select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: .6rem;
+  }
+  & textarea {
+    resize: vertical;
+  }
+  :focus-visible {
+    outline: 2px solid var(--mw-accent,#6658e8);
+    outline-offset: 2px;
+  }
+  @media (pointer: coarse) {
+    & select {
+      min-height: 44px;
+    }
+  }
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline-color: Highlight;
+    }
+  }
+}
+.mw-code-form textarea,
+.mw-code-view {
+  font-family: var(--mw-code-font,ui-monospace,SFMono-Regular,Consolas,monospace);
+  tab-size: var(--mw-code-tab-size,2);
+  white-space: pre;
+  overflow: auto;
+}
+.mw-code-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  & button {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    padding: .5rem .8rem;
+    cursor: pointer;
+    &:disabled {
+      opacity: .5;
+      cursor: default;
+    }
+    @media (pointer: coarse) {
+      min-height: 44px;
+    }
+  }
+}
+.mw-code-status {
+  font-size: .9rem;
+}
+.mw-code-view {
+  padding: .8rem;
+  background: var(--mw-code-background,#f5f7fa);
+  color: var(--mw-code-text,#17202a);
+  border-radius: var(--mw-control-radius,6px);
+}
+.mw-code-token-keyword,
+.mw-code-token-type {
+  color: var(--mw-code-keyword,#7134a1);
+}
+.mw-code-token-string {
+  color: var(--mw-code-string,#116644);
+}
+.mw-code-token-number {
+  color: var(--mw-code-number,#9b4500);
+}
+.mw-code-token-comment {
+  color: var(--mw-code-comment,#596579);
+}
+.mw-code-token-operator,
+.mw-code-token-punctuation {
+  color: var(--mw-code-operator,#315a91);
+}
+@media (forced-colors: active) {
+  .mw-code-view span {
+    color: CanvasText;
+  }
+}

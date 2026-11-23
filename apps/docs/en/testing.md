@@ -1,5 +1,9 @@
 # Testing and releases
 
+## Authoring tools — 23 November 2026
+
+New authoring tools add object navigation, paragraph layout/format painter and code blocks. Focused evidence is staged: 57/57 navigation/text-tool executions, 39/39 code and 15/15 security executions in three browsers; RU/EN demos/homepage passed 8/8 in Chromium. Builds, types, selective imports and focused real-tarball smoke passed. Full suites and CI were not run. Standard with the tools uses 83305 gzip JS bytes and 19913 raw CSS bytes. Syntax highlighting is an external preview; nested object navigation and universal structural mapping are not claimed.
+
 ## Current budget policy — 23 November 2026
 
 After the runs recorded below, the user raised Standard to **90000 gzip JS bytes**.

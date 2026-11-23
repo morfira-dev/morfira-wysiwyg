@@ -1,5 +1,59 @@
 # Verification record
 
+## Authoring blocks 1–3 — final focused evidence, 2026-11-23
+
+Implemented optional root block navigation, bounded paragraph layout and inline
+format painter, plus semantic code blocks with modal editing and an external
+async-highlight view. The modules have independent public imports/CSS, no runtime
+dependencies and no automatic preset inclusion. Native editing scopes and limits
+follow block-navigation.md, text-layout.md, format-painter.md and code-blocks.md.
+
+Final relevant evidence is staged, not a single final complete-suite run:
+- Block navigation, text layout and painter: **57/57** in Chromium/Firefox/WebKit
+  (19 scenarios per engine) after correcting native-selection/focus fixtures.
+- Code blocks: **39/39** and shared codec security: **15/15** in the preceding
+  coordinated three-engine run against the same final runtime build. These
+  unchanged scenarios were not repeated in the last 57-case run.
+- Built RU/EN demos and lazy homepage mount/unmount: **8/8** in Chromium.
+- Final package/declaration/size build, project contracts, TypeScript and docs
+  Vue types, selective-import/tree-shaking guards, eight archive checks and the
+  focused seven-subpath real-tarball type/bundle/SSR smoke passed. The bilingual
+  site build passed. No full editor/adapter/docs/consumer matrix, remote CI,
+  package publication or push was performed.
+
+The first runtime run passed 93/111; new fixtures incorrectly assumed concatenated
+getText paragraphs, no core-added trailing paragraph, and portable native focus
+behavior. Firefox's synthetic ClipboardEvent constructor discarded its supplied
+DataTransfer: an isolated diagnostic proved an empty replacement before dispatch.
+The corrected fixture asserts the literal payload before dispatch and retains the
+paste/history expectations. A second run passed 105/111; remaining six failures
+were corrected with exact supported native ranges and deterministic synchronous
+application focus hooks around the real focus call. Hook invocation is explicit,
+so early refusal cannot pass vacuously. No production regression was hidden by
+changing expected paste contents or weakening a security/Undo assertion.
+
+Pre-test review also fixed genuine focus-time target redirection, lost external
+UI-host ownership and composition cancellation/lifecycle risks. A first combined
+profile exceeded the raw CSS guard at 20332 bytes. Shared declarations and readable
+native CSS nesting reduced it to 19913 without removing controls/rules or changing
+the 20000-byte guard. Optional new UI styles require Chrome 112+, Firefox 117+,
+Safari 16.5+; commands and persisted data are independent of those styles.
+
+| Selected closure | Raw JS | gzip JS | Brotli JS | Raw CSS | gzip CSS | Brotli CSS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 105948 | 32990 | 28951 | 3397 | 1197 | 987 |
+| Standard ready | 234392 | 72882 | 62020 | 16581 | 4707 | 3904 |
+| Standard + authoring tools ready | 269306 | 83305 | 70060 | 19913 | 6228 | 5152 |
+| Standard + table properties ready | 257817 | 80026 | 67711 | 16581 | 4707 | 3904 |
+| Extended ready | 291098 | 89854 | 75357 | 18046 | 5280 | 4355 |
+
+The all-authoring-tools composition leaves 6695 gzip JS bytes and 87 raw CSS bytes
+under its current guards. Core adds 122 gzip JS bytes versus the preceding
+32868-byte measurement for bounded layout persistence. Do not infer arbitrary
+structural block editing, in-document syntax highlighting, full Office fidelity
+or physical-device/assistive-technology certification. Those unavailable
+environments remain evidence limitations rather than proposed follow-up tasks.
+
 ## User-directed budget and evidence policy — 2026-11-23
 
 Standard guard changes from 80000 to 90000 gzip JS bytes by explicit user request.
