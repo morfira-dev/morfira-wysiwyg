@@ -170,3 +170,13 @@ The independent `table-picker.md` widget renders bounded text/buttons, retains n
 ## Optional table properties
 
 The table-properties slice accepts a bounded explicit patch, never arbitrary CSS. Table width uses integer 40–4000px or 1–100%; placement writes only the canonical TABLE margin-left/right 0px/auto pair. Only TD/TH top/middle/bottom vertical alignment is added to the codec. Color values pass a bounded existing safe grammar and browser color parsing without content/image clones, URL functions or resource requests. HTML/JSON wrong-tag/value style declarations remain filtered. The plugin validates all fields before eligibility and snapshots actual table/cells/grid intent; the SDK focus boundary is revalidated before its atomic mutation. Protected/foreign/semantic/nested/malformed table regions are refused. The opt-in form guards actual focus-time target changes before restoring its saved Range and again before update, rejects stale/API-replaced contexts, and disposes external-host ownership. This does not broaden server trust, storage authorization or arbitrary application-code isolation.
+
+
+## Paragraph layout boundaries — 2026-11-23
+
+Text-layout persistence is restricted to ordinary paragraph/heading tags and
+three bounded numeric CSS properties. No CSS functions, variables, URL tokens,
+selectors, expressions, arbitrary units or negative margins are accepted. The
+same reconstruction runs for HTML, JSON and rendering. Semantic-owner editing
+continues to require the plugin command guards; an allowed declaration does not
+authorize editing any registered semantic node. See text-layout.md.

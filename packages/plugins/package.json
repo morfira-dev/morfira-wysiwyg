@@ -224,7 +224,25 @@
     "./block-navigation": {
       "types": "./dist/block-navigation/index.d.ts",
       "import": "./dist/block-navigation.js"
-    }
+    },
+    "./text-layout": {
+      "types": "./dist/text-layout/index.d.ts",
+      "import": "./dist/text-layout.js"
+    },
+    "./format-painter": {
+      "types": "./dist/format-painter/index.d.ts",
+      "import": "./dist/format-painter.js"
+    },
+    "./ui/text-layout": {
+      "types": "./dist/ui/text-layout/index.d.ts",
+      "import": "./dist/ui/text-layout.js"
+    },
+    "./ui/format-painter": {
+      "types": "./dist/ui/format-painter/index.d.ts",
+      "import": "./dist/ui/format-painter.js"
+    },
+    "./ui/text-layout.css": "./dist/ui/text-layout.css",
+    "./ui/format-painter.css": "./dist/ui/format-painter.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.14.0"

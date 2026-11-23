@@ -1,0 +1,31 @@
+import { expect, test } from '@playwright/test';
+
+for (const english of [false, true]) test(`text tools use localized public layout/painter controls (${english ? 'EN' : 'RU'})`, async ({ page }) => {
+  const t = (russian: string, translated: string) => english ? translated : russian;
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(english ? '/en/text-tools' : '/text-tools');
+  const demo = page.locator('.text-tools-example');
+  const content = demo.locator('.mw-content');
+  await expect(content).toBeVisible();
+  await demo.getByRole('button', { name: t('Выделить источник', 'Select source'), exact: true }).click();
+  await demo.getByRole('button', { name: t('Скопировать форматирование', 'Copy formatting'), exact: true }).click();
+  await expect(demo.getByRole('status')).toHaveText(t('Форматирование скопировано', 'Formatting copied'));
+  await demo.getByRole('button', { name: t('Выделить цель', 'Select target'), exact: true }).click();
+  await demo.getByRole('button', { name: t('Применить форматирование', 'Apply formatting'), exact: true }).click();
+  await expect(content.locator('[title="Formatting target"] strong')).toContainText('Target text');
+  await expect(content.locator('[title="Formatting target"] a')).toHaveAttribute('href', 'https://example.com');
+  await demo.getByRole('button', { name: t('Выделить блоки цитаты', 'Select quote blocks'), exact: true }).click();
+  const lineHeight = demo.getByRole('combobox', { name: t('Межстрочный интервал', 'Line height'), exact: true });
+  await lineHeight.focus();
+  await lineHeight.selectOption('1.5');
+  await expect(content.locator('[title="Quote spacing"]')).toHaveCSS('line-height', /.+/);
+  expect(await content.locator('[title="Quote spacing"]').evaluate((node) => (node as HTMLElement).style.lineHeight)).toBe('1.5');
+  expect(await content.locator('[title="Heading spacing"]').evaluate((node) => (node as HTMLElement).style.lineHeight)).toBe('1.5');
+  await demo.getByRole('button', { name: t('Отменить', 'Undo'), exact: true }).click();
+  expect(await content.locator('[title="Quote spacing"]').evaluate((node) => (node as HTMLElement).style.lineHeight)).toBe('');
+  await demo.getByRole('checkbox', { name: t('Только чтение', 'Read only'), exact: true }).check();
+  await expect(lineHeight).toBeDisabled();
+  await expect(demo.getByRole('button', { name: t('Применить форматирование', 'Apply formatting'), exact: true })).toBeDisabled();
+  expect(errors).toEqual([]);
+});

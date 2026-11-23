@@ -2,6 +2,7 @@ import { safeURL } from './security.js';
 import { normalizeFontFamily } from './font-family.js';
 import { normalizeListMarker } from './list-marker.js';
 import { normalizeDirection } from './direction.js';
+import { normalizeTextLayoutStyle } from './text-layout.js';
 import { normalizeCellBoxStyle, normalizeCellBorder } from './cell-box.js';
 import { normalizeOfficeHTML, normalizePointSize } from './office-paste/index.js';
 import { countText, countElement, maximumHTMLLength, maximumNodes, maximumDepth } from './budget.js';
@@ -20,6 +21,11 @@ const safeStyle = (tag: DocumentTag, value: string): string => {
     if (separator < 0)
       continue;
     const property = declaration.slice(0, separator).trim().toLowerCase();
+    if (['line-height', 'margin-top', 'margin-bottom'].includes(property)) {
+      const layout = normalizeTextLayoutStyle(tag, property, declaration.slice(separator + 1));
+      if (layout !== undefined) result.push(`${property}: ${layout}`);
+      continue;
+    }
     if (property === 'list-style-type') {
       const marker = normalizeListMarker(tag, declaration.slice(separator + 1));
       if (marker) result.push(`list-style-type: ${marker}`);

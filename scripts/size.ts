@@ -144,7 +144,7 @@ for (const [entry, symbol, label, budget] of [['ui/preview', 'createPreviewUI', 
   if (report[`${label}-standalone.js`].gzip > budget) { console.error(`${label}: exceeds ${budget} gzip JS byte budget`); failed = true; }
 }
 // Optional plugins/UI include their selected SDK and validation dependency closure.
-for (const [entry, label] of [['plugins/media', 'media'], ['plugins/formula', 'formula'], ['ui/media', 'media-ui'], ['ui/formula', 'formula-ui'], ['plugins/block-navigation', 'block-navigation']] as const) {
+for (const [entry, label] of [['plugins/media', 'media'], ['plugins/formula', 'formula'], ['ui/media', 'media-ui'], ['ui/formula', 'formula-ui'], ['plugins/block-navigation', 'block-navigation'], ['plugins/text-layout', 'text-layout'], ['plugins/format-painter', 'format-painter'], ['ui/text-layout', 'text-layout-ui'], ['ui/format-painter', 'format-painter-ui']] as const) {
   const result = await build({
     stdin: { contents: `import * as feature from '@morfira-dev/wysiwyg/${entry}'; globalThis.__morfiraOptional = feature;`, resolveDir: process.cwd(), loader: 'ts' },
     bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
@@ -155,7 +155,7 @@ for (const [entry, label] of [['plugins/media', 'media'], ['plugins/formula', 'f
   if (report[`${label}-standalone.js`].gzip > 150000) { console.error(`${label}: exceeds 150000 gzip JS byte budget`); failed = true; }
 }
 // Ready optional slices retain plugin and UI exports together; shared code counts once.
-for (const [feature, ui] of [['media', 'media'], ['formula', 'formula']] as const) {
+for (const [feature, ui] of [['media', 'media'], ['formula', 'formula'], ['text-layout', 'text-layout'], ['format-painter', 'format-painter']] as const) {
   const result = await build({
     stdin: { contents: `import * as plugin from '@morfira-dev/wysiwyg/plugins/${feature}'; import * as ui from '@morfira-dev/wysiwyg/ui/${ui}'; globalThis.__morfiraOptionalReady = { plugin, ui };`, resolveDir: process.cwd(), loader: 'ts' },
     bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
@@ -164,6 +164,12 @@ for (const [feature, ui] of [['media', 'media'], ['formula', 'formula']] as cons
   const buffer = result.outputFiles[0].contents;
   report[`${feature}-with-ui.js`] = { raw: buffer.length, gzip: gzipSync(buffer).length, brotli: brotliCompressSync(buffer).length };
   if (report[`${feature}-with-ui.js`].gzip > 150000) { console.error(`${feature}: exceeds 150000 gzip JS byte budget`); failed = true; }
+}
+// Explicit optional authoring UI stylesheet guards.
+for (const feature of ['text-layout', 'format-painter']) {
+  const buffer = await readFile(`packages/plugins/dist/ui/${feature}.css`);
+  report[`${feature}-ui.css`] = { raw: buffer.length, gzip: gzipSync(buffer).length, brotli: brotliCompressSync(buffer).length };
+  if (buffer.length > 3000) { console.error(`${feature}: exceeds 3000 raw CSS byte optional-UI budget`); failed = true; }
 }
 // Consumer profiles retain the actual public factories and bundle their shared JS once.
 // Runtime feature flags are deliberately not used as a tree-shaking claim.

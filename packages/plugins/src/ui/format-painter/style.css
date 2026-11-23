@@ -1,0 +1,29 @@
+.mw-format-painter {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mw-format-painter-gap, .5rem);
+  padding: .6rem;
+  border: 1px solid var(--mw-border, #d5dbe5);
+  border-radius: var(--mw-radius, .5rem);
+  background: var(--mw-bg, #fff);
+  color: var(--mw-text, #202b40);
+
+  & button {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-height: 2.25rem;
+    padding: .35rem .65rem;
+    border: 1px solid var(--mw-border, #d5dbe5);
+    border-radius: var(--mw-radius, .35rem);
+    background: var(--mw-control-bg, #f5f7fb);
+    color: inherit;
+    font: inherit;
+    overflow-wrap: anywhere;
+  }
+  & :focus-visible { outline: 2px solid var(--mw-accent, #4269dc); outline-offset: 2px; }
+  & :disabled { opacity: .5; }
+  & span { font-size: .875rem; }
+  @media (pointer: coarse) { & button { min-height: 44px; } }
+}

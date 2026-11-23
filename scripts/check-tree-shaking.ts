@@ -17,6 +17,10 @@ const owner = (path: string): string | undefined => {
 const cases = [
   ...[
     ['plugins/block-navigation', 'blockNavigation', 'block-navigation', ['block-navigation']],
+    ['plugins/text-layout', 'textLayout', 'text-layout', ['text-layout']],
+    ['plugins/format-painter', 'formatPainter', 'format-painter', ['format-painter', 'text-layout']],
+    ['ui/text-layout', 'createTextLayoutUI', 'ui/text-layout', ['ui/text-layout', 'ui/shared', 'text-layout']],
+    ['ui/format-painter', 'createFormatPainterUI', 'ui/format-painter', ['ui/format-painter', 'ui/shared', 'format-painter', 'text-layout']],
   ].map(([entry, symbol, feature, allowed]) => ({ entry: `@morfira-dev/wysiwyg/${entry}`, symbol: symbol as string, feature: feature as string, allowed: allowed as string[] })),
 
   { entry: '@morfira-dev/wysiwyg', symbol: 'createEditor', feature: 'core', allowed: [] },

@@ -100,3 +100,14 @@ The direct inline-fragment insertion fallback stabilizes its local paragraph/hea
 The additive optional `getFormats(range?: Range)` state projection follows [contextual-toolbar.md](contextual-toolbar.md): explicit current-document ranges are read without changing native selection/focus or applying pending typing overrides; no-argument behavior is preserved. Read-only projection is not command authority.
 
 Table/cell properties add only bounded TABLE margin-left/right and TD/TH vertical-align persistence under [table-properties.md](table-properties.md). This additive schema-v1 support is independent of the optional commands/UI; older readers may drop it. Existing width/color style filtering and table clipboard metadata limits remain unchanged.
+
+
+## Bounded paragraph layout — 2026-11-23
+
+The optional text-layout plugin adds codec persistence on ordinary P/H1–H6 only:
+unitless line-height 0.5–4 with at most three fractional digits and integer
+margin-top/margin-bottom 0–96px. Reject other units, expressions, negative values,
+foreign owners and arbitrary declarations at the HTML/JSON boundary. Canonicalize
+valid values before rendering. This additive schema-v1 support does not install
+commands or UI, and older readers may discard these declarations.
+Contract: text-layout.md. Actual validation belongs to verification-backlog.md.
