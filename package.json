@@ -26,7 +26,8 @@
     "consumers:angular22": "tsx scripts/consumers/index.ts --angular22",
     "release:notify": "tsx scripts/release-notification.ts",
     "consumers:optional-ui": "tsx scripts/consumers/optional-ui.ts",
-    "consumers:authoring": "tsx scripts/consumers/authoring.ts"
+    "consumers:authoring": "tsx scripts/consumers/authoring.ts",
+    "recipes:check": "tsx scripts/check-recipe-examples.ts"
   },
   "devDependencies": {
     "@angular/common": "21.2.26",

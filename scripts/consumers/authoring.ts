@@ -20,11 +20,20 @@ try {
     await mkdir(destination, { recursive: true });
     execFileSync('tar', ['-xzf', join(archives, archive), '--strip-components=1', '-C', destination]);
   }
-  const entries = ['plugins/block-navigation', 'plugins/text-layout', 'plugins/format-painter', 'plugins/code-blocks', 'ui/text-layout', 'ui/format-painter', 'ui/code-blocks'];
+  const entries = ['sdk', 'ui/source', 'plugins/block-navigation', 'plugins/text-layout', 'plugins/format-painter', 'plugins/code-blocks', 'ui/text-layout', 'ui/format-painter', 'ui/code-blocks'];
   const imports = entries.map((entry, index) => `import * as feature${index} from '@morfira-dev/wysiwyg/${entry}';`).join('\n');
   const retain = `export default [${entries.map((_, index) => `feature${index}`).join(',')}];`;
   const entry = join(temporary, 'entry.ts');
-  await writeFile(entry, `${imports}\n${retain}`);
+  await writeFile(entry, `${imports}
+import type { Editor, EditorNodePositionHandle, EditorMappedNodePosition } from '@morfira-dev/wysiwyg';
+const checkNewEditorBoundary = (editor: Editor) => {
+  const inserted: boolean = editor.insertTextAtCaret('literal');
+  const handle: EditorNodePositionHandle | undefined = editor.positions.trackNode([0], 0);
+  const point: EditorMappedNodePosition | undefined = handle ? editor.positions.resolveNode(handle) : undefined;
+  if (handle) editor.positions.releaseNode(handle);
+  return { inserted, point };
+};
+${retain}`);
   execFileSync(process.execPath, [join(repository, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--module', 'ESNext', '--moduleResolution', 'Bundler', '--target', 'ES2022', '--lib', 'ES2022,DOM,DOM.Iterable', entry], { cwd: temporary, stdio: 'pipe' });
   const result = await build({ entryPoints: [entry], bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true, tsconfigRaw: { compilerOptions: {} }, logLevel: 'silent' });
   assert.ok(Object.keys(result.metafile!.inputs).every((input) => !resolve(input).startsWith(`${repository}/packages/`)), 'Archive consumers must not resolve workspace sources or artifacts.');
@@ -34,9 +43,13 @@ try {
     for (const feature of modules) {
       assert.ok(Object.values(feature).some((value) => typeof value === 'function'));
     }
+    const sdk = modules[0];
+    assert.equal(typeof sdk.createInlineNodeViews, 'function');
+    assert.equal(typeof sdk.structuralCommands, 'function');
+    assert.equal(typeof modules[1].createSourceEditor, 'function');
     assert.equal(typeof globalThis.document, 'undefined');
   `], { cwd: temporary, stdio: 'pipe' });
-  console.log('Authoring archive smoke: seven public subpaths typecheck/bundle from actual tarballs and import without a browser.');
+  console.log('Authoring archive smoke: nine public subpaths typecheck/bundle from actual tarballs and import without a browser.');
 }
 finally {
   await rm(temporary, { recursive: true, force: true });

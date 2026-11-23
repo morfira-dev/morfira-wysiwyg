@@ -6,8 +6,8 @@ for (const english of [false, true]) test(`homepage mounts optional authoring ed
   await page.goto(english ? '/en/' : '/');
   const examples = page.locator('.home-optional-examples');
   for (const label of english
-    ? ['Navigation around images and objects', 'Paragraph layout and format painter', 'Code blocks and highlighting']
-    : ['Навигация вокруг изображений и объектов', 'Интервалы и перенос форматирования', 'Блоки кода и подсветка']) {
+    ? ['Safe HTML source editing', 'Node views inside the editor', 'Positions through structural edits', 'Application extension recipes', 'Navigation around images and objects', 'Paragraph layout and format painter', 'Code blocks and highlighting']
+    : ['Безопасный HTML-исходник', 'Узлы внутри области редактирования', 'Позиции через структурные изменения', 'Готовые рецепты расширений', 'Навигация вокруг изображений и объектов', 'Интервалы и перенос форматирования', 'Блоки кода и подсветка']) {
     const summary = examples.locator('summary').filter({ hasText: label });
     const panel = summary.locator('..');
     await expect(panel.locator('.mw-content')).toHaveCount(0);

@@ -48,3 +48,6 @@ Use pnpm 11.0.7 for installation and all workspace scripts. Keep only pnpm-lock.
 ## Unavailable verification environments — 2026-11-23
 
 Physical-device and assistive-technology sessions are unavailable to the project owner. Keep them explicitly marked as unverified evidence limitations, separate from automated desktop/touch-emulated checks. Do not propose, schedule or repeatedly recommend those sessions as next work unless the user explicitly reopens them. This does not establish device, screen-reader or WCAG conformance.
+
+
+The additive authoring SDK follows specs/source-editing.md, specs/inline-node-views.md and specs/structural-mapping.md. Preserve inert source preview, one undoable replacement with explicit pending-format reset, nonpersisted sibling overlay views, exact declared structural plans and actual history mapping; unknown edits invalidate observations. Application recipes follow specs/extension-recipes.md, stay outside package runtime graphs and keep server authorization/concurrency policy application-owned.

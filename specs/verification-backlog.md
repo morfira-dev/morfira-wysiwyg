@@ -1,5 +1,63 @@
 # Verification record
 
+## Extension blocks 4–7 — final focused evidence, 2026-11-23
+
+Implemented safe whole-document source editing, opt-in in-editor overlay node
+views, explicit path-aware structural mapping and application-owned extension
+recipes with five copyable wrapper examples. Source UI, SDK and business examples
+remain selectively imported; no dependency, implicit preset, editable contentDOM,
+backend integration, automatic native mapping or persisted schema revision was added.
+
+Final actual validation:
+- **225/225** focused executions in Chromium, Firefox and WebKit: source editing,
+  inline views, structural mapping, recipes with real Vue/React StrictMode wrappers,
+  literal caret input and affected existing SDK/mapping/transaction behavior.
+- **6/6** separate prior pending-font/color regressions in the same three engines.
+- **10/10** built RU/EN documentation/homepage scenarios in Chromium.
+- Package/declaration/size build, strict TS/docs Vue+React types, project contracts,
+  selective imports, eight archive checks and the focused nine-subpath real-tarball
+  type/bundle/SSR smoke passed. This includes literal-caret and structural-handle
+  public declarations. Source maps were checked against current runtime sources
+  for the tested build; the new model cache/limits were part of that build.
+- The Svelte recipe template and Angular 21 strict AOT recipe/transitive helpers
+  compiled using public artifact declarations. Vue/React/Web Component examples
+  type-check with the docs. This is not a full adapter/consumer matrix or fresh
+  Angular 22 validation. No full editor/docs suites, CI inspection, publication,
+  deployment or push were performed.
+
+Pre-test review fixed intermediate structural resource limits, aggregate inserted
+payload, initial actual-DOM/model path correspondence, semantic ancestor refusal,
+focus reentrancy and repeated model parsing. Source resetTyping snapshots restore
+pending formats through Undo. The initial browser run passed 203/207: Firefox's
+root-gap caret created a separate paragraph after source Apply; WebKit exposed
+an actual terminal-noneditable-atom input gap and its request-inspection protocol
+omitted multipart file bytes. These were not treated as successful checks.
+
+Source now selects the first actual ordinary body at child offset zero, with a
+validated P/BR for empty replacement and root-gap fallback for protected roots.
+The terminal atom diagnostic proved focused P-end selection plus keydown without
+beforeinput/input. SDK now delegates only that concrete printable-key gap to the
+typed core insertTextAtCaret method, reusing pending-format insertion and grouped
+history without synthetic events/fillers/a second input engine. Composition
+cancellation is reset only after confirmed core API/readonly cancellation. The
+styled-input regression checks semantic identity; formatter DOM reconstruction
+retains its existing contract. Plain controlled feedback still checks actual atom
+identity. The upload test separately checks native FormData File bytes and the
+visible wire multipart headers/name, without claiming WebKit exposes wire bytes.
+
+| Selected closure | Raw JS | gzip JS | Brotli JS | Raw CSS | gzip CSS | Brotli CSS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Core | 116095 | 35946 | 31581 | 3397 | 1197 | 987 |
+| Standard ready | 244750 | 75738 | 64639 | 16581 | 4707 | 3904 |
+| Standard + HTML source ready | 252411 | 78255 | 66551 | 17656 | 5216 | 4322 |
+| Standard + prior authoring tools | 279685 | 86328 | 72621 | 19913 | 6228 | 5152 |
+| Extended ready | 301492 | 92556 | 77935 | 18046 | 5280 | 4355 |
+
+Retained SDK closure: 16271 gzip JS bytes; source UI: 3636 gzip JS bytes. All existing guards pass unchanged.
+These profiles are distinct selections, not a promise that every optional UI
+combination fits one guard. Physical-device/assistive-technology evidence remains
+unavailable, separate from automated checks and not a proposed follow-up task.
+
 ## Authoring blocks 1–3 — final focused evidence, 2026-11-23
 
 Implemented optional root block navigation, bounded paragraph layout and inline

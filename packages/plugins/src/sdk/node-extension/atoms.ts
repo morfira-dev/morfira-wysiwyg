@@ -127,11 +127,37 @@ export const setupAtoms = (context: AtomicContext): (() => void) => {
     result.selectNode(atom);
     return result;
   };
+  const terminalGap = (range: Range): boolean => {
+    if (!range.collapsed || atomAncestor(context, range.startContainer)) return false;
+    const flow = ordinaryAtomRange(context, range);
+    const atom = adjacentAtom(context, range, -1);
+    if (!flow || !atom || atom.getAttribute('contenteditable') !== 'false') return false;
+    let node = range.startContainer;
+    if (node.nodeType === 3) {
+      if (range.startOffset !== (node.textContent?.length ?? 0)) return false;
+    }
+    else if (node.nodeType === 1) {
+      if ([...node.childNodes].slice(range.startOffset).some((child) => child.nodeType !== 3 || child.textContent)) return false;
+    }
+    else return false;
+    while (node !== flow) {
+      for (let sibling = node.nextSibling; sibling; sibling = sibling.nextSibling)
+        if (sibling.nodeType !== 3 || sibling.textContent) return false;
+      if (!node.parentNode) return false;
+      node = node.parentNode;
+    }
+    return true;
+  };
   const keydown = (event: KeyboardEvent) => {
     if (event.defaultPrevented || !event.cancelable || disposed || composing || event.isComposing || event.keyCode === 229 || !focused()) return;
     normalize();
     const saved = nativeRange(root);
     if (!saved || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (Array.from(event.key).length === 1 && !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(event.key) && terminalGap(saved.range)) {
+      cancel(event);
+      if (active()) editor.insertTextAtCaret(event.key);
+      return;
+    }
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       if (!saved.range.collapsed && !event.shiftKey) return;
       const focus = document.createRange();
@@ -243,7 +269,15 @@ export const setupAtoms = (context: AtomicContext): (() => void) => {
     for (const name of ['copy', 'cut', 'paste']) listen(name, clipboard as EventListener);
     listen('compositionstart', () => { composing = true; });
     listen('compositionend', () => { composing = false; annotate(); normalize(); });
-    cleanups.push(editor.onSelectionChange(normalize), editor.subscribe(() => { revision++; annotate(); }));
+    cleanups.push(editor.onSelectionChange(normalize), editor.subscribe((change) => {
+      if (change.source === 'api') composing = false;
+      revision++;
+      annotate();
+    }), editor.events.on('readonlychange', () => {
+      // Core cancels active composition before readonly activation and emits no
+      // trailing compositionend; readonly=false alone cannot clear this latch.
+      if (editor.isReadOnly()) composing = false;
+    }));
   }
   catch (error) {
     observer.disconnect();

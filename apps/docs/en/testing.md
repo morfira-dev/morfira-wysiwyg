@@ -1,5 +1,9 @@
 # Testing and releases
 
+## Extensions and source — 23 November 2026
+
+Blocks 4–7 are implemented locally: HTML source, overlay node views, structural positions and application recipes. Final focused checks passed **225/225** in three browsers, plus **6/6** prior pending-font/color regressions; RU/EN demos/homepage passed **10/10** in Chromium. Builds, types, selective imports, archives and a focused nine-subpath tarball smoke passed. The Svelte recipe compiled and Angular 21 strict AOT passed; the full consumer matrix and Angular 22 were not run. Core is 35946 gzip bytes, Standard ready 75738, Standard with source 78255, Standard with prior authoring tools 86328. Source/SDK remain opt-in. Limits: [source](/en/source-editing), [views](/en/inline-node-views), [mapping](/en/structural-mapping), [recipes](/en/extension-recipes).
+
 ## Authoring tools — 23 November 2026
 
 New authoring tools add object navigation, paragraph layout/format painter and code blocks. Focused evidence is staged: 57/57 navigation/text-tool executions, 39/39 code and 15/15 security executions in three browsers; RU/EN demos/homepage passed 8/8 in Chromium. Builds, types, selective imports and focused real-tarball smoke passed. Full suites and CI were not run. Standard with the tools uses 83305 gzip JS bytes and 19913 raw CSS bytes. Syntax highlighting is an external preview; nested object navigation and universal structural mapping are not claimed.

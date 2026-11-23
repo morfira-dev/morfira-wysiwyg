@@ -62,3 +62,43 @@ commands, per-editor isolation, atom navigation/deletion/clipboard and undo,
 read-only/composition, view create/update/destroy and unmount, callback errors,
 native highlight ownership, supported transaction mapping and expiry after unknown
 edits. Add public type/real-archive smoke and measure selected import closures.
+
+
+## Additive in-editor overlay views — 2026-11-23
+
+The independent createInlineNodeViews contract follows inline-node-views.md. It
+places nonpersisted visual output inside the editor box and outside the persisted
+surface, preserving the existing external createNodeViews API. Neither API is
+editable contentDOM. Path-aware explicit structural plans are separately scoped
+by structural-mapping.md; do not infer automatic mapping for native edits.
+
+
+## Terminal atom typing — 2026-11-23
+
+A collapsed native caret after an owned atomic span at the exact end of an
+ordinary inline flow accepts one printable key through the shared core
+`editor.insertTextAtCaret` command. This handles the observed WebKit case where
+keydown occurs but the browser produces no beforeinput/input at a terminal
+contenteditable=false boundary. The command retains pending formatting and
+ordinary insertText history; the atom's semantic identity, text and metadata survive.
+Formatting may reconstruct actual DOM spans under the existing formatter contract;
+node views keyed by actual node identity then dispose/recreate normally. Plain
+controlled-value acknowledgement retains existing actual nodes when no formatting
+operation rebuilds them.
+
+The SDK claims only that concrete terminal gap, including ordinary inline
+formatting ancestors ending at the same flow edge. Existing following text, BR,
+semantic/structural branches, noncollapsed ranges, modifier shortcuts, Dead/Process
+keys and composition remain with their previous owners. A printable key contains
+one Unicode codepoint and no control/line-separator character. This is not IME
+normalization, a keyboard layout engine, a sentinel/filler or a synthetic input
+commit. Cancel the owned native key once to prevent duplicate insertion in other
+browsers. The shared core command revalidates selection, pending formats,
+read-only/composition and synchronous focus callbacks. Failed revalidation leaves
+the edit unapplied rather than typing into a new application-selected target.
+
+Local atom composition state is cleared only on compositionend or confirmed core
+cancellation: changed external API content or readonly activation. An unrelated
+readonly=false transition cannot end an active composition. Focused regressions
+cover native terminal typing, pending marks/styles, semantic atom identity, grouped Undo
+and cancellation followed by restored keyboard behavior in three engines.

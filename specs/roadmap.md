@@ -44,6 +44,28 @@ docs, archive and build/size evidence belongs to verification-backlog.md. Do not
 full suites or monitor CI by default. Physical-device/AT environments remain
 unavailable evidence limitations, not proposed next work.
 
+## Implemented extension blocks 4–7 — 2026-11-23
+
+4. Explicit safe HTML-source draft/normalization preview and one undoable Apply;
+   reset pending caret formats through a typed transaction option. See source-editing.md.
+5. Opt-in in-editor visual node views in a sibling overlay outside persisted source;
+   preserve canonical data/search/clipboard/history, no editable contentDOM. See inline-node-views.md.
+6. Explicit validated structural plans and path-aware handles for supported
+   split/join/insert/remove/move, actual history mapping and unknown-edit expiry.
+   No automatic native mapping or immutable-engine rewrite. See structural-mapping.md.
+7. Copyable application-owned upload, async mention, custom atom, version-conflict
+   save and lazy-highlighting recipes with five wrapper examples and focused
+   compilation/runtime evidence. See extension-recipes.md and recipe-example-checks.md.
+
+Final local focused evidence passed 225/225 + 6/6 three-engine executions and
+10/10 documentation cases; source-ready is 78255 gzip JS bytes. No full suite or
+remote result is implied. Detailed limits/results are in verification-backlog.md.
+
+Public optional imports, zero runtime dependencies, focused checks, independent
+size accounting and local per-block commits remain required; no push or full-suite
+run is implied. Actual outcomes belong to verification-backlog.md. Physical-device
+and assistive-technology checks remain unavailable evidence limitations.
+
 ## Implemented baseline
 
 - Versioned schema-v1 HTML/JSON boundaries, formatting, selection, bounded history, synchronous composable transactions and instance-local typed events. Contracts: `editor.md`, `transactions.md`, `events.md`.

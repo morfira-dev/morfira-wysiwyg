@@ -274,3 +274,78 @@ test('mapped positions and decorations survive atom presentation rebuilt by undo
   expect(result.redoDecorations).toBe(result.supported ? 1 : 0);
   expect(result.persisted).not.toContain('contenteditable');
 });
+
+test('typing a terminal atom suffix preserves pending fonts/styles, semantic atom identity and one word Undo', async ({ page }) => {
+  await setupExtensions(page);
+  const before = await page.evaluate(() => {
+    const { editor } = window.sdkExtensions;
+    editor.setHTML('<p><em>Prefix</em><span data-mw-node="demo:token" data-id="one">TOKEN</span></p>');
+    editor.focus();
+    const range = document.createRange();
+    range.selectNodeContents(editor.surface.querySelector('p')!);
+    range.collapse(false);
+    document.getSelection()!.removeAllRanges();
+    document.getSelection()!.addRange(range);
+    editor.format('bold', true);
+    editor.format('fontFamily', 'Georgia');
+    editor.format('fontSize', '22px');
+    editor.format('color', '#123456');
+    return editor.getHTML();
+  });
+  await page.keyboard.type('word');
+  const typed = await page.evaluate(() => {
+    const { editor } = window.sdkExtensions;
+    const paragraph = editor.surface.querySelector('p')!;
+    const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT);
+    const styles: { text: string; bold: boolean; font: string; size: string; color: string }[] = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (node.parentElement!.closest('em,[data-mw-node]') || !node.textContent) continue;
+      const style = getComputedStyle(node.parentElement!);
+      styles.push({ text: node.textContent, bold: Number(style.fontWeight) >= 600, font: style.fontFamily, size: style.fontSize, color: style.color });
+    }
+    const atom = paragraph.querySelector<HTMLElement>('[data-mw-node]')!;
+    return { text: paragraph.textContent, atomText: atom.textContent,
+      attributes: Object.fromEntries([...atom.attributes].filter((attribute) => attribute.name !== 'contenteditable').map((attribute) => [attribute.name, attribute.value])),
+      atomic: atom.getAttribute('contenteditable') === 'false', renderedText: styles.map((value) => value.text).join(''),
+      styled: styles.length > 0 && styles.every((value) => value.bold && value.font.includes('Georgia') && value.size === '22px' && value.color === 'rgb(18, 52, 86)') };
+  });
+  expect(typed).toEqual({ text: 'PrefixTOKENword', atomText: 'TOKEN', attributes: { 'data-mw-node': 'demo:token', 'data-id': 'one' }, atomic: true, renderedText: 'word', styled: true });
+  await page.evaluate(() => window.editor.undo());
+  expect(await page.evaluate(() => ({ html: window.editor.getHTML(), undo: window.editor.canUndo() }))).toEqual({ html: before, undo: false });
+  await page.evaluate(() => window.editor.redo());
+  await expect(page.locator('.mw-content p')).toHaveText('PrefixTOKENword');
+});
+
+test('confirmed API and readonly cancellation release atom composition without a trailing compositionend', async ({ page }) => {
+  await setupExtensions(page);
+  const composing = await page.evaluate(() => {
+    const root = window.editor.surface;
+    root.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    window.editor.setReadOnly(false);
+    const key = new KeyboardEvent('keydown', { key: 'x', bubbles: true, cancelable: true });
+    root.dispatchEvent(key);
+    return { prevented: key.defaultPrevented, text: root.textContent };
+  });
+  expect(composing).toEqual({ prevented: false, text: 'ATOKENB' });
+  await page.evaluate(() => {
+    const editor = window.editor;
+    editor.setHTML('<p>A<span data-mw-node="demo:token" data-id="one">TOKEN</span></p>');
+    editor.focus();
+    const range = document.createRange(); range.selectNodeContents(editor.surface.querySelector('p')!); range.collapse(false);
+    document.getSelection()!.removeAllRanges(); document.getSelection()!.addRange(range);
+  });
+  await page.keyboard.type('x');
+  await expect(page.locator('.mw-content p')).toHaveText('ATOKENx');
+  await page.evaluate(() => {
+    const editor = window.editor;
+    editor.setHTML('<p>A<span data-mw-node="demo:token" data-id="one">TOKEN</span></p>');
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    editor.setReadOnly(true);
+    editor.setReadOnly(false);
+    editor.focus();
+    const range = document.createRange(); range.selectNodeContents(editor.surface.querySelector('p')!); range.collapse(false);
+    document.getSelection()!.removeAllRanges(); document.getSelection()!.addRange(range);
+  });
+  await page.keyboard.type('y');
+  expect(await page.evaluate(() => window.editor.getHTML())).toBe('<p>A<span data-mw-node="demo:token" data-id="one">TOKEN</span>y</p>');
+});

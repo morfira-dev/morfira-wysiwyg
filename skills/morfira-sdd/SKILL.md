@@ -79,3 +79,6 @@ widget decorations. Office corpus provenance follows specs/office-paste.md; keep
 raw captured bytes/hashes/licenses, native captures and upstream samples distinct.
 
 Physical-device and assistive-technology checks are currently unavailable by the user decision of 2026-11-23. Record the evidence limitation honestly; do not propose them as follow-up tasks unless the user reopens that scope.
+
+
+For the additive source/SDK authoring stage read specs/source-editing.md, specs/inline-node-views.md and specs/structural-mapping.md. Source preview stays inert; Apply is one validated transaction with explicit pending-format reset. In-editor node views are nonpersisted sibling overlays, not editable contentDOM. Structural plans validate all intermediate resources and exact pre/post state; unknown edits expire positions. Application-owned recipes follow specs/extension-recipes.md and specs/recipe-example-checks.md, outside core/preset graphs.
