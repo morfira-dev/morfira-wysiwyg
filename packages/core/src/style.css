@@ -3,7 +3,7 @@
   --mw-font-size: 16px;
   --mw-line-height: 1.75;
   --mw-text: #263043;
-  --mw-muted: #8490a1;
+  --mw-muted: #657185;
   --mw-surface: #ffffff;
   --mw-toolbar-bg: #fafbfc;
   --mw-border: #e4e8ef;
@@ -50,3 +50,5 @@
 .mw-content figure { margin: var(--mw-image-margin, 1em 0); }
 .mw-content figure > img { display: block; }
 .mw-content figcaption { color: var(--mw-caption-color, var(--mw-muted)); font-size: var(--mw-caption-size, .85em); margin-top: var(--mw-caption-gap, .4em); }
+
+@media (forced-colors: active) { .mw-content:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; } }

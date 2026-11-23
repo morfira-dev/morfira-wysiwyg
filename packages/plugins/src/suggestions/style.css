@@ -4,8 +4,8 @@
 .mw-suggestion-option { padding: 8px 12px; cursor: pointer; overflow-wrap: anywhere; }
 .mw-suggestion-option.is-active { background: var(--mw-suggestion-active-bg, var(--mw-accent-soft, #eeebff)); }
 .mw-suggestion-label { font-weight: 550; }
-.mw-suggestion-description { margin-top: 2px; color: var(--mw-suggestion-muted, var(--mw-muted, #8490a1)); font-size: .85em; }
-.mw-suggestions-status { padding: 7px 12px; border-top: 1px solid var(--mw-suggestion-border, var(--mw-border, #e4e8ef)); color: var(--mw-suggestion-muted, var(--mw-muted, #8490a1)); font-size: .85em; overflow-wrap: anywhere; }
+.mw-suggestion-description { margin-top: 2px; color: var(--mw-suggestion-muted, var(--mw-muted, #657185)); font-size: .85em; }
+.mw-suggestions-status { padding: 7px 12px; border-top: 1px solid var(--mw-suggestion-border, var(--mw-border, #e4e8ef)); color: var(--mw-suggestion-muted, var(--mw-muted, #657185)); font-size: .85em; overflow-wrap: anywhere; }
 .mw-content [data-mw-node="morfira:mention"] {
   color: var(--mw-mention-color, var(--mw-accent, #6658e8));
   background: var(--mw-mention-background, var(--mw-accent-soft, #eeebff));

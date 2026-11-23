@@ -341,6 +341,7 @@ export const createEditorUI = (host: HTMLElement, editor: Editor, options: Edito
       cleanups.push(overflow.destroy);
     }
     listen(element, 'keydown', keyboard);
+    listen(element, 'focusin', updateTabs);
     listen(editor.surface, 'compositionstart', () => {
       if (editor.isReadOnly()) return;
       composing = true;

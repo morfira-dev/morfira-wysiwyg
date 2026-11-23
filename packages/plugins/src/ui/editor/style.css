@@ -25,3 +25,5 @@
 .mw-ui-measuring .mw-ui-more[hidden] { display: inline-flex; visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .mw-editor-ui *, .mw-editor-ui *::before, .mw-editor-ui *::after { animation: none !important; transition: none !important; } }
 @media (forced-colors: active) { .mw-editor-ui button, .mw-editor-ui select, .mw-editor-ui input { border-color: ButtonText; } .mw-editor-ui [aria-pressed=true], .mw-editor-ui [aria-pressed=mixed] { outline: 1px solid Highlight; } }
+@media (pointer: coarse) { .mw-editor-ui :is(button, select, input) { min-width: 44px; min-height: 44px; } .mw-editor-ui select { height: max(44px, var(--mw-ui-control-size, 36px)); } }
+@media (forced-colors: active) { .mw-editor-ui :focus-visible { outline: 2px solid Highlight; } }
