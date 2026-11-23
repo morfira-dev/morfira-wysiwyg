@@ -5,8 +5,8 @@ verification-backlog.md; authored scenarios are not executed browser evidence.
 
 ## Composition and API
 
-Expose `@morfira-dev/wysiwyg/codecs/markdown` with `parseMarkdown(source: string):
-EditorDocument` and `serializeMarkdown(document: EditorDocument): string`.
+Expose `@morfira-dev/wysiwyg/codecs/markdown` with `parseMarkdown(source: string, options?: MarkdownCodecOptions):
+EditorDocument` and `serializeMarkdown(document: EditorDocument, options?: MarkdownCodecOptions): string`.
 Implementation belongs to optional plugins `codecs/markdown`, with a facade
 entry, strict TypeScript and no third-party runtime dependency. Neither core,
 typing shortcuts nor presets import it. These synchronous codecs use document
@@ -37,7 +37,7 @@ destinations and optional double-quoted titles. Backslash escapes accept ASCII
 punctuation, including angle brackets, ampersands and table pipes. A trailing
 backslash or at least two spaces produces a hard line break; soft breaks become
 spaces. Pipe table rows have one fixed column count and a delimiter header with
-at least three hyphens per column; colon alignment hints are not persisted.
+at least three hyphens per column; colon alignment hints persist only with the explicit `tableAlignment` option.
 Parsing has a bounded scan-work budget of 32,000,000 units; exceptionally dense
 or adversarial syntax may reject rather than repeatedly rescan source indefinitely.
 Link labels balance square brackets up to the nesting bound and skip matched
@@ -45,9 +45,9 @@ inline-code spans; image labels inside links are supported, while nested links
 are kept literal. Backslashes inside code are literal and do not escape its
 closing delimiter.
 
-Raw HTML is literal text, never parsed or executed. Reference definitions,
-autolinks, HTML entities, task metadata, math, footnotes and extended directives
-are not interpreted. Code-fence language info is not persisted by schema v1.
+Raw HTML is literal text, never parsed or executed. The extended authoring profile
+below defines reference links, angle autolinks, entity decoding and opt-in task metadata.
+Math, footnotes and extended directives are not interpreted. Code-fence language info is not persisted by schema v1.
 Unsafe link/image destinations degrade to visible label/alt text with no URL.
 
 Export canonical Markdown from validated schema-v1 nodes. Preserve ordinary
@@ -63,7 +63,7 @@ rather than silently flatten structural/identity-bearing data. Simple table
 export uses the first row as its Markdown header; arbitrary TH placement is not
 preserved. JSON validation occurs before export, including URL/resource checks.
 
-Canonical export uses `**strong**`, `_emphasis_`, `~~strike~~`, ATX headings,
+Canonical export uses `**strong**`, `*emphasis*`, `~~strike~~`, ATX headings,
 `---` thematic breaks and two-space list continuation/nesting. Ordinary text
 escapes ASCII punctuation. Inline backtick fences exceed every contained run;
 when content touches a backtick fence, one space is padded at each edge. Import
@@ -126,3 +126,69 @@ codecs; its boundaries must not silently expand when the new entry is added.
 ## Fence regression — 2026-11-19
 
 A backtick fence info string cannot contain backticks. A paragraph consisting of a variable-length inline code span, including embedded backticks or a trailing backslash, must remain inline during export/import; it must not consume subsequent blocks as an opening fence. Existing code-delimiter round-trip coverage is the regression scenario.
+
+## Extended authoring profile — 2026-11-23
+
+The existing function signatures remain valid. Both additionally accept copied,
+validated `MarkdownCodecOptions { taskLists?: boolean; tableAlignment?: boolean }`,
+with both flags false by default. The extended ordinary grammar is enabled without
+options: setext headings, indented code blocks at block boundaries, reference link
+and image definitions (full/collapsed/shortcut references), safe angle URL/email
+autolinks, numeric character references and a documented common named-entity set.
+Raw HTML remains literal; no DOM parser or external engine is introduced.
+
+Definitions use at most 999 UTF-16 units per label, normalized by collapsing
+whitespace and Unicode lowercase; first definition wins. Same-line bounded URL
+and optional single/double quoted or parenthesized title are supported. Definitions
+inside code fences/indented code stay code. Definitions collected inside supported
+quote/list containers share the document lookup. Multiline definitions/titles,
+full Unicode case folding and the complete CommonMark block-container algorithm
+are not claimed. Undefined references remain literal. Decode escapes/entities
+before the existing URL policy, so encoded unsafe schemes never become links.
+
+Character references require a semicolon. Numeric references handle Unicode
+replacement/control mappings. Named references cover the documented common set,
+not the full HTML5 entity catalog; unknown names remain literal. Code spans and
+code blocks never decode entities. Emphasis observes whitespace/punctuation
+flanking and refuses intraword underscore emphasis; arbitrary CommonMark delimiter
+stack equivalence is not claimed.
+
+With taskLists true, leading `[ ]`, `[x]` or `[X]` in ordinary bullet/ordered items
+becomes the same `data-checklist-checked` LI metadata as the existing checklist
+plugin. Codec validation registers only that lightweight declarative attribute
+schema, not its runtime interaction/UI. Consumers install checklists when replacing
+an editor value to retain and interact with task state. Export emits canonical
+`[ ]` / `[x]` before item text. Without the option markers stay literal.
+
+With tableAlignment true, delimiter colons become bounded per-cell text-align
+styles; export emits column alignment only when its cells agree, and rejects
+mixed per-column alignment instead of silently guessing. Other table styling
+continues to be lossy. Existing source/node/depth/work/output budgets and the
+standalone 15000 gzip guard remain in force.
+
+Primary syntax references: CommonMark 0.31.2 (https://spec.commonmark.org/0.31.2/)
+and GFM 0.29 (https://github.github.com/gfm/). Regression inputs are independently
+authored examples based on those published rules, not copied parser code or a
+claim of official conformance. Actual checks and unsupported cases are recorded
+separately from the existence of this implementation contract.
+
+The accepted named character references (case-sensitive, semicolon required) are:
+`amp AMP lt LT gt GT quot QUOT apos nbsp copy reg trade euro pound yen cent
+ndash mdash hellip middot bull laquo raquo lsquo rsquo ldquo rdquo times divide
+plusmn deg micro para sect shy ensp emsp thinsp eacute Eacute aacute Aacute
+agrave Agrave ouml Ouml uuml Uuml auml Auml szlig`. Decimal numeric references
+accept at most eight digits and hexadecimal references at most six; invalid Unicode
+scalars become U+FFFD. Unknown references remain literal. Escaped ampersands are
+not decoded a second time.
+
+Delimiter support includes Unicode whitespace/punctuation flanking, literal
+intraword underscores, nested distinct strong/emphasis/strike and triple emphasis.
+This bounded recursive delimiter profile does not implement the complete CommonMark
+delimiter-stack algorithm or its rule-of-three ambiguity resolution. Unsupported
+ambiguous arrangements may preserve literal markers instead of matching another parser.
+
+Canonical emphasis now uses asterisks so emphasis next to ordinary letters remains
+representable while intraword underscores correctly remain literal on import.
+
+Inline import coalesces adjacent ordinary text fragments, including refused URL
+label/alt fallbacks, so canonical round trips preserve JSON text-node boundaries.

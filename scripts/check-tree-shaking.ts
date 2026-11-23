@@ -21,7 +21,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg', symbol: 'createDocumentSchema', feature: 'schema', allowed: [] },
   { entry: '@morfira-dev/wysiwyg', symbol: 'createEditorCommand', feature: 'command-token', allowed: [] },
   { entry: '@morfira-dev/wysiwyg/web-component', symbol: 'defineMorfiraEditor', feature: 'web-component', allowed: [] },
-  ...['parseMarkdown', 'serializeMarkdown'].map((symbol) => ({ entry: '@morfira-dev/wysiwyg/codecs/markdown', symbol, feature: 'codecs/markdown', allowed: ['codecs/markdown'] })),
+  ...['parseMarkdown', 'serializeMarkdown'].map((symbol) => ({ entry: '@morfira-dev/wysiwyg/codecs/markdown', symbol, feature: 'codecs/markdown', allowed: ['codecs/markdown', 'checklists'] })),
   ...['createMentionSchema', 'getMentions', 'mentionClipboardCommands'].map((symbol) => ({ entry: '@morfira-dev/wysiwyg/plugins/mentions', symbol, feature: 'mentions', allowed: ['mentions'] })),
   ...features.map((feature) => ({
     entry: `@morfira-dev/wysiwyg/plugins/${feature}`,
@@ -86,6 +86,8 @@ for (const { entry, symbol, feature, allowed } of cases) {
     for (const source of originalInputs[output]) {
       const sourceOwner = owner(source);
       assert.ok(!sourceOwner || allowed.includes(sourceOwner), `${feature}: loaded unrelated ${sourceOwner} implementation through ${output}`);
+      if (feature === 'codecs/markdown' && sourceOwner === 'checklists')
+        assert.ok(source.replaceAll('\\', '/').endsWith('/checklists/schema.ts'), 'markdown codec loaded checklist runtime behavior');
       if (feature === 'ui/contextual-image')
         assert.ok(!source.replaceAll('\\', '/').endsWith('/ui/images/upload.ts'), `${feature}: edit-only UI loaded upload progress/retry controls`);
     }

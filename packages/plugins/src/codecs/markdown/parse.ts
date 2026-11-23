@@ -1,10 +1,12 @@
-import { createDocumentSchema } from '@morfira-dev/wysiwyg-core';
 import type { DocumentNode, DocumentTag, EditorDocument } from '@morfira-dev/wysiwyg-core';
+import { checklistAttribute } from '../../checklists/schema.js';
 import { assertMarkdownLength, consumeNode, consumeWork, createMarkdownBudget, maximumMarkdownDepth } from './budget.js';
 import { parseMarkdownInline } from './inline.js';
 import type { MarkdownListMarker, MarkdownParserContext } from './internal-types.js';
+import type { MarkdownCodecOptions } from './types.js';
+import { markdownOptions, markdownSchema } from './options.js';
+import { readMarkdownReference } from './references.js';
 
-const schema = createDocumentSchema();
 const listMarker = (line: string): MarkdownListMarker | undefined => {
   const match = /^(?:([-+*])|([0-9]{1,9})[.)])(?:[ \t]+(.*)|$)/.exec(line);
   if (!match) return;
@@ -19,6 +21,13 @@ const fence = (line: string): RegExpExecArray | null => {
 };
 const heading = (line: string): RegExpExecArray | null => /^ {0,3}(#{1,6})[ \t]+(.*)$/.exec(line);
 const quote = (line: string): boolean => /^ {0,3}>/.test(line);
+const setext = (line: string): number | undefined => /^ {0,3}=+[ \t]*$/.test(line) ? 1 : /^ {0,3}-+[ \t]*$/.test(line) ? 2 : undefined;
+const indentedCode = (line: string): boolean => /^(?: {4}|\t)/.test(line);
+const deferredInline = (source: string, context: MarkdownParserContext, depth: number): DocumentNode[] => {
+  const target: DocumentNode[] = [];
+  context.inlineTasks.push({ source, depth, target });
+  return target;
+};
 
 /** Split pipes only outside code spans, respecting escaped literal pipes. */
 const tableCells = (line: string): string[] => {
@@ -68,13 +77,22 @@ const paragraphText = (lines: string[], terminated: boolean): string => lines.ma
   return backslashes % 2 ? line.slice(0, -1) + '\n' : last ? line : line.trimEnd() + ' ';
 }).join('');
 
-const parseBlocks = (lines: string[], context: MarkdownParserContext, depth: number): DocumentNode[] => {
+const parseBlocks = (lines: string[], context: MarkdownParserContext, depth: number, options: Required<MarkdownCodecOptions>): DocumentNode[] => {
   if (depth > maximumMarkdownDepth) throw new RangeError('Markdown exceeds structural limits.');
   consumeWork(context.budget, lines.reduce((total, line) => total + line.length + 1, 0));
   const output: DocumentNode[] = [];
   for (let index = 0; index < lines.length;) {
     const line = lines[index];
     if (!line.trim()) { index++; continue; }
+    if (readMarkdownReference(line, context)) { index++; continue; }
+    if (indentedCode(line)) {
+      const content: string[] = [];
+      while (index < lines.length && (indentedCode(lines[index]) || !lines[index].trim()))
+        content.push(lines[index++].replace(/^(?: {4}|\t)/, ''));
+      while (content.at(-1) === '') content.pop();
+      output.push(context.element('pre', [context.text(content.join('\n'), depth + 1)], depth));
+      continue;
+    }
     const codeFence = fence(line);
     if (codeFence) {
       const marker = codeFence[1][0];
@@ -91,7 +109,8 @@ const parseBlocks = (lines: string[], context: MarkdownParserContext, depth: num
     }
     const title = heading(line);
     if (title) {
-      output.push(context.element(`h${title[1].length}` as DocumentTag, parseMarkdownInline(title[2], context, depth + 1), depth));
+      const body = title[2].replace(/[ \t]+#+[ \t]*$/, '');
+      output.push(context.element(`h${title[1].length}` as DocumentTag, deferredInline(body, context, depth + 1), depth));
       index++;
       continue;
     }
@@ -103,7 +122,7 @@ const parseBlocks = (lines: string[], context: MarkdownParserContext, depth: num
     if (quote(line)) {
       const quoted: string[] = [];
       while (index < lines.length && quote(lines[index])) quoted.push(lines[index++].replace(/^ {0,3}> ?/, ''));
-      output.push(context.element('blockquote', parseBlocks(quoted, context, depth + 1), depth));
+      output.push(context.element('blockquote', parseBlocks(quoted, context, depth + 1, options), depth));
       continue;
     }
     const firstItem = listMarker(line);
@@ -112,24 +131,29 @@ const parseBlocks = (lines: string[], context: MarkdownParserContext, depth: num
       while (index < lines.length) {
         const item = listMarker(lines[index]);
         if (!item || item.kind !== firstItem.kind || thematic(lines[index])) break;
-        const content = [item.content];
+        const task = options.taskLists ? /^\[([ xX])\](?:[ \t]+(.*)|$)/.exec(item.content) : null;
+        const content = [task ? task[2] ?? '' : item.content];
         index++;
         while (index < lines.length) {
           if (/^ {2}/.test(lines[index])) content.push(lines[index++].slice(2));
           else if (!lines[index].trim() && /^ {2}/.test(lines[index + 1] ?? '')) { content.push(''); index++; }
           else break;
         }
-        const bodies = parseBlocks(content, context, depth + 2);
-        items.push(context.element('li', bodies.length ? bodies : [context.element('p', [], depth + 2)], depth + 1));
+        const bodies = parseBlocks(content, context, depth + 2, options);
+        items.push(context.element('li', bodies.length ? bodies : [context.element('p', [], depth + 2)], depth + 1,
+          task ? { [checklistAttribute]: String(task[1].toLowerCase() === 'x') } : {}));
       }
       output.push(context.element(firstItem.kind, items, depth, firstItem.kind === 'ol' && firstItem.number !== 1 ? { start: String(firstItem.number) } : {}));
       continue;
     }
     if (tableHeader(line, lines[index + 1])) {
       const head = tableCells(line);
+      const alignments = tableCells(lines[index + 1]).map((value) => value.startsWith(':')
+        ? value.endsWith(':') ? 'center' : 'left' : value.endsWith(':') ? 'right' : undefined);
       const rows: DocumentNode[] = [];
       const row = (cells: string[], header: boolean): void => {
-        rows.push(context.element('tr', cells.map((cell) => context.element(header ? 'th' : 'td', parseMarkdownInline(cell, context, depth + 3), depth + 2)), depth + 1));
+        rows.push(context.element('tr', cells.map((cell, column) => context.element(header ? 'th' : 'td', deferredInline(cell, context, depth + 3), depth + 2,
+          options.tableAlignment && alignments[column] ? { style: `text-align: ${alignments[column]}` } : {})), depth + 1));
       };
       row(head, true);
       index += 2;
@@ -145,20 +169,27 @@ const parseBlocks = (lines: string[], context: MarkdownParserContext, depth: num
     }
     const paragraph = [line];
     index++;
-    while (index < lines.length && lines[index].trim() && !blockStart(lines, index)) paragraph.push(lines[index++]);
-    output.push(context.element('p', parseMarkdownInline(paragraphText(paragraph, index < lines.length), context, depth + 1), depth));
+    while (index < lines.length && lines[index].trim() && !blockStart(lines, index) && !setext(lines[index])) paragraph.push(lines[index++]);
+    const level = index < lines.length ? setext(lines[index]) : undefined;
+    if (level) index++;
+    output.push(context.element(level ? `h${level}` as DocumentTag : 'p', deferredInline(paragraphText(paragraph, level ? false : index < lines.length), context, depth + 1), depth));
   }
   return output;
 };
 
-export const parseMarkdown = (source: string): EditorDocument => {
+export const parseMarkdown = (source: string, inputOptions?: MarkdownCodecOptions): EditorDocument => {
   assertMarkdownLength(source);
+  const options = markdownOptions(inputOptions);
   const budget = createMarkdownBudget();
   const context: MarkdownParserContext = {
     budget,
+    references: new Map(),
+    inlineTasks: [],
     text: (text, depth) => { consumeNode(budget, depth); return { type: 'text', text }; },
     element: (tag, children, depth, attributes = {}) => { consumeNode(budget, depth); return { type: 'element', tag, attributes, children }; },
   };
   const normalized = source.replace(/\r\n?/g, '\n');
-  return schema.validateDocument({ version: 1, children: parseBlocks(normalized.split('\n'), context, 0) });
+  const children = parseBlocks(normalized.split('\n'), context, 0, options);
+  for (const task of context.inlineTasks) task.target.push(...parseMarkdownInline(task.source, context, task.depth));
+  return markdownSchema(options).validateDocument({ version: 1, children });
 };

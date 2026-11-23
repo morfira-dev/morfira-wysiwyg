@@ -1,7 +1,9 @@
-import { createDocumentSchema } from '@morfira-dev/wysiwyg-core';
 import type { DocumentNode, EditorDocument, ElementNode } from '@morfira-dev/wysiwyg-core';
 import { maximumMarkdownDepth, maximumMarkdownLength, maximumMarkdownNodes } from './budget.js';
 import type { MarkdownExportEntry } from './serialize.types.js';
+import type { MarkdownCodecOptions } from './types.js';
+import { markdownOptions, markdownSchema } from './options.js';
+import { checklistAttribute } from '../../checklists/schema.js';
 
 const join = (parts: readonly string[], separator = ''): string => {
   let length = Math.max(0, parts.length - 1) * separator.length;
@@ -73,7 +75,7 @@ const inline = (nodes: readonly DocumentNode[], active: readonly string[] = [], 
     const label = escape((node.attributes.alt ?? '').replace(/\s+/g, ' '));
     return node.attributes.src ? join(['![', label, '](<', target(node.attributes.src), '>', title(node.attributes.title), ')']) : label;
   }
-  const mark = node.tag === 'strong' ? '**' : node.tag === 'em' ? '_' : node.tag === 's' ? '~~' : undefined;
+  const mark = node.tag === 'strong' ? '**' : node.tag === 'em' ? '*' : node.tag === 's' ? '~~' : undefined;
   if (mark && !active.includes(node.tag)) {
     const body = inline(node.children, [...active, node.tag], insideLink);
     return body ? join([mark, body, mark]) : '';
@@ -89,7 +91,7 @@ const inline = (nodes: readonly DocumentNode[], active: readonly string[] = [], 
 }));
 
 const whitespace = (node: DocumentNode): boolean => node.type === 'text' && !node.text.trim();
-const table = (node: ElementNode): string => {
+const table = (node: ElementNode, options: Required<MarkdownCodecOptions>): string => {
   const rows: ElementNode[] = [];
   const captions: string[] = [];
   for (const child of node.children) {
@@ -109,15 +111,24 @@ const table = (node: ElementNode): string => {
   if (!rows.length) throw new TypeError('Markdown tables need at least one row.');
   if (rows.length > 100) throw new RangeError('Markdown tables exceed 100 rows.');
   let columns: number | undefined;
-  const lines = rows.map((row) => {
+  const alignment: (string | undefined)[] = [];
+  const lines = rows.map((row, rowIndex) => {
     const cells = row.children.filter((child) => !whitespace(child));
     if (!cells.length || (columns !== undefined && columns !== cells.length)) throw new TypeError('Markdown tables must be rectangular.');
     if (cells.length > 100) throw new RangeError('Markdown tables exceed 100 columns.');
     columns = cells.length;
-    return join(['| ', join(cells.map((cell) => {
+    return join(['| ', join(cells.map((cell, column) => {
       if (cell.type !== 'element' || !['td', 'th'].includes(cell.tag)
         || Number(cell.attributes.rowspan ?? '1') !== 1 || Number(cell.attributes.colspan ?? '1') !== 1)
         throw new TypeError('Merged cells are not supported by the Markdown codec.');
+      if (options.tableAlignment) {
+        const declared = /(?:^|;)\s*text-align\s*:\s*([^;]+)\s*(?:;|$)/i.exec(cell.attributes.style ?? '')?.[1].trim().toLowerCase();
+        if (declared && !['left', 'center', 'right'].includes(declared))
+          throw new TypeError('Unsupported Markdown table column alignment.');
+        const value = declared;
+        if (rowIndex === 0) alignment[column] = value;
+        else if (alignment[column] !== value) throw new TypeError('Markdown table alignment must be consistent within each column.');
+      }
       const content = cell.children.filter((child) => !whitespace(child));
       const body = content.length === 1 && content[0].type === 'element' && content[0].tag === 'p'
         ? inline(content[0].children) : inline(cell.children);
@@ -125,11 +136,11 @@ const table = (node: ElementNode): string => {
       return body;
     }), ' | '), ' |']);
   });
-  lines.splice(1, 0, join(['| ', join(Array.from({ length: columns! }, () => '---'), ' | '), ' |']));
+  lines.splice(1, 0, join(['| ', join(Array.from({ length: columns! }, (_, column) => alignment[column] === 'center' ? ':---:' : alignment[column] === 'left' ? ':---' : alignment[column] === 'right' ? '---:' : '---'), ' | '), ' |']));
   return join([...captions, join(lines, '\n')], '\n\n');
 };
 
-const blocks = (nodes: readonly DocumentNode[]): string => {
+const blocks = (nodes: readonly DocumentNode[], options: Required<MarkdownCodecOptions>): string => {
   const output: string[] = [];
   let run: DocumentNode[] = [];
   const flush = (): void => {
@@ -150,7 +161,7 @@ const blocks = (nodes: readonly DocumentNode[]): string => {
     }
     else if (node.tag === 'hr') output.push('---');
     else if (node.tag === 'pre') output.push(code(plain(node.children, true), true));
-    else if (node.tag === 'blockquote') output.push(indent(blocks(node.children), '> '));
+    else if (node.tag === 'blockquote') output.push(indent(blocks(node.children, options), '> '));
     else if (node.tag === 'ul' || node.tag === 'ol') {
       const number = Number(node.attributes.start ?? '1');
       if (node.tag === 'ol' && (number < 0 || number > 999999999))
@@ -159,17 +170,19 @@ const blocks = (nodes: readonly DocumentNode[]): string => {
       for (const item of node.children) {
         if (whitespace(item)) continue;
         if (item.type !== 'element' || item.tag !== 'li') throw new TypeError('Markdown lists require ordinary list items.');
-        const body = blocks(item.children);
+        const body = blocks(item.children, options);
         const lines = body.split('\n');
         // A Markdown list owns its initial counter; repeating the valid initial
         // marker avoids overflow at the end of the bounded nine-digit range.
-        const first = join([node.tag === 'ol' ? `${number}. ` : '- ', lines[0]]);
+        const state = options.taskLists ? item.attributes[checklistAttribute] : undefined;
+        const task = state === 'true' ? '[x] ' : state === 'false' ? '[ ] ' : '';
+        const first = join([node.tag === 'ol' ? `${number}. ` : '- ', task, lines[0]]);
         items.push(join([first, ...(lines.length > 1 ? ['\n', indent(join(lines.slice(1), '\n'), '  ')] : [])]));
       }
       output.push(join(items, '\n'));
     }
-    else if (node.tag === 'table') output.push(table(node));
-    else if (node.tag === 'figure') output.push(blocks(node.children));
+    else if (node.tag === 'table') output.push(table(node, options));
+    else if (node.tag === 'figure') output.push(blocks(node.children, options));
     else throw new TypeError(`Unsupported Markdown block structure: ${node.tag}.`);
   }
   flush();
@@ -177,7 +190,8 @@ const blocks = (nodes: readonly DocumentNode[]): string => {
 };
 
 /** Serialize validated document data without creating or reading a DOM. */
-export const serializeMarkdown = (input: EditorDocument): string => {
+export const serializeMarkdown = (input: EditorDocument, inputOptions?: MarkdownCodecOptions): string => {
+  const options = markdownOptions(inputOptions);
   if (!input || input.version !== 1 || !Array.isArray(input.children)) throw new TypeError('Expected a schema-v1 document.');
   const pending: MarkdownExportEntry[] = [];
   if (input.children.length > maximumMarkdownNodes) throw new RangeError('Markdown exceeds structural limits.');
@@ -207,5 +221,5 @@ export const serializeMarkdown = (input: EditorDocument): string => {
     }
     if (length > maximumMarkdownLength) throw new RangeError('Markdown source document exceeds the size limit.');
   }
-  return blocks(createDocumentSchema().validateDocument(input).children);
+  return blocks(markdownSchema(options).validateDocument(input).children, options);
 };

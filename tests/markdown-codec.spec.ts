@@ -52,7 +52,7 @@ test('raw HTML stays literal and unsafe Markdown destinations never become execu
       sameText: roundTrip.content.textContent === template.content.textContent,
     };
   });
-  expect(result.text).toContain('<img src="https://example.invalid/probe" onerror="alert(1)"> &amp;');
+  expect(result.text).toContain('<img src="https://example.invalid/probe" onerror="alert(1)"> &');
   expect(result.text).toContain('Danger');
   expect(result.text).toContain('Unsafe image');
   expect(result).toMatchObject({ liveTags: 0, reparsedTags: 0, sameText: true });
