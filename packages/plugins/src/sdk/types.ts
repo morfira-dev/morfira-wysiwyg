@@ -48,3 +48,14 @@ export interface DecorationsController {
 export interface NodeExtensionFactory {
   (spec: SchemaNodeSpec, options?: NodeExtensionOptions): EditorPlugin;
 }
+
+export interface InlineNodeViewsOptions {
+  readonly name: string;
+  readonly create: (context: NodeViewContext) => NodeView;
+  readonly onError?: (error: unknown) => void;
+}
+export interface InlineNodeViewsController {
+  readonly element: HTMLElement;
+  refresh(): void;
+  destroy(): void;
+}

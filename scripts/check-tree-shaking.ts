@@ -72,6 +72,7 @@ const cases = [
   { entry: '@morfira-dev/wysiwyg/ui/media', symbol: 'createMediaView', feature: 'ui/media', allowed: ['ui/media', 'ui/shared', 'media', 'sdk'] },
   { entry: '@morfira-dev/wysiwyg/ui/formula', symbol: 'createFormulaForm', feature: 'ui/formula', allowed: ['ui/formula', 'ui/shared', 'formula', 'sdk'] },
   { entry: '@morfira-dev/wysiwyg/ui/formula', symbol: 'createFormulaView', feature: 'ui/formula', allowed: ['ui/formula', 'ui/shared', 'formula', 'sdk'] },
+  { entry: '@morfira-dev/wysiwyg/sdk', symbol: 'createInlineNodeViews', feature: 'sdk', allowed: ['sdk'] },
   { entry: '@morfira-dev/wysiwyg/sdk', symbol: 'nodeExtension', feature: 'sdk', allowed: ['sdk'] },
   { entry: '@morfira-dev/wysiwyg/sdk', symbol: 'createNodeViews', feature: 'sdk', allowed: ['sdk'] },
   { entry: '@morfira-dev/wysiwyg/sdk', symbol: 'createDecorations', feature: 'sdk', allowed: ['sdk'] },

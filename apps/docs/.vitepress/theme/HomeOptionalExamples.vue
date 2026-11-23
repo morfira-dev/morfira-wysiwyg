@@ -4,8 +4,11 @@ import { useData } from 'vitepress';
 const { lang } = useData();
 const ru = computed(() => lang.value === 'ru');
 const sourceOpen = ref(false);
+const inlineViewsOpen = ref(false);
 const SourceEditingExample = defineAsyncComponent(() => import('./SourceEditingExample.vue'));
+const InlineNodeViewsExample = defineAsyncComponent(() => import('./InlineNodeViewsExample.vue'));
 const toggleSource = (event: Event) => { sourceOpen.value = (event.currentTarget as HTMLDetailsElement).open; };
+const toggleInlineViews = (event: Event) => { inlineViewsOpen.value = (event.currentTarget as HTMLDetailsElement).open; };
 const mediaOpen = ref(false);
 const markdownOpen = ref(false);
 const quoteOpen = ref(false);
@@ -31,6 +34,7 @@ const toggleQuote = (event: Event) => { quoteOpen.value = (event.currentTarget a
     <h2>{{ ru ? 'Дополнительные примеры' : 'Additional examples' }}</h2>
     <p>{{ ru ? 'Откройте нужный раздел, чтобы запустить дополнительный редактор с выбранными возможностями.' : 'Open a section to start an additional editor with the selected capabilities.' }}</p>
     <details @toggle="toggleSource"><summary>{{ ru ? 'Безопасный HTML-исходник' : 'Safe HTML source editing' }}</summary><SourceEditingExample v-if="sourceOpen" /></details>
+    <details @toggle="toggleInlineViews"><summary>{{ ru ? 'Узлы внутри области редактирования' : 'Node views inside the editor' }}</summary><InlineNodeViewsExample v-if="inlineViewsOpen" /></details>
     <details @toggle="toggleNavigation"><summary>{{ ru ? 'Навигация вокруг изображений и объектов' : 'Navigation around images and objects' }}</summary><BlockNavigationExample v-if="navigationOpen" /></details>
     <details @toggle="toggleTextTools"><summary>{{ ru ? 'Интервалы и перенос форматирования' : 'Paragraph layout and format painter' }}</summary><TextToolsExample v-if="textToolsOpen" /></details>
     <details @toggle="toggleCodeBlocks"><summary>{{ ru ? 'Блоки кода и подсветка' : 'Code blocks and highlighting' }}</summary><CodeBlocksExample v-if="codeBlocksOpen" /></details>

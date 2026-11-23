@@ -4,6 +4,7 @@ import type { NodeCommands } from './types.js';
 export interface NodeExtensionRegistration {
   readonly spec: SchemaNodeSpec;
   readonly commands: NodeCommands;
+  readonly atomic: boolean;
   owns(node: Element): node is HTMLElement;
 }
 export interface AtomicContext {

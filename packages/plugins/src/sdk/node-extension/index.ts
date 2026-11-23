@@ -143,7 +143,7 @@ export const nodeExtension = (spec: SchemaNodeSpec, options: NodeExtensionOption
           return removed;
         },
       };
-      const unregister = editor.providePlugin(nodeExtensionKey(definition.name), { spec: definition, commands, owns } satisfies NodeExtensionRegistration);
+      const unregister = editor.providePlugin(nodeExtensionKey(definition.name), { spec: definition, commands, owns, atomic } satisfies NodeExtensionRegistration);
       let stopAtoms: (() => void) | undefined;
       try { if (atomic) stopAtoms = setupAtoms({ editor, owns, name: definition.name }); }
       catch (error) { unregister(); throw error; }
