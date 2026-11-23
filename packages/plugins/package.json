@@ -1,6 +1,6 @@
 {
   "name": "@morfira-dev/wysiwyg-plugins",
-  "version": "1.20.0",
+  "version": "1.21.0",
   "type": "module",
   "files": [
     "dist"
@@ -259,7 +259,7 @@
     "./ui/source.css": "./dist/ui/source.css"
   },
   "peerDependencies": {
-    "@morfira-dev/wysiwyg-core": "^1.14.0"
+    "@morfira-dev/wysiwyg-core": "^1.15.0"
   },
   "repository": {
     "type": "git",

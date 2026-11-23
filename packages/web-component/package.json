@@ -1,6 +1,6 @@
 {
   "name": "@morfira-dev/wysiwyg-web-component",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "type": "module",
   "files": [
     "dist"
@@ -19,7 +19,7 @@
     }
   },
   "peerDependencies": {
-    "@morfira-dev/wysiwyg-core": "^1.14.0"
+    "@morfira-dev/wysiwyg-core": "^1.15.0"
   },
   "repository": {
     "type": "git",
