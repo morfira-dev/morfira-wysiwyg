@@ -6,8 +6,11 @@ const ru = computed(() => lang.value === 'ru');
 const mediaOpen = ref(false);
 const markdownOpen = ref(false);
 const quoteOpen = ref(false);
+const navigationOpen = ref(false);
 const MediaFormulaExample = defineAsyncComponent(() => import('./MediaFormulaExample.vue'));
 const AdvancedMarkdownExample = defineAsyncComponent(() => import('./AdvancedMarkdownExample.vue'));
+const BlockNavigationExample = defineAsyncComponent(() => import('./BlockNavigationExample.vue'));
+const toggleNavigation = (event: Event) => { navigationOpen.value = (event.currentTarget as HTMLDetailsElement).open; };
 const ListQuoteInputExample = defineAsyncComponent(() => import('./ListQuoteInputExample.vue'));
 const toggleMedia = (event: Event) => { mediaOpen.value = (event.currentTarget as HTMLDetailsElement).open; };
 const toggleMarkdown = (event: Event) => { markdownOpen.value = (event.currentTarget as HTMLDetailsElement).open; };
@@ -18,6 +21,7 @@ const toggleQuote = (event: Event) => { quoteOpen.value = (event.currentTarget a
   <section class="home-optional-examples">
     <h2>{{ ru ? 'Дополнительные примеры' : 'Additional examples' }}</h2>
     <p>{{ ru ? 'Откройте нужный раздел, чтобы запустить дополнительный редактор с выбранными возможностями.' : 'Open a section to start an additional editor with the selected capabilities.' }}</p>
+    <details @toggle="toggleNavigation"><summary>{{ ru ? 'Навигация вокруг изображений и объектов' : 'Navigation around images and objects' }}</summary><BlockNavigationExample v-if="navigationOpen" /></details>
     <details @toggle="toggleMedia"><summary>{{ ru ? 'Видео и математические формулы' : 'Video and mathematical formulas' }}</summary><MediaFormulaExample v-if="mediaOpen" /></details>
     <details @toggle="toggleMarkdown"><summary>{{ ru ? 'Расширенный Markdown: импорт и экспорт' : 'Extended Markdown import and export' }}</summary><AdvancedMarkdownExample v-if="markdownOpen" /></details>
     <details @toggle="toggleQuote"><summary>{{ ru ? 'Удаление на границах цитат в списке' : 'Deletion at list quote boundaries' }}</summary><ListQuoteInputExample v-if="quoteOpen" /></details>

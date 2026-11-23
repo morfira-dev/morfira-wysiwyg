@@ -242,7 +242,11 @@
       "types": "./dist/ui/formula.d.ts",
       "import": "./dist/ui/formula.js"
     },
-    "./ui/formula.css": "./dist/ui/formula.css"
+    "./ui/formula.css": "./dist/ui/formula.css",
+    "./plugins/block-navigation": {
+      "types": "./dist/plugins/block-navigation.d.ts",
+      "import": "./dist/plugins/block-navigation.js"
+    }
   },
   "dependencies": {
     "@morfira-dev/wysiwyg-core": "^1.14.0",

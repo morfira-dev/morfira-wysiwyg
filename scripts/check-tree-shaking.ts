@@ -15,6 +15,10 @@ const owner = (path: string): string | undefined => {
   return relative.split('/')[0];
 };
 const cases = [
+  ...[
+    ['plugins/block-navigation', 'blockNavigation', 'block-navigation', ['block-navigation']],
+  ].map(([entry, symbol, feature, allowed]) => ({ entry: `@morfira-dev/wysiwyg/${entry}`, symbol: symbol as string, feature: feature as string, allowed: allowed as string[] })),
+
   { entry: '@morfira-dev/wysiwyg', symbol: 'createEditor', feature: 'core', allowed: [] },
   { entry: '@morfira-dev/wysiwyg', symbol: 'sanitizeHTML', feature: 'sanitizer', allowed: [] },
   { entry: '@morfira-dev/wysiwyg', symbol: 'localize', feature: 'localization', allowed: [] },

@@ -144,7 +144,7 @@ for (const [entry, symbol, label, budget] of [['ui/preview', 'createPreviewUI', 
   if (report[`${label}-standalone.js`].gzip > budget) { console.error(`${label}: exceeds ${budget} gzip JS byte budget`); failed = true; }
 }
 // Optional plugins/UI include their selected SDK and validation dependency closure.
-for (const [entry, label] of [['plugins/media', 'media'], ['plugins/formula', 'formula'], ['ui/media', 'media-ui'], ['ui/formula', 'formula-ui']] as const) {
+for (const [entry, label] of [['plugins/media', 'media'], ['plugins/formula', 'formula'], ['ui/media', 'media-ui'], ['ui/formula', 'formula-ui'], ['plugins/block-navigation', 'block-navigation']] as const) {
   const result = await build({
     stdin: { contents: `import * as feature from '@morfira-dev/wysiwyg/${entry}'; globalThis.__morfiraOptional = feature;`, resolveDir: process.cwd(), loader: 'ts' },
     bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',

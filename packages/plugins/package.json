@@ -220,7 +220,11 @@
       "types": "./dist/ui/formula/index.d.ts",
       "import": "./dist/ui/formula.js"
     },
-    "./ui/formula.css": "./dist/ui/formula.css"
+    "./ui/formula.css": "./dist/ui/formula.css",
+    "./block-navigation": {
+      "types": "./dist/block-navigation/index.d.ts",
+      "import": "./dist/block-navigation.js"
+    }
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.14.0"
