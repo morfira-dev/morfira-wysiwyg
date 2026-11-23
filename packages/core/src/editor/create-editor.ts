@@ -1,3 +1,4 @@
+import { semanticPresentationTarget } from '../positions/presentation.js';
 import { createPositionRegistry } from '../positions/index.js';
 import { prepareTextMapping, inverseTextMapping } from '../positions/mapping.js';
 import type { PreparedTextMapping } from '../positions/internal-types.js';
@@ -202,6 +203,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
   const positionHistory = new WeakMap<Snapshot, PreparedTextMapping>();
   const positionRegistry = createPositionRegistry({
     surface,
+    canPresent: (node) => semanticPresentationTarget(surface, schema, node),
     isAvailable: () => !destroyed && !composing && !transactionDepth && !pendingInput,
     canCapture: () => {
       try { return htmlSnapshots.read() === current.html; }
@@ -288,7 +290,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       selectText(surface, selection.index, selection.length);
     const after = capture();
     if (mapping && mapping.after !== (surface.textContent ?? ''))
-      throw new Error('Declared position mapping does not match the committed text.');
+      throw new Error('Mapping does not match the edited text.');
     selectionHandles.synchronize();
     if (after.html === before.html) {
       positionRegistry.synchronize();
@@ -378,7 +380,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
     };
     if (transactionDepth) {
       if (transactionOptions !== undefined) {
-        const error = new Error('Only the outermost transaction may declare position mapping.');
+        const error = new Error('Nested mapping plans are not supported.');
         transactionFailed = true;
         transactionError = error;
         throw error;
@@ -448,7 +450,7 @@ export const createEditor = (host: HTMLElement, options: EditorOptions = {}): Ed
       transactionDepth = 0;
       pendingSelectionNotification = false;
       try { positionRegistry.notify(); }
-      catch (notificationError) { throw new AggregateError([error, notificationError], 'Transaction and position notification failed.'); }
+      catch (notificationError) { throw new AggregateError([error, notificationError], 'Transaction cleanup failed.'); }
       throw error;
     }
     finally {

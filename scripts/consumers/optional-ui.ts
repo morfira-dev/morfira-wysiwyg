@@ -26,6 +26,10 @@ try {
   }
   execFileSync(process.execPath, ['--input-type=module', '--eval', `
     import assert from 'node:assert/strict';
+    const { nodeExtension, createNodeViews, createDecorations } = await import('@morfira-dev/wysiwyg/sdk');
+    assert.equal(typeof nodeExtension, 'function');
+    assert.equal(typeof createNodeViews, 'function');
+    assert.equal(typeof createDecorations, 'function');
     const { createFullscreenUI } = await import('@morfira-dev/wysiwyg/ui/fullscreen');
     const { createSpecialCharacterUI } = await import('@morfira-dev/wysiwyg/ui/special-characters');
     const { createPreviewUI } = await import('@morfira-dev/wysiwyg/ui/preview');
@@ -87,6 +91,8 @@ try {
       await page.goto(`${server.url}/index.html`);
       const content = page.locator('.mw-content');
       await expect(content).toHaveText('AB');
+      assert.deepEqual(await page.evaluate(() => window.morfiraOptionalUI.exerciseSDK()),
+        { mapped: true, nodeText: 'Updated', views: 1, readonly: true, clean: true });
       assert.deepEqual(await page.evaluate(() => {
         const editor = window.morfiraOptionalUI.editor;
         editor.setSelection(0, 1);

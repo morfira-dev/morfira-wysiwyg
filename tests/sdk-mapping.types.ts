@@ -3,6 +3,9 @@ import type { Editor, EditorPositionHandle, EditorPositions, EditorTransactionOp
 const checkMappedPositions = (editor: Editor) => {
   const positions: EditorPositions = editor.positions;
   const handle: EditorPositionHandle | undefined = positions.track(0, -1);
+  positions.setPresentation(editor.surface, false);
+  // @ts-expect-error Presentation accounting never accepts arbitrary editable strings.
+  positions.setPresentation(editor.surface, 'true');
   const mapping: readonly TextMappingStep[] = [{ from: 0, to: 0, insert: 'X' }];
   const options: EditorTransactionOptions = { mapping };
   editor.transact((surface) => surface.prepend('X'), options);

@@ -210,3 +210,7 @@ For an action from an external field, the demo first restores the remembered bou
 - Direct DOM mutation is trusted application code, not a sandbox. Use transactions and validated HTML/JSON APIs for changes. A handle does not authorize backend requests or establish input safety.
 
 This slice **does not map positions through edits**, add a general atom/node-view/decorations SDK, or broaden supported structural operations. A remembered `Range` is an observation, not permission to bypass command validation. Actual executed checks are recorded in [testing](/en/testing); API examples alone are not browser verification evidence.
+
+## Additional SDK layers
+
+[Nodes, atoms, external views and decorations](/en/plugin-extensions) are available through optional `/sdk`. Explicit UTF-16 mapping uses `editor.positions` and transaction plans. These independent contracts do not turn revision-bound selection handles into automatically mapped DOM targets or promise editable contentDOM.

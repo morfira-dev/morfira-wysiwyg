@@ -29,6 +29,7 @@
 | `setSelection(index, length?)` | Select text; nonnegative integer offsets |
 | `selection.capture() / isCurrent(handle) / getRange(handle) / restore(handle) / release(handle)` | Revision-bound selection handles for external UI; [contract](/en/plugin-sdk#remembered-selections-for-external-ui) |
 | `positions.track(index, association?) / resolve(handle) / release(handle) / subscribe(listener)` | Explicitly mapped UTF-16 positions. `transact(mutate, { mapping })` validates sequential `{ from, to, insert }` steps; unknown edits expire targets. Undo/redo use inverse/forward plans. This is not structural mapping. |
+| `positions.setPresentation(node, editable)` | Accounted runtime contenteditable annotation on a validated semantic span; only false or undefined. Not an arbitrary DOM transaction. |
 | `getFormats(range?)` | Formats at selection start, `mixed`, list depth and indentation availability |
 | `format(name, value)` | Undoable user-format command |
 | `insertHTML(html)` | Validated paste-like replacement of the current selection |

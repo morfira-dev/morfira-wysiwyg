@@ -15,7 +15,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     if (name === 'svelte' && extension === 'js') {
       const source = await readFile(`${path}/MorfiraEditor.svelte`, 'utf8');
       const compiled = compile(source, { filename: 'MorfiraEditor.svelte', generate: 'client', dev: false });
-      const minified = await transform(compiled.js.code, { minify: true, format: 'esm', target: 'es2022' });
+      const minified = await transform(compiled.js.code, { minify: true, charset: 'utf8', format: 'esm', target: 'es2022' });
       buffers.push(Buffer.from(minified.code));
     }
     if (!buffers.length) continue;
@@ -66,7 +66,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     report['ui-search-highlights.css'] = { raw: searchCSS.length, gzip: gzipSync(searchCSS).length, brotli: brotliCompressSync(searchCSS).length };
     if (searchCSS.length > 1500) { console.error('search highlights: exceeds 1500 raw CSS byte budget'); failed = true; }
     const editorCSS = await readFile(`${path}/ui/editor.css`); report['ui-editor.css'] = { raw: editorCSS.length, gzip: gzipSync(editorCSS).length, brotli: brotliCompressSync(editorCSS).length };
-    for (const entry of ['presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/special-characters', 'ui/fullscreen', 'ui/preview', 'ui/save-state', 'ui/print', 'ui/outline', 'text-drop', 'save-state', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/search-highlights']) {
+    for (const entry of ['sdk', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/special-characters', 'ui/fullscreen', 'ui/preview', 'ui/save-state', 'ui/print', 'ui/outline', 'text-drop', 'save-state', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/search-highlights']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].gzip > 150_000) { console.error(`${entry}: exceeds 150000 byte gzip JS budget`); failed = true; }
@@ -101,7 +101,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
 // A standalone codec consumer also includes its selected core validation helpers.
 const markdownCodec = await build({
   stdin: { contents: "import { parseMarkdown, serializeMarkdown } from '@morfira-dev/wysiwyg/codecs/markdown'; globalThis.__morfiraMarkdownCodec = { parseMarkdown, serializeMarkdown };", resolveDir: process.cwd(), loader: 'ts' },
-  bundle: true, minify: true, write: false, format: 'esm', platform: 'browser',
+  bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
   target: 'es2022', tsconfigRaw: { compilerOptions: {} }, logLevel: 'silent',
 });
 const markdownBuffer = markdownCodec.outputFiles[0].contents;
@@ -113,7 +113,7 @@ if (report['markdown-codec-standalone.js'].gzip > 15000) {
 // Include the optional panel's selected core helpers in its standalone guard.
 const specialCharacterUI = await build({
   stdin: { contents: "import { createSpecialCharacterUI } from '@morfira-dev/wysiwyg/ui/special-characters'; globalThis.__morfiraSpecialCharacterUI = createSpecialCharacterUI;", resolveDir: process.cwd(), loader: 'ts' },
-  bundle: true, minify: true, write: false, format: 'esm', platform: 'browser',
+  bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
   target: 'es2022', tsconfigRaw: { compilerOptions: {} }, logLevel: 'silent',
 });
 const specialCharacterBuffer = specialCharacterUI.outputFiles[0].contents;
@@ -124,7 +124,7 @@ if (report['special-characters-standalone.js'].gzip > 12000) {
 }
 const fullscreenUI = await build({
   stdin: { contents: "import { createFullscreenUI } from '@morfira-dev/wysiwyg/ui/fullscreen'; globalThis.__morfiraFullscreenUI = createFullscreenUI;", resolveDir: process.cwd(), loader: 'ts' },
-  bundle: true, minify: true, write: false, format: 'esm', platform: 'browser',
+  bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
   target: 'es2022', tsconfigRaw: { compilerOptions: {} }, logLevel: 'silent',
 });
 const fullscreenBuffer = fullscreenUI.outputFiles[0].contents;
@@ -136,7 +136,7 @@ if (report['fullscreen-standalone.js'].gzip > 8000) {
 for (const [entry, symbol, label, budget] of [['ui/preview', 'createPreviewUI', 'preview', 12000], ['ui/save-state', 'createSaveStateUI', 'save-state-ui', 12000], ['ui/print', 'createPrintUI', 'print', 12000], ['ui/outline', 'createOutlineUI', 'outline', 10000], ['plugins/text-drop', 'textDrop', 'text-drop', 15000]] as const) {
   const result = await build({
     stdin: { contents: `import { ${symbol} } from '@morfira-dev/wysiwyg/${entry}'; globalThis.__morfiraAuthoringUI = ${symbol};`, resolveDir: process.cwd(), loader: 'ts' },
-    bundle: true, minify: true, write: false, format: 'esm', platform: 'browser',
+    bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
     target: 'es2022', tsconfigRaw: { compilerOptions: {} }, logLevel: 'silent',
   });
   const buffer = result.outputFiles[0].contents;
@@ -187,7 +187,7 @@ for (const profile of ['minimal', 'standard', 'extended']) {
     }
     const bundled = await build({
       stdin: { contents, resolveDir: process.cwd(), sourcefile: 'profile-consumer.ts', loader: 'ts' },
-      bundle: true, treeShaking: true, minify: true, write: false, metafile: true,
+      bundle: true, treeShaking: true, minify: true, charset: 'utf8', write: false, metafile: true,
       tsconfigRaw: { compilerOptions: {} }, format: 'esm', platform: 'browser', target: 'es2022', logLevel: 'silent',
     });
     const inputs = Object.keys(bundled.metafile!.inputs);
@@ -230,6 +230,16 @@ for (const profile of ['minimal', 'standard', 'extended']) {
     }
   }
 }
+// Include the schema codec retained by a real optional SDK consumer, not just
+// the plugins-package chunks whose core imports stay external in distribution.
+const sdkConsumer = await build({
+  stdin: { contents: "import * as sdk from '@morfira-dev/wysiwyg/sdk'; globalThis.__morfiraSDK = sdk;", resolveDir: process.cwd(), loader: 'ts' },
+  bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',
+  target: 'es2022', tsconfigRaw: { compilerOptions: {} },
+});
+const sdkBuffer = sdkConsumer.outputFiles[0].contents;
+report['sdk-standalone.js'] = { raw: sdkBuffer.length, gzip: gzipSync(sdkBuffer).length, brotli: brotliCompressSync(sdkBuffer).length };
+if (report['sdk-standalone.js'].gzip > 150000) { console.error('sdk: exceeds 150000 gzip JS byte budget'); failed = true; }
 console.table(Object.fromEntries(Object.entries(report).map(([key, sizes]) => [key, Object.fromEntries(Object.entries(sizes).map(([type, bytes]) => [type, `${(bytes / 1000).toFixed(2)} kB`]))])));
 await writeFile('size-report.json', JSON.stringify(report, null, 2) + '\n');
 if (failed) process.exitCode = 1;

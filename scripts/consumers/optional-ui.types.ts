@@ -25,6 +25,7 @@ export interface ReadingProbe {
 }
 
 export interface OptionalUIProbe {
+  exerciseSDK(): { mapped: boolean; nodeText: string; views: number; readonly: boolean; clean: boolean };
   editor: Editor;
   preview: PreviewUIController;
   saveState: SaveStateCommands;

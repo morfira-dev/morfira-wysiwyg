@@ -1,5 +1,19 @@
 # Тесты и релизы
 
+## SDK расширений и Office-корпус — 23 ноября 2026
+
+Итоговый целевой прогон: **267/267** в Chromium, Firefox и WebKit и **6/6**
+RU/EN-примеров документации в Chromium. Прошли mapping/history, узлы и атомы,
+внешние node views, decorations, реальный Office-корпус и затронутые транзакции/
+ссылки. Типы, сборки, архивы, selective imports и tarball-consumer прошли.
+Это целевой набор текущих изменений, не полный повтор всех старых проверок.
+
+Универсальный structural mapping, editable contentDOM и widget decorations не
+реализованы. Word/Excel используются как закреплённые upstream captures; свежий
+Google Docs payload получен native Cmd+C, а его editor-проверки воспроизводят
+сохранённый MIME через paste event. Подробности и потери — в [Office guide](/office-paste).
+
+
 ## Целевые проверки SDK — 23 ноября 2026
 
 Новый `editor.selection` и интеграция формы ссылок прошли **156/156** целевых

@@ -1,5 +1,19 @@
 # Testing and releases
 
+## Extension SDK and Office corpus — 23 November 2026
+
+The final focused run passed **267/267** in Chromium, Firefox and WebKit and
+**6/6** RU/EN documentation examples in Chromium. It covers mapping/history,
+nodes/atoms, external node views, decorations, the real Office corpus and affected
+transactions/links. Types, builds, archives, selective imports and tarball consumers
+passed. This is the changed features' focused set, not a full-suite rerun.
+
+Universal structural mapping, editable contentDOM and widget decorations are not
+implemented. Word/Excel use pinned upstream captures; the fresh Google Docs payload
+came from native Cmd+C and editor checks replay its saved MIME through paste events.
+See the [Office guide](/en/office-paste) for provenance and losses.
+
+
 ## Focused SDK verification — 23 November 2026
 
 The new `editor.selection` API and link-form integration passed **156/156** focused

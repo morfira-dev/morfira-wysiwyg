@@ -18,6 +18,7 @@ export interface PositionRegistryOptions {
   surface: HTMLElement;
   isAvailable: () => boolean;
   canCapture: () => boolean;
+  canPresent: (node: HTMLElement) => boolean;
 }
 
 export interface PositionRegistry {

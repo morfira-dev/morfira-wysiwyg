@@ -29,3 +29,13 @@ Heap measurements are optional Chromium/CDP observations. If available, distingu
 A generated fixture must match its metadata after importing through public editor APIs; no executable markup or unsupported schema shape enters the sample. The runner must fail on wrong content/selection/history/cleanup and save machine-readable local results under ignored `artifacts/`. It must close owned browsers/servers/contexts and remove owned editor instances on error as well as success. Do not promise support for arbitrary 5000-paragraph office documents, real IME/mobile/touch, screen readers, memory leak freedom or enterprise-editor parity based on this synthetic baseline.
 
 Core is the default profile; search/statistics are explicitly requested. Build from public artifacts with workspace source aliases disabled and record artifact hashes. Persist completed cases incrementally. Each warmup/sample has a bounded operational timeout (default 120000ms); terminate only the owned benchmark browser on timeout, record an incomplete/failed report and clean up. This is not a millisecond performance gate.
+
+## JavaScript encoding and selected profiles — 2026-11-23
+
+Emit modern-browser JavaScript as UTF-8 and measure consumer profiles with the
+same explicit charset. This preserves string values while avoiding redundant
+ASCII Unicode escapes in localized UI. It changes neither locale selection nor
+runtime behavior, and does not remove modules or relax budgets. Package JS,
+consumer JS, gzip and Brotli remain separate observations; consumer pipelines
+may choose their own encoding and compression. Record actual guard results and
+verify RU/EN controls after the build.

@@ -1,51 +1,45 @@
+import { createEventHub, createPluginEvent } from '../events/index.js';
+import type { EventHub } from '../events/types.js';
 import type { EditorPositionChange, EditorPositionHandle, EditorPositions } from './types.js';
 import type { PositionRecord, PositionRegistry, PositionRegistryOptions } from './internal-types.js';
 import { mapPositionRecord } from './mapping.js';
 
 export type { EditorPositionHandle, EditorMappedPosition, EditorPositionChange, EditorPositions, EditorTransactionOptions, TextMappingStep } from './types.js';
 
-export const createPositionRegistry = ({ surface, isAvailable, canCapture }: PositionRegistryOptions): PositionRegistry => {
+export const createPositionRegistry = ({ surface, isAvailable, canCapture, canPresent }: PositionRegistryOptions): PositionRegistry => {
   const records = new WeakMap<EditorPositionHandle, PositionRecord>();
   const live = new Set<PositionRecord>();
-  const listeners = new Set<(change: EditorPositionChange) => void>();
+  const event = createPluginEvent<EditorPositionChange>('positionchange');
+  let notifications: EventHub | undefined;
   const pending: EditorPositionChange[] = [];
   let observer: MutationObserver | undefined;
   let destroyed = false;
   let dirty = false;
-  let notifying = false;
 
   const stopObserving = () => {
     observer?.disconnect();
     observer = undefined;
   };
   const notify = () => {
-    if (notifying) return;
-    notifying = true;
     const failures: unknown[] = [];
-    try {
-      while (pending.length) {
-        const change = pending.shift()!;
-        for (const listener of [...listeners]) {
-          if (!listeners.has(listener)) continue;
-          try { listener(change); }
-          catch (error) { failures.push(error); }
-        }
-      }
+    while (pending.length) {
+      const change = pending.shift()!;
+      // The existing hub owns reentry, listener errors and unsubscribe identity.
+      try { notifications?.events.emit(event, change); }
+      catch (error) { failures.push(error); }
     }
-    finally {
-      notifying = false;
-    }
-    if (failures.length) throw new AggregateError(failures, 'Position mapping notification failed.');
+    if (failures.length) throw new AggregateError(failures, 'Position listeners failed.');
   };
   const invalidate = () => {
     const hadLive = live.size > 0;
     for (const record of live) record.active = false;
     live.clear();
     stopObserving();
-    if (hadLive && listeners.size)
+    if (hadLive && notifications)
       pending.push(Object.freeze({ kind: 'invalidated', steps: Object.freeze([]) }));
   };
-  const relevant = (mutation: MutationRecord) => mutation.target !== surface || mutation.type === 'childList';
+  const relevant = (mutation: MutationRecord) => mutation.target === surface
+    ? mutation.type === 'childList' : surface.contains(mutation.target);
   const flush = () => {
     if (!observer?.takeRecords().some(relevant)) return false;
     dirty = true;
@@ -67,7 +61,7 @@ export const createPositionRegistry = ({ surface, isAvailable, canCapture }: Pos
     track: (index, association = 1) => {
       if (destroyed || !isAvailable() || flush() || dirty || !surface.isConnected || !canCapture()) return;
       if (!Number.isSafeInteger(index) || index < 0 || index > (surface.textContent?.length ?? 0) || (association !== -1 && association !== 1))
-        throw new RangeError('Mapped positions require a valid text offset and association.');
+        throw new RangeError('Invalid position offset or association.');
       const token = Object.freeze({}) as EditorPositionHandle;
       const record: PositionRecord = { index, association, deleted: false, active: true };
       records.set(token, record);
@@ -93,11 +87,32 @@ export const createPositionRegistry = ({ surface, isAvailable, canCapture }: Pos
       record.active = false;
       if (!live.size) stopObserving();
     },
+    setPresentation: (node, editable) => {
+      if (destroyed || !isAvailable() || (editable !== false && editable !== undefined) || !canPresent(node)) return false;
+      // Existing unrelated edits must expire old positions before this projection.
+      // Notifications may reenter application code, so validate the target again.
+      flush();
+      if (destroyed || !isAvailable() || !canPresent(node)) return false;
+      const view = surface.ownerDocument.defaultView;
+      if (!view) return false;
+      const previous = node.getAttribute('contenteditable');
+      if (editable === false) {
+        if (previous !== 'false') view.Element.prototype.setAttribute.call(node, 'contenteditable', 'false');
+      }
+      else if (previous !== null) view.Element.prototype.removeAttribute.call(node, 'contenteditable');
+      const unexpected = observer?.takeRecords().some((mutation) => mutation.type !== 'attributes'
+        || mutation.target !== node || mutation.attributeName !== 'contenteditable');
+      if (unexpected) {
+        dirty = true;
+        invalidate();
+        notify();
+      }
+      return !destroyed && canPresent(node);
+    },
     subscribe: (listener) => {
       if (destroyed) throw new Error('Editor has been destroyed.');
-      if (typeof listener !== 'function') throw new TypeError('A position subscription requires a function.');
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
+      notifications ??= createEventHub();
+      return notifications.events.on(event, listener);
     },
   };
   return {
@@ -111,7 +126,7 @@ export const createPositionRegistry = ({ surface, isAvailable, canCapture }: Pos
         return;
       }
       for (const record of live) mapPositionRecord(record, mapping.steps);
-      if (listeners.size) pending.push(Object.freeze({ kind: 'mapped', steps: mapping.steps }));
+      if (notifications) pending.push(Object.freeze({ kind: 'mapped', steps: mapping.steps }));
     },
     invalidate,
     synchronize: () => {
@@ -122,10 +137,8 @@ export const createPositionRegistry = ({ surface, isAvailable, canCapture }: Pos
     notify,
     destroy: () => {
       destroyed = true;
-      for (const record of live) record.active = false;
-      live.clear();
-      stopObserving();
-      listeners.clear();
+      invalidate();
+      notifications?.destroy();
       pending.length = 0;
     },
   };

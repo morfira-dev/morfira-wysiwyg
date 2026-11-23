@@ -7,7 +7,7 @@ selection handles. It does not claim arbitrary structural/model position mapping
 ## Public API and coordinates
 
 `editor.positions` exposes `track(index, association?)`, `resolve(handle)`,
-`release(handle)` and `subscribe(listener)`. Export opaque `EditorPositionHandle`,
+`release(handle)`, `subscribe(listener)` and the narrow `setPresentation` setter. Export opaque `EditorPositionHandle`,
 `EditorPositions`, `EditorMappedPosition`, `TextMappingStep`,
 `EditorTransactionOptions` and `EditorPositionChange` types through core/facade.
 Coordinates count `surface.textContent` UTF-16 units, exactly like public
@@ -76,3 +76,26 @@ unknown native/external changes, read-only/composition, callbacks and cleanup.
 A decoration consumer uses tracked endpoints and drops expired/deleted ranges.
 Actual tarball/type smoke and raw/gzip/Brotli measurements are required; no new
 runtime dependency, persisted schema revision or preset eager plugin import.
+
+## Accounted runtime atom presentation
+
+`editor.positions.setPresentation(node, false | undefined)` sets or removes ONLY
+`contenteditable` on an actual connected XHTML span owned by this editor's
+registered semantic schema. Require nonempty single-line text bounded to 2048
+units, text-only children, no customized built-in marker, and exact per-node
+schema validation of persisted attributes. The optional atom plugin additionally
+checks its own registered name/ownership. Read-only permits derived presentation;
+transaction/composition/destruction refuse it.
+
+This is a single native attribute setter, not a callback permission or a blanket
+observer exception. Drain preexisting mutation records first: unrelated edits
+still expire positions, even when the safe annotation can subsequently apply.
+Revalidate after notification callbacks, then drain ONLY this setter's exact
+attribute records. Unexpected mutations expire the positions. No persisted HTML,
+text, history or mapping is changed, and no whole-document scan runs per atom.
+
+Undo/redo may rebuild semantic spans; atom subscriptions rederive this annotation
+using the setter without expiring an otherwise valid explicit text map. Arbitrary
+application changes to contenteditable still invalidate. Exact DOM selection
+handles retain their stricter mutation invalidation and are not preserved by this
+text-coordinate accounting method.

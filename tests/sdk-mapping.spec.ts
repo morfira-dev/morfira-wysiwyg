@@ -262,3 +262,46 @@ test('reentrant mapping subscribers publish editor changes in commit order', asy
   });
   expect(result).toEqual({ html: '<p>aXYbcd</p>', changes: ['aXbcd', 'aXYbcd'], kinds: ['mapped', 'mapped'], end: { index: 6, deleted: false } });
 });
+
+test('accounted semantic-span presentation preserves mapped text positions without hiding earlier DOM mutations', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const modulePath = '/packages/core/dist/index.js';
+    const { createEditor } = await import(/* @vite-ignore */ modulePath) as typeof import('@morfira-dev/wysiwyg');
+    const host = document.createElement('div');
+    document.body.append(host);
+    const editor = createEditor(host, {
+      value: '<p>a<span data-mw-node="test:atom" data-id="1">TAG</span>b</p>',
+      schema: [{ name: 'test:atom', kind: 'inline', tag: 'span',
+        attributes: { 'data-id': { type: 'text', required: true, minLength: 1, maxLength: 8 } },
+        content: { type: 'text', minLength: 1, maxLength: 20, singleLine: true } }],
+    });
+    const atom = editor.surface.querySelector<HTMLElement>('[data-mw-node]')!;
+    const point = editor.positions.track(5)!;
+    const original = editor.getHTML();
+    editor.setReadOnly(true);
+    const annotated = editor.positions.setPresentation(atom, false);
+    const current = editor.positions.resolve(point);
+    const cleaned = editor.positions.setPresentation(atom, undefined);
+    const stillCurrent = editor.positions.resolve(point);
+    const foreign = document.createElement('span');
+    foreign.setAttribute('data-mw-node', 'test:atom');
+    foreign.textContent = 'TAG';
+    document.body.append(foreign);
+    const refused = editor.positions.setPresentation(foreign, false);
+    const invalid = editor.positions.setPresentation(editor.surface, false);
+    atom.setAttribute('data-transient', 'temporary');
+    atom.removeAttribute('data-transient');
+    const afterDirty = editor.positions.setPresentation(atom, false);
+    const expired = editor.positions.resolve(point) === undefined;
+    const unchanged = editor.getHTML() === original;
+    const undo = editor.canUndo();
+    const annotation = atom.getAttribute('contenteditable');
+    editor.destroy();
+    host.remove();
+    foreign.remove();
+    return { annotated, current, cleaned, stillCurrent, refused, invalid, afterDirty, expired, unchanged, undo, annotation };
+  });
+  expect(result).toEqual({ annotated: true, current: { index: 5, deleted: false }, cleaned: true,
+    stillCurrent: { index: 5, deleted: false }, refused: false, invalid: false, afterDirty: true,
+    expired: true, unchanged: true, undo: false, annotation: 'false' });
+});

@@ -5,7 +5,7 @@ import type { PositionRecord, PreparedTextMapping } from './internal-types.js';
 /** Plans are sequential and bounded; every unchanged span is checked by replay. */
 export const prepareTextMapping = (input: readonly TextMappingStep[], before: string): PreparedTextMapping => {
   if (!Array.isArray(input) || input.length > 64)
-    throw new TypeError('A position mapping requires at most 64 text replacement steps.');
+    throw new TypeError('Mapping accepts at most 64 replacement steps.');
   let text = before;
   const steps: TextMappingStep[] = [];
   const inverse: TextMappingStep[] = [];
@@ -13,13 +13,13 @@ export const prepareTextMapping = (input: readonly TextMappingStep[], before: st
   for (const value of input) {
     if (!value || typeof value !== 'object' || Array.isArray(value)
       || Object.keys(value).some((key) => !['from', 'to', 'insert'].includes(key)))
-      throw new TypeError('Unsupported text mapping step.');
+      throw new TypeError('Invalid mapping step.');
     const { from, to, insert } = value;
     if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to) || from < 0 || to < from || to > text.length || typeof insert !== 'string')
-      throw new RangeError('Text mapping coordinates are outside the current text.');
+      throw new RangeError('Invalid mapping offsets or text.');
     inserted += insert.length;
     if (inserted > maximumHTMLLength || text.length - (to - from) + insert.length > maximumHTMLLength)
-      throw new RangeError('Text mapping exceeds document resource limits.');
+      throw new RangeError('Mapping exceeds document limits.');
     steps.push(Object.freeze({ from, to, insert }));
     inverse.unshift(Object.freeze({ from, to: from + insert.length, insert: text.slice(from, to) }));
     text = text.slice(0, from) + insert + text.slice(to);

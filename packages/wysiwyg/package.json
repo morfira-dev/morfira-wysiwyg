@@ -220,6 +220,10 @@
     "./plugins/text-drop": {
       "types": "./dist/plugins/text-drop.d.ts",
       "import": "./dist/plugins/text-drop.js"
+    },
+    "./sdk": {
+      "types": "./dist/sdk.d.ts",
+      "import": "./dist/sdk.js"
     }
   },
   "dependencies": {

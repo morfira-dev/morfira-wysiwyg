@@ -28,5 +28,7 @@ export interface EditorPositions {
   track(index: number, association?: -1 | 1): EditorPositionHandle | undefined;
   resolve(handle: EditorPositionHandle): EditorMappedPosition | undefined;
   release(handle: EditorPositionHandle): void;
+  /** Account only an owned semantic span's runtime contenteditable annotation. */
+  setPresentation(node: HTMLElement, editable: false | undefined): boolean;
   subscribe(listener: (change: EditorPositionChange) => void): () => void;
 }

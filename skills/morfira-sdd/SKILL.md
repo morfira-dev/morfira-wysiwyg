@@ -69,3 +69,11 @@ Run checks proportionate to the change. Per the user instruction of 2026-11-20, 
 Finish by reporting the behavior implemented, actual test results, measured bundle sizes when relevant, and remaining limitations. Distinguish passing acceptance scenarios from untested product goals.
 
 CI feedback follows `specs/continuous-integration.md`: one checked package build, the complete three-browser matrix (four Chromium, six Firefox, four WebKit shards), two docs shards and independent consumer jobs with a required aggregate gate. Browser jobs use the official image matching the installed Playwright version, without per-job apt. Publication restores those checked artifacts from the current workflow/commit and still waits for every gate. When the verified library artifacts already exist, `docs:build:site` performs the site stage without rebuilding packages; `docs:build` retains standalone build-plus-site behavior. Verify the actual new GitHub critical path before claiming the user's seven-minute complete-cycle target, and distinguish no-release runs from live publication; do not remove unique regressions merely to shorten elapsed time.
+
+For the implemented next SDK layers, read specs/plugin-position-mapping.md and
+specs/plugin-extensions.md. Preserve explicit UTF-16 transaction plans, real
+history-entry mapping, separately accounted runtime presentation and per-editor
+cleanup. Optional SDK modules must stay outside core/preset graphs. External-host
+node views are not editable contentDOM, and native highlight ranges are not
+widget decorations. Office corpus provenance follows specs/office-paste.md; keep
+raw captured bytes/hashes/licenses, native captures and upstream samples distinct.

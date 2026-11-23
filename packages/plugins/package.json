@@ -198,6 +198,10 @@
     "./text-drop": {
       "types": "./dist/text-drop/index.d.ts",
       "import": "./dist/text-drop.js"
+    },
+    "./sdk": {
+      "types": "./dist/sdk/index.d.ts",
+      "import": "./dist/sdk.js"
     }
   },
   "peerDependencies": {

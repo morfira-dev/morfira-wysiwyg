@@ -213,3 +213,15 @@ Quill is no longer an active benchmark or roadmap target. Preserve historical
 measurements as historical evidence without extending that comparison. Compare
 explicit feature profiles, selected bundles and maturity evidence; do not infer
 input performance or universal superiority from transfer size.
+
+## Optional extension SDK — 2026-11-23
+
+Implemented explicit UTF-16 transaction/history position maps, safe semantic node
+commands, bounded generic inline atoms, external-host node-view lifecycle and
+native CSS Highlight decorations. Contracts: plugin-position-mapping.md and
+plugin-extensions.md; exact revision handles retain their separate invalidation
+contract. Runtime presentation has a narrow schema-validated setter; detached old
+subtree cleanup cannot invalidate accepted current mappings. Optional /sdk stays
+out of core and presets. This is not arbitrary structural mapping, editable
+contentDOM or widget decorations. Focused evidence belongs to the verification
+record, not a full-suite or production-maturity claim.

@@ -1,5 +1,56 @@
 # Verification record
 
+## Optional extension SDK and accepted mapping integration — 2026-11-23
+
+Implemented /sdk safe semantic node commands, bounded inline atoms, external-host
+node views and native range decorations under plugin-extensions.md. Core mapping
+adds a narrow schema-validated contenteditable presentation setter, per-node
+validation and owned mutation accounting; exact selection handles remain stricter.
+Late cleanup on detached old nodes no longer expires current mapped positions.
+Position notification dispatch reuses the existing per-instance event hub.
+
+Final focused editor run: 267/267 passed, 1.3 minutes, Chromium/Firefox/WebKit,
+three workers, no skips/retries. It covers 13 mapping cases, 10 extension cases,
+Office corpus/paste, selection handles, typed commands, transactions and affected
+link forms/ranges. Office provenance and behavior are described in its own record.
+The final six RU/EN docs cases passed in 3.7 seconds, including the two extension
+live examples. Builds, TS/Svelte/Vue, eight archive layouts and all selective-import
+checks passed. Actual core/plugins/facade tarballs passed strict declarations,
+SSR imports and a Chromium runtime consumer, including atom + mapping + decoration
+undo/redo, readonly, external views, persisted-data isolation and the existing UI
+smoke. Full adapter matrices and full editor/docs suites were not repeated.
+
+Earlier attempts are retained: 209/210 first failed because Firefox substituted
+a synthetic ClipboardEvent DataTransfer (runtime had written the correct real
+buffer); binding the synthetic buffer like the existing mention fixtures fixed
+that test, with assertions unchanged. Atom+mapping history initially failed in
+three engines due to runtime annotation then detached-node cleanup; the projection
+setter and current-surface record filter fix those concrete integration bugs.
+An initial typecheck overlapped declaration rebuild and saw missing artifacts;
+after-build typechecks passed. A docs label included selected-option text; explicit
+localized aria-labels fixed the Office sample/capture control without weakening
+its UI assertions.
+
+Build guards were retained: the first complete feature build exceeded one 80000
+byte standard-table-properties profile by 279 bytes. Explicit UTF-8 output,
+shared notification machinery, simpler per-node validation and concise diagnostics
+bring it to 79991 gzip bytes. No features or checks were removed. Current JS bytes
+(raw/gzip/Brotli): core 103768/32383/28451; standard-ready 233311/72400/61570;
+extended-ready 290017/89001/74777; optional SDK consumer including its codec
+closure 36475/12602/11351. CSS unchanged, zero external runtime dependencies.
+The table-properties selection has only nine gzip bytes of reserve; this is not
+headroom for unrelated future core features. These numbers describe the final
+joint SDK/Office source, not a competitor-equivalent performance benchmark.
+
+Logs: /tmp/morfira-office-sdk-accepted-editor-20261123.log,
+/tmp/morfira-office-sdk-docs-passed-20261123.log,
+/tmp/morfira-sdk-office-build-accepted-20261123.log,
+/tmp/morfira-sdk-office-types-accepted-20261123.log,
+/tmp/morfira-office-sdk-accepted-consumer-20261123.log,
+/tmp/morfira-office-sdk-accepted-tree-20261123.log.
+No GitHub CI, push or package publication was performed.
+
+
 ## Explicit position mapping and transaction focus safety — 2026-11-23
 
 Implemented editor.positions and explicit outer transaction mapping under

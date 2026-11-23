@@ -2,6 +2,7 @@ import { createPreviewUI } from '@morfira-dev/wysiwyg/ui/preview';
 import { saveState, saveStateCommands } from '@morfira-dev/wysiwyg/plugins/save-state';
 import { createSaveStateUI } from '@morfira-dev/wysiwyg/ui/save-state';
 import { createEditor } from '@morfira-dev/wysiwyg';
+import { nodeExtension, nodeCommands, createNodeViews, createDecorations } from '@morfira-dev/wysiwyg/sdk';
 import type { EditorSelectionHandle, EditorSelectionHandles } from '@morfira-dev/wysiwyg';
 import { createSpecialCharacterUI } from '@morfira-dev/wysiwyg/ui/special-characters';
 import { createFullscreenUI } from '@morfira-dev/wysiwyg/ui/fullscreen';
@@ -50,6 +51,53 @@ let readingHost: HTMLElement | undefined;
 let floating: FloatingProbe | undefined;
 let floatingHost: HTMLElement | undefined;
 const probe: OptionalUIProbe = {
+  exerciseSDK: () => {
+    const workspace = document.createElement('section');
+    const host = document.createElement('div');
+    const viewHost = document.createElement('div');
+    workspace.append(host, viewHost);
+    document.body.append(workspace);
+    const instance = createEditor(host, { value: '<p>A<span data-mw-node="consumer:token" data-id="42">T</span>Z</p>', plugins: [nodeExtension({
+      name: 'consumer:token', kind: 'inline', tag: 'span',
+      attributes: { 'data-id': { type: 'text', minLength: 1, maxLength: 64, required: true } },
+      content: { type: 'text', minLength: 1, maxLength: 64, singleLine: true },
+    }, { atomic: true })] });
+    const views = createNodeViews(viewHost, instance, { name: 'consumer:token', create: (context) => {
+      const element = document.createElement('div');
+      element.textContent = context.text;
+      return { element, update: (next) => { element.textContent = next.text; } };
+    } });
+    const decorations = createDecorations(instance, { name: 'consumer-sdk-probe' });
+    try {
+      const handle = instance.positions.track(2);
+      if (!handle) throw new Error('The installed position SDK did not track.');
+      decorations.set([{ from: 2, to: 3 }]);
+      instance.transact((surface) => { (surface.querySelector('p')!.firstChild as Text).insertData(0, '+'); },
+        { mapping: [{ from: 0, to: 0, insert: '+' }] });
+      let mapped = instance.positions.resolve(handle)?.index === 3;
+      instance.undo();
+      mapped = mapped && instance.positions.resolve(handle)?.index === 2;
+      instance.redo();
+      mapped = mapped && instance.positions.resolve(handle)?.index === 3
+        && (decorations.getState().status !== 'ready' || decorations.getState().count === 1);
+      instance.positions.release(handle);
+      const token = instance.surface.querySelector<HTMLElement>('[data-mw-node="consumer:token"]')!;
+      const commands = nodeCommands(instance, 'consumer:token');
+      commands.update(token, { 'data-id': '42' }, 'Updated');
+      instance.setReadOnly(true);
+      const readonly = commands.remove(token) === false && instance.surface.contains(token);
+      const nodeText = token.textContent ?? '';
+      const count = viewHost.childElementCount;
+      const clean = !/contenteditable|consumer-sdk-probe/.test(instance.getHTML());
+      return { mapped, nodeText, views: count, readonly, clean };
+    }
+    finally {
+      decorations.destroy();
+      views.destroy();
+      instance.destroy();
+      workspace.remove();
+    }
+  },
   editor, characters, fullscreen, preview, saveState: saveAPI, saveUI, getSaveCalls: () => saveCalls,
   setupReading: () => {
     if (reading) throw new Error('Consumer reading editor already exists.');
