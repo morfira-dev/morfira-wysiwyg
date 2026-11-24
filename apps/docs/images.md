@@ -1,12 +1,13 @@
-# Изображения
+# Images
 
-Готовая необязательная `createImageForm` поставляется через `@morfira-dev/wysiwyg/ui/images`; ей нужен установленный `images()`. Она включает URL/alt/размеры/подпись, вставку/обновление/удаление и файловую загрузку с отменой. [Самостоятельный пример подключения](/ui#изображения-и-загрузка-приложения). Транспорт и хранилище по-прежнему принадлежат приложению.
+The optional `createImageForm` is available through `@morfira-dev/wysiwyg/ui/images` and requires `images()`. It provides URL/alt/dimensions/caption, insertion/update/removal and cancellable file upload. [Standalone integration example](/ui#images-and-application-owned-upload). The application still owns transport and storage.
 
-## Окно вставки и редактирования
+## Insert and edit dialog
 
-По умолчанию форма остаётся встроенной (`presentation: 'inline'`). Для отдельного
-окна явно выберите `presentation: 'dialog'`: форма монтируется закрытой в нативный
-`dialog`, а приложение открывает её по своей кнопке. Поля не раздвигают страницу.
+The compatible default remains an embedded form (`presentation: 'inline'`).
+Explicitly select `presentation: 'dialog'` for a separate window: the form mounts
+closed inside a native `dialog`, and the application opens it from its own button.
+Its fields do not expand the page layout.
 
 ```ts
 import { createImageForm } from '@morfira-dev/wysiwyg/ui/images';
@@ -22,19 +23,19 @@ const disposeImageDialog = () => {
 };
 ```
 
-`open()` сохраняет действующую позицию редактора и читает выбранную картинку;
-`close()` закрывает окно, `isOpen()` возвращает его состояние. Escape и кнопка
-закрытия отменяют принадлежащую форме загрузку и возвращают фокус исходной кнопке.
-Успешные вставка, обновление, удаление или загрузка закрывают окно; ошибка оставляет
-его открытым для исправления или явного повтора. Кнопки выравнивания применяют
-размещение сразу и сохраняют окно с остальными черновиками открытым. Сама форма не
-создаёт сервер загрузки и не меняет формат документа.
+`open()` captures the editor's current position and inspects the selected image;
+`close()` dismisses the window, and `isOpen()` reports its state. Escape and the
+close button cancel the form's owned upload and restore focus to the originating
+button. Successful insert, update, removal or upload closes the dialog; an error
+keeps it open for correction or explicit retry. Alignment buttons apply placement
+immediately and keep the dialog and other drafts open. This form creates no upload
+server and does not change the document format.
 
-На главной и в playground окно открывает кнопка **«Вставить изображение…»** над
-редактором. Для правки существующей картинки сначала выберите её в документе.
-Настройку **«Ошибка следующей загрузки»** в инспекторе включайте до открытия окна.
+On the homepage and playground, **Insert image…** above the editor opens the
+dialog. Select an existing image in the document first to edit it. Enable the
+inspector's **Fail next upload** setting before opening the dialog.
 
-Изображения — необязательный модуль без runtime-зависимостей. Ядро поддерживает HTML `img`, `figure` и `figcaption`, а модуль добавляет команды выбора, изменения и загрузки. Импортируйте его отдельно:
+Images are an optional module with no runtime dependencies. Core understands HTML `img`, `figure` and `figcaption`; the module adds selection, editing and upload commands. Import it separately:
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -44,31 +45,31 @@ import '@morfira-dev/wysiwyg/style.css';
 const editor = createEditor(host, { plugins: [images()] });
 const api = imageCommands(editor);
 api.insert({
-  src: '/photo.jpg', alt: 'Описание фотографии',
-  width: 640, height: 480, caption: 'Подпись под изображением',
+  src: '/photo.jpg', alt: 'Photo description',
+  width: 640, height: 480, caption: 'A caption beneath the image',
 });
 ```
 
-Вставка создаёт `figure` с картинкой и необязательной подписью, делит текущий абзац и ставит курсор после изображения. В списках и таблицах figure остаётся внутри пункта/ячейки, включая объединённые ячейки. Можно заменить выделение внутри одного блока; выделение через границы абзацев, пунктов и ячеек отклоняется. Вставка внутрь подписи также отклоняется.
+Insertion creates a figure with an image and optional caption, splits the current paragraph and places the caret after the image. In lists and tables the figure stays inside the item/cell, including merged cells. A selection within one block can be replaced; selections across paragraphs, items or cells are rejected. Insertion inside captions is also rejected.
 
-Нажатие на картинку выбирает её. Выбор доступен и программно:
+Clicking an image selects it. Programmatic selection is available too:
 
 ```ts
 const image = editor.surface.querySelector('img');
 if (image) api.select(image);
 const selected = api.getSelected(); // ImageValue | undefined
-api.update({ alt: 'Новое описание', width: 320, height: null });
-api.update({ caption: '' }); // убрать подпись
+api.update({ alt: 'New description', width: 320, height: null });
+api.update({ caption: '' }); // remove caption
 api.remove();
 ```
 
-`ImageValue`: `src: string`, необязательные `alt`, `caption`, `width`, `height`, `alignment`. `ImagePatch` принимает частичные данные и `null` для снятия размеров. Размеры — целые числа от 1 до 1000, подпись — буквальный текст до 5000 символов, alt — до 20000. URL — http/https или относительный; data/blob/script не принимаются. Неверные параметры вызывают исключение до изменения документа.
+`ImageValue` contains `src: string` and optional `alt`, `caption`, `width`, `height`, `alignment`. `ImagePatch` accepts partial metadata and `null` to remove dimensions. Dimensions are integers from 1 to 1000; captions are literal text up to 5000 characters; alt accepts up to 20000. URLs use http/https or relative references; data/blob/script URLs are rejected. Invalid options throw before document mutation.
 
-Команды изменения и удаления требуют выбора одной картинки или курсора в её подписи. Добавление подписи к старой inline-картинке переносит её в figure, сохраняя соседний текст. Удаление обычной figure с одной картинкой удаляет картинку и её подпись; для сложной импортированной figure сохраняется остальное содержимое. Подпись можно редактировать прямо в документе. Каждая команда участвует в undo/redo и учитывает read-only. При отключённом сохранении пропорций пустые размеры возвращают естественный размер.
+Update/remove require one selected image or a caret in its caption. Adding a caption to a legacy inline image promotes it to a figure while preserving surrounding text. Removing a simple image figure removes the image and caption; other content in a complex imported figure is retained. Captions can be edited in the document. Each command participates in undo/redo and respects read-only. With aspect-ratio locking disabled, empty dimensions restore natural sizing.
 
-## Выравнивание изображения
+## Image alignment
 
-`ImageAlignment` — `'left' | 'center' | 'right'`. Команда действует на выбранную картинку; `false` снимает явное выравнивание:
+`ImageAlignment` is `'left' | 'center' | 'right'`. The command acts on the selected image; `false` resets explicit alignment:
 
 ```ts
 import type { ImageAlignment } from '@morfira-dev/wysiwyg/plugins/images';
@@ -80,25 +81,25 @@ if (image) {
   api.align(alignment);
   api.align('right');
   api.align('left');
-  api.align(false); // убрать явное размещение
+  api.align(false); // remove explicit placement
 }
-// При вставке или обновлении:
+// During insertion or metadata updates:
 api.insert({ src: '/photo.jpg', width: 320, height: 240, alignment: 'center' });
 ```
 
-`api.update({ alignment: 'right' })` меняет размещение вместе с другими метаданными за одну операцию; пропущенное поле сохраняет прежнее выравнивание. `getSelected()` возвращает `alignment` для распознанного явного размещения и пропускает поле, если его нет. Повторное `align` с тем же каноническим значением не добавляет Undo.
+`api.update({ alignment: 'right' })` changes placement together with other metadata in one operation; omitting the field preserves existing alignment. `getSelected()` includes `alignment` for recognized explicit placement and omits it otherwise. Repeating `align` with the same canonical value adds no Undo entry.
 
-Изображение получает `display: block` и проверенную пару `margin-left`/`margin-right`: слева `0px/auto`, по центру `auto/auto`, справа `auto/0px`. Сброс удаляет эти три inline-свойства. HTML/JSON сохраняет размещение без установленного плагина; старые читатели могут отбросить новые стили. Другие display-значения, произвольные отступы, shorthand и исполняемые CSS не разрешаются этим расширением.
+The IMG receives `display: block` and a validated `margin-left`/`margin-right` pair: left `0px/auto`, center `auto/auto`, right `auto/0px`. Reset removes these three inline properties. HTML/JSON persists placement without the plugin installed; older readers may discard the new styles. Other display values, arbitrary margins, shorthand and executable CSS are not allowed by this extension.
 
-Меняется сама картинка: её размеры, URL, figure, rich-подпись и соседние узлы сохраняются. Подпись имеет собственное выравнивание и не перемещается этой командой. Старая inline-картинка остаётся в том же абзаце, но отображается отдельным блоком; соседние узлы не переносятся в новые обёртки. Это физические слева/справа даже в RTL. На полной ширине разница может быть незаметна. Обтекания текстом, float и обрезки нет.
+Only the image moves: dimensions, URL, figure, rich caption and neighboring nodes survive. Caption text has independent alignment and does not move with this command. A legacy inline image stays in its paragraph but renders as a block; neighboring nodes are not moved into new wrappers. Left/right are physical positions even in RTL. Placement may be visually neutral for a full-width image. Text wrapping, floats and cropping are not included.
 
-Поддерживается одно обычное изображение, включая список или объединённую ячейку; сложные figure, защищённые семантические узлы и чужой target отклоняются атомарно. Успешное изменение — один Undo с сохранением выбора. Read-only и активная IME-композиция блокируют изменение; смена документа или выбора при фокусировке не переносит команду на другую картинку.
+One ordinary image is supported, including lists and merged table cells; complex figures, protected semantic nodes and foreign targets reject atomically. Each successful change is one Undo step with image selection retained. Read-only and active IME composition block changes; document or selection replacement during focus cannot redirect the operation to another image.
 
-В готовой форме и её контекстном режиме доступны отдельные кнопки слева/по центру/справа/сброса: они применяют размещение сразу, не отправляя остальные поля формы. Попробуйте пример **«Изображения»** на главной или в [песочнице](/playground): нажмите картинку и откройте **«Вставить изображение…»**. Эти действия не закрывают окно; перед Undo на основной панели закройте его через Escape. Актуальные результаты проверок фиксируются отдельно от описания возможностей.
+The ready form and its contextual edit mode expose separate left/center/right/reset buttons: they apply placement immediately without submitting other draft fields. Try the **Images** sample on the homepage or in the [playground](/playground): click the image and open **Insert image…**. These actions keep the dialog open; close it with Escape before using Undo in the main toolbar. Current verification results are recorded separately from this capability description.
 
-## Размер с сохранением пропорций
+## Proportional dimensions
 
-Выберите изображение и передайте **одну** сторону. Вторая вычисляется автоматически:
+Select an image and provide **one** side. The other is calculated automatically:
 
 ```ts
 import type { ImageResize } from '@morfira-dev/wysiwyg/plugins/images';
@@ -107,45 +108,45 @@ const image = editor.surface.querySelector<HTMLImageElement>('img');
 if (image) {
   api.select(image);
   const size: ImageResize = { width: 320 };
-  api.resize(size); // например, 640 × 480 → 320 × 240
+  api.resize(size); // for example, 640 × 480 → 320 × 240
   api.resize({ height: 180 }); // 320 × 240 → 240 × 180
 }
 ```
 
-`ImageResize` — `{ width: number; height?: never } | { height: number; width?: never }`. Команда принимает ровно одну ширину или высоту, целое число 1–1000. Сначала используется сохранённая пара width/height, иначе — уже доступные естественные размеры выбранного изображения. CSS-размеры не задают пропорцию; команда не создаёт превью, не декодирует файл и не запускает отдельную загрузку. Неизвестная пропорция, неверный аргумент или вычисленная сторона вне 1–1000 вызывают ошибку до изменения документа. Дробная вычисленная сторона округляется к ближайшему пикселю, поэтому повторные отдельно применённые размеры не гарантируют сохранения исходного рационального отношения без погрешности.
+`ImageResize` is `{ width: number; height?: never } | { height: number; width?: never }`. The command accepts exactly one width or height, an integer from 1 to 1000. It first uses the stored width/height pair, otherwise the selected image's already available natural dimensions. CSS sizing does not define the ratio; the command creates no preview, decodes no file and starts no separate image request. Unknown proportions, invalid arguments or a calculated side outside 1–1000 throw before document mutation. A fractional calculated side rounds to the nearest pixel, so repeated separately committed resizes do not guarantee exact preservation of the original rational ratio.
 
-Поддерживается одно обычное inline-изображение или изображение непосредственно внутри простой figure с одной картинкой, в том числе в списке или объединённой ячейке. Сложные figure, чужие и защищённые семантические узлы отклоняются. Размеры и их pixel-стили сохраняются в HTML/JSON; подпись с rich-разметкой, IMG и соседние узлы сохраняются. Одно изменение — один Undo с восстановлением выделения. Совпадающий размер не создаёт историю; read-only и активная IME-композиция не меняют документ. После уничтожения редактора команда недоступна.
+One ordinary inline image or an image directly inside a simple single-image figure is supported, including list and merged-cell placement. Complex figures, foreign nodes and protected semantic ownership are rejected. Dimensions and pixel styles persist in HTML/JSON; rich caption children, the IMG and neighboring nodes survive. One change is one Undo step with restored selection. Identical dimensions add no history; read-only and active IME composition leave the document unchanged. Commands are unavailable after editor disposal.
 
-В [готовой форме](/ui#сохранение-пропорций) включите **«Сохранять пропорции»**, измените ширину или высоту и нажмите **«Обновить изображение»**. Связанное поле пересчитывается в черновике, до применения документ не меняется. По умолчанию переключатель выключен для совместимости; приложение может задать `keepAspectRatio: true` при создании формы. Для перетаскивания подключается отдельный UI ниже; обрезка пока не реализована.
+In the [ready form](/ui#preserving-proportions), enable **Keep aspect ratio**, edit width or height, and choose **Update image**. The linked field changes only in the draft until Apply. The checkbox defaults to off for compatibility; applications can pass `keepAspectRatio: true` when creating the form. Dragging uses the separate UI below; cropping remains unsupported.
 
-## Перетаскивание маркеров
+## Drag resize handles
 
-Модуль `createImageResizeUI` добавляет четыре угловых маркера с сохранением пропорций. Он подключается независимо от формы и контекстных свойств и не устанавливается пресетами автоматически:
+`createImageResizeUI` adds four aspect-locked corner handles. It is independent of forms and contextual properties and is not installed automatically by presets:
 
 ```ts
 import { createImageResizeUI } from '@morfira-dev/wysiwyg/ui/image-resize';
 import '@morfira-dev/wysiwyg/ui/image-resize.css';
 
 const resizeHost = document.createElement('div');
-document.body.append(resizeHost); // пустой подключённый viewport overlay host
+document.body.append(resizeHost); // empty connected viewport overlay host
 const resizeUI = createImageResizeUI(resizeHost, editor);
 
 const disposeResize = () => {
   resizeUI.destroy();
   resizeHost.remove();
 };
-// Вызовите disposeResize при размонтировании приложения.
+// Call disposeResize when your application unmounts.
 ```
 
-Нажмите на сам IMG, затем потяните видимый угловой маркер мышью или указателем. Во время жеста меняется только внешняя рамка и текст размеров: HTML, выделение, история и callbacks изменения документа не меняются. Отпускание указателя применяет оба размера одной командой и одним Undo/Redo. Размер ограничивается допустимой парой целых 1–1000; пропорция фиксируется на начало жеста. Картинка, figure, богатая подпись и соседние узлы сохраняются, отдельной загрузки или копии IMG нет.
+Click the IMG itself, then drag a visible corner with a mouse or pointer. Only the external outline and dimension text change during the gesture: HTML, selection, history and document-change callbacks stay untouched. Releasing the pointer applies both dimensions through one command and one Undo/Redo step. Dimensions stay within an allowed integer pair of 1–1000; the ratio is fixed at gesture start. The image, figure, rich caption and neighboring nodes survive, with no extra fetch or IMG clone.
 
-**Escape**, отмена указателя/потеря capture, уход окна в фон, прокрутка или изменение viewport во время жеста отменяют предпросмотр. Внешнее изменение документа, новое выделение, read-only, IME или уничтожение UI также отменяют старый жест; он не переносится на другой IMG. На сфокусированном маркере стрелки меняют размер на 1 px, Shift+стрелка — на 10 px. Каждый клавиатурный шаг — отдельная операция истории; Enter/Space не применяют незавершённый drag.
+**Escape**, pointer cancellation/lost capture, window blur, scrolling or a viewport change during the gesture cancels the preview. External document edits, a new selection, read-only, IME or UI disposal also cancel the old gesture; it cannot transfer to a different IMG. On a focused handle, arrow keys change the size by 1 px; Shift+arrow uses 10 px. Each keyboard step is a separate history operation; Enter/Space do not apply an unfinished drag.
 
-Нужен точный node Range одного обычного IMG, как после `api.select(image)` или клика по нему. Курсор подписи, целая figure, несколько изображений, защищённые/чужие узлы и сложная figure не подходят. Неизвестная пропорция скрывает маркеры без дополнительного запроса. Углы вне видимой clipped-области скрываются. Используйте обычный viewport-overlay host без transform/paint/clipping-контейнеров; трансформированная картинка/редактор и явно искажённое CSS-соотношение размеров не поддерживаются. Responsive CSS может ограничить фактическое отображение после применения сохранённых pixel-размеров. [Контракт и оформление UI](/ui#маркеры-размера-изображения).
+An exact node Range selecting one ordinary IMG is required, as after `api.select(image)` or clicking it. Caption carets, whole figures, multiple images, protected/foreign ownership and complex figures are ineligible. Unknown proportions hide handles without an extra request. Corners outside the visible clipped region are hidden. Use a normal viewport-overlay host without transformed/paint-containing/clipping ancestors; transformed images/editors and materially distorted CSS aspect ratios are unsupported. Responsive CSS may constrain actual display after stored pixel dimensions are applied. [UI contract and appearance](/ui#image-resize-handles).
 
-## Callback загрузки
+## Upload callback
 
-Редактор не задаёт URL сервера, авторизацию и способ хранения. Приложение предоставляет callback:
+The editor does not choose your server, authentication or storage. The application provides a callback:
 
 ```ts
 const editor = createEditor(host, {
@@ -155,8 +156,8 @@ const editor = createEditor(host, {
       const body = new FormData();
       body.append('image', file);
       const response = await fetch('/api/images', { method: 'POST', body, signal });
-      if (!response.ok) throw new Error('Не удалось загрузить изображение');
-      // Сервер должен вернуть ImageValue, например { src: '/uploads/photo.jpg', alt: '...' }.
+      if (!response.ok) throw new Error('Image upload failed');
+      // Server returns ImageValue, e.g. { src: '/uploads/photo.jpg', alt: '...' }.
       return response.json();
     },
   })],
@@ -165,27 +166,27 @@ const api = imageCommands(editor);
 const upload = async (file: File) => {
   try {
     const inserted = await api.upload(file);
-    // false означает отмену; true — одну завершённую вставку в историю.
+    // false means cancelled; true means one completed insertion in history.
   } catch (error) {
-    // Покажите общую локализованную ошибку; диагностику не выводите как разметку.
+    // Display a generic localized error; keep raw diagnostics outside rendered content.
   }
 };
 api.isUploading();
 api.cancelUpload();
 ```
 
-Клиент допускает непустые PNG/JPEG/GIF/WebP/AVIF по MIME и ограничивает размер (по умолчанию 10 MiB). Это предварительная проверка: сервер обязан самостоятельно проверить файл. SVG-файлы для загрузки не принимаются; существующий безопасный URL изображения SVG допустим.
+The client accepts nonempty PNG/JPEG/GIF/WebP/AVIF files by MIME and enforces a size limit (10 MiB by default). This is a preliminary gate; the server must validate files independently. SVG file uploads are rejected; existing safe SVG image URLs are allowed.
 
-Загрузка запоминает DOM-позицию вставки. Перемещение курсора не меняет её. Новая загрузка отменяет предыдущую. Любое изменение документа, внешняя замена, начало IME-композиции, read-only или уничтожение редактора прерывают запрос через AbortSignal. Поздний ответ после отмены игнорируется; временных узлов и blob URL в документе нет. Изменение документа во время загрузки требует повторной загрузки в новой позиции. После уничтожения команды недоступны, cancelUpload остаётся безопасным.
+Upload captures the DOM insertion position. Moving the caret does not relocate insertion. A new upload cancels the previous one. Any document edit, external replacement, composition start, read-only transition or editor destruction aborts the request via AbortSignal. Late results after cancellation are ignored; no temporary nodes or blob URLs are persisted. Editing while uploading requires restarting at a new position. Commands become unavailable after disposal; cancelUpload remains safe.
 
-Вызов `upload()` во время композиции возвращает `false`, не запуская транспорт и не восстанавливая выделение. Начало композиции отменяет текущую загрузку; её поздний результат не восстанавливает сохранённый Range. См. [безопасность и обязанности сервера](/security).
+Calling `upload()` during composition returns `false` without starting transport or restoring selection. Starting composition aborts an existing upload; its eventual result cannot restore the saved range. See [security and server responsibilities](/security).
 
-### Прогресс, ошибки и повторная попытка
+### Progress, errors and retry
 
-Callback получает `ImageUploadContext`: `{ signal, reportProgress }`. Прежние callbacks, использующие только `signal`, продолжают работать. Передавайте число байтов из транспорта вашего приложения — например, из обработчика прогресса загрузки `XMLHttpRequest`:
+The callback receives `ImageUploadContext`: `{ signal, reportProgress }`. Existing callbacks using only `signal` still work. Report byte counts from your application's upload transport; for example, inside an `XMLHttpRequest` upload-progress listener:
 
 ```ts
-// Устанавливайте и снимайте обработчик вместе с собственным transport lifecycle.
+// Install/remove this listener with your own request's transport lifecycle.
 xhr.upload.addEventListener('progress', (event) => {
   reportProgress({
     loaded: event.loaded,
@@ -194,9 +195,9 @@ xhr.upload.addEventListener('progress', (event) => {
 });
 ```
 
-`reportProgress` — член контекста callback, а `xhr` принадлежит приложению. Редактор не создаёт и не запускает этот транспорт. Пример с `fetch` выше не сообщает прогресс передачи, поэтому готовая форма показывает неопределённый прогресс. В production-интеграции не выдавайте прошедшее время за измеренный процент загрузки.
+`reportProgress` is the callback context member; `xhr` belongs to your application. The editor does not supply or start this transport. The `fetch` example above supplies no transfer-progress reports, so the ready form displays indeterminate progress. Do not invent percentages from elapsed time in a production integration.
 
-Для собственного UI передайте наблюдатель конкретного запроса:
+For a custom UI, pass a request-scoped observer:
 
 ```ts
 import type { ImageUploadOptions } from '@morfira-dev/wysiwyg/plugins/images';
@@ -213,17 +214,17 @@ const options: ImageUploadOptions = {
 const inserted = await api.upload(file, options);
 ```
 
-`progressElement` — ваш нативный `HTMLProgressElement`. `ImageUploadProgress` содержит неотрицательный safe-integer `loaded` и необязательный положительный safe-integer `total`, причём `loaded <= total`. Некорректные отчёты и уменьшение `loaded` игнорируются. Принятые значения — замороженные снимки. Исключение или отклонённый Promise наблюдателя не срывают загрузку. Отчёты после отмены, завершения, изменения документа или уничтожения не оживляют старую попытку. **100% означает сообщённый прогресс передачи, а не успешную вставку**: URL и метаданные результата ещё проходят проверку.
+`progressElement` is your native `HTMLProgressElement`. `ImageUploadProgress` contains nonnegative safe-integer `loaded` and optional positive safe-integer `total`, with `loaded <= total`. Invalid reports and decreasing `loaded` are ignored. Accepted values are frozen snapshots. Observer exceptions/rejections do not fail the upload. Reports after cancellation, completion, document changes or disposal cannot revive an old attempt. **100% means reported transfer progress, not successful insertion**: the returned image URL and metadata must still pass validation.
 
-Готовая форма показывает подписанный нативный индикатор и локализованные общие ошибки. После неудачи **«Повторить загрузку»** запускает новый запрос с тем же File в исходную позицию вставки. Одно перемещение курсора не переносит её. Успех вставляет изображение один раз и отменяется одним Undo; ошибки не добавляют историю документа. Повтор всегда явный, без автоматических попыток, с повторной проверкой файла и результата. Он может быть доступен после ошибок валидации и транспорта; некорректный файл или небезопасный результат по-прежнему не проходят проверку.
+The ready image form shows a labeled native progress bar and generic localized errors. After a failed attempt, **Retry upload** starts a fresh request with the same File and original insertion range. Moving the caret alone does not relocate it. Success inserts once and is one Undo step; failures add no document history. Retry is explicit, never automatic, and every attempt repeats file/result validation. It may be offered after validation failures as well as transport failures; an invalid file or unsafe result still cannot pass validation.
 
-Другой выбранный файл, отмена, любое редактирование/Undo/API-замена документа, включение read-only, начало композиции или уничтожение формы освобождают File и сбрасывают право повторить попытку. После таких изменений начните новую загрузку в новой позиции. Форма владеет только своим запросом и не повторяет и не отменяет загрузку другой формы. В edit-only режиме прогресса/повтора нет; `ImageFormValues` не изменился. Тексты исключений, HTML сервера и пути файлов не выводятся как разметка ошибки.
+Choosing another file, cancellation, any document edit/Undo/API replacement, read-only activation, composition start or form destruction clears the retained File and retry authority. Start a new upload at a fresh position after such a change. The form only owns its own request and never retries or cancels another form's upload. Progress/retry are absent in edit-only mode; `ImageFormValues` is unchanged. Raw exception messages, server HTML and file paths are not rendered as error markup.
 
-Сервер по-прежнему отвечает за авторизацию, проверку содержимого/MIME/размера, безопасное хранение, ресурсные ограничения и удаление файлов-сирот. Настройте CSP для разрешённых источников изображений и не сохраняйте серверные credentials в документе редактора. [Обязанности сервера](/security).
+Your backend remains responsible for upload authorization, content/MIME/size checks, safe storage, resource limits and orphan cleanup. Configure CSP for allowed image sources and keep server credentials outside persisted editor data. [Security responsibilities](/security).
 
-### Отмена загрузки отдельным владельцем
+### Owner-scoped upload cancellation
 
-Необязательный второй аргумент `upload` имеет тип `ImageUploadOptions`. Передайте собственный `AbortSignal`, если загрузкой управляет отдельная панель или компонент:
+The optional second `upload` argument has type `ImageUploadOptions`. Pass a dedicated `AbortSignal` when a particular panel or component owns the request:
 
 ```ts
 import type { ImageUploadOptions } from '@morfira-dev/wysiwyg/plugins/images';
@@ -232,14 +233,14 @@ const controller = new AbortController();
 const options: ImageUploadOptions = { signal: controller.signal };
 const pending = api.upload(file, options);
 controller.abort();
-const inserted = await pending; // false после отмены
+const inserted = await pending; // false after cancellation
 ```
 
-Этот сигнал отменяет только связанную с ним загрузку. Поздняя отмена старого сигнала не прерывает более новую загрузку; уже отменённый сигнал не запускает запрос и не отменяет текущий. `cancelUpload()` по-прежнему отменяет текущую загрузку редактора независимо от владельца. [Готовая форма изображений](/ui#изображения-и-загрузка-приложения) использует собственный сигнал и освобождает его при уничтожении.
+This signal cancels only its associated upload. Aborting an old signal cannot interrupt a newer upload; an already aborted signal starts no request and does not cancel the current one. `cancelUpload()` still cancels the editor's current upload regardless of its owner. The [ready image form](/ui#images-and-application-owned-upload) owns a dedicated signal and aborts it on disposal.
 
-## Демо и оформление
+## Demo and appearance
 
-На [главной](/#editor) и [стенде](/playground) выберите «Изображения». Откройте **«Вставить изображение…»** для числового ввода: включите «Сохранять пропорции» и измените одну сторону; вторая пересчитается до применения. Успешное обновление закрывает окно. Для drag оставьте включёнными **«Маркеры размера изображения»**, нажмите на картинку и потяните угол; Escape отменяет, отпускание применяет, Undo возвращает размер. Выключение demo-переключателя уничтожает только этот UI. Поля alt/размеров/подписи обновляются при выборе картинки; кнопки применяют изменения с сохранением выделения. Для проверки ошибки сначала включите **«Ошибка следующей загрузки»** в разделе **«Ссылки и изображения»**, затем откройте окно и выберите допустимый растровый файл. После одной имитации ошибки нажмите **«Повторить загрузку»**. Переключатель сбрасывается при старте попытки, поэтому повтор может завершиться успешно. Демо возвращает локальный логотип вместо выбранного файла. **Файл не читается, не отправляется и не сохраняется**: прогресс имитируется локально, а не измеряет сетевую передачу. Актуальные результаты проверок фиксируются отдельно.
+On the [homepage](/#editor) and [playground](/playground), choose “Images”. Open **Insert image…** for numeric input: enable Keep aspect ratio and edit one side; its counterpart updates before Apply. A successful update closes the dialog. For dragging, leave **Image resize handles** enabled, click the image and drag a corner; Escape cancels, releasing applies, and Undo restores the size. Turning off the demo toggle destroys only this UI. Alt/dimension/caption fields populate on image selection; commands preserve selection through form focus. To demonstrate an error, first enable **Fail next upload** in **Links and images**, then open the dialog and choose an accepted raster file. After one simulated error, use **Retry upload**. The checkbox resets when that attempt starts, allowing the retry to succeed. The demo returns a local logo instead of the chosen file. **Files are never read, uploaded or stored**: progress is simulated locally, not measured network transfer. Current verification results are recorded separately.
 
 ```css
 .my-editor {
@@ -250,11 +251,11 @@ const inserted = await pending; // false после отмены
 }
 ```
 
-Schema v1 дополнена figure/figcaption: старые версии читателя могут потерять семантику обёртки при импорте. Автоматического обновления старого HTML нет. Обрезка и управление хранилищем пока не реализованы. [Вставка растрового файла из буфера/drop](/image-input) доступна отдельным необязательным плагином.
+Schema v1 adds figure/figcaption: older readers may discard wrapper semantics during import. Existing HTML is not upgraded automatically. Cropping and storage management are not implemented. Optional [raster clipboard/drop input](/image-input) is available through a separate plugin.
 
-Если выбрана картинка в обычной figure, новая вставка заменяет figure вместе со старой подписью. Вложенные figure не создаются. Вставка внутри сложной импортированной figure отклоняется.
+Inserting with an image selected in a simple figure replaces the whole figure and old caption. Figures are never nested. Insertion inside a complex imported figure is rejected.
 
-Размеры из HTML/JSON-атрибутов img дублируются в проверенные inline pixel-стили, чтобы CSS сайта (например height: auto) не игнорировал заданную высоту. Атрибуты размеров имеют приоритет; команды синхронно обновляют/снимают обе записи.
+HTML/JSON img dimensions are mirrored into validated inline pixel styles so host CSS such as height: auto cannot ignore the configured height. Dimension attributes take precedence; commands update/remove both representations together.
 
 
-Необязательные [контекстные свойства изображения](/contextual-images) показываются при точном Range узла IMG, переиспользуют публичную форму с `mode: 'edit'` и существующие update/remove с Undo. Второй IMG для thumbnail не создаётся. Курсор в подписи, диапазон всей figure и сложные figure не подходят для первого UI-среза; поддержка самих команд выше не меняется.
+The optional [contextual image properties](/contextual-images) show on exact IMG node selection, reuse the public image form in `mode: 'edit'`, and apply existing metadata/remove commands with Undo. No second IMG thumbnail is created. Caption-carets, whole-figure ranges and complex figures are not eligible for that first UI slice; the underlying command support above is unchanged.

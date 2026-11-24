@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
-import { useData } from 'vitepress';
+import { useData, withBase } from 'vitepress';
 import { quoteInputSample, selectQuoteInputSample } from './quote-input/index.js';
 import type { QuoteInputDirection } from './quote-input/types.js';
 import { officePasteSamples } from './office-paste/index.js';
@@ -57,6 +57,8 @@ import '@morfira-dev/wysiwyg/plugins/checklists.css';
 const props = defineProps<{ full?: boolean }>();
 const { lang } = useData();
 const ru = computed(() => lang.value === 'ru');
+const docsLink = (path: string): string => withBase(ru.value ? `/ru${path}` : path);
+const logoUrl = withBase('/logo.svg');
 const t = (russian: string, english: string) => ru.value ? russian : english;
 const editorLocale = ref(ru.value ? 'ru' : 'en');
 const toolbarOverflow = ref<'wrap' | 'more'>('wrap');
@@ -214,8 +216,8 @@ const listSelectionSample = () => {
   };
   return `<ul><li>${body('Alpha <strong>one</strong>', false)}</li><li>${body('<em>Beta</em> tail', true)}<ul><li>Nested branch</li></ul></li><li>Keep item</li></ul><p>Keep paragraph</p>`;
 };
-const imageSample = () => `<h2>${t('Изображения с подписью', 'Images with captions')}</h2><p>${t('Нажми на изображение: в разделе «Ссылки и изображения» доступны размер, alt, подпись и выравнивание слева, по центру или справа.', 'Click the image: Links and images provides dimensions, alt text, caption and left, center or right alignment.')}</p><figure><img src="/logo.svg" alt="Morfira" width="160" height="160"><figcaption>${t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption')}</figcaption></figure><p>${t('Здесь можно продолжить текст.', 'Continue writing here.')}</p>`;
-const contextualImageSample = () => `<p>${t('До изображения', 'Before the image')}</p><figure title="Contextual image sample"><img src="/logo.svg" alt="${t('Знак Morfira', 'Morfira mark')}" width="120" height="80"><figcaption><em>${t('Исходная подпись', 'Original caption')}</em></figcaption></figure><p>${t('После изображения', 'After the image')}</p>`;
+const imageSample = () => `<h2>${t('Изображения с подписью', 'Images with captions')}</h2><p>${t('Нажми на изображение: в разделе «Ссылки и изображения» доступны размер, alt, подпись и выравнивание слева, по центру или справа.', 'Click the image: Links and images provides dimensions, alt text, caption and left, center or right alignment.')}</p><figure><img src="${logoUrl}" alt="Morfira" width="160" height="160"><figcaption>${t('Логотип Morfira — редактируемая подпись', 'Morfira logo — an editable caption')}</figcaption></figure><p>${t('Здесь можно продолжить текст.', 'Continue writing here.')}</p>`;
+const contextualImageSample = () => `<p>${t('До изображения', 'Before the image')}</p><figure title="Contextual image sample"><img src="${logoUrl}" alt="${t('Знак Morfira', 'Morfira mark')}" width="120" height="80"><figcaption><em>${t('Исходная подпись', 'Original caption')}</em></figcaption></figure><p>${t('После изображения', 'After the image')}</p>`;
 const contextualLinkSample = () => `<p title="Contextual link sample">Before <a href="https://example.com/article" title="Original"><strong>Mor</strong><em>fira</em></a> after</p><p>${t('Поставь курсор или выдели часть текста внутри ссылки: доступны открытие, редактирование и удаление всей ссылки без потери оформления.', 'Place the caret or select text inside the link to open, edit or unlink the whole link without losing rich content.')}</p>`;
 const mixedContextualLinkSample = () => '<p title="Mixed contextual link sample"><a href="https://example.com/first" title="First"><strong>Alpha</strong></a> + plain + <a href="https://example.com/second" title="Second"><em>Beta</em></a> tail</p>';
 const contextualSample = () => `<p title="Contextual sample">Alpha <strong>bold</strong> <em>italic</em> <a href="https://example.com">link</a> tail</p><p>${t('Выдели часть текста: панель появляется над выделением без перехвата фокуса.', 'Select some text: the toolbar appears above the selection without taking focus.')}</p>`;
@@ -228,8 +230,8 @@ const checklistInteractionSample = () => '<ul title="Checklist interaction sampl
 const statisticsSample = () => `<h2>${t('Unicode и статистика', 'Unicode and statistics')}</h2><p>e<strong>́</strong> · 👨‍👩‍👧‍👦 · 🇷🇺 · ${t('Привет, мир!', 'Hello, world!')}</p><p>${t('Выдели букву с комбинируемым знаком или эмодзи и открой панель статистики: считаются видимые графемы, а не UTF-16 единицы.', 'Select a combining sequence or emoji and open Statistics: the counter measures visible graphemes rather than UTF-16 units.')}</p>`;
 const suggestionSample = () => `<h2>${t('Упоминания и slash-шаблоны', 'Mentions and slash snippets')}</h2><p>${t('Вводи @an для людей или /sig в начале абзаца для текстового шаблона. ArrowUp/Down выбирают, Enter вставляет, Escape закрывает.', 'Type @an for people or /sig at the beginning of a paragraph for a text snippet. ArrowUp/Down navigate, Enter inserts, Escape dismisses.')}</p><p>@an</p><p>/sig</p><p>/h2 · /bullet · /ordered · /quote · /code · /table</p><p>${t('Загруженные примеры буквальны. Кликни в конец токена и открой подсказки кнопкой справа, либо начни новый пример.', 'Loaded examples stay literal. Place the caret at a token end and use Open suggestions on the right, or start a new example.')}</p><p><br></p>`;
 const markdownSample = () => `<h2>Markdown shortcuts</h2><p>${t('Эти примеры загружены как обычный текст. Для преобразования введи маркеры сам и нажми Space; для code fence или разделителя доступен также Enter.', 'These examples are loaded as literal text. Type markers yourself and press Space to transform; code fences and horizontal rules also accept Enter.')}</p><p># ${t('Заголовок', 'Heading')}</p><p>- ${t('Пункт', 'Item')}</p><p>&gt; ${t('Цитата', 'Quote')}</p><p>**${t('полужирный', 'bold')}** · _${t('курсив', 'italic')}_ · ~~${t('зачёркнутый', 'strike')}~~ · \`${t('код', 'code')}\`</p><p>${t('Последняя пустая строка — для твоего ввода. Undo возвращает текст до клавиши-триггера.', 'Use the final empty line for typing. Undo restores text before the trigger key.')}</p><p><br></p>`;
-const searchSample = () => `<h2>${t('Поиск и замена', 'Find and replace')}</h2><p><strong>Mor</strong>fira ${t('помогает писать', 'helps you write')}. <em>Morfira</em> ${t('сохраняет стили', 'preserves styles')}.</p><p><a href="https://example.com">MORFIRA</a> · morfira</p><ul><li>Morfira ${t('в списке', 'in a list')}</li></ul><table><tbody><tr><td rowspan="2"><p>Morfira</p></td><td>A</td></tr><tr><td>B</td></tr></tbody></table><figure><img src="/logo.svg" alt="Morfira" width="64"><figcaption>Morfira</figcaption></figure><p>MorfiraPlus — ${t('совпадение только без целого слова', 'a match only with whole word disabled')}.</p>`;
-const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="/logo.svg" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + checklistSample() + contextualTableSample() + contextualImageSample() + contextualLinkSample() + contextualSample() + textDirectionSample() + listPropertySample() + fontSample() + horizontalRuleSample() + markdownSample() + suggestionSample() + searchSample() + tableSample();
+const searchSample = () => `<h2>${t('Поиск и замена', 'Find and replace')}</h2><p><strong>Mor</strong>fira ${t('помогает писать', 'helps you write')}. <em>Morfira</em> ${t('сохраняет стили', 'preserves styles')}.</p><p><a href="https://example.com">MORFIRA</a> · morfira</p><ul><li>Morfira ${t('в списке', 'in a list')}</li></ul><table><tbody><tr><td rowspan="2"><p>Morfira</p></td><td>A</td></tr><tr><td>B</td></tr></tbody></table><figure><img src="${logoUrl}" alt="Morfira" width="64"><figcaption>Morfira</figcaption></figure><p>MorfiraPlus — ${t('совпадение только без целого слова', 'a match only with whole word disabled')}.</p>`;
+const showcase = () => article() + `<h3>${t('Форматирование', 'Formatting')}</h3><p><strong>${t('Полужирный', 'Bold')}</strong> · <em>${t('Курсив', 'Italic')}</em> · <u>${t('Подчёркнутый', 'Underline')}</u> · <s>${t('Зачёркнутый', 'Strike')}</s> · <code>inline code</code> · H<sub>2</sub>O · x<sup>2</sup></p><blockquote>${t('Редактор должен помогать писать, а не отвлекать.', 'An editor should help you write and stay out of your way.')}</blockquote><ul><li>TypeScript</li><li>MIT</li></ul><ol><li>${t('Выделить', 'Select')}</li><li>${t('Отформатировать', 'Format')}</li></ol><pre>const editor = createEditor(host);</pre><p><a href="https://example.com">${t('Пример ссылки', 'Example link')}</a> · <img src="${logoUrl}" alt="Morfira" width="48"></p>` + listSample() + stylingSample() + imageSample() + statisticsSample() + checklistSample() + contextualTableSample() + contextualImageSample() + contextualLinkSample() + contextualSample() + textDirectionSample() + listPropertySample() + fontSample() + horizontalRuleSample() + markdownSample() + suggestionSample() + searchSample() + tableSample();
 const updateStatistics = (state: StatisticsState) => { statisticsState.value = state; count.value = state.document.characters; words.value = state.document.words; };
 const refresh = () => {
   if (!editor) return;
@@ -531,12 +533,12 @@ const loadTextDropSample = () => run((instance) => {
   output.value = '';
 });
 const loadReadingSample = () => run((instance) => {
-  instance.setHTML(`<h2>${t('План документа', 'Document plan')}</h2><p>${t('Обзор документа', 'Document overview')}: <strong>42 €</strong>. <a href="/reading-destination">${t('Обычная ссылка', 'Ordinary link')}</a></p><h3>${t('Детали', 'Details')}</h3><ul><li>${t('Пункт плана', 'Plan item')}</li></ul><blockquote><h3>${t('Вложенный раздел', 'Nested section')}</h3><p>${t('Заголовок внутри цитаты тоже доступен в оглавлении.', 'A heading inside a quote is also available in the outline.')}</p></blockquote><table><caption>${t('Сводка', 'Summary')}</caption><tbody><tr><th colspan="2">${t('Объединённый заголовок', 'Merged header')}</th></tr><tr><td>A</td><td>B</td></tr></tbody></table><figure><img src="/logo.svg" alt="${t('Изображение примера', 'Sample image')}" width="64" height="64"><figcaption>${t('При печати вместо изображения остаётся текст.', 'Printing retains text in place of the image.')}</figcaption></figure><h2>${t('Следующие шаги', 'Next steps')}</h2><p>${t('Документ остаётся редактируемым.', 'The document remains editable.')}</p>`);
+  instance.setHTML(`<h2>${t('План документа', 'Document plan')}</h2><p>${t('Обзор документа', 'Document overview')}: <strong>42 €</strong>. <a href="/reading-destination">${t('Обычная ссылка', 'Ordinary link')}</a></p><h3>${t('Детали', 'Details')}</h3><ul><li>${t('Пункт плана', 'Plan item')}</li></ul><blockquote><h3>${t('Вложенный раздел', 'Nested section')}</h3><p>${t('Заголовок внутри цитаты тоже доступен в оглавлении.', 'A heading inside a quote is also available in the outline.')}</p></blockquote><table><caption>${t('Сводка', 'Summary')}</caption><tbody><tr><th colspan="2">${t('Объединённый заголовок', 'Merged header')}</th></tr><tr><td>A</td><td>B</td></tr></tbody></table><figure><img src="${logoUrl}" alt="${t('Изображение примера', 'Sample image')}" width="64" height="64"><figcaption>${t('При печати вместо изображения остаётся текст.', 'Printing retains text in place of the image.')}</figcaption></figure><h2>${t('Следующие шаги', 'Next steps')}</h2><p>${t('Документ остаётся редактируемым.', 'The document remains editable.')}</p>`);
   instance.setSelection(0);
   outlineUI?.refresh();
 });
 const loadPreviewSample = () => run((instance) => {
-  instance.setHTML(`<h2>${t('Проверяем перед публикацией', 'Review before publishing')}</h2><p>${t('Цена', 'Price')}: <strong>42 €</strong>. <a href="/preview-destination">${t('Ссылка в предпросмотре не открывается', 'Preview links stay inert')}</a></p><ul><li>${t('Форматирование сохраняется', 'Formatting is retained')}</li></ul><figure><img src="/logo.svg" alt="${t('Изображение примера', 'Sample image')}" width="64" height="64"><figcaption>${t('Подпись остаётся текстом', 'The caption remains text')}</figcaption></figure>`);
+  instance.setHTML(`<h2>${t('Проверяем перед публикацией', 'Review before publishing')}</h2><p>${t('Цена', 'Price')}: <strong>42 €</strong>. <a href="/preview-destination">${t('Ссылка в предпросмотре не открывается', 'Preview links stay inert')}</a></p><ul><li>${t('Форматирование сохраняется', 'Formatting is retained')}</li></ul><figure><img src="${logoUrl}" alt="${t('Изображение примера', 'Sample image')}" width="64" height="64"><figcaption>${t('Подпись остаётся текстом', 'The caption remains text')}</figcaption></figure>`);
   instance.setSelection(0);
 });
 const prepareSaveSample = () => run((instance) => {
@@ -1037,7 +1039,7 @@ const demoUpload = (_file: File, { signal, reportProgress }: ImageUploadContext)
     }
     else if (loaded === 100) {
       cleanup();
-      resolve({ src: '/logo.svg', alt: 'Morfira demo', width: 160, height: 160, caption: t('Демо результата callback загрузки', 'Demo upload callback result') });
+      resolve({ src: logoUrl, alt: 'Morfira demo', width: 160, height: 160, caption: t('Демо результата callback загрузки', 'Demo upload callback result') });
     }
   }, 300);
   if (signal.aborted) abort();
@@ -1206,7 +1208,7 @@ onMounted(async () => {
     });
     imageForm = createImageForm(imageFormHost.value!, editor, {
       presentation: 'dialog',
-      initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64', height: '', caption: '' },
+      initialValues: { src: logoUrl, alt: 'Morfira', width: '64', height: '', caption: '' },
     });
     tablePropertiesForm = createTablePropertiesForm(tablePropertiesFormHost.value!, editor, {
       onError: (error) => notify(error instanceof Error ? error.message : String(error), true),
@@ -1240,7 +1242,7 @@ onMounted(async () => {
       presentation: 'floating',
       overflow: toolbarOverflow.value,
       links: { initialValues: { href: 'https://example.com' } },
-      images: { initialValues: { src: '/logo.svg', alt: 'Morfira', width: '64' } },
+      images: { initialValues: { src: logoUrl, alt: 'Morfira', width: '64' } },
       search: { initialValues: { query: 'Morfira', replacement: 'Morfira Studio' } },
       table: { picker: createTablePicker },
       mentions: { labels: { label: t('Люди', 'People'), loading: t('Ищем людей…', 'Finding people…'), empty: t('Люди не найдены', 'No people found'), error: t('Ошибка поиска людей', 'People lookup failed'), results: t('Людей: {count}', 'People: {count}') } },
@@ -1358,7 +1360,7 @@ onBeforeUnmount(() => {
       <div v-if="full" class="lab-fullscreen-controls">
         <div ref="fullscreenHost"></div>
         <span>{{ fullscreenActive ? t('Рабочая область развёрнута. Escape возвращает обычный вид.', 'Workspace expanded. Escape returns to the normal view.') : t('Редактор и панель можно развернуть на окно без изменения документа.', 'Expand the editor and toolbar to the viewport without changing the document.') }}</span>
-        <a :href="ru ? '/fullscreen' : '/en/fullscreen'">{{ t('Подключение полноэкранного режима', 'Fullscreen setup') }}</a>
+        <a :href="docsLink('/fullscreen')">{{ t('Подключение полноэкранного режима', 'Fullscreen setup') }}</a>
       </div>
       <div class="demo-editing">
         <div v-if="full" class="lab-block-controls">
@@ -1405,7 +1407,7 @@ onBeforeUnmount(() => {
             <button @click="pasteOfficeSample('google-docs')">{{ t('Вставить пример Google Docs', 'Paste Google Docs sample') }}</button>
           </div>
           <p class="lab-hint">{{ t('Кнопка заменяет документ пустым абзацем и отправляет демонстрационный paste; Undo отменяет вставку. Это написанные вручную образцы разметки, а не реальные снимки буфера Word/Excel/Google Docs. Доступ к системному буферу не нужен. В Word восстанавливаются поддержанные списки, в Docs убирается служебная жирная обёртка, в Excel сохраняются таблица и colspan. Стили из классов и таблиц стилей отбрасываются.', 'Each button replaces the document with an empty paragraph and dispatches a demonstration paste; Undo reverts the paste. These are hand-authored markup samples, not actual Word/Excel/Google Docs clipboard captures. No system clipboard permission is needed. Supported Word lists are reconstructed, the Docs bold wrapper is neutralized, and the Excel table and colspan survive. Classes and stylesheets are discarded.') }}</p>
-          <a :href="ru ? '/office-paste' : '/en/office-paste'">{{ t('Поддержка и ограничения офисной вставки', 'Office paste support and limitations') }}</a>
+          <a :href="docsLink('/office-paste')">{{ t('Поддержка и ограничения офисной вставки', 'Office paste support and limitations') }}</a>
         </fieldset></details>
         <details class="lab-quote-input"><summary>{{ t('Ввод через границы цитат', 'Input across quote boundaries') }}</summary><fieldset :disabled="!ready || readOnly">
           <button @click="loadQuoteInputSample">{{ t('Загрузить пример ввода через цитаты', 'Load cross-quote input sample') }}</button>
@@ -1577,7 +1579,7 @@ onBeforeUnmount(() => {
           <p role="status" aria-live="polite">{{ checklistStatus }}</p>
           <p class="lab-hint" data-checklist-interaction-hint>{{ t('Нажми именно на квадратный маркер задачи: текст рядом не переключает выполнение. Или поставь курсор в задачу и нажми Ctrl+Enter / Cmd+Enter на Mac. Вложенная задача переключается отдельно от родительской. Обратное выделение сохраняется; Undo отменяет одно переключение. В read-only изменения заблокированы.', 'Click the square task marker: clicking nearby text does not toggle completion. Or place the caret in a task and press Ctrl+Enter / Cmd+Enter on Mac. A child task toggles independently of its parent. Backward selection is preserved; Undo reverses one toggle. Read-only blocks changes.') }}</p>
           <p class="lab-hint">{{ t('Загрузка заменяет документ. Внешние кнопки доступны с клавиатуры через Tab и Enter/Space. Enter в тексте сохраняет состояние исходной задачи и создаёт новую невыполненную; Shift+Enter оставляет состояние прежним. Маркер нарисован CSS и не является нативным checkbox; полная доступность и реальные touch/IME-устройства пока не подтверждены. Плагин подключён явно; без него метаданные теряются. Обработчики и новые RU/EN-сценарии реализованы локально, но браузерные тесты пока не запускались.', 'Loading replaces the document. External buttons are keyboard accessible through Tab and Enter/Space. Enter in text preserves the original task state and creates a new incomplete item; Shift+Enter keeps it. The CSS marker is not a native checkbox; complete accessibility and real touch/IME devices are not verified. The plugin is explicit; without it metadata is lost. Handlers and new RU/EN scenarios are implemented locally, but browser tests have not run yet.') }}</p>
-          <a :href="ru ? '/checklists' : '/en/checklists'">{{ t('Мышь, клавиатура и формат чек-листа', 'Checklist mouse, keyboard and format') }}</a>
+          <a :href="docsLink('/checklists')">{{ t('Мышь, клавиатура и формат чек-листа', 'Checklist mouse, keyboard and format') }}</a>
         </fieldset></details>
         <details class="lab-suggestions"><summary>{{ t('Упоминания и slash-шаблоны', 'Mentions and slash snippets') }}</summary><fieldset :disabled="!ready">
           <div class="lab-button-grid"><button :disabled="readOnly" @click="startSuggestions('mentions')">{{ t('Новый пример @an', 'New @an example') }}</button><button :disabled="readOnly" @click="startSuggestions('slash')">{{ t('Новый пример /sig', 'New /sig example') }}</button></div>
@@ -1609,7 +1611,7 @@ onBeforeUnmount(() => {
           <pre v-if="mentionReferences" data-mention-references class="lab-code">{{ mentionReferences }}</pre>
           <p class="lab-hint">{{ t('Демка явно включает persistent: true и atomic: true; пресеты по умолчанию оставляют обычный текст. Выбери вариант в меню и нажми «Показать ID». Это снимок { id, text }, доступный и в read-only.', 'The demo explicitly enables persistent: true and atomic: true; presets keep plain text by default. Choose a menu result, then Show mention IDs. This { id, text } snapshot also works read-only.') }}</p>
           <p class="lab-hint">{{ t('Начало примера и загрузка заменяют документ. HTML/JSON round-trip валидирует текущее значение; при неизменном содержимом история сохраняется. В этой демке подпись атомарна; отдельный persistent-режим без atomic остаётся редактируемым. ID из буфера не подтверждает личность или права и не отправляет уведомления.', 'Starting/loading an example replaces the document. HTML/JSON round-trip validates the current value; unchanged content preserves history. Labels are atomic in this demo; persistent mode without atomic stays editable. Clipboard IDs prove neither identity nor permission and send no notifications.') }}</p>
-          <a :href="ru ? '/persistent-mentions' : '/en/persistent-mentions'">{{ t('Хранение ID и границы упоминаний', 'Mention ID storage and boundaries') }}</a>
+          <a :href="docsLink('/persistent-mentions')">{{ t('Хранение ID и границы упоминаний', 'Mention ID storage and boundaries') }}</a>
         </fieldset></details>
         <details class="lab-atomic-mentions"><summary>{{ t('Атомарные упоминания: курсор и удаление', 'Atomic mentions: navigation and deletion') }}</summary><fieldset :disabled="!ready">
           <button :disabled="readOnly" @click="loadAtomicMentionSample">{{ t('Загрузить атомарные упоминания', 'Load atomic mentions') }}</button>
@@ -1620,7 +1622,7 @@ onBeforeUnmount(() => {
           </div>
           <p class="lab-hint">{{ t('Загрузка заменяет документ. После «Курсор перед @Anna» нажми ArrowRight или Shift+ArrowRight: переход и выделение охватывают весь токен. Delete перед ним или Backspace сразу после удаляет упоминание целиком; Undo возвращает ID и подпись. Пробел после токена остаётся обычным текстом.', 'Loading replaces the document. After Caret before @Anna, press ArrowRight or Shift+ArrowRight to cross or select the entire token. Delete before it or Backspace immediately after it removes the whole mention; Undo restores its ID and label. The trailing space remains ordinary text.') }}</p>
           <p class="lab-hint">{{ t('atomic: true требует persistent: true. Это ограниченное поведение упоминаний, не универсальный SDK атомов. В сохраняемом HTML/JSON нет contenteditable; после загрузки поведение заново выводится из конфигурации. Read-only блокирует изменения; обработчики атомов не вмешиваются в подтверждение IME.', 'atomic: true requires persistent: true. This is bounded mention behavior, not a universal atom SDK. Stored HTML/JSON has no contenteditable; behavior is rederived from configuration after loading. Read-only blocks edits; atomic handlers do not intercept IME confirmation.') }}</p>
-          <a :href="ru ? '/atomic-mentions' : '/en/atomic-mentions'">{{ t('Навигация, удаление и миграция упоминаний', 'Mention navigation, deletion and migration') }}</a>
+          <a :href="docsLink('/atomic-mentions')">{{ t('Навигация, удаление и миграция упоминаний', 'Mention navigation, deletion and migration') }}</a>
         </fieldset></details>
         <details class="lab-mention-clipboard"><summary>{{ t('Буфер упоминаний: ID и обычный текст', 'Mention clipboard: IDs and plain text') }}</summary><fieldset :disabled="!ready">
           <button :disabled="readOnly" @click="loadAtomicMentionSample">{{ t('Загрузить пример буфера', 'Load clipboard sample') }}</button>
@@ -1665,7 +1667,7 @@ onBeforeUnmount(() => {
           <p class="lab-hint">{{ t('Пример с ветками: загрузи буфер с вложенными ветками и используй те же кнопки выделения пунктов. В HTML иерархия UL/OL и пять ID сохраняются; в обычном тексте подписи идут в порядке обхода с LF. Вставка переносит выбранные ветки, вырезание удаляет их из источника. Непокрытая ветка последнего пункта не входит в буфер и остаётся. Для соседних пунктов используется соединение оставшихся краёв. Для разных уровней есть отдельный пример ниже: частичные пути сохраняются на своих уровнях.', 'Branch example: load the nested branch clipboard sample and reuse the item selection buttons. HTML retains the UL/OL hierarchy and five IDs; plain text follows traversal order with LF. Paste transfers selected branches; cut removes them from the source. The final item’s unselected branch stays outside the buffer and survives. Sibling items use the edge-joining profile. Different levels use the separate example below: partial paths remain at their levels.') }}</p>
           <p class="lab-hint">{{ t('Кнопки используют память страницы, не системный буфер: разрешения и сеть не нужны. Нативные copy/cut/paste работают через событие браузера. Поддержаны обычные соседние абзацы и заголовки одного родителя и пункты одного UL/OL с допустимыми хвостовыми ветками. Разные уровни одного обычного дерева поддержаны отдельным структурным профилем. Несвязанные деревья/ячейки, блоки после веток, изображения и чужие семантические узлы остаются барьерами. ID проверяется схемой, но не подтверждает права.', 'Buttons use page memory, not the OS clipboard: no permissions or network. Native copy/cut/paste use browser events. Ordinary sibling paragraphs/headings under one parent and items of one UL/OL with supported trailing branches are supported. Different levels of one ordinary tree use a separate structural profile. Unrelated trees/cells, bodies after branches, images and other semantic owners remain barriers. Schema validation of an ID does not authorize it.') }}</p>
           <p class="lab-hint">{{ t('Разные уровни: загрузи отдельный пример и выбери одно из трёх обратных выделений. Копирование сохраняет выбранное дерево и ID с необходимыми обёртками предков. Вырезание оставляет непокрытые края на исходных уровнях — без соединения, подъёма или выравнивания веток. Для вставки скопированного дерева выбери «Место вставки дерева»: обёртки предков входят в данные, автоматического пересчёта относительной глубины нет. Undo возвращает весь шаг. Локальные браузерные проверки пока не запускались.', 'Different levels: load the separate sample and choose one of three backward selections. Copy retains selected tree data and IDs with required ancestor shells. Cut leaves unselected edges at their original levels, without joining, lifting or flattening branches. For paste, choose Tree paste position: ancestor shells are part of the data, with no automatic relative-depth rewrite. Undo restores the whole step. Local browser checks have not run.') }}</p>
-          <a :href="ru ? '/atomic-mention-clipboard' : '/en/atomic-mention-clipboard'">{{ t('Буфер, безопасность и ограничения', 'Clipboard, safety and boundaries') }}</a>
+          <a :href="docsLink('/atomic-mention-clipboard')">{{ t('Буфер, безопасность и ограничения', 'Clipboard, safety and boundaries') }}</a>
         </fieldset></details>
         <details class="lab-markdown-codec"><summary>{{ t('Markdown: импорт и экспорт', 'Markdown: import and export') }}</summary><fieldset :disabled="!ready || markdownCodecBusy">
           <label>{{ t('Markdown-исходник', 'Markdown source') }}<textarea :aria-label="t('Markdown-исходник', 'Markdown source')" v-model="markdownSource" class="lab-code" rows="9" spellcheck="false"></textarea></label>
@@ -1676,7 +1678,7 @@ onBeforeUnmount(() => {
           </div>
           <p class="lab-hint">{{ t('Импорт заменяет документ и сбрасывает историю. Вставка использует сохранённое выделение и одну операцию Undo. Экспорт не меняет документ и доступен в read-only. Кодек загружается отдельно по действию, без автоматической обработки буфера.', 'Import replaces the document and clears history. Insert uses the saved selection and one Undo operation. Export does not change the document and works read-only. The codec loads separately on demand, without automatic clipboard conversion.') }}</p>
           <p class="lab-hint">{{ t('Поддерживается ограниченный синтаксис: текст, заголовки, списки, цитаты, код, ссылки, изображения и простые таблицы. HTML остаётся текстом; визуальные стили теряются, объединённые таблицы отклоняются.', 'The bounded syntax includes text, headings, lists, quotes, code, links, images and simple tables. HTML stays literal; visual styles are lost, and merged tables are rejected.') }}</p>
-          <a :href="ru ? '/markdown-codec' : '/en/markdown-codec'">{{ t('Синтаксис и ограничения Markdown-кодека', 'Markdown codec syntax and limitations') }}</a>
+          <a :href="docsLink('/markdown-codec')">{{ t('Синтаксис и ограничения Markdown-кодека', 'Markdown codec syntax and limitations') }}</a>
         </fieldset></details>
         <details class="lab-markdown"><summary>Markdown shortcuts</summary><fieldset :disabled="!ready">
           <label class="lab-checkbox"><input v-model="markdownEnabled" type="checkbox" @change="toggleMarkdown">{{ t('Markdown при вводе', 'Markdown while typing') }}</label>
@@ -1697,7 +1699,7 @@ onBeforeUnmount(() => {
             </div>
             <p data-search-highlights-state role="status">{{ searchHighlightsSummary }}</p>
             <p class="lab-hint">{{ t('Подсветка использует CSS Highlight API без обёрток в документе. Снимок обновляется по кнопке. Если API недоступен, обычный поиск продолжает работать. Загрузка примера заменяет документ. Поиск и подсветка доступны в read-only.', 'Highlights use CSS Highlight API without document wrappers. Refresh the snapshot explicitly. Ordinary search still works when the API is unavailable. Loading the sample replaces the document. Search and highlights work read-only.') }}</p>
-            <a :href="ru ? '/search-highlights' : '/en/search-highlights'">{{ t('Подключение и ограничения подсветки', 'Highlight setup and limitations') }}</a>
+            <a :href="docsLink('/search-highlights')">{{ t('Подключение и ограничения подсветки', 'Highlight setup and limitations') }}</a>
           </div>
           <p class="lab-hint">{{ t('Буквальный поиск, без регулярных выражений. Совпадения пересекают стили, но не блоки, ячейки, переносы и изображения. Выделяется активное совпадение; поиск доступен в read-only.', 'Literal search without regular expressions. Matches cross inline styles, but not blocks, cells, line breaks or images. The active match is selected; search works in read-only.') }}</p>
         </details>
@@ -1705,7 +1707,7 @@ onBeforeUnmount(() => {
           <div class="lab-inline-actions"><button :disabled="!ready || readOnly" @click="loadPreviewSample">{{ t('Загрузить пример предпросмотра', 'Load preview sample') }}</button></div>
           <div ref="previewHost"></div>
           <p class="lab-hint">{{ t('Отдельный вид не изменяет редактор, выделение или Undo. Изображения по умолчанию заменены подписью без нового запроса, ссылки не открываются. Открытый вид обновляется после изменений; закрытый не хранит снимок.', 'The separate view leaves the editor, selection and Undo unchanged. Images default to text placeholders without another request; links stay inert. An open preview follows changes; a closed view retains no snapshot.') }}</p>
-          <a :href="ru ? '/preview' : '/en/preview'">{{ t('Подключение и политика ресурсов предпросмотра', 'Preview setup and resource policy') }}</a>
+          <a :href="docsLink('/preview')">{{ t('Подключение и политика ресурсов предпросмотра', 'Preview setup and resource policy') }}</a>
         </details>
         <details class="lab-text-drop"><summary>{{ t('Перетаскивание текста', 'Text drag and drop') }}</summary>
           <div class="lab-inline-actions">
@@ -1714,7 +1716,7 @@ onBeforeUnmount(() => {
           </div>
           <p class="lab-hint" data-text-drop-hint>{{ t('Пример выделяет Move this с сохранением полужирного и курсива. Перетащи выделенный текст в абзац Destination, обычный пункт списка или ячейку. Внутри этого редактора действие по умолчанию переносит, Ctrl/Meta/Alt копируют; один Undo восстанавливает исходный текст и выделение. Внешний текст и безопасный inline HTML всегда копируются. При необходимости сначала выдели фрагмент заново.', 'The sample selects Move this with bold and italic marks. Drag the selection into Destination, an ordinary list item or a cell. Within this editor the default action moves; Ctrl/Meta/Alt copy. One Undo restores original content and selection. External text and safe inline HTML always copy. Reselect the fragment first when needed.') }}</p>
           <p class="lab-hint" data-text-drop-limits>{{ t('Клавиатурная альтернатива: вырезать/копировать, поставить курсор и вставить обычными сочетаниями ОС. Это отдельные операции буфера, а не один drag-жест. Перенос через несколько исходных блоков, semantic-узлы и упоминания не поддержаны; файлы обрабатывает модуль изображений. Read-only блокирует drop. Реальные OS drag/drop и touch-сценарии требуют отдельной проверки.', 'Keyboard alternative: cut/copy, place the caret and paste with the usual OS shortcuts. Those are separate clipboard operations, not one drag gesture. Multi-block sources, semantic nodes and mentions are unsupported; files belong to the image module. Read-only blocks dropping. Real OS drag/drop and touch scenarios need separate validation.') }}</p>
-          <a :href="ru ? '/text-drop' : '/en/text-drop'">{{ t('Подключение перетаскивания текста', 'Text drag and drop setup') }}</a>
+          <a :href="docsLink('/text-drop')">{{ t('Подключение перетаскивания текста', 'Text drag and drop setup') }}</a>
         </details>
         <details class="lab-reading"><summary>{{ t('Печать и оглавление', 'Print and outline') }}</summary>
           <div class="lab-inline-actions"><button :disabled="!ready || readOnly" @click="loadReadingSample">{{ t('Загрузить пример чтения', 'Load reading sample') }}</button></div>
@@ -1722,7 +1724,7 @@ onBeforeUnmount(() => {
           <p class="lab-hint" data-print-hint>{{ t('Печать открывает настоящий диалог браузера с отдельным проверенным снимком. Панели и сайт не печатаются; изображения заменены alt-текстом, ссылки неактивны, гарнитуры системные. Размер страницы, разбиение и сохранение в PDF определяет браузер/ОС. Если браузер не сообщил о завершении, используй «Отменить» для освобождения снимка.', 'Print opens the actual browser dialog for a separate validated snapshot. Toolbars and the site are excluded; images become alt text, links stay inert and fonts are system fonts. Page size, pagination and saving to PDF belong to the browser/OS. If completion is not reported, use Cancel to release the snapshot.') }}</p>
           <div ref="outlineHost"></div>
           <p class="lab-hint" data-outline-hint>{{ t('Оглавление показывает обычные заголовки, включая вложенные цитаты, списки и ячейки. Кнопка переводит курсор к настоящему заголовку и прокручивает его в видимую область, без изменения документа или Undo. Навигация и печать доступны в read-only; IDs в документ не добавляются.', 'The outline lists ordinary headings, including headings in quotes, lists and cells. A button moves the caret to the actual heading and scrolls it into view without changing content or Undo. Navigation and printing work read-only; no IDs are added to the document.') }}</p>
-          <a :href="ru ? '/print' : '/en/print'">{{ t('Подключение печати', 'Print setup') }}</a> · <a :href="ru ? '/outline' : '/en/outline'">{{ t('Подключение оглавления', 'Outline setup') }}</a>
+          <a :href="docsLink('/print')">{{ t('Подключение печати', 'Print setup') }}</a> · <a :href="docsLink('/outline')">{{ t('Подключение оглавления', 'Outline setup') }}</a>
         </details>
         <details class="lab-save-state"><summary>{{ t('Сохранение документа', 'Document saving') }}</summary>
           <div class="lab-inline-actions">
@@ -1734,7 +1736,7 @@ onBeforeUnmount(() => {
           <div ref="saveStateHost"></div>
           <p class="lab-hint" data-demo-save-revisions>{{ t(`Текущая версия: ${saveSnapshot.revision}; подтверждена: ${saveSnapshot.savedRevision}; вызовов: ${demoSaveCalls}; последнее подтверждение имитации: ${demoSavedRevision ?? '—'}.`, `Current revision: ${saveSnapshot.revision}; acknowledged: ${saveSnapshot.savedRevision}; calls: ${demoSaveCalls}; last simulated acknowledgement: ${demoSavedRevision ?? '—'}.`) }}</p>
           <p class="lab-hint">{{ t('Здесь только имитация задержки 700 мс: без сети и хранения. Сначала подготовь пример, затем сохрани. Если внести правку во время ожидания, ответ старой версии не сделает новую сохранённой. Повторная попытка берёт текущий документ. API-замена устанавливает новую сохранённую базу.', 'This is a 700 ms simulation only: no network or storage. Prepare a sample, then save. Editing while pending leaves the newer revision unsaved after the older response. Retry captures the current document. API replacement establishes a new saved baseline.') }}</p>
-          <a :href="ru ? '/save-state' : '/en/save-state'">{{ t('Контракт сохранения и ответственность сервера', 'Save contract and server responsibilities') }}</a>
+          <a :href="docsLink('/save-state')">{{ t('Контракт сохранения и ответственность сервера', 'Save contract and server responsibilities') }}</a>
         </details>
         <details class="lab-special-characters"><summary>{{ t('Спецсимволы', 'Special characters') }}</summary>
           <div class="lab-inline-actions">
@@ -1742,7 +1744,7 @@ onBeforeUnmount(() => {
           </div>
           <button :disabled="!ready" @click="openSpecialCharacters">{{ t('Открыть спецсимволы', 'Open special characters') }}</button>
           <p class="lab-hint">{{ t('Пример выделяет слово «сумма»: найди € и замени слово одним нажатием. Undo вернёт исходное выделение. В панели работают стрелки, Home/End и Enter/Space; Escape возвращает курсор в редактор. Поиск не меняет документ и доступен в read-only.', 'The sample selects “amount”: find € and replace the word with one activation. Undo restores the original selection. Use arrows, Home/End and Enter/Space in the panel; Escape returns to the editor. Search never changes the document and remains available read-only.') }}</p>
-          <a :href="ru ? '/special-characters' : '/en/special-characters'">{{ t('Подключение и свой каталог символов', 'Setup and custom character catalog') }}</a>
+          <a :href="docsLink('/special-characters')">{{ t('Подключение и свой каталог символов', 'Setup and custom character catalog') }}</a>
         </details>
         <details class="lab-statistics"><summary>{{ t('Статистика', 'Statistics') }}</summary>
           <table class="lab-statistics-table"><caption>{{ t('Счётчики текста', 'Text counts') }}</caption><thead><tr><th>{{ t('Метрика', 'Metric') }}</th><th>{{ t('Документ', 'Document') }}</th><th>{{ t('Выделение', 'Selection') }}</th></tr></thead><tbody>

@@ -1,21 +1,21 @@
-# Быстрый старт
+# Getting started
 
-Morfira WYSIWYG — самостоятельно реализованный редактор на TypeScript с подключаемыми таблицами и адаптерами Vue, React и Svelte. У ядра и плагинов **нет runtime-зависимостей**. Код проекта распространяется по MIT.
+Morfira WYSIWYG is an independently implemented TypeScript editor with an optional table plugin and Vue, React, and Svelte adapters. The editor core and plugins have **zero runtime dependencies**. Project code is licensed under MIT.
 
-## Локальный запуск
+## Run locally
 
-Нужны Node.js 22.14+ и pnpm 11.0.7.
+Node.js 22.20+ and pnpm 11.0.7 are required.
 
 ```sh
 pnpm install
 pnpm run docs:dev
 ```
 
-Документация запускается только локально. Пакеты связаны через workspaces и пока не опубликованы в npm. После изменения исходников библиотеки выполняйте `pnpm run build`. `pnpm run dev` запускает браузерный тестовый стенд.
+The project uses workspace links for local development. Install published versions in your application with `pnpm add @morfira-dev/wysiwyg`. Rebuild library sources with `pnpm run build` after edits. `pnpm run dev` starts the browser test harness.
 
-## Создание редактора
+## Create an editor
 
-Подготовьте два пустых элемента: `<div id="toolbar"></div><div id="editor"></div>`.
+Provide two empty elements: `<div id="toolbar"></div><div id="editor"></div>`.
 
 ```ts
 import { createEditor, createToolbar } from '@morfira-dev/wysiwyg';
@@ -23,9 +23,9 @@ import '@morfira-dev/wysiwyg/style.css';
 
 const host = document.querySelector<HTMLElement>('#editor')!;
 const editor = createEditor(host, {
-  value: '<p>Привет, <strong>Morfira</strong></p>',
-  label: 'Текст статьи',
-  placeholder: 'Начните писать…',
+  value: '<p>Hello <strong>Morfira</strong></p>',
+  label: 'Article body',
+  placeholder: 'Start writing…',
   onChange: ({ html, source }) => {
     if (source === 'user') console.log(html);
   },
@@ -33,19 +33,19 @@ const editor = createEditor(host, {
 const removeToolbar = createToolbar(
   document.querySelector<HTMLElement>('#toolbar')!, editor,
 );
-// При удалении представления:
+// On view removal:
 removeToolbar();
 editor.destroy();
 ```
 
-Панель необязательна. Удаляйте её UI до уничтожения редактора. Начальный HTML передавайте через `value`; контейнер должен быть пустым.
+The toolbar is optional. Destroy its UI before disposing the editor. Pass initial HTML through `value`; the host must be empty.
 
-## Хранение и проверка
+## Storage and validation
 
-`getJSON()` возвращает версионированное дерево `EditorDocument`: текст и разрешённые семантические элементы. Сохраняйте его через `JSON.stringify`, восстанавливайте через `setJSON`. HTML и JSON проходят проверку схемы, URL, допустимых стилей, вложенности и размера. Неизвестная версия документа отклоняется без изменения редактора.
+`getJSON()` returns the versioned `EditorDocument` tree, containing text nodes and allowed semantic elements. Store it with `JSON.stringify` and restore it with `setJSON`. Both HTML and JSON boundaries enforce a schema, URL and style allowlists, nesting limits and document size limits. Unknown document versions are rejected without modifying the editor.
 
-`getHTML()` возвращает поддерживаемый семантический HTML. Обработчики событий, исполняемая разметка и чужие пространства имён не импортируются. Неподдерживаемая разметка нормализуется; произвольная вёрстка не сохраняется. Сервер отвечает за собственную валидацию, авторизацию и правила выдачи контента.
+`getHTML()` returns supported semantic HTML. Imported event attributes, executable markup and foreign namespaces are omitted. Unsupported HTML is normalized; arbitrary layout fidelity is not promised. The server still owns its own validation, authorization and output policy.
 
-## Браузер и SSR
+## Browser and SSR
 
-Импорт ядра не обращается к DOM-глобальным объектам. `createEditor` вызывается только при наличии браузерного элемента. Адаптеры создают и удаляют экземпляр в клиентском lifecycle. Svelte-компонент требует компилятора Svelte в приложении. Ввод, composition и вспомогательные технологии всё равно нужно проверять в целевых окружениях.
+Importing the core does not access DOM globals. Call `createEditor` only when a browser element exists. Framework adapters create and dispose their instance in the client lifecycle. The Svelte component needs the consuming application's Svelte compiler. Browser editing, composition and assistive technologies still require target-environment testing.

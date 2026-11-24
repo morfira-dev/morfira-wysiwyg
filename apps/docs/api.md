@@ -1,266 +1,267 @@
-# API ядра
+# Core API
 
-## Параметры создания
+## Creation options
 
-`createEditor(host, options)` создаёт независимый экземпляр в пустом `HTMLElement`.
+`createEditor(host, options)` mounts one independent instance into an empty `HTMLElement`.
 
-| Опция | Тип | Поведение |
+| Option | Type | Behavior |
 | --- | --- | --- |
-| `value` | `string` | Начальный проверенный HTML |
-| `readOnly` | `boolean` | По умолчанию false |
-| `placeholder` | `string` | Подсказка пустого документа |
-| `label` | `string` | Доступное название поля |
-| `locale` | `string` | Язык интерфейса, по умолчанию `ru`; встроены RU/EN |
-| `translations` | `EditorTranslations` | Переопределения строк по ключам, только для этого экземпляра |
-| `plugins` | `EditorPlugin[]` | Фиксируются при создании; повтор имени отклоняется |
-| `historyLimit` | `number` | 1–10000 ревизий, по умолчанию 100 |
-| `onChange` | `(change: EditorChange) => void` | Изменения после инициализации |
+| `value` | `string` | Initial validated HTML |
+| `readOnly` | `boolean` | Defaults to false |
+| `placeholder` | `string` | Empty-surface prompt |
+| `label` | `string` | Accessible textbox name |
+| `locale` | `string` | Interface language; defaults to `ru`, with built-in RU/EN |
+| `translations` | `EditorTranslations` | Instance-local keyed string overrides |
+| `plugins` | `EditorPlugin[]` | Fixed at creation; duplicate names rejected |
+| `historyLimit` | `number` | 1–10000 revisions, default 100 |
+| `onChange` | `(change: EditorChange) => void` | Changes after initialization |
 
-## Работа с документом
+## Document API
 
-| Метод | Результат |
+| Method | Result |
 | --- | --- |
-| `getHTML()` | Проверенный семантический HTML |
-| `getText()` | Текст браузерного представления; переносы зависят от блоков |
-| `getJSON()` | Дерево `EditorDocument` версии 1 |
-| `setHTML(html)` | Проверка и замена; новое внешнее содержимое сбрасывает историю |
-| `setJSON(document)` | Проверка схемы до изменения документа |
-| `getSelection()` | Текстовые смещения `{ index, length }` или undefined вне области ввода |
-| `setSelection(index, length?)` | Выделение текста; неотрицательные целые смещения |
-| `selection.capture() / isCurrent(handle) / getRange(handle) / restore(handle) / release(handle)` | Выделение одной ревизии для внешнего UI; [контракт](/plugin-sdk#сохранённое-выделение-для-внешнего-ui) |
-| `positions.track(index, association?) / resolve(handle) / release(handle) / subscribe(listener)` | Явно переносимые UTF-16-позиции. `transact(mutate, { mapping })` проверяет последовательные `{ from, to, insert }`; неизвестные изменения сбрасывают цели. Undo/redo используют обратный/прямой план. Не structural mapping. |
-| `positions.setPresentation(node, editable)` | Учтённая runtime-аннотация `contenteditable` проверенного семантического span; только `false` или `undefined`. Не произвольная DOM-транзакция. |
-| `getFormats(range?)` | Форматы в начале выделения, `mixed`, глубина и доступность отступов |
-| `format(name, value)` | Форматирование с историей |
-| `insertHTML(html)` | Проверенная вставка вместо выделения |
-| `setReadOnly(value) / isReadOnly()` | Установка и чтение режима редактирования |
-| `getLocale()` | Независимый `EditorLocale` snapshot `{ locale, translations }` |
-| `setLocale(locale, translations?)` | Сменить язык и заменить overrides без изменения документа/истории |
-| `focus()` | По возможности восстановить последнее выделение |
-| `undo() / redo()` | Собственная история с закладками выделения |
-| `canUndo() / canRedo()` | Наличие операций в истории |
-| `transact(mutate)` | Атомарная операция доверенного плагина; ошибка откатывает содержимое |
-| `subscribe(listener)` | Подписка на документ; возвращает отписку |
-| `onSelectionChange(listener)` | Выделение/режим чтения; возвращает отписку |
-| `providePlugin(name, api) / getPlugin(name)` | Типизированный API плагина конкретного экземпляра |
-| `destroy()` | Удаление listeners, плагинов и представления; повторный вызов допустим |
+| `getHTML()` | Validated semantic HTML |
+| `getText()` | Browser-rendered plain text; line spacing follows block semantics |
+| `getJSON()` | Version 1 `EditorDocument` tree |
+| `setHTML(html)` | Replace validated content; changed external content clears history |
+| `setJSON(document)` | Validate schema before replacing content |
+| `getSelection()` | `{ index, length }` text offsets, or undefined outside the surface |
+| `setSelection(index, length?)` | Select text; nonnegative integer offsets |
+| `selection.capture() / isCurrent(handle) / getRange(handle) / restore(handle) / release(handle)` | Revision-bound selection handles for external UI; [contract](/plugin-sdk#remembered-selections-for-external-ui) |
+| `positions.track(index, association?) / resolve(handle) / release(handle) / subscribe(listener)` | Explicitly mapped UTF-16 positions. `transact(mutate, { mapping })` validates sequential `{ from, to, insert }` steps; unknown edits expire targets. Undo/redo use inverse/forward plans. This is not structural mapping. |
+| `positions.setPresentation(node, editable)` | Accounted runtime contenteditable annotation on a validated semantic span; only false or undefined. Not an arbitrary DOM transaction. |
+| `getFormats(range?)` | Formats at selection start, `mixed`, list depth and indentation availability |
+| `format(name, value)` | Undoable user-format command |
+| `insertHTML(html)` | Validated paste-like replacement of the current selection |
+| `setReadOnly(value) / isReadOnly()` | Control and query user editing |
+| `getLocale()` | Independent `EditorLocale` snapshot `{ locale, translations }` |
+| `setLocale(locale, translations?)` | Replace language/overrides without document/history changes |
+| `focus()` | Restore the last known selection when possible |
+| `undo() / redo()` | Own document history with selection bookmarks |
+| `canUndo() / canRedo()` | History availability |
+| `transact(mutate)` | Atomic undoable trusted plugin edit; errors restore content |
+| `subscribe(listener)` | Document subscription; returns disposer |
+| `onSelectionChange(listener)` | Selection/read-only notification; returns disposer |
+| `providePlugin(name, api) / getPlugin(name)` | Instance-local typed plugin API |
+| `destroy()` | Dispose listeners, plugins and view; idempotent |
 
-После уничтожения методы документа выбрасывают ошибку. Режим чтения блокирует пользовательские команды, но допускает внешнюю замену документа. `surface` — редактируемый HTMLElement, `element` — контейнер. Прямые изменения DOM допустимы внутри транзакций доверенного плагина. Недоверенные данные передавайте через HTML/JSON API.
+Document methods after destruction throw. Read-only blocks user commands but permits external document replacement. `surface` is the editable HTMLElement; `element` is its container. Direct DOM writes should happen only inside a trusted plugin transaction. Untrusted input must go through HTML/JSON import methods.
 
-Во время активной IME composition команды `format`, `insertHTML`, `transact`, `undo` и `redo` ничего не меняют, чтобы сохранить нативный ввод кандидата. Внешние `setHTML`/`setJSON` с другим значением остаются приоритетными и отменяют текущую composition; подтверждение того же значения её сохраняет. При включении read-only незавершённый ввод откатывается без новой истории. Завершение composition синхронно фиксирует результат; если браузер затем сообщает ещё один изменённый composition-specific документ, он уточняет ту же undo-операцию и даёт отдельный `change`.
+During active IME composition, `format`, `insertHTML`, `transact`, `undo` and `redo` make no changes, preserving native candidate input. External `setHTML`/`setJSON` with a different value remain authoritative and cancel composition; same-value acknowledgement preserves it. Switching to read-only rolls back unfinished input without adding history. Composition end synchronously commits the result; if the browser subsequently reports another changed composition-specific document, it amends the same undo operation and emits a separate `change`.
 
-## Ввод и выделение на границах блоков
+## Input and selection at block boundaries
 
-Enter делит обычный абзац или заголовок с сохранением вложенного оформления. В конце заголовка он создаёт абзац, пустой обычный заголовок превращает в абзац. Shift+Enter вставляет перенос строки. Backspace в начале блока и Delete в его конце объединяют соседние обычные абзацы/заголовки, сохраняя оформление, точную позицию курсора и одну undo-операцию. Таблицы, списки, изображения и другие контейнеры не объединяются этим обработчиком.
+Enter splits an ordinary paragraph or heading while preserving nested formatting. At a heading end it creates a paragraph; an empty ordinary heading becomes a paragraph. Shift+Enter inserts a line break. Backspace at a block start and Delete at its end join adjacent ordinary paragraphs/headings while preserving formatting, the exact caret and one undo operation. This handler does not merge tables, lists, images or other containers.
 
-Ввод текста, Backspace и Delete также заменяют выделение **между несколькими обычными `p`/`h1`–`h6`, расположенными непосредственно рядом под одним родителем**: корнем редактора, одним blockquote или одной ячейкой td/th. Обе DOM-границы выделения должны находиться внутри этих блоков; границы, заданные индексами дочерних узлов самого корня, не входят в этот путь. Сохраняются левый блок и его атрибуты, невыделенный префикс и оформленный суффикс справа. Промежуточные выделенные блоки удаляются; соседние блоки и другие ячейки не затрагиваются. Вставка остаётся буквальным текстом.
+An ordinary `ol` persists optional `start` as a decimal integer string in the range `-2147483648…2147483647`. Valid values are canonicalized: `" +0004 "` → `"4"`, `"-0"` → `"0"`; omission does not add a default. HTML import retains valid `ol.start` and strips invalid values or `start` on other tags. JSON import rejects a wrong type, range, format or tag before changing the document, selection or history. The attribute survives insertion, export and Undo/Redo. An older reader may drop `start` and change displayed numbering; equivalent-numbering compatibility is not promised. The start contract itself does not add `li.value` or automatic renumbering; native reversed and bounded container commands are now documented separately under [list properties](/list-properties).
 
-Например, в документе:
+For list Enter/Shift+Enter/Backspace/Delete keys already owned by core, a cancelable `keydown` suppresses the browser action and dispatches one normalized cancelable `beforeinput`; the existing validated input handler remains the only mutation path. This constructed event has `isTrusted === false`: raw DOM-event consumers must not require a trusted native `beforeinput` for these commands. Cancel through capture-phase `keydown` or `beforeinput`; observe the result through typed `editor.events.on('change', ...)` in [editor events](/events). Already canceled events, read-only, composition and Ctrl/Meta/Alt retain their guards. The mechanism adds no browser detection, timers or alternative DOM mutation path.
+
+Text input, Backspace and Delete also replace a selection **across several ordinary `p`/`h1`–`h6` leaves that are direct siblings under one parent**: the editor root, one blockquote or one td/th cell. Both DOM endpoints must be inside those leaves; endpoints expressed as child-node indices on the editor root itself are outside this path. The left block and its attributes, unselected prefix and formatted right suffix are preserved. Covered middle blocks are removed; unrelated blocks and other cells remain untouched. Inserted data stays literal text.
+
+For example, in this document:
 
 ```html
 <p>Alpha <strong>one</strong></p><h2><em>Beta</em> tail</h2><p>Keep</p>
 ```
 
-выделите от позиции после `Alpha ` до позиции после `Be` и напечатайте `X`. Получится:
+select from immediately after `Alpha ` to immediately after `Be`, then type `X`. The result is:
 
 ```html
 <p>Alpha X<em>ta</em> tail</p><p>Keep</p>
 ```
 
-Курсор окажется сразу после `X`, вне правого `em`. Одна отмена восстановит исходные блоки и выделение, включая обратное направление; redo вернёт курсор замены. Следующий ввод остаётся в этой позиции и имеет отдельную undo-операцию. Попробовать можно в примере **«Границы блоков»** на главной или в [playground](/playground).
+The caret is immediately after `X`, outside the right-hand `em`. One undo restores the original blocks and selection, including backwards direction; redo restores the replacement caret. Subsequent input stays there and has a separate undo operation. Try the **Block boundaries** sample on the homepage or in the [playground](/playground).
 
-Текст замены наследует исходный строчный контекст; это не принудительное оформление последующего нативного ввода. Если замена началась внутри ссылки и итоговый курсор оказался на её краю, `X` и непосредственный курсор остаются внутри ссылки, а следующий обычный символ вводится по существующей нативной политике границы ссылки: снаружи, перед сохранённым правым суффиксом. Логическая позиция курсора и раздельная история сохраняются; новое состояние принудительного ввода внутри ссылки не создаётся.
+The replacement payload inherits the starting inline context; it does not force formatting on later native input. If replacement starts inside a link and its resulting caret is at the link edge, `X` and the immediate caret remain inside the link, while the next ordinary character follows the existing native link-boundary policy: outside the link, before the retained right suffix. Logical caret position and separate history are preserved; no new forced link-typing state is introduced.
 
-Нативный ввод, Backspace и Delete дополнительно поддерживают выделение из обычного корневого абзаца/заголовка в **простую цитату верхнего уровня**, из цитаты в корневой текст и между такими цитатами. Все дочерние узлы каждой затронутой цитаты, включая невыделенные, должны быть обычными непосредственными `p`/заголовками: вложенные/семантические цитаты, изображения, списки, таблицы, прямой текст и пробельные узлы между блоками не входят в этот обработчик. Начальный блок и его контейнер сохраняются, оформленный правый остаток присоединяется к нему. Невыделенные начальные/конечные блоки цитат сохраняют реальные узлы и атрибуты; опустевшие выбранные цитаты удаляются. Один Undo возвращает документ и выделение. На главной/playground раскройте **«Ввод через границы цитат»**, загрузите пример, выберите направление и напечатайте текст либо удалите выделение. Это расширение только нативного ввода; оно не расширяет вставку через API/буфер и не обещает нормализацию неподдержанных нативных выделений.
+Native typing, Backspace and Delete additionally accept a range from an ordinary root paragraph/heading into a **simple top-level quote**, from a quote into root text, or between such quotes. Each touched quote must contain only ordinary direct `p`/heading leaves, including unselected children: nested/semantic quotes, images, lists, tables, raw quote text and formatting-only child whitespace are outside this classifier. The starting block and its container remain; the formatted right suffix joins that block. Unselected leading/trailing quote bodies keep their actual nodes and attributes, while emptied selected quote containers are removed. One Undo restores the original document and range. Try **Input across quote boundaries** on the homepage/playground: load the sample, select a direction, then type or delete. This extension is native-input-only; it does not expand API/clipboard insertion or promise normalization of unsupported native selections.
 
-Этот путь требует отменяемого `beforeinput`; уже отменённое событие, read-only и активная composition сохраняют свои ограничения. Он не вводит общую модель структурного выделения. Остальные замены через разные контейнеры/ячейки, через table/figure/list/pre/hr или самостоятельный семантический блок SDK, drag/drop, удаление слова и `insertReplacementText` не получают новую нормализацию этим обработчиком. Вставка из буфера имеет отдельный контракт ниже. Неотменяемые события остаются в прежнем нативном пути. Синтетические тесты событий не подтверждают работу реальных мобильных клавиатур, автокоррекции, диктовки или системных IME.
+This path requires cancelable `beforeinput`; already canceled events, read-only and active composition retain their existing guards. It does not introduce a general structural-selection model. Other cross-container/cell replacement, across table/figure/list/pre/hr or an independent SDK semantic block, drag/drop, word deletion and `insertReplacementText` receive no new normalization through this handler. Clipboard paste has a separate contract below. Noncancelable events retain the previous native path. Synthetic event tests do not certify real mobile keyboards, autocorrection, dictation or system IME.
 
-Публичные `{ index, length }` — UTF-16-смещения текста. Пустые блоки и переносы могут иметь разные DOM-позиции с одинаковыми текстовыми смещениями; это API не заменяет структурную модель выделения. Внутренняя история использует DOM-закладки для восстановления таких позиций. Новое внешнее значение заменяет документ и сбрасывает историю; не храните DOM Range старого документа для будущей правки.
+Public `{ index, length }` values are UTF-16 text offsets. Empty blocks and line breaks may have distinct DOM positions with identical text offsets; this API does not replace a structural selection model. Internal history uses DOM bookmarks to restore those positions. A changed external value replaces the document and clears history; do not retain a DOM Range from the old document for a later edit.
 
-Зарегистрированный через [SDK](/plugin-sdk) семантический абзац/заголовок сохраняет свой wrapper, `data-mw-node` и проверенные атрибуты при разделении внутри текста. Enter в конце семантического заголовка добавляет обычный абзац без семантических данных; Enter в пустом семантическом заголовке сохраняет исходный пустой узел и добавляет обычный абзац после него. Самостоятельные семантические блоки — барьер для общего объединения Backspace/Delete и описанной замены через несколько блоков. Их идентичность не переносится на несовместимый HTML-тег и не теряется при обычном выходе из заголовка. Замена между обычными дочерними блоками внутри одного семантического blockquote допускается и сохраняет метаданные предка.
+A semantic paragraph/heading registered through the [SDK](/plugin-sdk) preserves its wrapper, `data-mw-node` and validated attributes when split inside its text. Enter at a semantic heading end adds an ordinary paragraph without semantic data; Enter in an empty semantic heading preserves the original empty node and adds an ordinary paragraph after it. Independent semantic blocks are barriers to generic Backspace/Delete joins and the multi-block replacement described above. Their identity is not copied onto an incompatible HTML tag or lost when exiting a heading. Replacement between ordinary child blocks inside one semantic blockquote is supported and preserves the ancestor's metadata.
 
-## Вставка поверх выделения между блоками
+## Pasting over a selection between blocks
 
-`editor.insertHTML(html)` и вставка из буфера используют общие границы замены для описанных выше обычных соседних блоков. Исходные leaf-блоки допускают текст, поддерживаемые строчные стили, ссылки, `span`, `code` и `br`; блок с исходным inline-изображением не входит в этот путь. Входящий фрагмент при этом может содержать разрешённые изображения. Начало первого блока, форматированный остаток последнего, соседние блоки и другие ячейки сохраняются. Весь входящий фрагмент проходит схему редактора до изменения живого документа.
+`editor.insertHTML(html)` and clipboard paste share the replacement boundaries for the ordinary sibling blocks described above. Source leaves allow text, supported inline marks, links, `span`, `code` and `br`; a block containing an existing inline image is outside this path. The incoming fragment may still contain allowed images. The first block prefix, formatted last-block suffix, unrelated blocks and other cells are preserved. The entire incoming fragment passes the editor's schema before changing the live document.
 
-| Входящий фрагмент | Состав результата |
+| Incoming fragment | Result composition |
 | --- | --- |
-| Строчная разметка или один обычный `p` | Вставляется в исходный строчный контекст. Обёртка входящего `p` снимается, атрибуты левого блока сохраняются; правый остаток присоединяется к нему |
-| Несколько обычных `p`/`h1`–`h6` | Содержимое первого блока продолжает левый блок; атрибуты первой входящей обёртки уступают его атрибутам. Средние и последний входящие блоки сохраняют теги и атрибуты; правый остаток присоединяется к последнему |
-| Структурный или смешанный HTML | Входящие блоки вставляются между сохранённым левым началом и правым остатком в его исходной обёртке. Строчные фрагменты между блоками оборачиваются в `p`; пробельное оформление между корневыми блоками отбрасывается |
+| Inline markup or one ordinary `p` | Inserted in the original inline context. The incoming `p` wrapper is removed, the left block attributes remain, and the right suffix joins it |
+| Several ordinary `p`/`h1`–`h6` blocks | The first block's children continue the left block; its attributes take precedence over the first incoming wrapper. Middle and final incoming blocks retain their tags and attributes; the right suffix joins the final block |
+| Structural or mixed HTML | Incoming blocks are spliced between the retained left prefix and the right suffix in its original wrapper. Loose inline runs are wrapped in `p`; formatting-only whitespace between root blocks is discarded |
 
-В этом пути одиночный входящий заголовок сохраняет собственную обёртку. Семантические `p`/заголовки с `data-mw-node` здесь не разворачиваются и не меняют тег; это не расширяет прежний контракт вставки внутри одного блока или через другие структуры. Входящая ссылка не вкладывается в существующую ссылку: при таком начале выделения фрагмент вставляется после сохранённого начального `a`, сохраняя собственный URL.
+In this path, a single incoming heading retains its own wrapper. Semantic `p`/heading wrappers with `data-mw-node` are not unwrapped or retagged here; this does not broaden the previous insertion contract within one block or across other structures. Incoming links do not nest in an existing link: when the selection starts there, the fragment is inserted after the retained starting `a`, preserving the incoming URL.
 
-Для выделения из примера `Alpha`/`Beta` выше:
+For the `Alpha`/`Beta` selection above:
 
 ```ts
 editor.insertHTML('<p><strong>First</strong></p><h3>Second</h3>');
 ```
 
-результат будет таким:
+the result is:
 
 ```html
 <p>Alpha <strong>First</strong></p><h3>Second<em>ta</em> tail</h3><p>Keep</p>
 ```
 
-Курсор находится после `Second`, перед сохранённым `em`. Для строчного фрагмента курсор остаётся после вставки внутри левого блока; после структурной вставки — в начале правого остатка. Если остатка нет, создаётся обычный редактируемый абзац после вставленных блоков. Следующий ввод продолжается с этой позиции; undo/redo восстанавливают документ и точное направление выделения. Самостоятельная вставка — отдельная операция истории с одним `change`; вложенная вставка присоединяется к внешней `transact`.
+The caret is after `Second`, before the retained `em`. For an inline fragment it stays after the payload inside the left block; after structural insertion it is at the start of the right suffix. If no suffix remains, an ordinary editable paragraph is created after the inserted blocks. Subsequent input continues there; undo/redo restore the document and exact selection direction. A standalone insertion is one isolated history operation with one `change`; a nested insertion joins the outer `transact`.
 
-Формат самого вставленного фрагмента определяется правилами выше. Последующий нативный ввод использует поведение границы форматирования в браузере: например, после вставленного конечного `br` перед оформленным остатком новый символ может унаследовать стиль этого остатка или остаться вне него. Точная позиция перед остатком и отдельная история сохраняются; одинаковое наследование стиля во всех движках не обещается.
+The pasted fragment's formatting follows the rules above. Later native input uses the browser's formatting-boundary behavior: for example, after a trailing pasted `br` before a marked suffix, a new character may inherit that suffix's mark or remain outside it. The exact position before the suffix and separate history are preserved; identical later mark inheritance across engines is not promised.
 
-В буфере непустой `text/html` имеет приоритет над `text/plain`. Plain text остаётся буквальным текстом: CRLF, LF и одиночный CR становятся `br`, а HTML-подобная строка не превращается в элементы. Если HTML после очистки пуст, выделение не удаляется и переключения на plain text нет. Пустой фрагмент не создаёт историю. Уже отменённый `paste`, read-only и активная composition блокируют эту вставку.
+A nonempty clipboard `text/html` takes precedence over `text/plain`. Plain text stays literal: CRLF, LF and lone CR become `br`, and HTML-looking text does not become elements. If sanitization empties the HTML, the selection is not deleted and plain text is not used as a fallback. Empty fragments add no history. An already canceled `paste`, read-only and active composition block this insertion.
 
-Неподходящие данные известного семантического узла и запрещённая для этого пути структура отклоняются до правки: `insertHTML` выбрасывает ошибку, а clipboard-вставка остаётся без изменений и без необработанной ошибки события. Вложенная ошибка `insertHTML` внутри `transact` делает всю внешнюю транзакцию недействительной, даже если приложение поймало исключение. Таблица в payload внутри `td/th`, вложенные таблицы и отдельные корневые `li`, `figcaption` или части таблицы не вставляются этим путём.
+Invalid data for a known semantic node and structure unsupported by this path are rejected before editing: `insertHTML` throws, while clipboard paste leaves the document unchanged without an uncaught event error. A nested `insertHTML` failure inside `transact` poisons the whole outer transaction even if the application catches it. A table payload inside `td/th`, nested tables and orphan root `li`, `figcaption` or table parts are not inserted through this path.
 
-Попробуйте **«Вставка между блоками»** на главной или в [playground](/playground): **«Выделить пример»**, затем **«Вставить текст»** или **«Вставить HTML»**. Пример использует публичный API; native clipboard проверяется отдельно. Выделения через разные контейнеры/ячейки или самостоятельные списки, таблицы и фигуры остаются вне новой нормализации. Эта вставка не обещает точную совместимость с Word/Excel/Google Docs; синтетические ClipboardEvent не подтверждают системные разрешения буфера или реальные мобильные IME.
+Try **Paste between blocks** on the homepage or in the [playground](/playground): **Select sample**, then **Insert text** or **Insert HTML**. The example uses the public API; native clipboard is tested separately. Source selections across containers/cells or independent lists, tables and figures remain outside the new normalization. This insertion does not promise exact Word/Excel/Google Docs compatibility; synthetic ClipboardEvent cases do not establish OS clipboard permissions or real mobile IME support.
 
-## Выделения и границы пунктов списка
+## List item selections and boundaries
 
-Следующие правила описывают ограниченные операции списков и цитат. Актуальные результаты запусков и оставшиеся ограничения — в [проверках проекта](/roadmap#проверки-и-ограничения).
+The following rules describe bounded list and quote operations. See [verification and remaining limits](/roadmap#verification-and-limits) for current execution results.
 
-Обычный `ol` сохраняет необязательный `start` строкой десятичного целого в диапазоне `-2147483648…2147483647`. Допустимые значения канонизируются: `" +0004 "` → `"4"`, `"-0"` → `"0"`; отсутствие атрибута не добавляет значение по умолчанию. HTML-импорт сохраняет только корректный `ol.start`, а неправильные значения и `start` у других тегов удаляет. JSON-импорт отклоняет неправильный тип, диапазон, формат или тег до изменения документа, выделения и истории. Атрибут сохраняется при вставке, экспорте и Undo/Redo. Старый читатель может отбросить `start` и изменить отображаемую нумерацию; совместимость с сохранением нумерации не обещается. Сам контракт start не добавляет `li.value` или автоматическую перенумерацию; нативный reversed и ограниченные команды контейнера теперь описаны отдельно в [свойствах списка](/list-properties).
+Text input, Backspace and Delete handle a noncollapsed selection between ordinary bodies of one item or across direct sibling `li` elements under one `ul`/`ol`. An original item's own content may be direct inline content or **one or more ordinary `p`/`h1`–`h6` bodies**. Each body accepts text, supported inline marks, links, `span`, `code` and `br`; optional trailing nested lists follow all bodies. Mixed direct text and block bodies, whitespace alongside block bodies, original inline images, tables and other structural blocks remain outside this path. A semantic `data-mw-node` on the list, item or body is a barrier; inline semantic nodes are retained. Operating within a nested list or a list in one cell leaves its outer parent intact.
 
-Для уже обрабатываемых ядром клавиш списка Enter/Shift+Enter/Backspace/Delete отменяемый `keydown` подавляет браузерное действие и отправляет один нормализованный отменяемый `beforeinput`; все изменения по-прежнему выполняет общий проверяемый обработчик ввода. Это созданное событие имеет `isTrusted === false`: обработчики сырых DOM-событий не должны требовать доверенный нативный `beforeinput` для таких команд. Для отмены используй capture-фазу `keydown` или `beforeinput`, для наблюдения результата — типизированное `editor.events.on('change', ...)` из [событий редактора](/events). Уже отменённые события, read-only, composition и Ctrl/Meta/Alt сохраняют свои ограничения. Механизм не использует определение браузера, таймеры или отдельный путь изменения DOM.
+The first `li`, starting body, their attributes and untouched prefix remain. Bodies before the selection stay in place. The discarded ending wrapper does not transfer its tag or alignment; only its inline suffix moves. Unselected bodies after the ending body move as actual nodes after the joined body. Direct and wrapped bodies may be mixed; if a direct starting body must retain following right bodies, its content is wrapped in an ordinary `p` to avoid mixing direct text and blocks. Nested branches remain children of `li`, **outside** paragraphs/headings. Covered bodies and middle items are removed; other items and neighboring blocks are not rebuilt. Formatting-only whitespace between covered items may be removed with that selected gap. Non-whitespace gaps and unrelated nodes between items are not silently normalized.
 
-Текстовый ввод, Backspace и Delete обрабатывают непустое выделение между обычными блоками одного пункта или через непосредственные соседние `li` одного `ul`/`ol`. Собственное содержимое исходного пункта может быть непосредственно строчным либо состоять из **одного или нескольких обычных `p`/`h1`–`h6`**. Внутри каждого блока допустимы текст, поддерживаемые строчные стили, ссылки, `span`, `code` и `br`; после всех тел могут идти хвостовые вложенные списки. Смесь прямого текста с блоками, пробельные узлы рядом с блочными телами, исходные inline-изображения, таблицы и другие структурные блоки остаются за границей этого пути. Семантические `data-mw-node` на списке, пункте или теле — барьер; семантические строчные узлы сохраняются. Работа внутри вложенного списка или списка в одной ячейке не меняет внешнего родителя.
+Trailing nested `ul`/`ol` branches of the last item, lying entirely **after the selection end**, move as whole branches into the retained first item. The range must not enter them. For ordinary replacement spanning different items without an affected quote, nested lists in the first or middle covered item reject this bounded path. The quote-specific structural branch preservation profile is described below. Ranges between different lists, an item and a paragraph, or different list levels are blocked before mutation when an endpoint belongs to an item. Within one nearest `li`, the new path owns ranges between distinct ordinary bodies; a selection inside one body keeps its existing handler. General structural selection of an entire list remains separate work.
 
-Сохраняются первый `li`, начальный блок, их атрибуты и невыделенное начало. Блоки перед началом выделения остаются на месте. Удаляемая конечная обёртка не переносит свой тег или выравнивание на начальное тело; переносится только её строчный остаток. Невыделенные блоки после конечного тела переносятся целыми узлами после объединённого тела. Можно смешивать прямые и обёрнутые тела; если у прямого начального тела нужно сохранить последующие правые блоки, его содержимое оборачивается в обычный `p`, чтобы не создать смесь прямого текста и блоков. Вложенные ветки остаются дочерними узлами `li`, **вне** абзацев/заголовков. Покрытые блоки и средние пункты удаляются; остальные пункты и соседние блоки не перестраиваются. Пробельное оформление между покрытыми пунктами может быть удалено вместе с выбранным промежутком. Непробельные промежутки и посторонние узлы между пунктами не нормализуются неявно.
-
-Хвостовые вложенные `ul`/`ol` последнего пункта, находящиеся целиком **после конца выделения**, переносятся в сохранённый первый пункт целыми ветками. Выделение не должно заходить в них. При обычной замене разных пунктов без затронутой цитаты вложенные списки в первом или среднем покрытом пункте отклоняют этот ограниченный путь. Для структурной вставки через цитаты ниже описан отдельный путь сохранения веток. Диапазоны между разными списками, пунктом и абзацем или разными уровнями списка блокируются до изменения документа, если один из концов принадлежит пункту. Внутри одного ближайшего `li` новый путь обрабатывает диапазоны между разными обычными телами; выделение внутри одного тела сохраняет прежнего владельца. Общая структурная выборка списка целиком остаётся отдельной задачей.
-
-Для такого документа:
+For this document:
 
 ```html
 <ul><li>Alpha <strong>one</strong></li><li><em>Beta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul>
 ```
 
-выделение от конца `Alpha ` до конца `Be` и `editor.insertHTML('<u>X</u>')` имеют следующий целевой результат:
+a selection from after `Alpha ` to after `Be`, followed by `editor.insertHTML('<u>X</u>')`, has this intended result:
 
 ```html
 <ul><li>Alpha <u>X</u><em>ta</em> tail<ul><li>Nested keep</li></ul></li><li>Keep item</li></ul>
 ```
 
-Входящий фрагмент проходит схему до живой правки. Строчная разметка, включая разрешённое входящее изображение, и один обычный `p` сохраняют прежнюю вставку: обёртка входящего `p` снимается, левое тело и атрибуты первого `li` сохраняются. Это не разрешает изображения в исходном выделении.
+The incoming fragment passes the schema before live editing. Inline markup, including an allowed incoming image, and one ordinary `p` retain their existing insertion: the incoming `p` wrapper is removed, while the left body and first `li` attributes remain. This does not permit images in the original source selection.
 
-HTML из **двух и более обычных `p`/`h1`–`h6`** вставляется несколькими телами внутри сохранённого пункта. Строчное содержимое первого входящего блока соединяется с невыделенным началом в исходном контексте; его тег и атрибуты уступают сохранённому левому телу. Средние и последний входящие блоки сохраняют теги и атрибуты. Строчный остаток исходного конечного тела присоединяется к последнему входящему блоку, курсор остаётся между вставкой и этим остатком. Последующие невыделенные тела и вложенные ветки располагаются после вставленных тел. Если исходное левое тело было прямым строчным содержимым `li`, оно получает обычную обёртку `p`; новые пункты `li` из входящих абзацев не создаются.
+HTML containing **two or more ordinary `p`/`h1`–`h6` bodies** inserts multiple bodies inside the retained item. The first incoming body's inline children join the untouched prefix in its original inline context; its tag and attributes yield to the retained left body. Middle and final incoming bodies retain their tags and attributes. The original ending body's inline suffix joins the final incoming body, with the caret between the payload and that suffix. Unselected following bodies and nested branches remain after the inserted bodies. A direct inline left `li` body is wrapped in an ordinary `p`; incoming paragraphs do not create new `li` items.
 
-Этот многоабзацный путь API/clipboard поддерживает непустое выделение между телами одного пункта, через соседние пункты и **внутри одного поддержанного тела**, а также **схлопнутый курсор внутри пункта**. При вставке в курсор исходный блок делится в этой позиции: его начало сохраняется с первым входящим содержимым, остаток переносится в последний входящий блок. Предыдущие и следующие исходные блоки, а также вложенные ветки остаются на своих местах относительно вставки. Описанная композиция относится к многоузловым блочным кандидатам; отдельные пути одиночного заголовка и цитаты описаны ниже. Нативный ввод, строчная вставка и остальные одиночные структурные корни сохраняют прежние пути. Пробельные узлы вокруг и между входящими блоками игнорируются; пробелы внутри тел сохраняются. Одиночный placeholder `br` в пустом первом/последнем входящем теле не создаёт лишнюю строку при соединении; пустые средние тела остаются отдельными редактируемыми блоками.
+This multi-block API/clipboard path supports a noncollapsed selection between bodies of one item, across sibling items and **within one supported body**, and also **a collapsed caret inside an item**. At a caret the source body splits at that position: its prefix stays with the first incoming content and its suffix moves into the final incoming body. Preceding and following source bodies and nested branches retain their positions relative to the insertion. This composition applies to multi-root block candidates; the separate single-heading and quote paths are described below. Native input, inline insertion and other single structural roots retain their existing paths. Formatting whitespace around and between incoming blocks is ignored; spaces inside bodies remain. A lone placeholder `br` in an empty first/final incoming body does not add an extra joined line; empty middle bodies remain separate editable blocks.
 
-На границе в координатах `li` курсор перед следующим телом означает начало этого тела; после последнего тела — его конец перед вложенными списками. Позиции внутри хвостовых веток не приравниваются к концу родительского тела. Смешанные или семантические многоузловые фрагменты проверяются и в позиции курсора: API отклоняет их до изменения документа, clipboard остаётся без изменений. Успешная вставка — одна операция истории; курсор оказывается перед исходным остатком в последнем входящем блоке. Undo возвращает исходную DOM-позицию и сохранённое состояние форматирования курсора.
+At an item-level boundary the caret before a following body means that body's start; after the last body it means its end before nested lists. Positions inside trailing branches do not become the parent body's end. Mixed or semantic multi-root fragments are also validated at a caret: the API rejects them before document mutation and clipboard insertion leaves content unchanged. Successful insertion is one history operation, with the caret before the original suffix in the final incoming body. Undo restores the original DOM point and saved caret formatting state.
 
-Одиночный обычный `h1`–`h6` вставляется **отдельным телом пункта**, сохраняя собственный тег, выравнивание и другие разрешённые атрибуты. Это отличается от нескольких входящих блоков: заголовок не отдаёт свою обёртку исходному левому телу. Начало исходного тела остаётся перед заголовком; отдельное тело после заголовка получает строчный остаток исходного конечного тела и его тег/атрибуты. Для прямого строчного `li` края получают `p`. Курсор ставится в начало правого тела, перед остатком. Пустые края сохраняются с placeholder `br`; невыделенные тела и хвостовые ветки располагаются после правого тела, новые `li` не создаются. Действует и в курсор, и поверх выделения внутри тела, между телами или соседними пунктами. Например, `Аль|фа` и `<h2>Заголовок</h2>` дают `<p>Аль</p><h2>Заголовок</h2><p>фа</p>`.
+A single ordinary `h1`–`h6` is inserted as **a separate item body**, retaining its own tag, alignment and other allowed attributes. Unlike the multi-block profile, the heading does not yield its wrapper to the source left body. The source prefix stays before the heading; a separate body after it receives the original end body's inline suffix and tag/attributes. Direct inline `li` edges become `p` elements. The caret starts in the right body before the suffix. Empty edges retain placeholder `br`; unselected following bodies and branches stay after the right body, and no new `li` is created. This works at a caret and over a selection within a body, across bodies or sibling items. For example, `Al|pha` plus `<h2>Title</h2>` produces `<p>Al</p><h2>Title</h2><p>pha</p>`.
 
-Для ограниченного пути между телами/пунктами семантические входящие блоки с `data-mw-node`, смесь строчного текста с блоками, списки, таблицы, `figure` и другие структурные payload остаются атомарным отказом: API выбрасывает ошибку, clipboard-вставка оставляет документ без изменений. Одиночный семантический заголовок проверяется и отклоняется до изменения DOM также внутри одного тела и в курсоре. Пробельные узлы вокруг обычного заголовка игнорируются только после проверки фрагмента. Пустой очищенный HTML — no-op, без удаления выделения и без fallback на plain text. Неизвестные свойства списков и новые семантические теги SDK этим этапом не добавляются.
+For the bounded path between bodies/items, incoming semantic blocks with `data-mw-node`, mixed inline/block fragments, lists, tables, `figure` and other structural payloads remain atomic refusals: the API throws and clipboard insertion leaves the document unchanged. A single semantic heading is also validated and refused before DOM mutation within one body and at a caret. Formatting whitespace around an ordinary heading is ignored only after payload validation. Empty sanitized HTML is a no-op, without deleting the range or falling back to plain text. This slice adds neither new list properties nor new SDK semantic tags.
 
-В демо выбери **«Несколько блоков → Загрузить пример с блоками»**, затем **«Выделить пункты»**, **«Выделить блоки пункта»** или **«Выделить текст одного блока»** и нажми **«Заменить несколькими блоками»**. Поле **«HTML из нескольких блоков»** позволяет изменить входящие абзацы/заголовки; пример проходит тот же `editor.insertHTML`, системный буфер не запрашивается.
+In the demo choose **Multiple blocks → Load block-body sample**, then **Select items**, **Select item blocks** or **Select text in one body**, followed by **Replace with multiple blocks**. The **Multi-block HTML** field lets you change incoming paragraphs/headings; this uses the same `editor.insertHTML` API without requesting system clipboard access.
 
-Для вставки без выделения выбери **«Позиция вставки блоков» → «Начало блока», «Внутри слова» или «Конец блока»**, нажми **«Курсор для вставки блоков»**, затем **«Заменить несколькими блоками»**. Средняя позиция находится после первой буквы выделенного жирным слова. Можно сравнить режимы прямого строчного тела, абзаца и нескольких блоков; загрузка примера заменяет документ.
+For insertion without a selection choose **Block insertion position → Body start, Inside a word or Body end**, click **Caret for block insertion**, then **Replace with multiple blocks**. The middle position follows the first letter of the bold word. Compare direct inline, paragraph and multiple-body modes; loading a sample replaces the document.
 
-Для отдельного заголовка используй те же кнопки выделения или курсора, затем **«HTML одиночного заголовка → Вставить заголовок»**. Пример по умолчанию сохраняет `h2`, `title`, выравнивание и курсив. Undo возвращает исходное выделение или точный курсор.
+For a separate heading use the same selection or caret buttons, then **Single heading HTML → Insert heading**. The default sample retains `h2`, `title`, alignment and italic text. Undo restores the original selection or exact caret.
 
-Одна обычная цитата `blockquote` имеет такой же отдельный путь: исходное начало → цитата → отдельное тело с исходным остатком. Её обёртка и разрешённые атрибуты сохраняются, курсор ставится в начало правого тела. Поддерживаются курсор и выделения внутри тела, между телами или соседними пунктами. Внутри входящей цитаты допустим либо полностью строчный контент, либо последовательность обычных `p`/`h1`–`h6`; смешанные строчно-блочные дети, вложенные цитаты, списки, таблицы, `figure` и `pre` не входят в этот путь. Семантические корни цитаты и её блочных детей с `data-mw-node` отклоняются до изменения DOM, включая вставку внутри одного тела и в курсор. Семантические строчные узлы и разрешённые входящие изображения проходят общую схему. Пробельное оформление вокруг цитаты и между её блочными детьми убирается только после проверки; текстовые пробелы строчной цитаты сохраняются. Пустая строчная цитата и пустые дочерние блоки получают редактируемый `br`.
+A single ordinary `blockquote` uses the same separate splice: source prefix → quote → separate body with the original suffix. Its wrapper and allowed attributes remain, with the caret at the right body's start. It supports a caret and selections within a body, across bodies or sibling items. The incoming quote may contain either entirely inline content or a sequence of ordinary `p`/`h1`–`h6` bodies; mixed inline/block children, nested quotes, lists, tables, `figure` and `pre` remain outside this path. Semantic quote roots and semantic body children with `data-mw-node` are refused before DOM mutation, including within one body and at a caret. Inline semantic nodes and allowed incoming images pass the shared schema. Formatting whitespace around the quote and between its body children is removed only after validation; inline quote text spaces remain. An empty inline quote and empty child bodies receive an editable `br`.
 
-Повторная **блочная API/clipboard-вставка** допускает обычные цитаты как непрозрачные соседние тела исходного пункта. В обычное текстовое тело перед цитатой или после неё можно вставлять несколько `p`/заголовков, одиночный заголовок или новую цитату без перезагрузки документа. Цитаты до и после выбранного интервала сохраняются целыми фактическими DOM-узлами с содержимым, тегом и атрибутами; их не склеивают и не переносят внутрь нового payload. Это относится и к нескольким исходным цитатам. Неподдержанная или семантическая исходная цитата блокирует операцию до изменения документа, даже если она не выделена.
+Repeated **block API/clipboard insertion** accepts ordinary quotes as opaque neighboring bodies in the source item. In an ordinary text body before or after a quote, insert multiple paragraphs/headings, a single heading or another quote without reloading the document. Quotes before and after the selected interval retain their actual DOM nodes, content, tags and attributes; they are neither coalesced nor placed inside the new payload. Multiple source quotes are supported. An unsupported or semantic source quote blocks the operation before mutation even when it is unselected.
 
-Для вставки рядом с цитатой концы диапазона должны оставаться в обычных текстовых телах с одной стороны от неё. Отдельный профиль ниже поддерживает и выделение через одну или несколько цитат, включая полное покрытие, внутри того же пункта. Позиция на `li`, которая нормализуется в целую цитату, тоже блокируется; для вставки перед ней используй конец предыдущего абзаца, после неё — начало следующего. Нативные структурные операции на границах цитаты, строчная и одноабзацная вставка сохраняют прежние пути. Это отдельное расширение блочной вставки, а не полная поддержка редактирования цитат.
+For insertion beside a quote, range endpoints must stay in ordinary text bodies on one side of it. The dedicated crossing profile below also supports a selection that crosses or fully covers one or several quotes within the same item. An item-level position resolving to the whole quote is blocked too; use the preceding paragraph's end to insert before it or the next body's start to insert after it. Native quote-boundary structural operations, inline insertion and single-paragraph insertion retain their earlier paths. This is a dedicated block-insertion extension, not complete quote editing.
 
-**Блочная вставка внутри одной цитаты пункта** принимает два и более обычных `p`/`h1`–`h6` либо один обычный заголовок. Поддержаны схлопнутый курсор, выделение внутри одного тела и диапазон между обычными дочерними блоками той же цитаты. Фактический `blockquote` и его разрешённые атрибуты сохраняются; вставленные тела остаются его детьми, а внешние тела пункта, соседние цитаты и вложенные списки не меняются. Если исходная цитата строчная, её содержимое получает обычную обёртку `p` внутри той же цитаты.
+**Block insertion inside one quote in a list item** accepts two or more ordinary `p`/`h1`–`h6` blocks or a single ordinary heading. It supports a collapsed caret, a selection within one body and a range across ordinary child bodies of that same quote. The actual `blockquote` and its allowed attributes remain; inserted bodies stay inside it, while outer item bodies, neighboring quotes and nested lists remain untouched. Direct inline quote content is promoted into an ordinary `p` inside that same quote.
 
-Правила соединения те же: в многоабзацном payload начало остаётся в исходном левом теле с содержимым первого входящего блока, остаток переносится в последний; одиночный заголовок остаётся отдельным телом между началом и отдельным остатком. Курсор находится перед остатком — в последнем входящем теле либо в начале правого тела после одиночного заголовка. Невыделенные дочерние блоки сохраняются фактическими узлами; пустые края остаются редактируемыми. DOM-смещения на `blockquote` учитывают реальные дочерние узлы, включая пробельные промежутки: начало выбирает следующий блок, конец выделения — предыдущий; схлопнутый конец цитаты означает конец последнего блока. Undo восстанавливает исходные DOM-координаты и состояние форматирования курсора.
+Composition follows the existing profiles: for multiple incoming blocks, the prefix stays in the original left body with the first incoming body's children and the suffix joins the final incoming body; a single heading remains separate between the prefix and a separate suffix body. The caret precedes the suffix, in the last incoming body or at the suffix body's start after a single heading. Unselected child bodies retain actual node identity and empty edges stay editable. DOM offsets on `blockquote` account for actual child nodes, including formatting gaps: a start resolves to the next body, a selection end to the previous body, and a collapsed quote-end position to the last body's end. Undo restores original DOM coordinates and pending caret formatting.
 
-Этот внутренний профиль оставляет оба конца **внутри одной поддержанной цитаты**; внешний конец или концы в разных цитатах обрабатывает отдельный профиль ниже. Вложенная цитата, семантические обёртки и дочерние блоки, исходные изображения и неподдержанные структуры отклоняются до изменения документа. Обычные входящие изображения и строчные семантические данные по-прежнему проходят схему. Проверка исходных цитат строже внутри области изменения, чем при сохранении целой непрозрачной цитаты снаружи. Нативный ввод, операции на границах, строчная и одноабзацная вставка этим этапом не расширяются; совместимость ещё не подтверждена запуском.
+This inner-quote profile keeps both endpoints **inside one supported quote**; the separate crossing profile below handles an outside endpoint or endpoints in different quotes. Nested quote insertion, semantic quote/body wrappers, original images and unsupported structures are refused before document mutation. Allowed incoming images and inline semantic data still pass schema validation. Source validation is stricter within the changed quote than when preserving a whole opaque quote beside insertion. Native input, boundary operations, inline insertion and single-paragraph insertion are not extended by this slice.
 
-**Блочная замена через границы цитат** поддерживает диапазон в одном `li`: снаружи → внутрь обычной цитаты, из цитаты → наружу, между разными цитатами либо снаружи → снаружи с полным покрытием одной или нескольких цитат. Входящий фрагмент — несколько обычных абзацев/заголовков, один обычный заголовок или одна поддержанная цитата. Каждая входящая корневая обёртка сохраняет тег и разрешённые атрибуты отдельным телом на уровне пункта; в отличие от обычной многоабзацной вставки, первая обёртка не снимается и не соединяется с исходным началом. Новый контент не переносится внутрь остатка исходной цитаты.
+**Block replacement across quote boundaries** supports a range in a single `li`: outside → inside an ordinary quote, inside → outside, between different quotes, or outside → outside across one or several whole quotes. Use multiple ordinary paragraphs/headings, one ordinary heading or one supported quote as the payload. Every incoming root wrapper keeps its tag and allowed attributes as a separate body at item level; unlike ordinary multi-block insertion, the first wrapper is not stripped or joined to the source prefix. New content is never placed inside the remaining source quote.
 
-Невыделенные цитатные начало или остаток остаются цитатой в том же фактическом `blockquote`, с его атрибутами и нетронутыми дочерними блоками; полностью покрытые цитаты и промежуточные тела удаляются. Если правый конец внутри цитаты, между payload и её остатком создаётся **новый редактируемый `p` с `br`**, курсор — в его начале. Если правый конец снаружи, исходный остаток сохраняет отдельное тело, курсор — перед ним. Другие тела пункта, пробельные промежутки и хвостовые ветки сохраняют порядок и фактические узлы. Каждая затронутая цитата проверяется целиком, даже при полном покрытии: исходные изображения, семантические блочные корни и вложенные структуры блокируют всю операцию. Концы в разных цитатах разрешены в одном пункте либо в допустимом диапазоне соседних пунктов по профилю ниже. Разные списки/уровни, выделенные ветки, семантические/неправильные исходные формы и неподдержанные payload отклоняются атомарно. Вставка внутри одной цитаты, нативные операции на границах и строчный/одноабзацный пути не меняются.
+An unselected quoted prefix or suffix stays quoted in the same actual `blockquote`, preserving its attributes and untouched child bodies; fully covered quotes and intervening bodies are removed. With a right endpoint inside the quote, a **new editable `p` with `br`** is inserted between the payload and quoted remainder, and the caret starts there. With a right endpoint outside, the source suffix keeps its own body and the caret starts before that suffix. Other item bodies, formatting gaps and trailing list branches retain their order and identity. Every affected quote is validated completely, even when fully covered: original images, semantic block roots and nested structures block the entire operation. Distinct quote endpoints are allowed within one item or eligible consecutive items under the sibling-item profile below. Different lists/levels, selected branches, semantic/malformed source shapes and unsupported payloads remain atomic refusals. Same-quote insertion, native boundary editing and inline/single-paragraph paths are unchanged.
 
-В демо нажми **«Загрузить пример пересечения цитаты»**, затем **«Выделить снаружи внутрь цитаты»**, **«Выделить из цитаты наружу»** или **«Выделить через целую цитату»** и используй прежние **«Заменить несколькими блоками»**, **«Вставить заголовок»** или **«Вставить цитату»**. Для сравнения направлений загружай документ заново. Undo должен вернуть точное исходное обратное выделение; RU/EN тесты пока только написаны.
+In the demo click **Load quote-crossing sample**, choose **Select outside into quote**, **Select quote into outside** or **Select across whole quote**, then reuse **Replace with multiple blocks**, **Insert heading** or **Insert quote**. Reload before comparing directions; loading replaces the document. Undo restores the exact original backward selection.
 
-Новый пример **«Загрузить пример нескольких цитат»** содержит три цитаты, промежуточное тело и вложенную ветку. Выбери **«Выделить между цитатами»**, **«Выделить снаружи до последней цитаты»**, **«Выделить из первой цитаты наружу»** или **«Выделить через все цитаты»**, затем используй те же кнопки вставки. Между двумя частично выбранными цитатами начало первой и остаток последней остаются в своих фактических обёртках; полностью покрытая средняя цитата удаляется. Если справа цитатный остаток, перед ним создаётся обычный абзац с курсором. Проверяется **каждая** затронутая цитата, в том числе удаляемая целиком: исходные изображения, семантические блочные корни и вложенные структуры отклоняют всю операцию до изменения документа. Для сравнения направлений загружай пример заново.
+The new **Load multiple-quote sample** contains three quotes, an intervening body and a nested branch. Choose **Select between quotes**, **Select outside into last quote**, **Select first quote into outside** or **Select across all quotes**, then reuse the insertion buttons. Between two partially selected quotes, the first prefix and last suffix stay in their actual wrappers; the fully covered middle quote is removed. A quoted right remainder gets an ordinary caret paragraph before it. **Every** affected quote is validated, including fully removed quotes: original images, semantic block roots and nested structures reject the whole operation before document mutation. Reload before comparing directions.
 
-### Цитаты в соседних пунктах
+### Quotes across sibling items
 
-Нажми **«Загрузить цитаты в соседних пунктах»**, выбери **«Выделить цитаты соседних пунктов»**, **«Выделить до цитаты последнего пункта»**, **«Выделить из цитаты до внешнего остатка»** или **«Выделить через цитаты всех пунктов»**, затем используй **«Заменить несколькими блоками»**, **«Вставить заголовок»** или **«Вставить цитату»**. Загрузка заменяет документ; загружай пример заново для сравнения направлений.
+Click **Load sibling-item quote sample**, choose **Select quotes across sibling items**, **Select into last item quote**, **Select from quote into outside suffix** or **Select across all item quotes**, then use **Replace with multiple blocks**, **Insert heading** or **Insert quote**. Loading replaces the document; reload before comparing directions.
 
-Блочная API/clipboard-вставка через обычные цитаты допускает последовательные пункты **одного родительского `ul`/`ol`**. Фактический первый пункт и его невыделенное начало сохраняются. Частичный остаток последнего пункта, следующие за ним тела/невыделенные цитаты и конечные вложенные списки переносятся в первый пункт фактическими узлами, в исходном порядке; остальные выбранные пункты, полностью покрытые цитаты и промежуточные тела удаляются. Входящие обёртки остаются отдельными блоками на уровне первого пункта. Если справа цитатный остаток, перед ним создаётся новый обычный `p` с `br` и курсором в начале; иначе курсор находится в начале внешнего тела с остатком. Прямой строчный край пункта получает обёртку `p` с переносом исходных дочерних узлов.
+Block API/clipboard insertion through ordinary quotes accepts consecutive items under **one parent `ul`/`ol`**. The actual first item and its unselected prefix remain. The last item's partial suffix, following bodies/unselected quotes and trailing nested lists move into the first as actual nodes in their original order; other selected items, fully covered quotes and intervening bodies are removed. Incoming wrappers remain separate blocks at the first-item level. A quoted right remainder gets a new ordinary `p` with `br` before it, with the caret at its start; otherwise the caret starts in the outside suffix body. A direct-inline item edge receives a `p` wrapper containing the actual original descendants.
 
-Каждая затронутая цитата проверяется целиком, включая цитаты удаляемых средних пунктов: исходные изображения, семантические блочные корни и вложенные структуры отклоняют всю операцию до изменения документа. Хвостовые ветки всех выбранных пунктов сохраняются отдельным цитатным путём, описанным ниже. Разные родительские списки, уровни и концы внутри веток, а также позиции `li`, разрешающиеся в целую цитату, остаются барьерами. Нативный ввод, строчная/одноабзацная вставка и обычная замена без затронутых цитат сохраняют прежние пути.
+Every affected quote is fully validated, including quotes in removed middle items: original images, semantic block roots and nested structures reject the whole operation before document mutation. Trailing branches of all selected items are preserved by the quote-specific branch profile below. Different parent lists, levels, endpoints inside branches and `li` positions resolving to a whole quote remain barriers. Native input, inline/single-paragraph insertion and ordinary replacement without affected quotes retain their earlier paths.
 
-### Сохранение веток всех выбранных пунктов
+### Preserving branches from all selected items
 
-Нажми **«Загрузить пример сохранения веток»**, выбери **«Выделить цитаты с ветками»**, **«Выделить до цитаты с ветками»**, **«Выделить из цитаты с ветками»** или **«Выделить все тела с ветками»** и используй прежние кнопки вставки. Пример содержит хвостовые `ul`/`ol` первого, среднего и последнего пунктов, более глубокую ветку, атрибуты `start` и пустой пункт.
+Click **Load quote-branch preservation sample**, choose **Select quotes with branches**, **Select into quote with branches**, **Select from quote with branches** or **Select all bodies with branches**, then use the existing insertion buttons. The sample contains trailing `ul`/`ol` from the first, middle and last items, a deeper branch, `start` attributes and an empty item.
 
-В пути только с хвостовыми ветками структурная API/clipboard-вставка с хотя бы одной затронутой цитатой сохраняет эти ветки фактическими поддеревьями. После всех результирующих тел первого пункта идут ветки первого, затем промежуточных и последнего исходных пунктов; внутри каждого пункта их порядок сохраняется. **Это перенос веток после тел, а не сохранение прежнего сквозного порядка «тело — ветка — тело».** Ветки не склеиваются, не клонируются и не уплощаются; их типы, атрибуты, вложенность, дочерние узлы и пустые пункты сохраняются. Перед обрезкой прямых строчных тел и удалением покрытых пунктов ветки отделяются целиком.
+In the trailing-only profile, structural API/clipboard insertion with at least one affected quote preserves these branches as actual subtrees. After the complete resulting body sequence in the first item come branches from the first, intermediate and last source items; order within each item remains. **This relocates branches after bodies; it does not preserve the former global body–branch–body traversal order.** Branches are neither coalesced, cloned nor flattened; kinds, attributes, nesting, descendants and empty items remain. Branches detach intact before trimming direct-inline bodies or removing covered items.
 
-Новые ветки первого/средних пунктов должны быть обычными непосредственными хвостовыми `ul`/`ol` без семантической корневой обёртки; импортированное проверенное содержимое переносится как непрозрачное поддерево. Концы внутри веток, разные родители/уровни и неподдержанные цитаты отклоняются атомарно; тело после ветки относится к отдельному пути ниже. Обычная замена **без** затронутой цитаты, нативный ввод и строчная/одноабзацная вставка сохраняют прежние барьеры. Входящие обёртки, цитатные края и позиция курсора следуют правилам выше.
+Newly accepted first/middle branches must be ordinary direct trailing `ul`/`ol` without a semantic root wrapper; imported validated content moves as an opaque subtree. Endpoints inside branches, different parents/levels and unsupported quotes reject atomically; bodies after a branch use the separate profile below. Ordinary replacement **without** an affected quote, native input and inline/single-paragraph insertion keep their previous barriers. Incoming wrappers, quoted edges and caret placement follow the rules above.
 
-### Блоки после вложенных списков
+### Blocks after nested lists
 
-Нажми **«Загрузить блоки после веток»**, выбери **«Выделить цитаты между ветками»**, **«Выделить до цитаты после ветки»**, **«Выделить из цитаты через ветки»** или **«Выделить все тела между ветками»**, затем используй прежние кнопки вставки. В примере есть ветка перед началом выделения, защищённые ветки между выбранными телами и последовательность «остаток → список → заголовок → список» после него. Загрузка заменяет документ.
+Click **Load blocks-after-branches sample**, choose **Select quotes between branches**, **Select into quote after branch**, **Select from quote across branches** or **Select all bodies between branches**, then use the existing insertion buttons. The sample has a branch before the selection, protected branches between selected bodies and a suffix → list → heading → list sequence afterward. Loading replaces the document.
 
-Этот отдельный структурный путь включается, когда хотя бы один выбранный пункт содержит обычный `p`/заголовок/цитату **после** непосредственного вложенного `ul`/`ol`. Нужны разные крайние тела и хотя бы одна затронутая цитата; допустимы один пункт или последовательные соседи одного списка. Пункт с таким чередованием начинается обёрнутым телом; смешанный прямой текст после списка не поддержан. Соседний пункт без чередования может иметь прямое строчное тело и получает обычную обёртку `p` по прежним правилам.
+This separate structural path applies when at least one selected item contains an ordinary `p`, heading or quote **after** a direct nested `ul`/`ol`. Distinct endpoint bodies and at least one affected quote are required; one item or consecutive siblings of one list are supported. An interleaved item starts with a wrapped body; mixed direct inline text after a list is unsupported. A neighboring item without interleaving may have direct inline content, receiving an ordinary `p` wrapper under the earlier rules.
 
-Начальная последовательность первого пункта до левого края, включая ветки, остаётся на месте. Далее идут сохранённый левый край, **все входящие обёртки**, защищённые ветки из выбранного интервала в исходном порядке и правый остаток. Полностью выбранные собственные тела и цитаты удаляются, ветки сохраняют фактические поддеревья. При правом крае внутри цитаты новый редактируемый `p` с `br` ставится **после защищённых веток**, непосредственно перед цитатным остатком; курсор находится в нём. При внешнем крае курсор ставится в начало тела остатка. Следующие дети последнего пункта переносятся в первом прежней последовательностью блоков и списков. Относительный порядок сохранённых узлов не меняется; входящий фрагмент вставляется перед защищёнными ветками.
+The first item's sequence before the left edge, including branches, stays in place. Then come the retained left edge, **every incoming wrapper**, protected branches from the selected interval in source order and the right remainder. Fully selected own bodies and quotes are removed; branches retain their actual subtrees. For a quoted right edge, a new editable `p` with `br` goes **after protected branches**, immediately before the quoted remainder, with the caret there. For an outside edge, the caret starts in the suffix body. Following children from the last item move into the first in their original body/list sequence. Relative order among retained nodes remains; the incoming fragment precedes the protected branches.
 
-Если все вложенные списки расположены только в хвостах пунктов, прежний путь выше сохраняется: ветки идут после всей результирующей последовательности тел. Для нового чередующегося источника концы внутри веток, разные родители/уровни, неподдержанные и семантические корни, строчный/одноабзацный фрагмент, диапазон в обычном теле вне цитаты и операция без затронутой цитаты остаются за границей этого пересекающего пути; вставка внутри одной цитаты описана отдельным внутренним профилем ниже. Проверяются все затронутые цитаты и корни веток до изменения документа. Нативное редактирование не расширено.
+If nested lists occur only at item tails, the earlier profile above remains: branches follow the complete resulting body sequence. For the new interleaved source, endpoints inside branches, different parents/levels, unsupported or semantic roots, inline/single-paragraph payloads, a range within an ordinary body outside the quote and operations without an affected quote remain outside this crossing profile; insertion inside one quote follows the separate inner profile below. Every affected quote and branch root is validated before document mutation. Native editing is not extended.
 
-### Внутри одной цитаты среди блоков и веток
+### Inside one quote between bodies and branches
 
-Нажми **«Загрузить цитату среди блоков и веток»**, затем **«Курсор в цитате среди веток»** или **«Выделить блоки цитаты среди веток»**. Используй прежние **«Заменить несколькими блоками»** или **«Вставить заголовок»**; загрузка заменяет документ. Пример содержит список перед цитатой, соседнюю цитату, список после неё и заголовок после этого списка.
+Click **Load quote inside interleaved item**, then **Caret in quote between branches** or **Select quote bodies between branches**. Reuse **Replace with multiple blocks** or **Insert heading**; loading replaces the document. The sample includes a list before the quote, a neighboring quote, another list after it and a heading after that list.
 
-Внутренняя блочная вставка работает в курсор, поверх выделения внутри одного дочернего тела и между обычными дочерними блоками той же цитаты. Фактическая цитата, её атрибуты и невыделенные дети сохраняются. Внешние блоки, соседние цитаты и вложенные списки остаются теми же узлами в прежнем порядке: этот путь не переносит ветки ни за payload, ни в хвост пункта. Несколько входящих `p`/`h1`–`h6` соединяют первый контент с исходным началом, а последний — с остатком внутри цитаты; одиночный заголовок сохраняет отдельную обёртку между началом и отдельным остатком. Курсор остаётся перед исходным остатком; пустые края сохраняют редактируемый перенос.
+Inner block insertion accepts a caret, a selection within one child body or a range across ordinary child bodies of that same quote. The actual quote, attributes and untouched children remain. Outer bodies, neighboring quotes and nested lists retain their actual nodes and original order: this path moves branches neither behind the payload nor to the item tail. Multiple incoming `p`/`h1`–`h6` roots compose their first content with the source prefix and their last with the suffix inside the quote; a single heading keeps a separate wrapper between prefix and a separate suffix body. The caret stays before the original suffix, and empty edges retain an editable placeholder.
 
-Все корни вложенных веток такого пункта должны быть обычными непосредственными `ul`/`ol` без семантического владельца; проверенное содержимое веток сохраняется непрозрачным поддеревом. Исходная цитата по-прежнему не принимает изображения, семантические блочные корни или вложенные структуры; входящая вложенная цитата отклоняется атомарно. Нативный ввод, строчная/одноабзацная вставка и редактирование обычного тела вне цитаты не расширены.
+All branch roots in that item must be ordinary direct `ul`/`ol` without semantic ownership; validated branch content remains an opaque subtree. The source quote still rejects images, semantic block roots and nested structures; an incoming nested quote is refused atomically. Native input, inline/single-paragraph insertion and ordinary bodies outside the quote are not extended.
 
-В демо используй те же кнопки курсора или выделения, затем **«HTML цитаты → Вставить цитату»**. Пример содержит абзац и заголовок внутри `blockquote`, сохраняет `title`, выравнивание и курсив. Окружающие исходные тела и хвостовые ветки не переносятся внутрь цитаты; новые `li` не создаются.
+In the demo use the same caret or selection buttons, then **Quote HTML → Insert quote**. The sample contains a paragraph and heading inside `blockquote`, retaining `title`, alignment and italic text. Neighboring source bodies and trailing branches stay outside the quote; no new `li` is created.
 
-Для повторной вставки нажми **«Загрузить пример повторной вставки»**, затем **«Курсор после существующей цитаты»**. Последовательно нажми **«Вставить цитату» → «Вставить заголовок» → «Заменить несколькими блоками»**, не загружая документ заново. Каждый шаг сохраняет исходную цитату и имеет отдельный Undo; **«Курсор перед существующей цитатой»** демонстрирует вставку с другой стороны. Загрузка примера заменяет документ.
+For repeated insertion click **Load repeated insertion sample**, then **Caret after existing quote**. Click **Insert quote → Insert heading → Replace with multiple blocks** consecutively without reloading. Each step retains the original quote and has its own Undo; **Caret before existing quote** demonstrates insertion on the other side. Loading the sample replaces the document.
 
-Для новой области нажми **«Загрузить пример вставки внутри цитаты»**, затем **«Курсор внутри цитаты»** или **«Выделить блоки внутри цитаты»**. Используй прежние **«HTML из нескольких блоков → Заменить несколькими блоками»** либо **«HTML одиночного заголовка → Вставить заголовок»**. Кнопка **«Вставить цитату»** в этой области отклоняет вложенный `blockquote`. Загрузка заменяет документ.
+For the new area click **Load insertion-inside-quote sample**, then **Caret inside quote** or **Select blocks inside quote**. Reuse **Multi-block HTML → Replace with multiple blocks** or **Single heading HTML → Insert heading**. **Insert quote** refuses a nested `blockquote` in this area. Loading replaces the document.
 
-Внутри одного тела новый путь проверяет многокорневые блочные и смешанные кандидаты, одиночный заголовок и одиночную цитату: неподдержанный кандидат отклоняется до изменения документа. Другой одиночный структурный корень, например таблица, сохраняет прежний общий обработчик; этот этап не вводит для него новую гарантию или новый запрет.
+Within one body the new path validates multi-root block and mixed candidates, a single heading and a single quote: an unsupported candidate is rejected before mutation. Another single structural root, such as a table, retains its earlier generic handler; this slice introduces neither a new guarantee nor a new prohibition for it.
 
 ```ts
 editor.insertHTML('<p><strong>First</strong></p><h3>Middle</h3><p><u>Last</u></p>');
 ```
 
-Схлопнутый Delete в конце блока объединяет его со следующим телом **того же пункта**. В конце последнего тела он объединяет первый блок следующего подходящего пункта **того же списка**; остальные блоки справа сохраняются после результата. Если слева было прямое строчное тело, а справа остаются последующие блоки, строчное тело оборачивается в обычный `p`, как при замене выделения. Backspace в начале не первого тела соединяет его с предыдущим телом того же пункта. Сохраняются тег и атрибуты левого тела; правая обёртка удаляется. Вложенные ветки сохраняются целиком в исходном порядке, их не склеивают и не теряют атрибуты. Последний пункт, неподходящий сосед и границы контейнеров останавливают межпунктовое объединение без новой истории. Backspace в начале первого тела многоблочного пункта теперь обрабатывается отдельно, как описано ниже; прежние пути простых пунктов не переписываются. Новая обработка проходит через отменяемый `beforeinput`, а не обходит отмену на `keydown`.
+Collapsed Delete at a body's end joins the next body **inside the same item**. At the last body's end it joins the first body of the next suitable item **in the same list**, preserving following right bodies after the result. If a direct inline left body must coexist with surviving right blocks, it is wrapped in an ordinary `p`, as with selection replacement. Backspace at a non-first body's start joins it into the previous body of the same item. The left body's tag and attributes remain; the right wrapper is removed. Nested branches stay whole and in their original order; they are not coalesced or stripped of attributes. The final item, unsupported neighbors and container boundaries stop the inter-item join without history. Backspace at the first body's start in a multi-block item now has the dedicated behavior below; existing simple-item paths are not rewritten. The new handling uses cancelable `beforeinput`, preserving cancellation rather than bypassing it on `keydown`.
 
-В начале первого блока многоблочного пункта Backspace соединяет его с последним телом предыдущего соседнего пункта того же списка. Сохраняются тег и атрибуты левого тела, последующие правые блоки и обе группы хвостовых веток; прямое левое содержимое при необходимости получает обёртку `p`. Без предыдущего пункта первый корневой пункт выходит из списка: его фактические абзацы/заголовки и затем ветки располагаются перед оставшимся списком. Атрибуты снимаемого `li` не переносятся на тела, их собственные атрибуты сохраняются. Первый вложенный пункт поднимается после родительского пункта; его следующие вложенные соседи переходят в отдельный список под ним после уже имеющихся веток. Исходный список может быть не последней веткой родителя: более ранние ветки остаются у родителя, а более поздние целыми фактическими узлами переходят под поднятый пункт после его собственных веток и списка следующих исходных соседей. Порядок обхода содержимого сохраняется; типы и атрибуты списков не меняются, ветки не склеиваются. Каждая переносимая поздняя ветка должна быть обычным списком с поддержанными непосредственными пунктами; семантическая или неподдержанная ветка блокирует всю операцию до изменения DOM. Поддерживаются корневые списки в поверхности, `blockquote`, `td` и `th`; операция не пересекает границы ячейки. Семантический список/пункт/тело, неподдержанный сосед, посторонний узел между пунктами и более сложная форма остаются атомарными барьерами. Каждая успешная операция — одна транзакция с восстановлением исходного DOM-курсора через Undo.
+At the first body's start in a multi-block item, Backspace joins that body into the previous sibling item's final body in the same list. The left body's tag and attributes, subsequent right bodies and both sets of trailing branches remain; a direct inline left body receives a `p` wrapper when required. Without a previous item, the first root item exits the list: its actual paragraphs/headings followed by its branches move before the remaining list. Removed `li` attributes are not copied to bodies; their own attributes remain. A first nested item lifts after its owner item; its following nested siblings move into a separate list under the lifted item after its existing branches. The source list may precede other owner branches: earlier branches stay with the owner, while later branches move as actual whole nodes under the lifted item after its own branches and the list of following source siblings. Content traversal order remains; list kinds and attributes are unchanged and branches are not coalesced. Each moved later branch must be an ordinary list with supported direct items; a semantic or unsupported branch blocks the entire operation before DOM mutation. Root lists inside the surface, `blockquote`, `td` and `th` are supported; the operation never crosses a cell boundary. Semantic lists/items/bodies, unsupported neighbors, foreign nodes between items and more complex shapes remain atomic barriers. Each successful operation is one transaction with Undo restoring the original DOM caret.
 
-Enter внутри одного обычного `p`/`h1`–`h6` создаёт следующий `li` с таким же разделённым телом и его атрибутами; заголовок в конце продолжается заголовком. Хвостовой текст, все последующие блоки и вложенные ветки переходят в новый пункт, причём ветки остаются вне обёрток. Shift+Enter добавляет `br` внутри одного тела с сохранением начального строчного контекста. Пустое тело получает внутренний placeholder. Пустой блок при наличии других тел делится как часть пункта; прежний выход/подъём сохраняется только для обычного целиком пустого простого пункта. Выделение между телами одного пункта перед Enter/Shift+Enter сначала заменяется пустым содержимым в той же транзакции, затем выполняется разделение или перенос. Диапазон между разными пунктами и семантические тела для этих клавиш остаются барьерами. Команды отступов этим этапом не расширяются.
+Enter inside one ordinary `p`/`h1`–`h6` creates the next `li` with the same split-body tag and attributes; a heading at its end continues as a heading. Following text, all subsequent bodies and nested branches move into the new item, with branches outside body wrappers. Shift+Enter inserts `br` inside one body in the starting inline context. An empty body gets an internal placeholder. An empty body with other bodies present splits as part of its item; existing empty-item exit/outdent remains only for an entirely empty ordinary simple item. For Enter/Shift+Enter, a selection across bodies of one item is first replaced with empty content in the same transaction, then split or given a line break. Cross-item ranges and semantic bodies remain barriers for these keys. Indent commands are not extended by this slice.
 
-Операция имеет отдельный undo, восстанавливающий исходный документ и прямое/обратное DOM-выделение. Курсор ставится после вставленного текста/HTML, перед сохранённым строчным остатком и вложенными ветками. Следующий ввод остаётся на этой позиции с прежним нативным наследованием оформления. Уже отменённые события, read-only и composition сохраняют свои ограничения; неотменяемый `beforeinput` не получает новую ручную правку. Вложенная ошибка импорта по-прежнему делает всю внешнюю транзакцию недействительной, даже если её поймал плагин.
+The operation has an isolated undo restoring the original document and forward/backward DOM range. The caret follows inserted text/HTML and precedes the retained inline suffix and nested branches. Subsequent input stays there with existing native formatting affinity. Already canceled events, read-only and composition retain their guards; noncancelable `beforeinput` receives no new manual edit. A nested import failure still poisons its whole outer transaction even when the plugin catches it.
 
-Отказ на предварительной проверке до открытия транзакции и блокировка нативного ввода сохраняют идентичность нетронутых DOM-узлов. Если доверенный focus-listener меняет контекст после такой проверки, поздний отказ использует обычный откат транзакции: сохраняются её исходные HTML, выделение и история, но DOM-узлы могут пересоздаваться. Гарантия DOM identity на этот поздний rollback не распространяется.
+A detached-preflight refusal before opening the transaction or a blocked native edit preserves unrelated DOM identity. If a trusted focus listener changes the context after preflight, a late rejection uses ordinary transaction rollback: its initial HTML, selection and history are preserved, but DOM nodes may be rebuilt. DOM identity is not guaranteed for that late rollback path.
 
-Локальная демо: **«Документ → Выделение пунктов списка»**; выбери режим **«Содержимое пункта»**, нажми **«Загрузить пример с блоками»**, затем **«Выделить пункты»**, **«Заменить текстом»** или **«Заменить HTML»**. В режиме **«Несколько блоков»** кнопка **«Выделить блоки пункта»** задаёт обратное выделение между абзацем и заголовком внутри первого пункта. **«Курсор перед Delete»** готовит конец первого тела: в этом режиме Delete соединяет два блока внутри пункта. Для первого Backspace выбери **«Сценарий Backspace»**, нажми **«Загрузить пример Backspace» → «Курсор перед Backspace»**, затем клавишу Backspace. Доступны объединение с предыдущим пунктом, выход первого корневого, подъём первого вложенного пункта и «Вложенная ветка перед другими». Последний пример показывает раннюю ветку у родителя и сохранение порядка двух поздних веток под поднятым пунктом. Загрузка заменяет документ. Удаление слова, `insertReplacementText` и замена по native target ranges не расширяются этим обработчиком. Произвольная структурная вставка в пункты, list↔paragraph-преобразования, частично выбранные вложенные деревья, реальные мобильные IME и новые размеры бандлов остаются непроверенными или последующими задачами.
+Local demo: **Document → List item selection**; choose an **Item body** mode, click **Load block-body sample**, then **Select items**, **Replace with text** or **Replace with HTML**. In **Multiple blocks** mode, **Select item blocks** sets a backward selection between the paragraph and heading inside the first item. **Caret before Delete** prepares the first body's end: in this mode Delete joins two bodies inside the item. For first-body Backspace choose a **Backspace scenario**, click **Load Backspace sample → Caret before Backspace**, then press Backspace. Try joining the previous item, exiting the first root item, lifting the first nested item and Nested branch before others. The last sample retains the earlier branch with the owner and preserves two later branches in order under the lifted item. Loading replaces the document. Word deletion, `insertReplacementText` and native replacement target ranges are not extended by this handler. Arbitrary structural HTML across items, list↔paragraph transformations, partially selected nested trees, and actual mobile IME remain separate work.
 
-Пример с абзацем и заголовком использует ту же замену от конца `Alpha ` до конца `Be`:
+The same selection from after `Alpha ` to after `Be` works with a paragraph and heading:
 
 ```html
-<!-- До -->
+<!-- Before -->
 <ul><li><p style="text-align:center">Alpha <strong>one</strong></p></li><li><h3 style="text-align:right"><em>Beta</em> tail</h3><ul><li>Nested keep</li></ul></li></ul>
-<!-- После editor.insertHTML('<u>X</u>') -->
+<!-- After editor.insertHTML('<u>X</u>') -->
 <ul><li><p style="text-align:center">Alpha <u>X</u><em>ta</em> tail</p><ul><li>Nested keep</li></ul></li></ul>
 ```
 
-Границы на самом `li` между блочными телами нормализуются к соседнему телу: начало выделения — к следующему, конец — к предыдущему. Перед первым и после последнего тела используются внешние границы тела; диапазон не должен входить во вложенную ветку. Это рабочая нормализация диапазона; undo возвращает исходные DOM-координаты и направление выделения.
+Endpoints on `li` between block bodies normalize to an adjacent body: range starts prefer the next body, range ends prefer the previous body. Before the first and after the last body they use outer body boundaries; the range must not enter a nested branch. This is a working-range normalization; undo restores the original DOM coordinates and selection direction.
 
-В одном пункте выделение от конца `Alpha ` до конца `Mid` удаляет покрытые тела, но сохраняет последующий абзац:
+Inside one item, selecting from after `Alpha ` to after `Mid` removes covered bodies but keeps the following paragraph:
 
 ```html
-<!-- До -->
+<!-- Before -->
 <ul><li><p>Alpha <strong>one</strong></p><h2>Middle</h2><p>After body</p></li></ul>
-<!-- После editor.insertHTML('<u>X</u>') -->
+<!-- After editor.insertHTML('<u>X</u>') -->
 <ul><li><p>Alpha <u>X</u>dle</p><p>After body</p></li></ul>
 ```
-Необязательные [чек-листы](/checklists) подключаются отдельным плагином: состояние хранится на одном `li`. `checklists()` включает клик по CSS-маркеру и Ctrl/Cmd+Enter; `checklists({ interactive: false })` оставляет только команды. Пресеты не подключают плагин автоматически, ядро панели не расширяется.
 
-## Форматирование
+Optional [checklists](/checklists) use a separate plugin: state belongs to one `li`. `checklists()` enables CSS-marker clicks and Ctrl/Cmd+Enter; `checklists({ interactive: false })` retains commands only. Presets do not install the plugin automatically, and the core toolbar is unchanged.
 
-Строчное: `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`. Блочное: `header` (1–6 или false), `blockquote`, `code-block`, `list` (`bullet`, `ordered`, false), `align` (`left`, `center`, `right`, `justify`). `color` и `background` принимают CSS-цвет или false. Core-форматы `fontFamily` и `fontSize` используют безопасный CSS codec; настроенные команды и ограничения описаны в [шрифтах](/fonts). `link` принимает URL, `LinkFormat` или false: выделенный фрагмент меняется отдельно, курсор внутри ссылки редактирует всю ссылку. Небезопасные параметры API отклоняются с исключением до изменения документа. Форматирование в позиции курсора создаёт позицию для ввода; сложные случаи на границах форматов требуют дальнейшей браузерной проверки.
+## Formatting
 
-## События и панель
+Inline: `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`. Blocks: `header` (1–6 or false), `blockquote`, `code-block`, `list` (`bullet`, `ordered`, false), `align` (`left`, `center`, `right`, `justify`). `color` and `background` accept a CSS color or false. Core `fontFamily` and `fontSize` formats use the safe CSS codec; configured commands and boundaries are documented under [fonts](/fonts). `link` accepts a URL, `LinkFormat` or false: a selection changes only that fragment; a caret inside a link edits the whole anchor. Unsafe API options throw before document mutation. Collapsed inline formatting establishes a typing position; complex cursor-boundary cases remain part of browser compatibility work.
+
+## Events and toolbar
 
 ```ts
 interface EditorChange {
@@ -270,115 +271,115 @@ interface EditorChange {
 }
 ```
 
-Начальный документ не создаёт событие. Адаптеры подавляют обратное событие внешней замены значения. Сохранение в приложении при необходимости debounce-ится.
+Initial content emits no change. Adapter feedback from external value updates is suppressed. Debounce application persistence as needed.
 
 ```ts
 const dispose = createToolbar(host, editor, [
-  { label: 'Полужирный', text: 'B', format: 'bold' },
-  { label: 'Отменить', text: '↶', run: (instance) => instance.undo(), enabled: (instance) => instance.canUndo() },
+  { label: 'Bold', text: 'B', format: 'bold' },
+  { label: 'Undo', text: '↶', run: (instance) => instance.undo(), enabled: (instance) => instance.canUndo() },
 ]);
 ```
 
-Стандартная панель наследует язык редактора и реагирует на `localechange`. Пользовательские `ToolbarAction.label` сохраняют заданный текст; четвёртый аргумент `{ label }` переопределяет доступное название панели. Она сохраняет закладки DOM, включая пустые пункты, показывает disabled/pressed/mixed состояния и поддерживает навигацию стрелками/Home/End и Escape. `ToolbarAction.enabled(instance)` управляет доступностью команды. Полный набор dropdown/dialog компонентов и аудит доступности ещё впереди.
+The default toolbar inherits editor language and reacts to `localechange`. Custom `ToolbarAction.label` values retain their supplied text; the fourth `{ label }` argument overrides the toolbar accessible name. It preserves DOM bookmarks including empty items, exposes disabled/pressed/mixed states and supports arrow/Home/End/Escape navigation. `ToolbarAction.enabled(instance)` controls command availability. A complete dropdown/dialog system and accessibility audit are future work.
 
-`editor.events.on('localechange', listener)` получает независимый `EditorLocale`; смена языка не вызывает `change` документа и разрешена в read-only/composition, но запрещена внутри document transaction. `localize(state, key, dictionaries)` позволяет необязательным UI и плагинам использовать свои словари без включения их строк в ядро. [Полный контракт и каталог ключей](/localization).
+`editor.events.on('localechange', listener)` receives an independent `EditorLocale`; language changes emit no document `change` and work in read-only/composition, but are rejected inside a document transaction. `localize(state, key, dictionaries)` lets optional UI/plugins own dictionaries without adding their strings to core. [Full contract and key catalog](/localization).
 
-Списки поддерживают вложенность через `format('indent', 1 | -1)`. `format('clear', true)` очищает строчное форматирование выделенного текста. Контракты клавиш, смешанных состояний и примеры — на странице [«Списки и форматирование»](/lists).
+Lists support nesting through `format('indent', 1 | -1)`. `format('clear', true)` removes inline formatting from selected text. See [Lists and formatting](/lists) for keyboard contracts, mixed states and examples.
 
-[Цвета и ссылки: параметры, курсор и ограничения](/styling).
+[Colors and links: parameters, caret behavior and limitations](/styling).
 
-[Изображения и callback загрузки](/images) подключаются отдельным модулем `/plugins/images`.
+[Images and upload callbacks](/images) use the optional `/plugins/images` module.
 
-[Поиск и замена](/search) подключается отдельно через `/plugins/search`; ядро не требует этот модуль.
+[Find and replace](/search) uses the optional `/plugins/search` entry; core does not require it.
 
-[Статистика текста](/statistics) — отдельный `/plugins/statistics` для графем и слов документа/выделения.
+[Text statistics](/statistics) uses `/plugins/statistics` for document/selection grapheme and word counts.
 
-[Markdown shortcuts](/markdown) — необязательный `/plugins/markdown` для преобразований при вводе; загрузка и вставка текста остаются буквальными.
+[Markdown shortcuts](/markdown) uses the optional `/plugins/markdown` entry for typing conversions; imports and pasted text stay literal.
 
-Undo/redo восстанавливает ожидающее оформление у курсора вместе с его позицией. Это внутренняя история: в HTML/JSON дополнительные метаданные не сохраняются. Замена документа и перемещение выделения сбрасывают ожидающее оформление.
+Undo/redo restores pending caret formatting along with its position. This is internal history metadata, not extra HTML/JSON data. External replacement and selection movement clear pending formatting.
 
-[Упоминания и slash-шаблоны](/suggestions): `/plugins/mentions`, `/plugins/slash`, необязательные `/plugins/suggestions` и `/plugins/suggestions.css`. Обычный текст остаётся значением по умолчанию; `mentions({ persistent: true })` включает [сохраняемые редактируемые ссылки с ID](/persistent-mentions).
+[Mentions and slash snippets](/suggestions): `/plugins/mentions`, `/plugins/slash`, optional `/plugins/suggestions` and `/plugins/suggestions.css`. Plain text remains the default; `mentions({ persistent: true })` enables [persistent editable ID references](/persistent-mentions).
 
-Для навигации и удаления целого упоминания включите `atomic: true` вместе с `persistent: true`. Формат ID остаётся прежним; ограничения текстовой подписи и миграция описаны в [атомарных упоминаниях](/atomic-mentions).
+Enable `atomic: true` alongside `persistent: true` for whole-mention navigation and deletion. ID representation stays unchanged; see [atomic mentions](/atomic-mentions) for text-label bounds and migration.
 
-`mentionClipboardCommands(editor)` → `copy(): MentionClipboardData | undefined`, `cut(): MentionClipboardData | undefined`, `paste(input: MentionClipboardInput): boolean`. HTML сохраняет ID, допустимые абзацы/заголовки, соседние пункты одного списка и полностью выбранные допустимые хвостовые ветки, plain text — только подписи с LF между блоками/пунктами/ветками; API использует память вызывающего приложения. [Буфер атомарных упоминаний](/atomic-mention-clipboard) описывает один поток, соседние обычные блоки одного родителя, пункты одного UL/OL и рекурсивные хвостовые ветки, а также структурные диапазоны между уровнями одного обычного дерева без выравнивания частичных путей. Описаны композиция и атомарный отказ для невалидного HTML или несвязанных деревьев/защищённых контейнеров.
+`mentionClipboardCommands(editor)` → `copy(): MentionClipboardData | undefined`, `cut(): MentionClipboardData | undefined`, `paste(input: MentionClipboardInput): boolean`. HTML retains IDs, eligible paragraphs/headings, consecutive items of one list and fully selected supported trailing branches; plain text keeps labels with LF between blocks/items. The API uses application-owned memory. [Atomic mention clipboard](/atomic-mention-clipboard) documents same-flow, ordinary sibling-block and sibling-list-item boundaries, plus different-level structural intervals in one ordinary tree without flattening partial paths. It documents composition and atomic refusal for invalid HTML or unrelated trees/protected containers.
 
-См. [события, взаимодействие плагинов и составные транзакции](/events). Структурные slash-команды описаны [здесь](/suggestions#структурные-slash-команды).
+See [events, plugin cooperation and composable transactions](/events). Structural slash actions are documented [here](/suggestions#structural-slash-commands).
 
-Для расширений, наблюдающих завершённый ввод, см. [подтверждения контролируемого ввода](/events#подтверждения-контролируемого-ввода): `EditorInputCommit` охватывает только проверенные контролируемые пути Enter/clipboard, а не любой ввод или отменяемое преобразование. Последующая команда остаётся отдельной операцией истории.
-
-
-Необязательная команда [разделителя](/horizontal-rule) доступна через `/plugins/horizontal-rule`: один корневой абзац/заголовок, редактируемый остаток и один Undo. Standard/extended подключают её и кнопку готовой панели по умолчанию; `horizontalRule: false` отключает экземпляр.
-
-Необязательный [плагин шрифтов](/fonts) через `/plugins/fonts` задаёт настроенное семейство и px-размер, независимый сброс и фактическое/mixed CSS-состояние. Он подключается явно, не входит в пресеты и не загружает файлы шрифтов.
-
-Необязательные [свойства списка](/list-properties) через `/plugins/list-properties` меняют start/reversed/marker всего одного текущего контейнера с Undo. Подключаются явно, не входят в пресеты и не пересчитывают продолженную нумерацию.
-
-Необязательное [направление текста LTR/RTL](/text-direction) через `/plugins/text-direction` меняет явный dir ближайшего обычного блока или соседних блоков с общим родителем/ячейкой. Reset наследует окружение, а не включает LTR; пресеты и ready toolbar не подключают плагин автоматически.
-
-Необязательная [контекстная панель выделения](/contextual-toolbar) использует независимый `/ui/contextual`. `getFormats(range?)` читает сохранённый текущий Range без смены Selection/фокуса; без аргумента сохраняется прежнее поведение. Custom readers shell получают копию диапазона вторым аргументом, команды по-прежнему проверяют фактическую цель.
-
-Для курсора или текстового диапазона целиком внутри одной обычной ссылки есть отдельные [контекстные действия ссылки](/contextual-links): `/ui/contextual-link`, явные core/forms/contextual-link CSS, безопасное открытие и изменение/удаление всей ссылки с Undo. При совместном подключении этот модуль имеет приоритет над текстовой контекстной панелью для подходящего диапазона; чистый текст без ссылок сохраняет текстовую панель. Смешанный диапазон внутри одного потока получает применение/удаление только выделенной части без Open. Пресеты этот UI не подключают.
+For post-input extension observers, see [controlled input commit receipts](/events#controlled-input-commit-receipts): `EditorInputCommit` covers only validated controlled Enter/clipboard paths, not arbitrary input or a cancellable transform. Follow-up commands remain separate history operations.
 
 
-Явные [контекстные свойства изображения](/contextual-images) используют `/ui/contextual-image`, плагин images, точный Range узла IMG и существующие update/remove с историей. Форма изображения получает `mode?: ImageFormMode` (`all` по умолчанию; `edit` исключает вставку/загрузку и направляет Enter в обновление). Также поддержаны Range всей простой figure и каретка её обычной подписи: положение панели следует IMG, Escape возвращает исходный Range. Ссылки/code в подписи и развёрнутая подпись исключены.
+The optional [horizontal-rule command](/horizontal-rule) is available through `/plugins/horizontal-rule`: one root paragraph/heading, an editable suffix and one Undo step. Standard/extended install it and its ready toolbar button by default; `horizontalRule: false` omits the instance.
 
-## Контекстные действия таблиц
+The optional [font plugin](/fonts), through `/plugins/fonts`, provides configured family/px-size commands, independent resets and actual/mixed CSS state. It is explicitly installed, excluded from preset defaults and loads no font files.
 
-Явно подключаемая [контекстная панель таблиц](/contextual-tables) добавляет вставку/удаление строк и столбцов, merge/split поверх существующей логической сетки, восстановление native Range и один шаг Undo на команду. Подключите `/ui/contextual-table` и его CSS вместе с `tables()` и CSS таблиц; пресеты не меняются. `getTableSelection(editor, range?)` возвращает наблюдаемый `TableSelectionState`, `registerSelectionHost(host)` задаёт владение внешними контролами, а `tableSelectionChange` — типизированное уведомление экземпляра, не RPC. Гайд описывает spans, недоступные действия, клавиатуру/lifecycle и отдельные gzip-бюджеты.
+Optional [list properties](/list-properties), through `/plugins/list-properties`, change start/reversed/marker on one whole current container with Undo. They are explicitly installed, excluded from preset defaults and do not recalculate continued numbering.
 
+Optional [LTR/RTL text direction](/text-direction), through `/plugins/text-direction`, changes explicit dir on the closest ordinary block or siblings sharing a parent/cell. Reset inherits surrounding direction rather than forcing LTR; presets and ready toolbar do not install it automatically.
 
-Необязательный [выбор размера таблицы](/table-picker) подключается явным импортом фабрики и CSS; [вставка изображения из буфера/drop](/image-input) использует callback загрузки приложения. Пресеты автоматически их не включают.
+The optional [contextual selection toolbar](/contextual-toolbar) uses the independent `/ui/contextual` entry. `getFormats(range?)` projects a remembered current Range without moving Selection/focus; omission retains existing behavior. Shell custom readers receive a cloned range as their second argument, while commands still validate the actual target.
 
-
-[Свойства таблиц и ячеек](/table-properties) подключаются отдельными `/plugins/table-properties` и `/ui/table-properties`: ширина/расположение таблицы, фон/цвет границ/вертикальное выравнивание выбранных ячеек. Форма применяет только изменённые поля одним Undo, использует существующий `/ui/forms.css` и не входит в пресеты.
-
-## Наблюдение за диапазонами поиска
-
-`getSearchRanges(editor)` из `/plugins/search` возвращает `{ ranges, current }`: свежие native Range, построенные по актуальному индексу поиска. Метод не меняет фокус/выделение/историю; изменение возвращённого Range не меняет приватный индекс и не даёт командной авторизации. Снимки могут устареть после редактирования. Для визуальной подсветки всех совпадений подключается [отдельный необязательный UI](/search-highlights).
-
-## Спецсимволы
-
-`createSpecialCharacterUI(host, editor, options?)` из `/ui/special-characters` создаёт [необязательную панель символов](/special-characters) с поиском и клавиатурой. Отдельный `/ui/special-characters.css` подключается явно. Опции `label`, `characters?: readonly SpecialCharacter[]` и `onError` задают имя, свой ограниченный каталог `{ id, text, label }` и диагностику. Контроллер предоставляет `element`, `refresh()` и `destroy()`. Вставка — обычный текст через существующее ядро с одним Undo; дополнительный плагин, изменение схемы и автоматическое включение в пресеты не требуются.
-
-## Полноэкранный режим
-
-`createFullscreenUI(host, editor, { target, label?, onChange?, onError? })` из `/ui/fullscreen` создаёт [независимую кнопку разворачивания рабочей области](/fullscreen); `/ui/fullscreen.css` подключается явно. `target` — существующий подключённый HTML-контейнер редактора, панели и host кнопки. Контроллер предоставляет `element`, `enter()`, `exit()`, `toggle()`, `isActive()`, `refresh()` и `destroy()`. CSS-режим не переносит DOM, не меняет документ/историю и не скрывает интерфейс браузера.
-
-## Предпросмотр для чтения
-
-`createPreviewUI(host, editor, options?)` из `/ui/preview` предоставляет `element`, `open/close/toggle`, `isOpen`, `refresh` и `destroy`. CSS подключается через `/ui/preview.css`; `live` по умолчанию true, `images` — `'omit'`. [Руководство](/preview) описывает неактивные ссылки, явное разрешение запросов изображений и lifecycle без изменения редактора/истории.
-
-## Состояние сохранения приложения
-
-`saveState({ save, autoSave?, debounceMs?, onError? })` из `/plugins/save-state` отслеживает подтверждение локальных версий callback'ом приложения. `saveStateCommands(editor)` предоставляет `getState`, `save`, `retry`, `markSaved` и немедленную `subscribe`. [Руководство](/save-state) объясняет отмену, новые правки, базу внешнего value и ответственность сервера. Необязательный `/ui/save-state` и его CSS добавляют локализованные Save/Retry/status-контролы.
-
-## Дополнение email и текст ячеек
-
-`autolink({ email: true })` явно включает консервативные ASCII email-адреса после Space, контролируемого Enter и вставки одного plain-text токена. По умолчанию `email: false`; нет HTML/многострочного дополнения и сетевой проверки. [Контракт, история и ограничения](/autolink#email-явная-опция).
-
-`tablePropertyCommands(editor).update({ cellTextAlign: 'right', cellDirection: 'rtl' })` меняет выбранные фактические TD/TH одним Undo. Экспортируются `TableCellTextAlign` (`left | center | right | justify`) и `TableCellDirection` (`ltr | rtl`); `false` снимает собственное значение, состояние также допускает `'mixed'`. Дочерние явные стили сохраняются. [Форма, наследование и clipboard](/table-properties#выравнивание-и-направление-текста-ячеек).
+A caret or text range wholly inside one ordinary link can use separate [contextual link actions](/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open and whole-link editing/unlinking with Undo. When both are mounted, this module takes priority over the contextual text toolbar for an eligible range; pure unlinked text retains text formatting. An eligible mixed single-flow linked range offers selected-part Apply/Remove without Open. Presets do not install this UI.
 
 
-## Печать и оглавление
+Explicit [contextual image properties](/contextual-images) use `/ui/contextual-image` with the images plugin, an exact IMG node Range and existing update/remove history. The reused image form adds `mode?: ImageFormMode` (`all` by default, `edit` excludes Insert/upload and makes Enter update). Whole simple-figure Ranges and ordinary caption carets are also supported: placement follows IMG and Escape restores the original Range. Caption links/code and expanded caption ranges are excluded.
 
-`createPrintUI(host, editor, options?)` из `/ui/print` предоставляет `element`, `print(): boolean`, `cancel()`, `isPrinting()` и `destroy()`. Обязательный `/ui/print.css` включает безопасное отделение печатного снимка от приложения; без CSS печать отклоняется. Изображения и пользовательские гарнитуры не загружаются снимком. `true` означает принятие запроса, а не результат системного диалога. [Руководство](/print) описывает владение одним сеансом на документ и очистку.
+## Contextual table actions
 
-`createOutlineUI(host, editor, { label?, maxHeadings?, onError? })` из `/ui/outline` предоставляет `element`, `refresh()` и `destroy()`. `/ui/outline.css` подключается отдельно. Обычные заголовки показаны в порядке документа, без сохраняемых IDs; кнопка меняет курсор/прокрутку, сохраняя содержимое и историю. Read-only разрешает обе возможности. [Руководство](/outline) описывает лимит 1–500, исключённые узлы и проверку актуальности перехода.
-
-## Перетаскивание текста
-
-`textDrop({ enabled?, onError? })` и `textDropCommands(editor)` из `/plugins/text-drop` подключают ограниченный rich-text drag/drop отдельно от пресетов. Команды `getState()` и `setEnabled(boolean)` управляют предпочтением; фактические изменения запрещены в read-only/composition. Внутренний перенос или копирование сохраняют оформление и один Undo; внешний inline HTML/plain text всегда копируется. Файлы и структурные/semantic-источники не присваиваются этому плагину. CSS не нужен. [Контракт и пример](/text-drop) описывают лимит 20 000 UTF-16 единиц и проверку актуальности источника/цели.
+The explicit [contextual table toolbar](/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions and independent gzip budgets.
 
 
-## Буквальный ввод в курсор
+Optional [table size picker](/table-picker) uses an explicit factory and CSS import; [image clipboard/drop input](/image-input) delegates to the application-owned images upload callback. Neither changes preset defaults.
 
-`editor.insertTextAtCaret(text): boolean` вставляет до 20000 UTF-16 единиц как
-текст, сохраняя ожидающее форматирование и обычную группировку истории ввода.
-CR нормализуется в LF; HTML не интерпретируется, новые абзацы не создаются.
-Нужен collapsed native caret в поддерживаемом обычном inline-потоке; выделение,
-корневой gap, PRE и semantic/noneditable owner не принимаются. Read-only,
-composition и устаревшая после focus цель дают false. Некорректный payload
-отклоняется; уничтоженный редактор сохраняет общий контракт lifecycle-ошибки.
-Это типизированная операция для плагинов, включая границу терминального атома,
-а не разрешение подделывать input-события или менять защищённые узлы.
+
+[Table and cell properties](/table-properties) use independent `/plugins/table-properties` and `/ui/table-properties` entries: table width/placement and selected-cell background/border color/vertical alignment. The form applies only dirty fields in one Undo, uses existing `/ui/forms.css`, and is outside preset defaults.
+
+## Observing search ranges
+
+`getSearchRanges(editor)` from `/plugins/search` returns `{ ranges, current }`: fresh native ranges built from the current search index. It changes no focus/selection/history; modifying a returned range cannot modify the private index and confers no command authority. Snapshots can become stale after edits. An [independent optional UI](/search-highlights) paints every match.
+
+## Special characters
+
+`createSpecialCharacterUI(host, editor, options?)` from `/ui/special-characters` creates an [optional searchable character panel](/special-characters) with keyboard navigation. Import `/ui/special-characters.css` explicitly. Options `label`, `characters?: readonly SpecialCharacter[]` and `onError` configure the group name, a bounded custom catalog `{ id, text, label }` and diagnostics. The controller exposes `element`, `refresh()` and `destroy()`. Insertion is ordinary text through existing core operations with one Undo; it requires no additional plugin, schema change or automatic preset installation.
+
+## Fullscreen workspace
+
+`createFullscreenUI(host, editor, { target, label?, onChange?, onError? })` from `/ui/fullscreen` creates an [independent workspace toggle](/fullscreen); import `/ui/fullscreen.css` explicitly. `target` is the existing connected HTML wrapper for editor, toolbar and button host. The controller exposes `element`, `enter()`, `exit()`, `toggle()`, `isActive()`, `refresh()` and `destroy()`. This CSS mode keeps DOM nodes and document/history intact and does not hide browser chrome.
+
+## Read-only preview
+
+`createPreviewUI(host, editor, options?)` from `/ui/preview` exposes `element`, `open/close/toggle`, `isOpen`, `refresh` and `destroy`. Its explicit CSS is `/ui/preview.css`; `live` defaults true and `images` defaults `'omit'`. [The guide](/preview) explains inert links, opt-in image requests and lifecycle without editor/history changes.
+
+## Application-owned save state
+
+`saveState({ save, autoSave?, debounceMs?, onError? })` from `/plugins/save-state` tracks local revision acknowledgement through an application callback. `saveStateCommands(editor)` exposes `getState`, `save`, `retry`, `markSaved`, and immediate `subscribe`. [The guide](/save-state) covers cancellation, newer edits, external value baselines and server responsibilities. Optional `/ui/save-state` and its CSS provide localized native Save/Retry/status controls.
+
+## Email completion and cell text
+
+`autolink({ email: true })` explicitly enables conservative ASCII email addresses after Space, controlled Enter and one plain-text clipboard token. Default is `email: false`; HTML/multiline completion and network checks are absent. [Contract, history and limits](/autolink#email-explicit-opt-in).
+
+`tablePropertyCommands(editor).update({ cellTextAlign: 'right', cellDirection: 'rtl' })` updates selected actual TD/TH in one Undo step. Public types are `TableCellTextAlign` (`left | center | right | justify`) and `TableCellDirection` (`ltr | rtl`); `false` resets an own value, and state also allows `'mixed'`. Explicit descendant formatting is preserved. [Form, inheritance and clipboard](/table-properties#cell-text-alignment-and-direction).
+
+
+## Print and outline
+
+`createPrintUI(host, editor, options?)` from `/ui/print` exposes `element`, `print(): boolean`, `cancel()`, `isPrinting()` and `destroy()`. Required `/ui/print.css` separates the print snapshot from the application; printing is refused without CSS. The snapshot loads neither images nor custom font families. A `true` result accepts a request, rather than proving a system-dialog outcome. The [guide](/print) explains document-wide session ownership and cleanup.
+
+`createOutlineUI(host, editor, { label?, maxHeadings?, onError? })` from `/ui/outline` exposes `element`, `refresh()` and `destroy()`, with separate `/ui/outline.css`. Ordinary headings appear in document order without persisted IDs; a button changes caret/scroll while preserving content and history. Read-only allows both modules. The [guide](/outline) explains the 1–500 limit, excluded owners and stale-navigation checks.
+
+## Text drag and drop
+
+`textDrop({ enabled?, onError? })` and `textDropCommands(editor)` from `/plugins/text-drop` install bounded rich-text drag/drop separately from presets. `getState()` and `setEnabled(boolean)` manage the preference; actual edits remain blocked read-only/during composition. Internal moves/copies retain formatting and one Undo; external inline HTML/plain text always copies. Files and structural/semantic sources are outside this plugin's ownership. No CSS is required. The [contract and example](/text-drop) explain the 20,000 UTF-16-unit bound and source/target freshness checks.
+
+
+## Literal caret input
+
+`editor.insertTextAtCaret(text): boolean` inserts up to 20000 UTF-16 units as
+literal text, preserving pending formats and normal typing-history grouping.
+CR normalizes to LF; HTML is not interpreted and no paragraph structure is added.
+It requires a collapsed native caret in a supported ordinary inline flow; expanded
+ranges, root gaps, PRE and semantic/noneditable owners refuse. Read-only,
+composition and stale focus-time targets return false. Invalid payloads reject;
+destroyed editors retain the normal lifecycle-error contract. This typed plugin
+operation supports terminal-atom boundaries without fabricated input events or
+permission to edit protected nodes.

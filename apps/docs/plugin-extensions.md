@@ -2,15 +2,15 @@
 import PluginExtensionsExample from './.vitepress/theme/PluginExtensionsExample.vue';
 </script>
 
-# Узлы, атомы, представления и decorations
+# Nodes, atoms, views and decorations
 
-Необязательный `@morfira-dev/wysiwyg/sdk` объединяет инструменты для расширений приложения. Он не входит в ядро и готовые пресеты автоматически, не требует framework runtime и не меняет версию сохраняемой схемы.
+The optional `@morfira-dev/wysiwyg/sdk` provides application extension tools. Core and ready presets do not import it automatically. It adds no framework runtime and does not change the persisted schema version.
 
 <PluginExtensionsExample />
 
-## Пользовательские узлы
+## Application-owned nodes
 
-`nodeExtension(spec, options)` регистрирует собственную семантику поверх разрешённых элементов схемы v1. `nodeCommands(editor, name)` возвращает `insert(text, attributes)`, `update(target, attributes, text?)` и `remove(target)`. Атрибуты и буквальный текст проходят кодек экземпляра до изменения документа; команды участвуют в истории и соблюдают read-only/composition.
+`nodeExtension(spec, options)` registers semantic nodes using existing safe schema-v1 wrappers. `nodeCommands(editor, name)` exposes `insert(text, attributes)`, `update(target, attributes, text?)` and `remove(target)`. The instance codec validates attributes and literal text before editing; commands participate in history and honor read-only/composition.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -29,25 +29,25 @@ const issues = nodeCommands(editor, 'app:issue');
 issues.insert('ISSUE-42', { 'data-id': '42' });
 ```
 
-Это не разрешение на произвольные теги, `iframe`, обработчики событий, стили или foreign namespaces. Схема проверяет данные, а регистрация плагинов и исполняемые callbacks остаются доверенным кодом приложения. ID узла не заменяет серверную авторизацию.
+This does not permit arbitrary tags, iframes, event attributes, styles or foreign namespaces. The schema validates data; plugin registration and executable callbacks remain trusted application code. Node IDs do not establish backend authorization.
 
-## Атомарные узлы
+## Atomic nodes
 
-`atomic: true` предназначен для inline `span` с непустым ограниченным однострочным текстом. Навигация и Backspace/Delete обрабатывают токен целиком в поддержанном обычном текстовом потоке. HTML/JSON сохраняют семантический маркер и атрибуты; runtime `contenteditable=false` не сохраняется. Зарегистрированная схема нужна и принимающему редактору.
+`atomic: true` supports inline spans with bounded, nonempty, single-line literal text. Navigation and Backspace/Delete treat the token as a unit within a supported ordinary text flow. HTML/JSON retain semantic identity and attributes; runtime `contenteditable=false` is not persisted. The receiving editor also needs the registered schema.
 
-Операции через неподдержанные структурные границы отказывают, а не превращают список или таблицу в плоский текст. Полноценный выбор произвольных block widgets и визуальная навигация смешанного bidi этим контрактом не заявляются. [Упоминания](/atomic-mentions) сохраняют собственный проверенный контракт; новый SDK не подменяет его.
+Unsupported structural crossings refuse rather than flattening lists or tables. Arbitrary block-widget selection and mixed-bidi visual navigation are not promised. [Atomic mentions](/atomic-mentions) retain their independent tested contract.
 
-## Представления узлов
+## Node views
 
-`createNodeViews(host, editor, { name, create })` создаёт управляемые представления **во внешнем host**, рядом с сохраняемым документом. `create(context)` возвращает `{ element, update?, destroy? }`. Контекст содержит фактический `node`, проверенные `attributes`, `text`, `editor` и наблюдательный `getRect()`.
+`createNodeViews(host, editor, { name, create })` manages views **in an external host**, alongside persisted content. `create(context)` returns `{ element, update?, destroy? }`. Context includes the actual `node`, validated `attributes`, `text`, `editor` and observational `getRect()`.
 
-Каждый фактический узел имеет свой lifecycle. Изменение обновляет контекст, удаление и уничтожение редактора освобождают представление. Host внутри `editor.surface` запрещён. Ошибки callback не должны оставлять частично созданный UI или подписки.
+Each actual target has an owned lifecycle. Changes update context; removal and editor destruction dispose its view. Hosts inside `editor.surface` reject. Callback failures must clean up partially created UI and subscriptions.
 
-Это полезно для карточки, инспектора свойств или собственного UI рядом с узлом. Это **не** произвольный in-document renderer с редактируемым `contentDOM`. HTML представления не попадает в `getHTML()` / `getJSON()`; приложение располагает внешний UI самостоятельно. Изменения данных выполняйте через `nodeCommands` и обычные команды редактора.
+This supports cards, inspectors and custom controls beside a node. It is **not** an arbitrary in-document renderer with editable `contentDOM`. View HTML never enters `getHTML()` / `getJSON()`; applications own placement. Use `nodeCommands` and guarded editor commands to change data.
 
-## Текстовые позиции и транзакции
+## Text positions and transactions
 
-`editor.positions` отслеживает UTF-16-смещения в `surface.textContent`. Пустые блоки, BR и изображения могут иметь одинаковые текстовые смещения; для точных DOM-границ используйте [сохранённое выделение](/plugin-sdk#сохраненное-выделение-для-внешнего-ui).
+`editor.positions` tracks UTF-16 offsets in `surface.textContent`. BR, empty blocks and images can share an offset; use [selection handles](/plugin-sdk#remembered-selections-for-external-ui) for exact native DOM points.
 
 ```ts
 const position = editor.positions.track(6, 1);
@@ -60,29 +60,29 @@ const result = editor.positions.resolve(position); // { index: 8, deleted: false
 editor.positions.release(position);
 ```
 
-- `track(index, association?)`: непрозрачная позиция экземпляра; `-1` остаётся перед вставкой на границе, `1` — после неё.
-- `resolve(handle)`: новая копия `{ index, deleted }` или `undefined` для истёкшей/чужой цели. Удалённая позиция не является актуальной целью команды.
-- `release(handle)`: идемпотентное освобождение.
-- `subscribe(listener)`: уведомления об описанном mapping или инвалидации, с отдельной отпиской.
+- `track(index, association?)`: an opaque per-editor position; `-1` associates before boundary insertion, `1` after it.
+- `resolve(handle)`: a fresh `{ index, deleted }`, or `undefined` for an expired/foreign target. Deleted positions are not live command targets.
+- `release(handle)`: idempotent cleanup.
+- `subscribe(listener)`: mapped/invalidation notifications with an unsubscribe function.
 
-`mapping` — ограниченная последовательность `{ from, to, insert }`: координаты каждого шага относятся к тексту после предыдущего. Результат должен точно совпасть с текстом после транзакции; неверное описание откатывает изменение. План принадлежит внешней транзакции. Поддержанные undo/redo используют обратные/прямые шаги истории.
+A `mapping` is a bounded sequence of `{ from, to, insert }`; each step uses coordinates after preceding steps. Its result must exactly match the transaction's final text. Invalid declarations roll back the edit. The outermost transaction owns the plan. Supported undo/redo use inverse/forward history steps.
 
-Неописанный ввод, замена документа и неподдержанные изменения сбрасывают позиции. Редактор не угадывает соответствие повторяющихся строк и не обещает универсальный structural mapping. Даже форматирование с изменением HTML требует явного пустого `mapping: []`, если приложение берёт ответственность за совместимость текстовых координат. Обычные команды продолжают работать без mapping, но не сохраняют отслеживаемые цели автоматически.
+Undeclared native input, external replacement and unsupported changes expire positions. The editor does not guess identities from repeated strings or promise universal structural mapping. Even formatting that changes HTML needs explicit `mapping: []` when an application asserts text-coordinate compatibility. Ordinary commands still work without mapping but do not automatically preserve tracked targets.
 
-Для runtime-аннотации зарегистрированного текстового атома SDK использует `editor.positions.setPresentation(node, false)`; `undefined` снимает аннотацию. Этот узкий API проверяет один фактический schema-span и учитывает только собственное изменение `contenteditable`. Он не разрешает произвольные атрибуты или обход неизвестных DOM-изменений. Точные selection handles по-прежнему истекают после реального изменения DOM.
+For a registered literal-text atom, the SDK uses `editor.positions.setPresentation(node, false)`; `undefined` removes its annotation. This narrow API validates one actual schema span and accounts only for its own `contenteditable` change. It cannot change arbitrary attributes or hide prior unknown DOM mutations. Exact selection handles still expire after actual DOM changes.
 
 ## Decorations
 
-`createDecorations(editor, { name })` владеет одной записью нативного CSS Highlight registry. `set([{ from, to }])` заменяет подсветки, `getState()` сообщает поддержку и количество, `destroy()` удаляет только собственную запись. Укажите безопасное уникальное имя и стиль:
+`createDecorations(editor, { name })` owns one native CSS Highlight registry entry. `set([{ from, to }])` replaces ranges, `getState()` reports support/count, and `destroy()` removes only its own entry. Choose a safe unique name and provide CSS:
 
 ```css
 ::highlight(app-annotation) { background: #ffdf6e; color: #171717; }
 ```
 
-Диапазоны следуют поддержанным mapping-транзакциям. Истёкшие или удалённые цели удаляются. В неподдержанном браузере состояние `unsupported`: нет тяжёлого fallback или скрытых сохраняемых обёрток. Это диапазонные decorations; произвольные inline widget decorations не входят в этот этап.
+Ranges follow supported mapped transactions. Expired/deleted targets disappear. Unsupported browsers report `unsupported`; there is no heavy fallback or persisted wrapper. This stage provides range decorations, not arbitrary inline widget decorations.
 
-## Очистка и безопасность
+## Cleanup and security
 
-Освобождайте отслеживаемые позиции, уничтожайте decorations и node views при unmount. Не переносите handles между редакторами и не сохраняйте их в backend. View callbacks не sandbox: не вставляйте непроверенный HTML и не запускайте недоверенный код. Фронтенд-проверки не заменяют проверку данных, загрузок и доступа на сервере.
+Release tracked positions and destroy decorations/node views on unmount. Never transfer handles between editors or persist them in backend storage. View callbacks are not sandboxed: do not insert untrusted HTML or execute untrusted code. Frontend checks do not replace backend data, upload or authorization validation.
 
-Фактические результаты запусков приведены в [проверках](/testing). Наличие API и примера само по себе не означает полного покрытия устройств, accessibility или Office-совместимости.
+Executed results are recorded in [testing](/testing). APIs and examples alone do not establish complete device coverage, accessibility or Office compatibility.

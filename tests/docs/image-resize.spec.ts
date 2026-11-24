@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`proportional image drafts, one-step Update and Undo in ${english ? 'English playground' : 'Russian homepage'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByLabel(t('Пример документа', 'Document sample'), { exact: true }).selectOption('images');

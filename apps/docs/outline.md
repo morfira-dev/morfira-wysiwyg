@@ -1,10 +1,10 @@
-# Оглавление документа
+# Document outline
 
-`createOutlineUI` показывает обычные заголовки `h1`–`h6` в порядке документа и переводит курсор к выбранному заголовку. Оно помогает ориентироваться в длинном тексте без добавления IDs, якорей или новых сохраняемых узлов. На главной и в [демо](/playground) откройте «Печать и оглавление» и загрузите пример чтения.
+`createOutlineUI` lists ordinary `h1`–`h6` headings in document order and moves the caret to the chosen heading. It helps navigate long text without adding IDs, anchors or persisted nodes. On the homepage and [playground](/playground), open “Print and outline” and load the reading sample.
 
-Это отдельный UI-модуль, вне core и пресетов. Список наблюдает реальные заголовки текущего редактора; он не является SDK отображаемых позиций или автоматической нумерацией разделов.
+This is an independent UI module outside core and presets. The list observes actual headings in the current editor; it is not a mapped-position SDK or automatic section numbering.
 
-## Подключение
+## Setup
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -13,8 +13,8 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/outline.css';
 
 const editor = createEditor(editorHost, {
-  locale: 'ru',
-  value: '<h2>План</h2><p>Обзор</p><h3>Детали</h3><p>Текст</p>',
+  locale: 'en',
+  value: '<h2>Plan</h2><p>Overview</p><h3>Details</h3><p>Text</p>',
 });
 const outline = createOutlineUI(outlineHost, editor, {
   maxHeadings: 100,
@@ -22,35 +22,35 @@ const outline = createOutlineUI(outlineHost, editor, {
 });
 ```
 
-`outlineHost` — пустой подключённый HTML-контейнер того же документа вне содержимого редактора. Разместите его в боковой панели или рядом с документом. CSS подключается отдельно и использует scoped `--mw-*`-тему без загрузки шрифтов.
+`outlineHost` is an empty connected HTML host in the same document, outside editor content. Place it in a sidebar or alongside the document. CSS is separate and uses scoped `--mw-*` theming without loading fonts.
 
-## API и обновление
+## API and updates
 
-| Опция | Поведение |
+| Option | Behavior |
 | --- | --- |
-| `label?: string` | Доступное имя навигации; до 160 символов без управляющих кодов |
-| `maxHeadings?: number` | Целое 1–500, по умолчанию 100 |
-| `onError?: (error: unknown) => void` | Диагностика приложения; произвольный текст ошибки не выводится |
+| `label?: string` | Accessible navigation name, up to 160 characters without control codes |
+| `maxHeadings?: number` | Integer 1–500, default 100 |
+| `onError?: (error: unknown) => void` | Application diagnostics; arbitrary error text is not displayed |
 
-`OutlineUIController` предоставляет `element`, `refresh()` и идемпотентный `destroy()`. После уничтожения `refresh()` отклоняется. Экспортируются `OutlineUIOptions`, `OutlineUIMessageKey` и `outlineUIMessages`.
+`OutlineUIController` exposes `element`, `refresh()` and idempotent `destroy()`. `refresh()` rejects after disposal. The entry also exports `OutlineUIOptions`, `OutlineUIMessageKey` and `outlineUIMessages`.
 
-Оглавление создаётся при подключении и обновляется после зафиксированных изменений, внешней замены значения, Undo/Redo и смены языка. Несколько изменений объединяются в один animation frame. Полный JSON документа на каждое нажатие не снимается. `refresh()` позволяет приложению явно обновить вид.
+The outline initializes on creation and follows committed changes, external value replacement, Undo/Redo and locale changes. Multiple changes coalesce into one animation frame. It does not capture complete document JSON on every keystroke. Applications can explicitly update the view with `refresh()`.
 
-## Какие заголовки видны
+## Included headings
 
-Поддержаны обычные заголовки, включая заголовки внутри поддержанных списков, цитат и ячеек таблицы. Semantic-заголовки и защищённые semantic-предки, `pre/code`, `figure/figcaption` исключены: приложение может иметь собственную политику для таких узлов.
+Ordinary headings are supported, including headings in supported lists, quotes and table cells. Semantic headings and protected semantic ancestors, `pre/code` and `figure/figcaption` are excluded; applications may supply a separate policy for their custom nodes.
 
-Подпись — буквальный текст, без копирования HTML. Пустой заголовок получает локализованное имя; длинная подпись ограничена 300 кодовыми единицами с многоточием. Если заголовков больше лимита, вид показывает ограниченный список и сообщает о сокращении. Лимит не удаляет заголовки из документа.
+Labels are literal text, never copied HTML. Empty headings receive a localized label; long labels are bounded to 300 code units with an ellipsis. When heading count exceeds the limit, the view lists the bounded entries and reports truncation. The limit does not remove headings from the document.
 
-Список использует обычные кнопки и показывает уровень заголовка. Tab переводит фокус между кнопками, Enter/Space выполняют переход. Это не ARIA tree-widget. `aria-current` может отмечать заголовок, содержащий текущий курсор; выделение через разные заголовки не заявляет один активный раздел.
+The list uses native buttons and shows heading level. Tab visits buttons, Enter/Space activate navigation. This is not an ARIA tree widget. `aria-current` may mark the heading containing the current caret; a selection spanning multiple headings does not claim one active section.
 
-## Навигация и безопасность
+## Navigation and safety
 
-Переход намеренно меняет фокус, выделение и прокрутку. Он устанавливает нативный свернутый Range в начале того же реального заголовка, без изменения содержимого, текущих форматов или истории. Read-only разрешает навигацию.
+Navigation intentionally changes focus, selection and scrolling. It sets a native collapsed Range at the beginning of the same actual heading without changing content, pending formats or history. Read-only permits navigation.
 
-Кнопка привязана к конкретному узлу и версии вида, а не к сохранённому числовому offset или совпадающей строке. Если callback фокуса заменит документ, уничтожит UI или удалит заголовок, устаревший переход не выбирает новый узел с похожим текстом. Заголовок прокручивается без плавной анимации. Полная проверка screen readers и мобильных устройств отдельно не заявляется.
+A button owns a concrete node and view generation, not a saved numeric offset or matching text. If a focus callback replaces content, destroys UI or removes the heading, stale navigation cannot select another node with a similar label. Scrolling uses no smooth animation. Complete screen-reader and mobile-device validation is not claimed.
 
-## Жизненный цикл
+## Lifecycle
 
 ```ts
 outline.refresh();
@@ -58,6 +58,6 @@ outline.destroy();
 editor.destroy();
 ```
 
-Каждый экземпляр владеет только своими контролами, ссылками на узлы, событиями и отложенным кадром. Уничтожение редактора освобождает оглавление. Отключённые/перенесённые в другой документ host и сохранённые устаревшие кнопки не получают права навигации. Отслеживаются пути удаления владельца, а не всё поддерево документа.
+Each instance owns its controls, retained node references, events and queued frame. Editor destruction releases the outline. Detached/adopted hosts and retained stale buttons do not gain navigation authority. Ownership observation follows removal paths rather than the whole document subtree.
 
-Результаты целевых проверок Chromium/Firefox/WebKit, RU/EN-демо, размеров и публичных импортов фиксируются отдельно; пример не означает полную проверку всех структур редактора.
+Actual Chromium/Firefox/WebKit regressions, RU/EN demo results, sizes and public imports are recorded separately; an example does not prove every editor structure has been tested.

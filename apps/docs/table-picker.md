@@ -1,8 +1,8 @@
-# Выбор размера таблицы
+# Table size picker
 
-На [главной](/#editor) и в [playground](/playground) откройте кнопку таблицы в панели форматирования. Наведение или фокус меняют только предпросмотр; нажатие вставляет таблицу одним шагом Undo. Быстрая сетка ограничена **8 × 8**. Числовые поля рядом по-прежнему позволяют задать **1–100** строк и столбцов.
+On the [homepage](/#editor) and [playground](/playground), open the Table toolbar button. Hover or focus changes only the preview; activation inserts a table with one Undo step. The quick matrix is bounded to **8 × 8**. The numeric fields still support **1–100** rows and columns.
 
-## Подключение готовой панели
+## Ready toolbar integration
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -19,26 +19,26 @@ const editor = createEditor(editorHost, createStandardPreset());
 const ui = createStandardEditorUI(toolbarHost, editor, {
   table: { picker: createTablePicker },
 });
-// При размонтировании сначала ui.destroy(), затем editor.destroy().
+// On unmount, call ui.destroy() before editor.destroy().
 ```
 
-Пресет устанавливает поведение таблиц; отдельная фабрика добавляет только выбор размера. Без `table.picker` панель сохраняет прежние поля и кнопку, не загружая реализацию сетки. Runtime-переключатель не удаляет уже импортированный код из бандла.
+The preset installs table behavior; the separately imported factory adds only the size widget. Without `table.picker`, the toolbar retains its existing fields and button without importing the matrix implementation. A runtime switch cannot remove code already imported into the bundle.
 
-## Самостоятельный виджет
+## Standalone widget
 
 ```ts
 import { createLocale } from '@morfira-dev/wysiwyg';
 
 const picker = createTablePicker(emptyHost, {
-  locale: createLocale('ru'), disabled: false, rows: 3, columns: 3,
+  locale: createLocale('en'), disabled: false, rows: 3, columns: 3,
   onSelect: (rows, columns) => console.log(rows, columns),
 });
-picker.refresh({ locale: createLocale('en'), disabled: true });
+picker.refresh({ locale: createLocale('ru'), disabled: true });
 picker.destroy();
 ```
 
-Виджет возвращает `element`, `refresh(state)` и идемпотентный `destroy()`. Он не изменяет редактор и не вызывает команды таблиц самостоятельно. Начальные размеры — целые 1–100; для значений больше восьми ограничивается только предпросмотр. `refresh` меняет язык и disabled, сохраняя текущий предпросмотр. Host должен быть пустым. Обработчик приложения отвечает за сохранение выделения и проверку команды; готовая панель делает это сама.
+The controller returns `element`, `refresh(state)` and idempotent `destroy()`. It never edits an editor or invokes table commands itself. Initial dimensions are integers from 1–100; values above eight clamp only the preview. Refresh changes locale and disabled state while preserving that preview. The host must be empty. Standalone application code owns selection restoration and command validation; the ready toolbar handles both.
 
-Стрелки перемещают фокус без перехода через край. Home/End выбирают край строки, Ctrl/Meta+Home/End — край матрицы; Enter/Space подтверждают. Tab выходит из единственной точки табуляции, Escape закрывает содержащую панель. Это группа обычных кнопок без focus trap, не ARIA grid. Во время IME выбор не подтверждается. Read-only, внешняя замена документа и уничтожение панели не позволяют устаревшему callback вставить таблицу.
+Arrow keys move without wrapping. Home/End select a row edge; Ctrl/Meta+Home/End select a matrix edge. Enter/Space confirm. Tab leaves its single tab stop; Escape closes the containing panel. This is a group of native buttons without a focus trap, not an ARIA grid. IME keys do not confirm. Read-only, external document replacement and panel destruction prevent a stale callback from inserting a table.
 
-Имена кнопок и status локализованы через `EditorLocale` и экспортируемый `tablePickerMessages`; переопределения `ui.tablePicker.label` и `ui.tablePicker.insert` выводятся как текст. Отдельный CSS использует `.mw-table-picker*` и `--mw-*` переменные. Импорт не обращается к DOM; оформление и поведение таблиц подключаются отдельно. Объединения и проверка вложенных таблиц остаются контрактом [табличных команд](/plugins).
+Button names and status use `EditorLocale` and the exported `tablePickerMessages` catalog. Overrides for `ui.tablePicker.label` and `ui.tablePicker.insert` render as text. Separate CSS uses `.mw-table-picker*` selectors and `--mw-*` variables. Importing the module does not access the DOM; table styling and behavior remain separate. Merged cells and nested-table rejection retain the [table command contract](/plugins).

@@ -1,10 +1,10 @@
-# Спецсимволы
+# Special characters
 
-`createSpecialCharacterUI` — отдельная панель для вставки типографских, математических и валютных символов: ©, ™, €, ± и других. В ней есть поиск, клавиатурная навигация и локализованные названия. Символ вставляется как обычный текст через существующие операции редактора: отдельного типа узла, HTML-виджета или служебной разметки в документе нет.
+`createSpecialCharacterUI` is a separate panel for typographic, mathematical and currency symbols such as ©, ™, €, and ±. It provides search, keyboard navigation and localized names. Insertion uses ordinary text through existing editor operations: no new node type, HTML widget or service markup is stored in the document.
 
-Модуль необязателен и не включается в core или пресеты автоматически. На главной и в [демо](/playground) откройте «Спецсимволы»: пример выделяет слово «сумма», которое можно заменить на € одним действием. Текущие результаты проверок и размеры фиксируются отдельно; наличие примера не означает проверку всех устройств или средств доступности.
+The module is optional and is not installed by core or presets. On the homepage and in the [playground](/playground), open “Special characters”: the sample selects “amount” so one activation can replace it with €. Executed validation and measured sizes are recorded separately; a working example does not establish coverage of every device or accessibility tool.
 
-## Подключение
+## Setup
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -13,8 +13,8 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/special-characters.css';
 
 const editor = createEditor(editorHost, {
-  locale: 'ru',
-  value: '<p>Стоимость: </p>',
+  locale: 'en',
+  value: '<p>Price: </p>',
 });
 const panel = createSpecialCharacterUI(characterHost, editor, {
   onError: (error) => console.error(error),
@@ -26,63 +26,63 @@ const dispose = () => {
 };
 ```
 
-`characterHost` должен быть пустым подключённым HTML-элементом из того же документа, вне содержимого редактора. Дополнительный плагин не нужен. JavaScript не импортирует CSS автоматически, а модуль не загружает шрифты и не добавляет runtime-зависимости.
+`characterHost` must be an empty connected HTML element in the editor's document, outside its content. No additional plugin is required. JavaScript does not import CSS automatically; the module loads no fonts and adds no runtime dependencies.
 
 ## API
 
-| Экспорт | Назначение |
+| Export | Purpose |
 | --- | --- |
-| `createSpecialCharacterUI(host, editor, options?)` | Создать панель и подписки её экземпляра |
-| `SpecialCharacter` | Элемент каталога: `id`, `text`, `label` |
-| `SpecialCharacterUIOptions` | Необязательные `label`, `characters`, `onError` |
+| `createSpecialCharacterUI(host, editor, options?)` | Create the panel and its instance-owned subscriptions |
+| `SpecialCharacter` | Catalog item: `id`, `text`, `label` |
+| `SpecialCharacterUIOptions` | Optional `label`, `characters`, `onError` |
 | `SpecialCharacterUIController` | `element`, `refresh()`, `destroy()` |
-| `SpecialCharacterUIMessageKey` | Ключ локализованных сообщений панели |
-| `specialCharacterUIMessages` | Встроенные RU/EN-сообщения |
+| `SpecialCharacterUIMessageKey` | Localized panel message key |
+| `specialCharacterUIMessages` | Built-in RU/EN messages |
 
-`label` задаёт имя группы для приложения. Без `characters` используется небольшой встроенный каталог. `refresh()` обновляет состояние панели по действующему редактору; это не способ назначить устаревшее выделение. `destroy()` идемпотентен и освобождает обработчики, подписки и DOM панели. После уничтожения не используйте контроллер повторно. Уничтожение редактора также очищает принадлежащую ему панель.
+`label` supplies an application-owned group name. Without `characters`, a small built-in catalog is used. `refresh()` updates the panel against its active editor; it does not authorize a stale selection. `destroy()` is idempotent and releases the panel's listeners, subscriptions and DOM. Do not reuse a disposed controller. Destroying the editor also cleans up its owned panel.
 
-## Свой каталог
+## Custom catalog
 
 ```ts
 import { createSpecialCharacterUI } from '@morfira-dev/wysiwyg/ui/special-characters';
 import type { SpecialCharacter } from '@morfira-dev/wysiwyg/ui/special-characters';
 
 const characters: readonly SpecialCharacter[] = [
-  { id: 'euro', text: '€', label: 'Евро' },
-  { id: 'copyright', text: '©', label: 'Авторское право' },
-  { id: 'angle-pair', text: '<>', label: 'Угловые скобки' },
+  { id: 'euro', text: '€', label: 'Euro' },
+  { id: 'copyright', text: '©', label: 'Copyright' },
+  { id: 'angle-pair', text: '<>', label: 'Angle brackets' },
 ];
 const panel = createSpecialCharacterUI(characterHost, editor, { characters });
 ```
 
-Каталог заменяет встроенный и копируется при создании панели. Его последующее изменение приложением не меняет уже созданный экземпляр. Допускается 1–256 элементов с уникальными непустыми ASCII-ID: до 64 символов. Название — непустая строка до 160 UTF-16 единиц; вставляемый текст — до 16 кодовых точек Unicode и 64 UTF-16 единиц. Управляющие символы, переводы строк/абзацев, bidi embedding/override/isolate и одиночные суррогаты отвергаются. Это каталог небольших текстовых символов, не вставка HTML-шаблонов или длинных сниппетов.
+The catalog replaces the built-in one and is copied during setup. Later application changes do not alter an existing instance. Allow 1–256 entries with unique nonempty ASCII IDs, at most 64 characters. Labels must be nonempty strings of at most 160 UTF-16 units; inserted text is bounded to 16 Unicode code points and 64 UTF-16 units. Control characters, line/paragraph separators, bidi embedding/override/isolate controls and unpaired surrogates are rejected. This is a catalog of short textual symbols, not an HTML-template or long-snippet inserter.
 
-Названия своего каталога задаёт приложение; они не переводятся автоматически. В примере `<>` вставляется буквально, без HTML-интерпретации. Для видимого глифа нужен подходящий шрифт приложения: модуль не гарантирует наличие каждого символа в системных шрифтах.
+Custom labels belong to the application and are not translated automatically. The example's `<>` is inserted literally, without HTML interpretation. Displaying a glyph requires a suitable application font; the module does not guarantee every symbol exists in system fonts.
 
-## Выделение, Undo и безопасность
+## Selection, Undo and safety
 
-Выберите текст или установите курсор в поддерживаемом текстовом контексте, затем воспользуйтесь поиском и кнопкой символа. Панель запоминает native Range до перехода фокуса к её контролам. Оба конца выделения должны оставаться в одном обычном текстовом потоке: абзаце/заголовке, теле пункта списка, цитаты или ячейки; строчные стили и ссылки сохраняются. Переход через несколько блоков и прямоугольное выделение ячеек не поддерживаются. Это не общий механизм замены выделенных таблиц, изображений, структурных диапазонов или защищённых семантических узлов; атомарные упоминания нельзя частично заменить через панель.
+Select text or place the caret in a supported text context, then use search and a character button. The panel saves a native Range before focus moves to its controls. Both endpoints must stay in one ordinary text flow: a paragraph/heading, list body, quote or cell; inline marks and links are preserved. Cross-block ranges and rectangular cell selections are unsupported. This is not a general replacement policy for selected tables, images, structural intervals or protected semantic nodes; atomic mentions cannot be partially replaced through this panel.
 
-Одна вставка создаёт один шаг истории и одно пользовательское уведомление. Undo возвращает исходный документ и выделение, включая его направление. Поиск, перемещение по каталогу и обновление языка документ и историю не меняют. Внешняя замена документа лишает старую цель актуальности: перед новой вставкой нужно свежее выделение редактора. Устаревшая кнопка не должна вставлять текст в новый документ или другой экземпляр.
+One insertion creates one history step and one user-change notification. Undo restores the original document and selection, including its direction. Search, catalog navigation and locale refresh never modify the document or history. External document replacement invalidates the remembered target: a fresh editor selection is required before another insertion. A retained stale button cannot insert into replacement content or another instance.
 
-Read-only и IME-композиция блокируют вставку, поиск остаётся наблюдательным действием. Проверки повторяются после восстановления фокуса; обработчик приложения не может подменить документ/выделение и получить вставку по прежней цели. Все имена и символы отображаются как текст, а вставка проходит через валидируемые операции ядра. Это не серверная граница доверия и не сертификация безопасности.
+Read-only and IME composition block insertion while search remains observational. Guards are checked again after restoring focus; application callbacks cannot replace the document/selection and authorize an insertion at the old target. Names and symbols use text rendering, and insertion delegates to validated core operations. This is neither a server trust boundary nor a security certification.
 
-## Клавиатура и локализация
+## Keyboard and localization
 
-Поиск сопоставляет символ, ID и текущее название буквально, без регулярных выражений. Восемь колонок используют roving tabindex: Tab вводит фокус в каталог, стрелки перемещают его, Home/End переходят к краям строки, Ctrl/Meta+Home/End — ко всему отфильтрованному набору. Enter/Space активируют нативную кнопку. Escape возвращает действующее запомненное выделение редактора; устаревшая цель не восстанавливается.
+Search matches the symbol, ID and current label literally, without regular expressions. Eight columns use roving tabindex: Tab enters the catalog, arrows move focus, Home/End reach row edges, and Ctrl/Meta+Home/End reach the entire filtered set's edges. Enter/Space activate the native button. Escape restores a still-valid saved editor selection; it does not revive stale targets.
 
-Встроенные подписи следуют `editor.setLocale('ru' | 'en')` и механизму переводов редактора. Смена языка сохраняет поисковую строку и цель вставки. Оформление использует scoped-переменные `--mw-*`; CSS панели работает без стилей сайта документации. Нативные кнопки и клавиатурные сценарии не заменяют полноценную проверку screen reader, сенсорных устройств и всех сочетаний масштабирования.
+Built-in captions follow `editor.setLocale('ru' | 'en')` and the editor's translation overrides. Locale changes retain the query and insertion target. Appearance uses scoped `--mw-*` variables, and panel CSS works without documentation-site styles. Native controls and keyboard scenarios do not establish full screen-reader, touch-device or arbitrary zoom accessibility.
 
-## Границы размера
+## Size boundaries
 
-Измеряется отдельный `/ui/special-characters` вместе с нужными ему общими помощниками и выбранный профиль `standard-special-characters-ready`; общие чанки учитываются один раз. Это не обещание, что любая комбинация всех необязательных модулей укладывается в профиль standard. Смотрите [архитектуру и вес](/architecture) и [тестирование](/testing) для правил измерения и актуальных проверок.
+Measure `/ui/special-characters` with its selected shared helpers and the separate `standard-special-characters-ready` profile, counting shared chunks once. This does not promise that every combination of optional modules fits the standard profile. See [architecture and size](/architecture) and [testing](/testing) for measurement rules and current validation.
 
-## Модальное окно
+## Dialog presentation
 
-Передайте `presentation: 'dialog'`, чтобы создать закрытое нативное окно, и
-вызывайте `ui.open()` кнопкой приложения. `ui.close()` закрывает его, а
-`ui.isOpen()` сообщает видимость. По умолчанию остаётся встраиваемый режим.
-Перед фокусом поиска сохраняется позиция редактора; вставка закрывает окно и
-возвращает курсор документа. Escape/закрытие не создают историю. Внешняя замена,
-read-only и уничтожение инвалидируют цель. Нужна поддержка нативного dialog;
-полифил не включён. На главной/playground подключён этот режим.
+For an initially closed native dialog, pass `presentation: 'dialog'`, then call
+`ui.open()` from an application button. `ui.close()` dismisses it; `ui.isOpen()`
+reports visibility. Inline stays the default. Open preserves the editor target
+before focusing search; insertion closes the dialog and returns the document
+caret. Escape/Close cancels without history. External replacement, read-only and
+destruction invalidate the target. Native dialog support is required; no polyfill
+is included. The homepage/playground use this mode.

@@ -1,10 +1,10 @@
-# Действия со ссылкой у курсора и в выделении
+# Link actions at the caret and in text selections
 
-На [главной](/#editor) и в [playground](/playground) включён отдельный переключатель **«Действия со ссылкой»**. Загрузи пример в одноимённом разделе и поставь курсор в текст ссылки либо нажми «Выделить часть ссылки» / «Выделить ссылку назад». Появятся адрес и действия **«Открыть ссылку»**, **«Изменить ссылку»**, **«Удалить ссылку»**. Автоматический показ не забирает фокус и не открывает сайт. Кнопки выделения не меняют документ или историю.
+The [homepage](/#editor) and [playground](/playground) enable a separate **Link actions** switch. Load its sample and place the caret inside link text, or use “Select link text” / “Select link text backward”. Its address and **Open link**, **Edit link**, **Remove link** appear. Automatic showing neither takes focus nor opens a website. The selection buttons do not change the document or history.
 
-Курсор, диапазон внутри одной ссылки и смешанный диапазон со ссылками имеют отдельные сценарии. Фактические результаты проверок фиксируются в дорожной карте; исторические результаты не подтверждают новые контексты автоматически.
+Caret, single-anchor text ranges and mixed linked ranges have separate scenarios. Actual runs are tracked in the roadmap; historical results do not automatically validate new contexts.
 
-## Подключение
+## Installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -24,44 +24,42 @@ const dispose = () => {
 };
 ```
 
-Это отдельный необязательный UI, без автоматического подключения пресетами или стандартной панелью. Плагин поведения не нужен: используются существующие команды ссылок и `createLinkForm`. Нет runtime-зависимостей, фреймворка, неявного CSS или сетевых ресурсов. Импорт безопасен при SSR; создание UI требует браузера.
+This independent optional UI is not installed by presets or ready standard UI. No behavior plugin is required: it reuses existing link commands and `createLinkForm`. There are no runtime dependencies, frameworks, implicit CSS or network assets. Imports are SSR-safe; UI creation requires a browser.
 
-`overlayHost` — пустой подключённый HTML-элемент приложения в документе редактора, вне `editor.surface`. Он должен находиться в подходящем слое для фиксированного позиционирования относительно viewport. Предки с transform/filter/perspective, paint containment или обрезкой содержимого не поддержаны. UI не переносит узлы приложения и не создаёт глобальную службу всплывающих панелей.
+`overlayHost` is an empty connected application-owned HTML element in the editor document, outside `editor.surface`. Choose an appropriate viewport overlay layer: transformed/filtered/perspective/paint-contained or clipping ancestors are unsupported. UI neither moves application nodes nor creates a global overlay manager.
 
-Контроллер предоставляет `element`, `refresh()` и идемпотентный `destroy()`. После destroy обновление выбрасывает ошибку; редактор остаётся рабочим. Освобождаются форма, собственные подписки, обработчики и observers, включая незавершённую инициализацию. `label`, `onError` и `gap` — необязательные настройки; `gap` должен быть конечным числом 0–32 CSS px, по умолчанию 8. Экспортируются `ContextualLinkUIOptions`, `ContextualLinkUIController`, `ContextualLinkUIMessageKey` и RU/EN-каталог `contextualLinkUIMessages`.
+The controller provides `element`, `refresh()` and idempotent `destroy()`. Refresh after destroy throws; the editor remains usable. Owned forms, subscriptions, listeners and observers are released, including setup rollback. Options are optional `label`, `onError` and finite `gap` from 0–32 CSS px, default 8. Public exports include `ContextualLinkUIOptions`, `ContextualLinkUIController`, `ContextualLinkUIMessageKey` and RU/EN `contextualLinkUIMessages`.
 
-## Курсор, выделение, действия и история
+## Caret, selection, actions and history
 
-Режим одной ссылки предназначен для **курсора или непустого текстового диапазона целиком внутри одного фактического обычного HTML-anchor**, когда редактор имеет фокус. Можно выделить часть ссылки через разные оформленные дочерние текстовые узлы, в прямом или обратном направлении. Обычный текст без ссылки остаётся у текстовой панели; смешанное выделение текста и нескольких ссылок поддержано в описанном ниже режиме одного потока. Межблочные границы и ссылки только с изображением исключены. Семантические узлы с собственным владельцем и чужие пространства имён исключены: проверяется вся ссылка, включая потомков вне выделенной части, и её предки. Для создания ссылки на обычном тексте используется стандартная форма или [контекстная панель форматирования](/contextual-toolbar).
+Single-anchor mode requires **a caret or nonempty text range wholly inside one actual ordinary HTML anchor**, within the focused editor. A partial range may cross differently formatted text children in either direction. Plain text without a link remains with text formatting; the mixed single-flow profile below supports linked/plain ranges and multiple anchors. Cross-block boundaries and image-only links remain excluded. Owning semantic nodes and foreign namespaces are also excluded: the whole anchor, including descendants outside the selected substring, and its ancestors are checked. Use the standard form or [contextual formatting toolbar](/contextual-toolbar) to create a link on plain text.
 
-**В режиме одной ссылки действия относятся ко всему anchor.** Например, при выделении `orfi` внутри `<a><strong>Mor</strong><em>fira</em></a>` изменение адреса обновляет этот anchor целиком, а удаление снимает всю ссылку. Это не частичное разделение ссылки на несколько фрагментов. Исходный текст, оформление, диапазон и его направление сохраняются; Undo отменяет изменение как одну операцию.
+**Single-anchor actions apply to that whole link.** For example, selecting `orfi` within `<a><strong>Mor</strong><em>fira</em></a>` and changing the URL updates that entire anchor; Remove unlinks it entirely. This does not split a partial selection into separate link fragments. Original text, rich content, selection and direction survive, with one Undo per change.
 
-Если подключены обе контекстные панели, для подходящего диапазона внутри одной ссылки приоритет у действий ссылки: текстовая панель скрывается и не перехватывает Alt+F10. Чистый текст без ссылок сохраняет текстовую панель; подходящий смешанный диапазон использует действия выбранной части ниже. При отключении действий ссылки текстовая панель снова обслуживает такой диапазон. Подключение остаётся независимым и явным; новые возможности не устанавливаются пресетами.
+When both contextual modules are mounted, link actions take priority for an eligible range inside one link: the text toolbar hides and yields Alt+F10. Pure unlinked text keeps its existing text toolbar behavior; eligible mixed linked ranges use the range actions below. Unmounting link actions restores text toolbar handling for that range. Both modules remain independently and explicitly installed; presets do not add them.
 
-- **Открыть** — нативная ссылка с `target="_blank"` и `rel="noopener noreferrer"`. Переход выполняется только по явному действию пользователя.
-- **Изменить** — восстановить сохранённый диапазон, заново проверить тот же anchor и открыть существующую форму с фокусом в поле адреса. Форма использует явный режим `scope: 'anchor'`, который меняет метаданные всей ссылки без замены её текста.
-- **Удалить** — снять ссылку целиком, сохранив её дочернее содержимое; это отдельный обычный шаг Undo. Удаление ссылки не удаляет её текст.
+- **Open** is a native anchor with `target="_blank"` and `rel="noopener noreferrer"`. Navigation requires an explicit user action.
+- **Edit** restores the remembered range, rechecks the same anchor and opens the existing form with focus in its URL field. The form uses explicit `scope: 'anchor'` to update whole-link metadata without replacing its text.
+- **Remove** unlinks the whole anchor while preserving its children, with its normal single Undo step. Unlinking does not delete the text.
 
-Обычный клик основной кнопкой по подходящей ссылке в редактируемом содержимом ставит курсор без перехода. Модифицированные клики, вспомогательная кнопка, контекстное меню и нативная навигация в режиме только чтения сохраняются. Read-only может оставлять адрес/открытие, но блокирует изменение/удаление и закрывает открытую форму. Составной ввод IME скрывает все действия.
+An unmodified primary click on an eligible editable content link places the caret without navigation. Modified/auxiliary/context-menu actions and read-only native navigation remain. Read-only may retain preview/Open but disables Edit/Remove and closes an active form. IME composition hides all actions.
 
-**Alt+F10** из редактора с подходящим курсором или диапазоном открывает панель и переводит фокус к первому доступному действию. Шорткат чужого поля/редактора не перехватывается. **Escape** закрывает форму либо просмотр и возвращает сохранённый диапазон с его направлением один раз. Внешнее действие или уход фокуса закрывает панель без перехвата фокуса. Отложенное обновление того же диапазона не должно сразу открыть её снова; новое выделение в редакторе или явный Alt+F10 открывают повторно.
+**Alt+F10** from this editor with an eligible caret or range opens/focuses its first enabled action; other fields/editors keep their shortcuts. **Escape** closes a form or preview and returns the remembered range and its direction once. Outside interaction/focus departure dismisses without stealing focus. Queued updates for the same range do not immediately reopen; a genuine new editor selection or explicit Alt+F10 can reopen.
 
-Внешняя замена документа синхронно отменяет старую цель: форма никогда не переносится на другую ссылку, отсоединённые элементы не должны изменять или открывать новый документ. Смена локали обновляет подписи без сброса черновика. Показ, перемещение и закрытие не создают истории. Положение учитывает видимые границы, прокрутку и изменение viewport; узкая панель переносит/прокручивает controls без переполнения страницы.
+External document replacement synchronously invalidates the old target: drafts never retarget to another anchor, and retained detached controls cannot edit or open replacement content. Locale updates change labels without resetting a draft. Showing, positioning and dismissal add no history. Geometry follows visible boundaries, scrolling and viewport resizing; narrow controls wrap/scroll without page overflow.
 
-## Безопасность и границы
+## Security and limits
 
-Фокус в собственных элементах управления может временно убрать нативное выделение: UI сохраняет точный исходный диапазон, а перед действием проверяет ту же ссылку и редакцию документа. Смена фактического диапазона, документа или цели не даёт старой форме изменить новую цель. Read-only блокирует изменение, IME скрывает действия. Проверки редактора, а не совпадение адресов разных ссылок, определяют владельца операции.
+Moving focus into owned controls can temporarily clear native Selection: the UI remembers the exact original range, then rechecks the same anchor and document revision before an action. A changed actual range, document or target cannot let a stale draft edit a new target. Read-only blocks mutation and IME hides actions. Editor ownership, rather than matching URLs on separate anchors, determines the target.
 
-Перед показом и непосредственно перед открытием проверяется фактический текущий href через codec редактора, затем адрес разрешается относительно `document.baseURI`. Разрешены только **http/https/mailto/tel**; относительный адрес допустим лишь при безопасном результате. Protocol-relative URL, обфускация управляющими символами/пробелами и небезопасные схемы не допускаются. Текст URL и сообщения выводятся обычным текстом, без HTML. Проверка ссылки не загружает её содержимое и не создаёт превью страницы.
+The actual current href is validated through the editor codec before preview and immediately before opening, then resolved against `document.baseURI`. Only **http/https/mailto/tel** are allowed; relative URLs require a safe resolved result. Protocol-relative URLs, control/space-obfuscated values and unsafe schemes are ineligible. The codec trims outer whitespace around otherwise safe URLs; internal control/space obfuscations are rejected. URL/messages render as plain text, never HTML. Validation neither fetches a link nor creates a remote page preview.
 
-Это фронтенд-граница, а не замена серверной валидации, CSP или контроля назначения внешней ссылки. Пользовательские тексты и `onError` принадлежат доверенному приложению. Не добавлены управление изображениями/таблицами, произвольные порталы, преобразованные координаты или полноценная сертификация доступности и мобильных устройств. Фактические проверки и размеры публикуются отдельно в [дорожной карте](/roadmap#проверки-и-ограничения).
+This frontend boundary does not replace server validation, CSP or application policy for external destinations. Custom text and `onError` belong to trusted application code. Image/table controls, arbitrary portals, transformed-coordinate mapping and complete accessibility/mobile certification are not added. Actual checks and sizes are recorded separately in the [roadmap](/roadmap#verification-and-limits).
 
-Валидатор нормализует пробелы по краям допустимого URL; управляющие символы и пробелы внутри адреса не разрешены.
+## Text across multiple links
 
-## Текст через несколько ссылок
+Choose **Load multiple-link selection** in the demo. The range covers part of the first link, plain text and part of the second. In this mode **Set link for selection** opens the existing form with `scope: 'selection'` and empty metadata drafts; **Remove links from selection** unlinks only selected portions. No Open URL action is offered because there is no single navigation target.
 
-Нажмите **«Загрузить выделение нескольких ссылок»** в демке. Диапазон охватывает часть первой ссылки, обычный текст и часть второй. В этом режиме **«Задать ссылку выделению»** открывает существующую форму с `scope: 'selection'` и пустыми метаданными, а **«Убрать ссылки из выделения»** снимает только выбранные части. Кнопки открытия URL нет: единственного назначения у такого диапазона нет.
+Applying one address links the selected text while unselected parts keep their original URLs, title/target and formatting. Rich text and backward direction survive, with one Undo/Redo operation. Text wholly within one anchor keeps the existing whole-anchor mode.
 
-Применение одного адреса объединяет ссылку на выделенном тексте; невыделенные части исходных ссылок сохраняют свои адреса, title/target и оформление. Rich-текст и обратное направление выделения сохраняются; операция имеет один Undo/Redo. Внутри единственной ссылки остаётся прежний режим редактирования всей ссылки.
-
-Смешанный контекст требует один обычный текстовый поток: p/заголовок, пункт списка, цитату или ячейку. Межблочные диапазоны, выбранные изображения, code, semantic/чужие/скрытые узлы исключены. Чистый текст без ссылок остаётся у текстовой панели; подходящий смешанный диапазон получает только панель ссылок. Read-only блокирует редактирование; внешняя замена документа, потеря владения и устаревший черновик не могут изменить новый диапазон.
+Mixed context requires one ordinary inline flow: paragraph/heading, list item, quote or cell. Cross-block ranges, selected images, code, semantic/foreign/hidden content are excluded. Pure unlinked text stays with text formatting; an eligible mixed linked range receives only link actions. Read-only blocks editing; replacement, lost ownership and stale drafts cannot redirect the operation to new content.

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) test(`preview controls preserve the editor and show a resource-free reading view in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   if (!english) await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const original = await content.elementHandle();
@@ -31,6 +31,6 @@ for (const english of [false, true]) test(`preview controls preserve the editor 
   await expect(region).toBeHidden();
   expect(await content.innerHTML()).toBe(before);
   await panel.getByRole('link', { name: t('Подключение и политика ресурсов предпросмотра', 'Preview setup and resource policy'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/preview$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/preview$`));
   await expect(page.locator('.vp-doc')).toContainText('PreviewUIController');
 });

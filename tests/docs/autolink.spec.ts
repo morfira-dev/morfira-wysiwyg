@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const enter of [true, false]) test(`autolink ${enter ? 'Enter on Russian homepage' : 'plain clipboard URL on English playground'} preserves two-step history`, async ({ page, context }) => {
   const english = !enter;
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-autolink');

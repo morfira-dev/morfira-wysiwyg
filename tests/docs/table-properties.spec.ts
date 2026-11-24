@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('Russian narrow homepage applies table and merged-cell properties in one Undo', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
-  await page.goto('/');
+  await page.goto('/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const lab = page.locator('.lab-contextual-table');
@@ -34,7 +34,7 @@ test('Russian narrow homepage applies table and merged-cell properties in one Un
 });
 
 test('English playground preserves mixed cell colors when only table width changes and disables read-only form', async ({ page }) => {
-  await page.goto('/en/playground');
+  await page.goto('/playground');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const lab = page.locator('.lab-contextual-table');

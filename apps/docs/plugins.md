@@ -1,6 +1,6 @@
-# Плагины и таблицы
+# Plugins and tables
 
-## Подключение таблиц
+## Tables
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -15,17 +15,17 @@ table.select({ row: 0, column: 0 }, { row: 0, column: 1 });
 table.merge();
 ```
 
-Размеры — целые числа от 1 до 100. Вставка вложенных таблиц отклоняется. Собственная логическая сетка учитывает объединения; команды входят в общую историю редактора. Разреженные таблицы нормализуются при структурном редактировании; пересечения и превышение лимитов отклоняются.
+Dimensions are integers from 1 to 100. Nested table insertion is rejected. The plugin uses its own logical grid for spans; all commands are transactions in the editor's history. Imported sparse tables are normalized during structural edits; invalid overlapping or oversized grids are rejected.
 
-## Команды
+## Commands
 
 `insert`, `select`, `rowAbove`, `rowBelow`, `columnLeft`, `columnRight`, `deleteRow`, `deleteColumn`, `merge`, `split`, `remove`, `background(color)`, `border(color)`, `columnWidth(column, pixels)`.
 
-Строки/столбцы и цвета применяются к выделению или текущей ячейке. `select` использует логические адреса с нуля; область расширяется через существующие объединения. Merge сохраняет содержимое в порядке документа; split оставляет содержимое в исходной ячейке. Ширина столбца — 40–4000 px. Режим чтения блокирует изменения.
+Rows/columns and colors target selected cells, or the current cell. `select` uses zero-based logical addresses; selections expand across existing spans. Merge preserves content in document order; split leaves content in the origin cell. Column width is 40–4000 pixels. Read-only blocks changes.
 
-Перетаскивайте по ячейкам или используйте Shift-click для выделения. Правая кнопка открывает русское контекстное меню. Tab/Shift+Tab перемещает по ячейкам; Tab в последней добавляет строку. На правой границе ячейки есть изменение ширины; завершённое перетаскивание — одна операция истории. Полное touch-управление и изменение размера только с клавиатуры ещё требуют работы.
+Drag across cells or Shift-click to select a region. Right-click opens the Russian context menu. Tab/Shift+Tab navigates cells; Tab at the final cell adds a row. Hover a cell's right edge to resize its column; one completed drag is one history edit. Full touch and keyboard-only resize interaction is still pending.
 
-## Свой плагин
+## Write a plugin
 
 ```ts
 import type { EditorPlugin } from '@morfira-dev/wysiwyg';
@@ -39,56 +39,56 @@ const counter = (): EditorPlugin => ({
 });
 ```
 
-Setup возвращает очистку ресурсов. `providePlugin` и `getPlugin<T>` открывают API конкретного экземпляра. `transact` объединяет доверенные DOM-операции в атомарное изменение с историей. Плагины подключаются при создании; каждая подписка и UI-ресурс удаляются при уничтожении. Глобального реестра форматов нет, ядро не импортирует общий индекс плагинов.
+Plugin setup returns cleanup. `providePlugin` and `getPlugin<T>` expose instance-local APIs. `transact` groups trusted DOM edits into an atomic undoable change. Register plugins at creation and dispose every subscription/UI resource; no global format registry is used. The core does not import a plugin barrel.
 
-## Буфер табличного диапазона
+## Table clipboard
 
-`copy()` возвращает `{ html, text }` без доступа к системному буферу. `cut()` возвращает те же данные и очищает выделенное содержимое одной транзакцией. `paste({ html?, text? })` принимает одну проверенную таблицу или TSV. HTML сохраняет объединения/стили; TSV поддерживает кавычки, табы/переносы внутри значения и удвоенные кавычки. Сетка расширяется вправо/вниз в пределах 100 × 100. Частично пересекаемое объединение отклоняется атомарно. Одиночное значение заполняет явно выделенные ячейки; размер большего источника должен совпадать с выделением.
+`copy()` returns `{ html, text }` without accessing system clipboard permissions. `cut()` returns the same payload and clears selected contents in one transaction. `paste({ html?, text? })` accepts one sanitized table or TSV. HTML preserves spans/styles; TSV supports quoted tabs, newlines and doubled quotes. The grid grows right/down within 100 × 100. A partially intersected destination merge is rejected atomically. A scalar fills explicitly selected cells; larger sources must match a multi-cell selection.
 
-Внутри таблицы системный буфер распознаёт HTML-таблицу или текст с табами. При явном выделении ячеек также принимается одиночный текст или rich text. Без выделенного диапазона обычное копирование текста и rich-text вставка сохраняют поведение браузера/ядра. Текст только с переносами автоматически не считается таблицей; для одного столбца есть явный paste API.
+Inside a table, native clipboard events recognize table HTML or tab-separated text. An explicit cell selection also accepts scalar rich/plain content. With no cell-range selection, ordinary text copying and rich-text paste remain native/core behavior. Newline-only text is not automatically treated as a spreadsheet; use the explicit paste API for a single-column matrix.
 
 ```ts
 const commands = tableCommands(editor);
 const payload = commands.copy();
-commands.paste({ text: 'Название\tЗначение\nЯзык\tTypeScript' });
+commands.paste({ text: 'Name\tValue\nLanguage\tTypeScript' });
 // tables({ onClipboardError: (error) => report(error.message) })
 ```
 
-Некорректные кавычки, вложенные/несколько таблиц, превышение лимитов и несовпадение размера не меняют документ. Ошибка браузерной вставки выводится через доступный status; `onClipboardError` позволяет сообщить её приложению. API выбрасывает ошибки валидации. Тестовые clipboard-примеры проверяют эти форматы, но не означают совместимости с любой вставкой Word/Excel.
+Malformed quoting, nested/multiple source tables, over-limit ranges and selection mismatches leave the document unchanged. Browser failures appear in an accessible status message; `onClipboardError` can also report them to the application. API calls throw validation errors. Browser fixtures cover these formats; arbitrary Word/Excel clipboard fidelity is not certified.
 
-[Изображения и callback загрузки](/images) подключаются отдельным модулем `/plugins/images`.
+[Images and upload callbacks](/images) use the optional `/plugins/images` module.
 
-[Поиск и замена](/search) подключается отдельно через `/plugins/search`; ядро не требует этот модуль.
+[Find and replace](/search) uses the optional `/plugins/search` entry; core does not require it.
 
-[Статистика текста](/statistics) — отдельный `/plugins/statistics` для графем и слов документа/выделения.
+[Text statistics](/statistics) uses `/plugins/statistics` for document/selection grapheme and word counts.
 
-[Markdown shortcuts](/markdown) — необязательный `/plugins/markdown` для преобразований при вводе; загрузка и вставка текста остаются буквальными.
+[Markdown shortcuts](/markdown) uses the optional `/plugins/markdown` entry for typing conversions; imports and pasted text stay literal.
 
-[Упоминания и slash-шаблоны](/suggestions): `/plugins/mentions`, `/plugins/slash`, необязательные `/plugins/suggestions` и `/plugins/suggestions.css`. Первый этап вставляет обычный текст и не сохраняет ID.
+[Mentions and slash snippets](/suggestions): `/plugins/mentions`, `/plugins/slash`, optional `/plugins/suggestions` and `/plugins/suggestions.css`. Phase 1 inserts ordinary text without persisted IDs.
 
-См. [события, взаимодействие плагинов и составные транзакции](/events). Структурные slash-команды описаны [здесь](/suggestions#структурные-slash-команды).
+See [events, plugin cooperation and composable transactions](/events). Structural slash actions are documented [here](/suggestions#structural-slash-commands).
 
-## Чек-листы
+## Checklists
 
-Отдельный [плагин чек-листов](/checklists) и его CSS подключаются явными импортами. Он даёт команды одного пункта, клик по маркеру и Ctrl/Cmd+Enter; встроенное взаимодействие отключается через `interactive: false`. Обычный core-only редактор не загружает плагин.
-
-
-Необязательная команда [разделителя](/horizontal-rule) доступна через `/plugins/horizontal-rule`: один корневой абзац/заголовок, редактируемый остаток и один Undo. Standard/extended подключают её и кнопку готовой панели по умолчанию; `horizontalRule: false` отключает экземпляр.
-
-Необязательный [плагин шрифтов](/fonts) через `/plugins/fonts` задаёт настроенное семейство и px-размер, независимый сброс и фактическое/mixed CSS-состояние. Он подключается явно, не входит в пресеты и не загружает файлы шрифтов.
-
-Явный плагин [свойств списка](/list-properties) задаёт start, reversed и ограниченный list-style-type контейнера; без отдельного CSS, счётчиков или изменений пресетов.
-
-Необязательное [направление текста LTR/RTL](/text-direction) через `/plugins/text-direction` меняет явный dir ближайшего обычного блока или соседних блоков с общим родителем/ячейкой. Reset наследует окружение, а не включает LTR; пресеты и ready toolbar не подключают плагин автоматически.
-
-Для форматирования непустого выделения доступен отдельный [контекстный UI](/contextual-toolbar), а не новый behavior-плагин: `/ui/contextual` и явный `/ui/contextual.css`. Он не устанавливается пресетами и использует существующие команды/историю.
-
-## Контекстные действия таблиц
-
-Явно подключаемая [контекстная панель таблиц](/contextual-tables) добавляет вставку/удаление строк и столбцов, merge/split поверх существующей логической сетки, восстановление native Range и один шаг Undo на команду. Подключите `/ui/contextual-table` и его CSS вместе с `tables()` и CSS таблиц; пресеты не меняются. `getTableSelection(editor, range?)` возвращает наблюдаемый `TableSelectionState`, `registerSelectionHost(host)` задаёт владение внешними контролами, а `tableSelectionChange` — типизированное уведомление экземпляра, не RPC. Гайд описывает spans, недоступные действия, клавиатуру/lifecycle и отдельные gzip-бюджеты.
+Install the separate [checklist plugin](/checklists) and its CSS through explicit imports. It provides single-item commands, marker clicks and Ctrl/Cmd+Enter; `interactive: false` disables built-in interaction. Core-only editors do not load the plugin.
 
 
-Необязательный [выбор размера таблицы](/table-picker) подключается явным импортом фабрики и CSS; [вставка изображения из буфера/drop](/image-input) использует callback загрузки приложения. Пресеты автоматически их не включают.
+The optional [horizontal-rule command](/horizontal-rule) is available through `/plugins/horizontal-rule`: one root paragraph/heading, an editable suffix and one Undo step. Standard/extended install it and its ready toolbar button by default; `horizontalRule: false` omits the instance.
+
+The optional [font plugin](/fonts), through `/plugins/fonts`, provides configured family/px-size commands, independent resets and actual/mixed CSS state. It is explicitly installed, excluded from preset defaults and loads no font files.
+
+The explicit [list-properties plugin](/list-properties) provides start, reversed and bounded container list-style-type, without extra CSS, a counter engine or preset changes.
+
+Optional [LTR/RTL text direction](/text-direction), through `/plugins/text-direction`, changes explicit dir on the closest ordinary block or siblings sharing a parent/cell. Reset inherits surrounding direction rather than forcing LTR; presets and ready toolbar do not install it automatically.
+
+Nonempty selections can use the separate [contextual UI](/contextual-toolbar), rather than a behavior plugin: `/ui/contextual` plus explicit `/ui/contextual.css`. Presets do not install it; it reuses existing commands/history.
+
+## Contextual table actions
+
+The explicit [contextual table toolbar](/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions and independent gzip budgets.
 
 
-[Свойства таблиц и ячеек](/table-properties) подключаются отдельными `/plugins/table-properties` и `/ui/table-properties`: ширина/расположение таблицы, фон/цвет границ/вертикальное выравнивание выбранных ячеек. Форма применяет только изменённые поля одним Undo, использует существующий `/ui/forms.css` и не входит в пресеты.
+Optional [table size picker](/table-picker) uses an explicit factory and CSS import; [image clipboard/drop input](/image-input) delegates to the application-owned images upload callback. Neither changes preset defaults.
+
+
+[Table and cell properties](/table-properties) use independent `/plugins/table-properties` and `/ui/table-properties` entries: table width/placement and selected-cell background/border color/vertical alignment. The form applies only dirty fields in one Undo, uses existing `/ui/forms.css`, and is outside preset defaults.

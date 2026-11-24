@@ -1,22 +1,22 @@
-# Переиспользуемые UI-формы
+# Reusable UI forms
 
-Формы ссылок, изображений и поиска — готовый необязательный интерфейс поверх публичных команд редактора. Они не зависят от Vue/React/Angular/Svelte или CSS сайта документации. Главная страница и playground используют эти же фабрики.
+Link, image and search forms are ready optional UI over the editor's public commands. They do not depend on Vue/React/Angular/Svelte or documentation-site CSS. The homepage and playground use these same factories.
 
-Каждый JS-вход подключается отдельно. Стили импортируются явно; импорт UI не регистрирует глобальные элементы и безопасен на сервере. Создание формы требует браузерного DOM.
+Import each JS entry separately. CSS is explicit; importing UI registers no global elements and is server-safe. Mounting a form requires a browser DOM.
 
-| Фабрика | Публичный вход | Требуемый плагин |
+| Factory | Public entry | Required plugin |
 | --- | --- | --- |
-| `createLinkForm` | `@morfira-dev/wysiwyg/ui/links` | Не нужен: используются команды ядра |
+| `createLinkForm` | `@morfira-dev/wysiwyg/ui/links` | None: uses core commands |
 | `createImageForm` | `@morfira-dev/wysiwyg/ui/images` | `images()` |
 | `createSearchForm` | `@morfira-dev/wysiwyg/ui/search` | `search()` |
 
-Общий CSS: `@morfira-dev/wysiwyg/ui/forms.css`. Отсутствие необходимого плагина обнаруживается до монтирования формы. Ни один UI-модуль не требуется для работы ядра.
+Shared CSS: `@morfira-dev/wysiwyg/ui/forms.css`. A missing required plugin is detected before mounting a view. No UI module is required to use core.
 
-Контейнеры форм изображений и поиска должны находиться вне `editor.surface`: сама поверхность и её потомки отклоняются до монтирования и установки обработчиков. Используйте отдельный соседний контейнер. См. [границы безопасности](/security).
+Hosts for image and search forms must be outside `editor.surface`: the surface itself or any descendant is rejected before mounting or installing listeners. Use a separate sibling container. See [security boundaries](/security).
 
-## Ссылки без фреймворка
+## Links without a framework
 
-Добавьте два пустых контейнера:
+Add two empty containers:
 
 ```html
 <div id="link-editor"></div>
@@ -30,30 +30,30 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const editor = createEditor(document.querySelector<HTMLElement>('#link-editor')!, {
-  locale: 'ru', value: '<p>Выделите текст для ссылки.</p>',
+  locale: 'en', value: '<p>Select text for a link.</p>',
 });
 const form = createLinkForm(document.querySelector<HTMLElement>('#link-controls')!, editor, {
   initialValues: { href: 'https://example.com', newTab: true },
   onError: (error) => console.error('Link command failed', error),
 });
 
-editor.setSelection(0, 8);
+editor.setSelection(0, 6);
 form.refresh();
 
 const dispose = () => {
   form.destroy();
   editor.destroy();
 };
-// Вызовите dispose() при удалении экрана.
+// Call dispose() when removing the screen.
 ```
 
-Форма создаёт/обновляет ссылку и снимает её, сохраняет выделение при переходе в поля. Заголовок, новая вкладка и URL используют существующую валидацию команд. Поле `text` нужно для новой ссылки без выделения; оно не заменяет текст существующей ссылки. Для `_blank` ядро сохраняет безопасный `rel`.
+The form creates/updates links and unlinks them, retaining selection while the user enters fields. Title, new-tab and URL use existing command validation. `text` creates a new link without selection; it does not replace an existing link's text. Core supplies safe `rel` values for `_blank`.
 
-Для контекстного редактирования существующей ссылки доступна явная настройка `scope: 'anchor'`. Форма принимает только курсор/диапазон внутри одного обычного anchor, меняет его метаданные или снимает ссылку целиком, сохраняя исходное выделение. В этом режиме нет создания ссылки и изменения текста. По умолчанию используется `scope: 'selection'`: обычное форматирование выбранного диапазона сохраняет прежнее поведение.
+Contextual editing of an existing link has explicit `scope: 'anchor'`. The form accepts only a caret/range inside one ordinary anchor, updates its metadata or unlinks the whole anchor while preserving the original selection. This mode does not create links or replace text. The default is `scope: 'selection'`: ordinary formatting of the chosen range retains its previous behavior.
 
-## Изображения и загрузка приложения
+## Images and application-owned upload
 
-Контейнеры: `<div id="image-editor"></div>` и `<div id="image-controls"></div>`.
+Containers: `<div id="image-editor"></div>` and `<div id="image-controls"></div>`.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -64,7 +64,7 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const editor = createEditor(document.querySelector<HTMLElement>('#image-editor')!, {
-  locale: 'ru', value: '<p>Место для изображения.</p>',
+  locale: 'en', value: '<p>An image insertion position.</p>',
   plugins: [images({
     maxFileSize: 5 * 1024 * 1024,
     upload: async (file, { signal }) => {
@@ -77,7 +77,7 @@ const editor = createEditor(document.querySelector<HTMLElement>('#image-editor')
   })],
 });
 const form = createImageForm(document.querySelector<HTMLElement>('#image-controls')!, editor, {
-  initialValues: { src: '/assets/photo.png', alt: 'Описание', width: '320' },
+  initialValues: { src: '/assets/photo.png', alt: 'Description', width: '320' },
 });
 editor.setSelection(0);
 
@@ -87,23 +87,23 @@ const dispose = () => {
 };
 ```
 
-`/api/uploads` — пример API вашего приложения, не поставляемый сервер. Он должен вернуть `ImageValue` с URL и необязательными alt/размерами/подписью. Плагин проверяет возвращённые метаданные. Выбор файла не означает автоматическую загрузку в какое-либо внешнее хранилище Morfira: транспорт полностью принадлежит приложению.
+`/api/uploads` is an example application API, not a supplied server. Return `ImageValue` with a URL and optional alt/dimensions/caption. The plugin validates returned metadata. Choosing a file does not upload it to any external Morfira storage: the application owns transport.
 
-Форма поддерживает URL, alt, подпись, размеры, вставку, обновление и удаление выбранного изображения, выбор файла и отмену. При выключенном сохранении пропорций пустые поля размеров снимают соответствующие ограничения при обновлении. Удаление формы отменяет только её собственный upload; поздний результат не вставляется. Resize мышью, crop и drag/drop не добавляются этим модулем.
+The form supports URL, alt, caption, dimensions, insertion, selected-image update/removal, file selection and cancellation. With aspect-ratio locking disabled, empty dimension fields remove those constraints on update. Destroying the form cancels only its own upload; late results are ignored. This module does not add drag resizing, cropping or drag/drop.
 
-Для своего интерфейса можно передать отдельный сигнал в `imageCommands(editor).upload(file, { signal })`; тип опций — `ImageUploadOptions`. Это отменяет именно данный запрос. `cancelUpload()` остаётся командой отмены текущей загрузки редактора. [Подробнее об изображениях](/images).
+Custom UI can pass a separate signal to `imageCommands(editor).upload(file, { signal })`; its option type is `ImageUploadOptions`. This cancels that specific request. `cancelUpload()` remains the editor-wide current-upload cancellation command. [Image details](/images).
 
-### Прогресс загрузки и повтор
+### Upload progress and retry
 
-В режиме `all` форма показывает нативный индикатор **«Прогресс загрузки изображения»**: процент при наличии общего числа байтов, иначе неопределённый прогресс. Данные поступают из callback приложения через `ImageUploadContext.reportProgress({ loaded, total? })`; готовый транспорт не добавляется. Необязательный `ImageUploadOptions.onProgress` доступен собственному UI. 100% передачи ещё не означает, что результат прошёл проверку и вставлен.
+In `all` mode, the form shows a native **Image upload progress** indicator: a percentage when total bytes are known, otherwise indeterminate progress. The application callback supplies values through `ImageUploadContext.reportProgress({ loaded, total? })`; no upload transport is added. Custom UI can use the optional `ImageUploadOptions.onProgress` observer. Reaching 100% transfer does not mean the result has passed validation and been inserted.
 
-Ошибка отображается общим локализованным текстом, без вывода HTML ответа и текста исключения. **«Повторить загрузку»** запускает новую попытку с прежним File в исходной позиции. Остальные черновики формы не отправляются. Перемещение курсора не переносит повтор; любое изменение документа/Undo/API-замена, read-only, IME, другой файл, отмена или уничтожение формы сбрасывают повтор и освобождают файл. Каждая попытка проходит валидацию, успех — одна вставка и один Undo. Автоматических повторов нет; загрузки других владельцев не затрагиваются. В режиме `edit` индикатор и повтор отсутствуют; тип `ImageFormValues` не меняется.
+Errors use generic localized text, without rendering response HTML or raw exception messages. **Retry upload** starts a fresh attempt with the same File and original insertion position. Other form drafts are not submitted. Moving the caret does not relocate retry; any document edit/Undo/API replacement, read-only, IME, another file, cancellation or form destruction clears retry and releases the file. Every attempt validates again; success is one insertion and one Undo. Retries are never automatic and do not affect another owner's upload. Progress/retry are absent in `edit` mode; `ImageFormValues` stays unchanged.
 
-В главной демке и playground переключатель **«Ошибка следующей загрузки»** демонстрирует одну ошибку, затем успешный повтор. Процент имитируется таймером, файл не читается и не отправляется. [API прогресса и обязанности сервера](/images#прогресс-ошибки-и-повторная-попытка).
+On the homepage and playground, **Fail next upload** demonstrates one error followed by successful retry. The percentage is simulated with a timer; the file is never read or uploaded. [Progress API and backend responsibilities](/images#progress-errors-and-retry).
 
-### Сохранение пропорций
+### Preserving proportions
 
-Для уже выбранного изображения доступен переключатель **«Сохранять пропорции»**. Включите его и измените ширину или высоту: другая сторона пересчитается по фиксированной пропорции инспектируемого изображения. До нажатия «Обновить изображение» меняются только черновики. В режиме `edit` Enter применяет обновление; в режиме `all` прежний Enter для вставки сохраняется.
+The **Keep aspect ratio** checkbox is available for an already selected image. Enable it and edit width or height: the other side is calculated from the inspected image's fixed ratio. Only drafts change until Update image. Enter applies an update in `edit` mode; `all` mode retains its existing Enter-to-insert behavior.
 
 ```ts
 const form = createImageForm(formHost, editor, {
@@ -112,17 +112,17 @@ const form = createImageForm(formHost, editor, {
 });
 ```
 
-`ImageFormOptions.keepAspectRatio` — необязательный boolean, по умолчанию `false`. Значение проверяется и копируется при создании; состояние переключателя принадлежит форме и не сохраняется в документ. Сначала берётся сохранённая пара размеров, иначе — уже загруженные естественные размеры. При отсутствии пропорции переключатель недоступен; дополнительной загрузки ради вычисления нет. Вычисленная сторона округляется до пикселя и должна остаться в диапазоне 1–1000.
+`ImageFormOptions.keepAspectRatio` is an optional boolean, default `false`. It is validated and snapshotted at construction; checkbox state belongs to the form and is never document data. The stored pair takes precedence, otherwise already-loaded natural dimensions provide the ratio. Unknown proportions disable the checkbox; sizing starts no extra image request. The calculated side rounds to a pixel and must remain within 1–1000.
 
-Неверный, пустой или слишком большой размер при включённой блокировке не применяется: черновики остаются для исправления. Выключите переключатель для независимых сторон или снятия размеров. `setValues` сохраняет переданные строковые черновики без автоматического пересчёта; обновление проверяет, что итоговая пара соответствует зафиксированным пропорциям. Смена src, изображения или внешняя API-замена не могут применить старую пропорцию к новой цели. Изменение размеров и остальных метаданных выполняется одним Undo; неизменённая rich-подпись сохраняет свои узлы. Локализация меняет подпись переключателя через `ui.images.keepAspectRatio`, не сбрасывая черновик. См. [команду resize](/images#размер-с-сохранением-пропорций).
+Invalid, blank or oversized locked dimensions are not applied; drafts remain available for correction. Uncheck to edit independent sides or remove dimensions. `setValues` preserves supplied string drafts without automatically recalculating; Apply validates that the final pair matches the fixed ratio. Changing src, switching images or external API replacement cannot apply the old ratio to a new target. Dimensions and other metadata use one Undo step; unchanged rich caption nodes survive. Locale changes translate the checkbox via `ui.images.keepAspectRatio` without resetting drafts. See the [resize command](/images#proportional-dimensions).
 
-### Выравнивание изображения
+### Image alignment
 
-Группа **«Выравнивание изображения»** доступна в обоих режимах формы и в контекстных свойствах. Кнопки **«Изображение слева»**, **«Изображение по центру»**, **«Изображение справа»** и **«Сбросить выравнивание изображения»** сразу вызывают команду для выбранной картинки. Остальные поля остаются черновиками и не отправляются. `aria-pressed` отражает явное размещение; сброс активен, когда оно не распознано. Формат `ImageFormValues`, `getValues` и `setValues` остаётся прежним: отдельного поля alignment в черновике нет.
+The **Image alignment** group is available in both form modes and contextual properties. **Align image left**, **Center image**, **Align image right** and **Reset image alignment** apply a command to the selected image immediately. Other fields remain drafts and are not submitted. `aria-pressed` reflects explicit placement; reset is pressed when no placement is recognized. `ImageFormValues`, `getValues` and `setValues` keep their existing shape: alignment is not a draft field.
 
-Без подходящего изображения, при read-only, IME-композиции или загрузке кнопки недоступны. Смена документа/цели во время возврата фокуса отменяет действие. Одно изменение размещения — один Undo; повтор того же значения не создаёт историю. Размер и подпись сохраняются; выравнивается IMG, а не текст подписи. [Формат хранения и ограничения](/images#выравнивание-изображения).
+Buttons are unavailable without an eligible image, during read-only, IME composition or upload. Replacing the document/target while restoring focus cancels the action. Each placement change is one Undo step; repeating the same value adds no history. Dimensions and caption survive; placement belongs to the IMG rather than caption text. [Stored format and boundaries](/images#image-alignment).
 
-### Форма только для редактирования
+### Edit-only image form
 
 ```ts
 import { createImageForm } from '@morfira-dev/wysiwyg/ui/images';
@@ -132,13 +132,13 @@ const mode: ImageFormMode = 'edit';
 const editForm = createImageForm(formHost, editor, { mode });
 ```
 
-`mode` задаётся при создании: `all` сохраняет прежние Insert/upload/cancel и Enter для вставки; `edit` показывает только поля, обновление и удаление, а Enter обновляет выделенное изображение. Для смены режима пересоздайте форму. Элементы вставки/загрузки/отмены отсутствуют, их handler paths также отклоняют edit mode; он не запускает transport и не отменяет загрузки другого владельца. Отсутствие выделения не превращается в точку вставки.
+`mode` is a constructor option: `all` retains the existing Insert/upload/cancel controls and Enter-to-insert; `edit` shows only fields, Update and Remove, and Enter updates the selected image. Recreate the form to change mode. Insert/upload/cancel controls are absent and their handler paths refuse edit mode; it neither starts transport nor cancels another owner's upload. Missing selection cannot become an insertion point.
 
-После восстановления нативного Range заново проверяется тот же фактический IMG. API-замена отменяет старую цель до нового выделения в редакторе; локаль и фокус полей сохраняют черновик. При выключенном сохранении пропорций пустой размер снимается; явный размер — целое число 1–1000, невалидные метаданные отклоняются атомарно. Неизменённая подпись исключается из patch, сохраняя rich-узлы при другом изменении; изменённая подпись остаётся буквальным текстом. См. [контекстные свойства изображения](/contextual-images): это необязательная плавающая обёртка с точным IMG-выделением.
+Edits recheck the same actual IMG after restoring the saved native Range. API replacement invalidates the old draft until a fresh editor selection; locale/field focus preserve drafts. Blank dimensions remove them with aspect-ratio locking off; explicit dimensions are integers 1–1000 and invalid metadata fails atomically. An unchanged caption is omitted from the patch so unrelated metadata edits preserve its rich children; an explicitly changed caption remains literal text. See [contextual image properties](/contextual-images) for the optional floating wrapper and exact IMG eligibility.
 
-## Маркеры размера изображения
+## Image resize handles
 
-Отдельный `createImageResizeUI` показывает четыре пропорциональных маркера вокруг точно выделенного IMG. Этот модуль не является формой и не подключается пресетами или `createImageForm` автоматически. Нужен установленный `images()`:
+The independent `createImageResizeUI` displays four proportional handles around an exactly selected IMG. This module is not a form and is not installed automatically by presets or `createImageForm`. It requires `images()`:
 
 ```ts
 import { createImageResizeUI } from '@morfira-dev/wysiwyg/ui/image-resize';
@@ -157,13 +157,13 @@ const disposeResize = () => {
 };
 ```
 
-Host должен быть пустым подключённым HTML-элементом вне `editor.surface`, в том же документе и на обычном viewport-overlay слое. Не помещайте его в transform/paint/clipping-контейнер. `options` содержит только необязательные `label` и `onError`; контроллер возвращает `element`, `refresh()` и идемпотентный `destroy()`. Уничтожение освобождает capture, слушатели, observer/RAF и владение внешним host, не уничтожая редактор.
+The host must be an empty connected HTML element outside `editor.surface`, in the same document on a normal viewport-overlay layer. Do not place it inside a transformed/paint-containing/clipping container. `options` contains only optional `label` and `onError`; the controller exposes `element`, `refresh()` and idempotent `destroy()`. Disposal releases capture, listeners, observers/RAFs and external-host ownership without destroying the editor.
 
-Клик по изображению выбирает точный IMG. Перетаскивание угла фиксирует пропорцию и меняет только внешние рамку/статус до отпускания: документ и история остаются прежними. Отпускание применяет одну resize-команду с одним Undo; отсутствие изменения не создаёт историю. Escape и отмена указателя отменяют жест. Прокрутка/resize/blur, смена документа или target, read-only и IME также отменяют незавершённый жест. На сфокусированном маркере стрелки меняют размер на 1 px, Shift+стрелка — на 10 px, отдельной операцией истории для каждого шага. Enter/Space не применяют незавершённое перетаскивание.
+Clicking the image selects its exact IMG. A corner drag fixes the ratio and changes only the external outline/status until release: document content and history remain untouched. Releasing applies one resize command with one Undo step; unchanged dimensions create no history. Escape and pointer cancellation abandon the gesture. Scroll/resize/blur, document/target replacement, read-only and IME also cancel an unfinished gesture. Focused handles support arrow keys in 1 px steps and Shift+arrows in 10 px steps, with a separate history operation for each key action. Enter/Space do not apply an unfinished drag.
 
-Подписи, подсказка и текст размеров локализованы через `imageResizeUIMessages` и `ImageResizeUIMessageKey` из того же entry; оформление использует scoped `--mw-*` переменные и явный CSS. Модуль не зависит от стилей сайта документации, не создаёт thumbnail и не загружает изображение дополнительно. Неизвестная пропорция, скрытая/трансформированная или явно искажённая картинка, курсор подписи, целая figure и защищённые/сложные targets не дают маркеров. Углы за clipped-границами скрыты. [Полный пример, границы и демо](/images#перетаскивание-маркеров).
+Labels, help and dimension text are localized through `imageResizeUIMessages` and `ImageResizeUIMessageKey` from the same entry; appearance uses scoped `--mw-*` variables and explicit CSS. The module does not depend on documentation-site styles, create thumbnails or fetch an image again. Unknown proportions, hidden/transformed or materially distorted images, caption carets, whole-figure ranges and protected/complex targets produce no handles. Corners outside clipped bounds are hidden. [Full example, boundaries and demo](/images#drag-resize-handles).
 
-Переменные задаются на внешнем host или его предке. Например, после `resizeHost.className = 'my-resize-overlay'`:
+Set variables on the external host or its ancestor. For example, after `resizeHost.className = 'my-resize-overlay'`:
 
 ```css
 .my-resize-overlay {
@@ -175,9 +175,9 @@ Host должен быть пустым подключённым HTML-элеме
 }
 ```
 
-## Поиск и замена
+## Find and replace
 
-Контейнеры: `<div id="search-editor"></div>` и `<div id="search-controls"></div>`.
+Containers: `<div id="search-editor"></div>` and `<div id="search-controls"></div>`.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -187,14 +187,14 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const editor = createEditor(document.querySelector<HTMLElement>('#search-editor')!, {
-  locale: 'ru', value: '<p>Один пример. Ещё один пример.</p>', plugins: [search()],
+  locale: 'en', value: '<p>One sample. Another sample.</p>', plugins: [search()],
 });
 const form = createSearchForm(document.querySelector<HTMLElement>('#search-controls')!, editor, {
-  initialValues: { query: 'пример', wholeWord: true },
+  initialValues: { query: 'sample', wholeWord: true },
 });
 
 const draft = form.getValues();
-form.setValues({ replacement: 'текст' });
+form.setValues({ replacement: 'text' });
 
 const dispose = () => {
   form.destroy();
@@ -202,96 +202,96 @@ const dispose = () => {
 };
 ```
 
-Запрос и параметры — drafts до нажатия «Найти». Если они отличаются от индексированного запроса, кнопки навигации/замены недоступны, чтобы случайно не заменить старые результаты. Enter в запросе запускает поиск с первого совпадения. **Shift+Enter в запросе** переходит к предыдущему совпадению по кругу; для нового запроса сначала выполняет поиск и выбирает последнее совпадение. Подсказка поля локализуется ключом `ui.search.queryKeys`. Enter в поле замены выполняет доступную замену текущего совпадения. IME-подтверждение не перехватывается.
+Query and options remain drafts until Find. If they differ from the indexed query, navigation/replacement buttons are disabled rather than accidentally acting on old results. Enter in the query searches from the first match. **Shift+Enter in the query** moves to the previous match with wrapping; for a new query, it first searches and selects the last match. The field hint is localized through `ui.search.queryKeys`. Enter in replacement performs the available current-match replacement. IME candidate confirmation is not intercepted.
 
-Поиск, переходы и очистка доступны в read-only; замена заблокирована. Команды используют индекс совпадений, а не выделение внутри поля формы. Массовая замена отменяется одним Undo. Удаление UI не очищает состояние поиска, принадлежащее приложению. [Границы буквального поиска](/search).
+Find/navigation/clear remain available read-only; replacement is blocked. Commands use indexed matches, not selection inside a form field. Replace all is one undo operation. Destroying UI does not clear the application's search state. [Literal-search boundaries](/search).
 
-## Контроллер и значения
+## Controller and values
 
-Все фабрики возвращают контроллер одного жизненного цикла:
+All factories return a controller for one lifecycle:
 
-| Поле/метод | Назначение |
+| Property/method | Purpose |
 | --- | --- |
-| `element` | Собственный корневой `HTMLElement`; можно добавить класс или изменить размещение |
-| `getValues()` | Независимая копия текущих drafts |
-| `setValues(partial)` | Частичное обновление drafts без изменения документа |
-| `refresh()` | Обновить UI из актуального состояния редактора/плагина |
-| `destroy()` | Снять подписки/обработчики и удалить только собственный UI; повторный вызов допустим |
+| `element` | Owned root `HTMLElement`; add a class or reposition it |
+| `getValues()` | Independent copy of current drafts |
+| `setValues(partial)` | Partially update drafts without editing the document |
+| `refresh()` | Refresh UI from current editor/plugin state |
+| `destroy()` | Unsubscribe, remove handlers and delete only owned UI; idempotent |
 
-После уничтожения остальные методы контроллера выбрасывают ошибку; старые DOM-кнопки не выполняют команды. Уничтожение редактора автоматически удаляет формы. При ручном удалении контейнера сначала вызовите `destroy()` — отключение произвольного DOM-узла не является автоматическим lifecycle-сигналом.
+Other controller methods reject after destruction; detached buttons do not run commands. Destroying the editor automatically removes its forms. Before manually removing a host, call `destroy()`—detaching an arbitrary DOM node is not an automatic lifecycle signal.
 
-| Значения | Поля |
+| Values | Fields |
 | --- | --- |
 | `LinkFormValues` | `href`, `title`, `text`: string; `newTab`: boolean |
 | `ImageFormValues` | `src`, `alt`, `caption`, `width`, `height`: string |
 | `SearchFormValues` | `query`, `replacement`: string; `caseSensitive`, `wholeWord`: boolean |
 
-Размеры в image drafts — строки полей ввода, а в `ImageValue` — числа. Такая разница сохраняет пустое/ошибочное поле для исправления пользователем; в документ попадают только проверенные значения. `initialValues`, необязательные `label` и `onError` находятся в соответствующих `LinkFormOptions`, `ImageFormOptions`, `SearchFormOptions`.
+Image dimension drafts are strings, while `ImageValue` uses numbers. This retains empty/invalid fields for correction; only validated values enter the document. `initialValues`, optional `label` and `onError` belong to `LinkFormOptions`, `ImageFormOptions`, `SearchFormOptions` respectively.
 
-## Выделение, ошибки и встраивание
+## Selection, errors and embedding
 
-Формы — немодальные панели с `role="form"`, не вложенные HTML `<form>`. Их можно поставить внутрь формы приложения. Кнопки не отправляют её; Enter в полях обрабатывает локальное действие.
+Forms are embedded nonmodal panels with `role="form"`, not nested HTML `<form>` elements. They can live inside an application's form. Their buttons do not submit it; Enter in fields handles a local action.
 
-Ссылки и изображения запоминают настоящий DOM Range перед переходом в поля, включая пустые блоки и обратное выделение. Внешняя замена документа сбрасывает старую цель: сначала выберите место в новом документе. Ввод в поля и смена языка не должны перезаписывать drafts. Поиск использует пересчитанный индекс плагина и не восстанавливает устаревший Range.
+Links and images remember real DOM Ranges before controls receive focus, including empty blocks and backward selections. External document replacement invalidates the old target: select a position in the new document first. Field input and locale changes preserve drafts. Search uses its recomputed plugin index rather than restoring a stale Range.
 
-Невалидная команда сохраняет документ и введённые поля. Пользователь видит локализованное сообщение; `onError` получает исходную диагностическую ошибку. Не выводите её через `innerHTML`. Формы не обещают полноценный аудит доступности или поддержку всех системных IME.
+Invalid commands retain document content and field drafts. Users receive localized messages; `onError` receives the original diagnostic error. Do not render it with `innerHTML`. These forms do not claim a complete accessibility audit or support for every system IME.
 
-## Локализация и оформление
+## Localization and appearance
 
 ```ts
-editor.setLocale('en', {
-  'ui.links.href': 'Destination URL',
-  'ui.images.caption': 'Caption',
-  'ui.search.find': 'Find now',
+editor.setLocale('ru', {
+  'ui.links.href': 'Адрес назначения',
+  'ui.images.caption': 'Подпись',
+  'ui.search.find': 'Найти сейчас',
 });
 ```
 
-Словари экспортируются как `linkFormMessages`, `imageFormMessages`, `searchFormMessages` из своих UI-входов; типы ключей — `LinkFormMessageKey`, `ImageFormMessageKey`, `SearchFormMessageKey`. Fallback и приоритет overrides соответствуют [общей локализации](/localization). Явный `options.label` имеет приоритет над словарём.
+Dictionary exports are `linkFormMessages`, `imageFormMessages`, `searchFormMessages` from their UI entries; key types are `LinkFormMessageKey`, `ImageFormMessageKey`, `SearchFormMessageKey`. Fallback/override precedence follows [editor localization](/localization). Explicit `options.label` wins over dictionary labels.
 
-CSS ограничен `.mw-form`. Он использует общие `--mw-text`, `--mw-muted`, `--mw-surface`, `--mw-border`, `--mw-accent` и необязательные `--mw-form-font-size`, `--mw-form-gap`, `--mw-form-padding`, `--mw-form-radius`, `--mw-form-control-radius`, `--mw-form-error`. На главной и в [playground](/playground) показаны эти же публичные модули; дополнительный demo-engine подключать не требуется.
+CSS is scoped to `.mw-form`. It uses common `--mw-text`, `--mw-muted`, `--mw-surface`, `--mw-border`, `--mw-accent` plus optional `--mw-form-font-size`, `--mw-form-gap`, `--mw-form-padding`, `--mw-form-radius`, `--mw-form-control-radius`, `--mw-form-error`. The homepage and [playground](/playground) demonstrate the same public modules; no separate demo engine is required.
 
-Для форматирования непустого выделения доступен отдельный [контекстный UI](/contextual-toolbar), а не новый behavior-плагин: `/ui/contextual` и явный `/ui/contextual.css`. Он не устанавливается пресетами и использует существующие команды/историю.
+Nonempty selections can use the separate [contextual UI](/contextual-toolbar), rather than a behavior plugin: `/ui/contextual` plus explicit `/ui/contextual.css`. Presets do not install it; it reuses existing commands/history.
 
-Для курсора или текстового диапазона целиком внутри одной ссылки есть отдельные [контекстные действия ссылки](/contextual-links): `/ui/contextual-link`, явные core/forms/contextual-link CSS, безопасное открытие и изменение/удаление всей ссылки с Undo. Чистый текст без ссылок остаётся у текстовой панели, а смешанный диапазон ссылок и текста внутри одного потока получает действия выбранной части без Open; пресеты этот UI не подключают.
+A caret or text range wholly inside one link can use separate [contextual link actions](/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open and whole-link editing/unlinking with Undo. Pure unlinked text stays with text formatting, while eligible mixed single-flow linked ranges use selected-part actions without Open; presets do not install this UI.
 
-## Контекстные действия таблиц
+## Contextual table actions
 
-Отдельная [форма свойств таблицы](/table-properties) через `/ui/table-properties` редактирует ширину/расположение, стили выбранных ячеек, заголовочную первую строку/колонку, буквальную подпись и минимальную высоту строк. Нужны `tables()` и `tableProperties()`, CSS формы подключается явно. Поля «Строка заголовков», «Столбец заголовков» и «Подпись таблицы» входят в общий черновик: Apply отправляет только изменённые значения одним Undo. Объединение через границу заголовка отклоняет весь patch. Новые строковые поля `headerRow`, `headerColumn`, `caption` включены в `getValues()`; заголовки используют `"true"` / пустую строку, подпись сохраняет пробелы. Главная и playground показывают форму рядом с табличными командами; контекстная панель сама её не устанавливает.
+The independent [table properties form](/table-properties), imported from `/ui/table-properties`, edits width/placement, selected-cell styles, the first header row/column, a literal caption and minimum row height. It requires `tables()` and `tableProperties()` plus explicit forms CSS. Header row, Header column and Table caption share the draft: Apply sends only dirty fields in one Undo. A merge crossing a header boundary rejects the whole patch. New string fields `headerRow`, `headerColumn`, `caption` are included in `getValues()`; headers use `"true"` / empty string and caption whitespace is retained. The homepage and playground show this form beside table commands; the contextual toolbar does not install it automatically.
 
-Та же форма предоставляет **Отступы ячеек (0–48px)**, **Толщина границ (0–12px)** и **Стиль границ** по [контракту оформления ячеек](/table-properties#отступы-и-границы-ячеек). Строковые черновики `cellPadding`, `cellBorderWidth`, `cellBorderStyle` входят в `getValues()`. Отступ одинаковый для четырёх сторон; толщина, стиль и цвет сбрасываются независимо. Mixed-состояние и отправка только изменённых полей сохраняют остальные значения выбранных ячеек. Стиль — по умолчанию/сброс либо solid/dashed/dotted/double/none. Настройка отдельных сторон и автоматическая установка пресетами не добавляются.
-
-
-Поле «Минимальная высота строк (1–1000px)» использует строковый черновик `rowMinHeight`: `80px` задаёт минимум всем строкам выбранного логического прямоугольника, включая полный rowspan; пустая строка сбрасывает его. Разные значения строк показываются как смешанные. Контент может сделать строку выше. Полное HTML/JSON сохраняет TR height, но существующие структурные команды пересоздают строки, а прямоугольный clipboard не копирует их высоту.
-
-Явно подключаемая [контекстная панель таблиц](/contextual-tables) добавляет вставку/удаление строк и столбцов, merge/split поверх существующей логической сетки, восстановление native Range и один шаг Undo на команду. Подключите `/ui/contextual-table` и его CSS вместе с `tables()` и CSS таблиц; пресеты не меняются. `getTableSelection(editor, range?)` возвращает наблюдаемый `TableSelectionState`, `registerSelectionHost(host)` задаёт владение внешними контролами, а `tableSelectionChange` — типизированное уведомление экземпляра, не RPC. Гайд описывает spans, недоступные действия, клавиатуру/lifecycle и отдельные gzip-бюджеты.
-
-## Неизменяющая документ подсветка поиска
-
-`createSearchHighlights(editor)` из `/ui/search-highlights` дополняет форму поиска и требует отдельного `/ui/search-highlights.css`. Это нативные диапазоны CSS Highlight API, а не разметка документа. При отсутствии API поиск продолжает работать без общей подсветки. [Подключение, состояния и очистка](/search-highlights).
-
-## Панель спецсимволов
-
-[Спецсимволы](/special-characters) подключаются отдельно через `createSpecialCharacterUI` из `/ui/special-characters` и явный `/ui/special-characters.css`. Панель не требует плагина: она вставляет буквальный текст в одно действующее текстовое выделение, сохраняет Undo и предоставляет свой небольшой каталог, поиск и клавиатуру. В core и пресеты она автоматически не входит.
-
-## Полноэкранная рабочая область
-
-[Полноэкранный режим](/fullscreen) подключается отдельно через `createFullscreenUI` и `/ui/fullscreen.css`. Он разворачивает выбранную приложением обёртку с настоящим редактором и панелью, без повторного монтажа адаптера. Вход/выход и Escape не добавляют историю; read-only остаётся доступен для просмотра. Режим не модальный, не использует браузерный Fullscreen API и не входит в пресеты автоматически. Внешние контекстные overlay и их слои остаются ответственностью приложения.
-
-## Предпросмотр и сохранение
-
-Необязательный [предпросмотр документа](/preview) показывает отдельный регион чтения с неактивными ссылками и текстовыми заглушками изображений по умолчанию. Автоматические обновления выполняются только для открытого вида; есть и ручное обновление. Редактор не перемонтируется и не меняется.
-
-[Состояние сохранения](/save-state) разделяет headless-контракт сохранения приложения и необязательный локализованный UI. По умолчанию сохранение ручное, autosave включается явно. Успешный старый ответ не подтверждает более новые правки. Демо имитирует задержку и восстановимую ошибку без сети и хранения. Пресеты автоматически не устанавливают эти модули.
-
-Форма свойств таблицы также включает нативные select `cellTextAlign` и `cellDirection`: выравнивание текста и LTR/RTL применяются к выбранным ячейкам, а не рекурсивно к их абзацам. Сброс восстанавливает наследование; собственные стили потомков сохраняются. [Пример, смешанные значения и ограничения](/table-properties#выравнивание-и-направление-текста-ячеек).
+The same form exposes **Cell padding (0–48px)**, **Border width (0–12px)** and **Border style** under the [cell box contract](/table-properties#cell-padding-and-borders). The new string drafts `cellPadding`, `cellBorderWidth` and `cellBorderStyle` are part of `getValues()`. Padding is uniform on all four sides; width/style/color reset independently. Mixed state and dirty-only Apply keep other selected-cell values intact. Border style is default/reset or solid/dashed/dotted/double/none. No per-edge controls or implicit preset installation are added.
 
 
-## Печать и навигация по заголовкам
+The Minimum row height (1–1000px) field uses a string `rowMinHeight` draft: `80px` applies a minimum to every row in the selected logical rectangle, including a full rowspan; an empty string resets it. Different row values use the mixed placeholder. Content can make the rendered row taller. Full HTML/JSON retains TR height, but existing structural commands rebuild rows and rectangle clipboard does not copy their height.
 
-[Печать](/print) — отдельный `/ui/print` с обязательным CSS и локализованными Print/Cancel-контролами. Явный запрос открывает настоящий диалог браузера для проверенного снимка без сайта и панелей; изображения остаются текстом, шрифты системные. Это не PDF-конвертер и не гарантия точной пагинации. Снимок освобождается по событию завершения, отмене или уничтожению.
+The explicit [contextual table toolbar](/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions and independent gzip budgets.
 
-[Оглавление](/outline) — отдельный `/ui/outline` с CSS, ограниченным списком обычных заголовков и нативными кнопками перехода. Оно не добавляет якоря или IDs в документ. Обе возможности доступны в read-only, не входят в пресеты и показаны на главной в «Печать и оглавление».
+## Search highlights without document changes
 
-[Перетаскивание текста](/text-drop) — поведение `/plugins/text-drop`, которому не нужна UI-обёртка или CSS. Полная демка явно подключает его и позволяет подготовить выделенный rich-фрагмент, перенести его мышью, повторно выделить после Undo или использовать обычные Cut/Copy/Paste с клавиатуры. Presets не меняют drop автоматически; изображения/файлы и semantic-узлы сохраняют собственные границы.
+`createSearchHighlights(editor)` from `/ui/search-highlights` complements the search form and requires separate `/ui/search-highlights.css`. It paints native CSS Highlight API ranges instead of document markup. Without the API, search remains usable without all-result painting. [Setup, state and cleanup](/search-highlights).
 
-Контекстные свойства изображения принимают также всю простую figure и каретку в обычной подписи, сохраняя исходный Range. Смешанные диапазоны со ссылками внутри одного текстового потока редактируют только выделенные части; разные URL не подставляются в форму автоматически. [Изображения](/contextual-images#вся-фигура-и-каретка-подписи) · [Ссылки](/contextual-links#текст-через-несколько-ссылок).
+## Special-character panel
+
+[Special characters](/special-characters) use a separate `createSpecialCharacterUI` import from `/ui/special-characters` and explicit `/ui/special-characters.css`. No plugin is required: the panel inserts literal text into one valid text range, retains Undo, and provides a small replaceable catalog, search and keyboard navigation. Core and presets do not install it automatically.
+
+## Fullscreen workspace
+
+[Fullscreen workspace mode](/fullscreen) is separately imported through `createFullscreenUI` and `/ui/fullscreen.css`. It expands the application’s existing editor/toolbar wrapper without remounting adapters. Enter/Exit and Escape do not create history; read-only remains viewable. The mode is nonmodal, does not call the browser Fullscreen API and is not implicitly part of presets. External contextual-overlay hosts and layering remain application-owned.
+
+## Preview and saving
+
+The optional [document preview](/preview) uses a separate reading region with inert links and default image placeholders. Its live updates run only while open; manual refresh is also available. It does not remount or mutate the editor.
+
+[Save state](/save-state) separates a headless application-owned persistence contract from optional localized status UI. Manual saving is the default; autosave is explicit. A successful older reply cannot acknowledge newer edits. The demo simulates latency and a recoverable error without network/storage. Neither module is installed by presets.
+
+The table properties form also includes native `cellTextAlign` and `cellDirection` selects: text alignment and LTR/RTL apply to selected cells without recursively restyling their paragraphs. Reset restores inheritance; explicit descendant formatting survives. [Example, mixed state and limits](/table-properties#cell-text-alignment-and-direction).
+
+
+## Print and heading navigation
+
+[Browser print](/print) is a separate `/ui/print` module with required CSS and localized Print/Cancel controls. An explicit request opens the real browser dialog for a validated snapshot without site chrome/toolbars; images become text and fonts are system fonts. It is not a PDF converter or an exact-pagination guarantee. Completion, cancellation or disposal releases the snapshot.
+
+[Document outline](/outline) is a separate `/ui/outline` module with CSS, a bounded list of ordinary headings and native navigation buttons. It adds no document anchors or IDs. Both modules work read-only, stay outside preset defaults and appear in the homepage's “Print and outline” section.
+
+[Text drag and drop](/text-drop) is `/plugins/text-drop` behavior without a UI wrapper or CSS requirement. The full demo installs it explicitly and prepares a rich selection for pointer dragging, reselection after Undo, or normal keyboard Cut/Copy/Paste. Presets do not change drop behavior automatically; files/images and semantic nodes retain their own ownership boundaries.
+
+Contextual image properties also accept whole simple figures and ordinary caption carets, preserving the original Range. Mixed linked text within one inline flow edits only selected portions; different URLs are never guessed in form drafts. [Images](/contextual-images#whole-figures-and-caption-carets) · [Links](/contextual-links#text-across-multiple-links).

@@ -9,7 +9,7 @@ const objects = (value: unknown): Record<string, unknown>[] => {
 
 for (const english of [false, true]) {
   const t = (ru: string, en: string) => english ? en : ru;
-  const path = english ? '/en/plugin-sdk' : '/plugin-sdk';
+  const path = english ? '/plugin-sdk' : '/ru/plugin-sdk';
 
   test(`SDK guide preserves schema metadata, command history and readonly in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     const errors: string[] = [];

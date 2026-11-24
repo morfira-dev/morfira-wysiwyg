@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) test(`special-character controls insert literal text with Undo and readonly search in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   if (!english) await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-special-characters');
@@ -35,7 +35,7 @@ for (const english of [false, true]) test(`special-character controls insert lit
   expect(await content.innerHTML()).toBe(before);
   await page.keyboard.press('Escape');
   await panel.getByRole('link', { name: t('Подключение и свой каталог символов', 'Setup and custom character catalog'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/special-characters$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/special-characters$`));
   await expect(page.locator('.vp-doc')).toContainText('SpecialCharacterUIController');
   await expect(page.locator('.vp-doc')).toContainText('1–256');
 });

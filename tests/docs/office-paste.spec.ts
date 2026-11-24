@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`Office paste samples and support link in ${english ? 'English playground' : 'Russian homepage'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-office-paste');
@@ -26,6 +26,6 @@ for (const english of [false, true]) test(`Office paste samples and support link
   await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
   await expect(panel.getByRole('button', { name: t('Вставить пример Word', 'Paste Word sample'), exact: true })).toBeDisabled();
   await panel.getByRole('link', { name: t('Поддержка и ограничения офисной вставки', 'Office paste support and limitations'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/office-paste$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/office-paste$`));
   await expect(page.locator('.vp-doc')).toContainText(t('JSON-контракт не расширяется', 'The JSON contract is unchanged'));
 });

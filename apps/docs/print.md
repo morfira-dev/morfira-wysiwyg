@@ -1,10 +1,10 @@
-# Печать документа
+# Browser print
 
-`createPrintUI` добавляет отдельную кнопку браузерной печати. По явному нажатию модуль готовит проверенный снимок текущего документа и показывает его в печатном представлении, без панелей редактора и сайта. На главной и в [демо](/playground) откройте «Печать и оглавление» и загрузите пример чтения.
+`createPrintUI` adds a separate browser-print control. An explicit user action prepares a validated snapshot of the current document and shows it in print media, without editor toolbars or the documentation site. On the homepage and [playground](/playground), open “Print and outline” and load the reading sample.
 
-Модуль подключается отдельно. Он не входит в core или пресеты, не открывает popup/iframe и не содержит движка PDF. Диалог печати, размер страницы, разбиение на страницы и доступность «Сохранить в PDF» определяет браузер и ОС. Совпадение с Office-вёрсткой не обещается.
+The module is independently imported. It is outside core and preset defaults, opens no popup/iframe and contains no PDF engine. The browser and OS own the dialog, page size, pagination and availability of “Save as PDF”. Office layout fidelity is not promised.
 
-## Подключение
+## Setup
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -13,49 +13,49 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/print.css';
 
 const editor = createEditor(editorHost, {
-  locale: 'ru',
-  value: '<h2>Отчёт</h2><p>Документ для печати</p>',
+  locale: 'en',
+  value: '<h2>Report</h2><p>Document to print</p>',
 });
 const printUI = createPrintUI(printHost, editor, {
   onError: (error) => console.error(error),
 });
 ```
 
-`printHost` — пустой подключённый HTML-контейнер того же документа, вне содержимого редактора. CSS печати обязателен: без него модуль отказывается вызывать `window.print()`, чтобы случайно не напечатать всю страницу приложения. CSS подключается отдельно и не загружает шрифты.
+`printHost` is an empty connected HTML host in the same document, outside persisted editor content. The print stylesheet is required: without it, the module refuses to call `window.print()` instead of accidentally printing the entire application page. CSS is explicit and loads no fonts.
 
-Собственная кнопка модуля вызывает печать по действию пользователя. Если приложению нужна своя кнопка, используйте `printUI.print()` из её обработчика; браузер может ограничивать вызовы без действия пользователя.
+The module's native button requests printing through user interaction. Applications with their own button can call `printUI.print()` from its handler; browsers may restrict calls without user activation.
 
 ## API
 
-| Опция | Поведение |
+| Option | Behavior |
 | --- | --- |
-| `label?: string` | Явное доступное имя; строка до 160 символов без управляющих кодов |
-| `onError?: (error: unknown) => void` | Диагностика приложения; UI показывает общий локализованный текст |
+| `label?: string` | Explicit accessible label, up to 160 characters without control codes |
+| `onError?: (error: unknown) => void` | Application diagnostics; UI displays a generic localized message |
 
-`PrintUIController` предоставляет `element`, `print(): boolean`, `cancel()`, `isPrinting()` и `destroy()`. Возврат `true` означает принятие запроса, а не подтверждение печати или сохранения PDF. Если уже выполняется печать, потерян host, отсутствует CSS или идёт IME-композиция, запрос не должен начинать новый сеанс. Read-only разрешает печать зафиксированного содержимого.
+`PrintUIController` exposes `element`, `print(): boolean`, `cancel()`, `isPrinting()` and `destroy()`. A `true` result means the request was accepted, not proof of printing or PDF saving. An active print, lost host, missing CSS or provisional IME composition does not start another session. Read-only permits printing committed content.
 
-`destroy()` идемпотентен. Остальные методы после уничтожения отклоняются. Экспортируются также `PrintUIOptions`, `PrintUIMessageKey` и `printUIMessages`.
+`destroy()` is idempotent. Other methods reject after disposal. The entry also exports `PrintUIOptions`, `PrintUIMessageKey` and `printUIMessages`.
 
-## Снимок и ресурсы
+## Snapshot and resources
 
-Модуль получает JSON текущего экземпляра, проверяет его схемой и строит новые допустимые DOM-узлы. Исходный редактор не клонируется и не переносится. Документ, его реальные DOM-узлы, выделение, текущие форматы и Undo остаются прежними. Изменения после запроса не переписывают уже подготовленный снимок.
+The module reads instance JSON, validates it through the schema and creates new permitted DOM nodes. It does not clone or move the live editor. The source document, actual DOM nodes, selection, pending formats and Undo remain unchanged. Later edits do not rewrite the requested snapshot.
 
-Изображения **всегда** заменяются alt-текстом или локализованной заглушкой до создания живого DOM. Печать не создаёт `img` и не делает дополнительных запросов изображений. Ссылки остаются текстом без навигационных атрибутов; обычные таблицы, объединённые ячейки, подписи, списки и стили текста сохраняются в пределах схемы. Отдельного `images: 'load'` здесь нет. Сохранённый `font-family` также не переносится: печатный профиль использует системные шрифты и monospace для кода, чтобы сам модуль не запрашивал пользовательский webfont. Размеры и другие разрешённые стили остаются в пределах схемы; совпадение гарнитуры с редактором не обещается.
+Images are **always** replaced by alt text or a localized placeholder before creating live DOM. Printing creates no `img` and makes no additional image requests. Links retain text without navigation attributes; ordinary tables, merged cells, captions, lists and text styling survive within schema limits. There is no `images: 'load'` option here. Persisted `font-family` is omitted too: the print profile uses system fonts and monospace for code, so the module does not request a custom webfont. Sizes and other allowed styles remain within schema limits; matching the editor's font family is not promised.
 
-Снимок временно добавляется непосредственным ребёнком `body`, скрывается на экране и показывается только в print media. Пока модуль владеет печатным сеансом, его CSS скрывает другие непосредственные элементы `body` в print media. В обычном экранном режиме приложение остаётся на месте. Внешняя печатная CSS приложения всё ещё может влиять на результат.
+The temporary snapshot is a direct child of `body`, hidden on screen and shown only in print media. While the module owns a print session, its stylesheet hides other direct `body` children in print media. The regular screen application stays in place. Application-owned print CSS can still affect the output.
 
-## Завершение и жизненный цикл
+## Completion and lifecycle
 
-На один документ браузера допускается один сеанс модуля: два редактора не перезаписывают печатный снимок друг друга. Чужой существующий маркер `data-mw-print-active` не присваивается. Не изменяйте этот служебный атрибут из приложения для управления печатью.
+Only one module print session may own a browser document, so two editors cannot overwrite one another's snapshot. An existing foreign `data-mw-print-active` marker is refused. Applications should not change this private attribute to control printing.
 
-Событие `afterprint`, наблюдаемый выход из print media, `cancel()`, исключение, потеря владения или уничтожение освобождают собственный снимок и маркер. Возврат из `window.print()` сам по себе не считается завершением: некоторые браузеры возвращают управление до закрытия диалога. Если сигнал завершения не пришёл, используйте кнопку «Отменить» или `cancel()` для очистки.
+`afterprint`, observed print-media exit, `cancel()`, exceptions, ownership loss or disposal release the owned snapshot and marker. Returning from `window.print()` alone is not completion: some browsers return before the dialog closes. If no completion signal arrives, use Cancel or `cancel()` to release the local session.
 
 ```ts
-printUI.cancel(); // освобождает локальный снимок; не управляет диалогом ОС
+printUI.cancel(); // releases the local snapshot; does not control the OS dialog
 printUI.destroy();
 editor.destroy();
 ```
 
-Отмена модуля не подтверждает отмену задания принтера. Модуль не опрашивает браузер таймерами и не читает результат системного диалога. Уничтожение редактора также освобождает UI; сохранённые устаревшие кнопки не могут начать новый сеанс.
+Canceling the module is not confirmation that a printer job was canceled. The module performs no timer polling and does not inspect the system dialog result. Destroying the editor releases the UI too; retained stale controls cannot start a new session.
 
-Проверки браузерной границы используют подмену `window.print()` только в тестах. Они проверяют снимок, CSS и очистку, а не физический вывод, все драйверы или полную доступность системного диалога. Реальные результаты сборки, целевых тестов и размеров фиксируются отдельно.
+Browser-boundary tests stub `window.print()` only in tests. They verify snapshot, CSS and cleanup, not physical output, every driver or complete system-dialog accessibility. Actual builds, focused test outcomes and size measurements are recorded separately.

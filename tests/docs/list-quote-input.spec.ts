@@ -4,7 +4,7 @@ for (const english of [false, true]) test(`list quote boundary guide uses native
   const t = (russian: string, translated: string) => english ? translated : russian;
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(english ? '/en/list-quote-input' : '/list-quote-input');
+  await page.goto(english ? '/list-quote-input' : '/ru/list-quote-input');
   const demo = page.locator('.list-quote-input-example');
   const content = demo.locator('.mw-content');
   const scenario = demo.getByRole('combobox', { name: t('Сценарий границы', 'Boundary scenario'), exact: true });
@@ -59,7 +59,7 @@ for (const english of [false, true]) test(`list quote boundary guide uses native
 });
 
 test('homepage quote editor mounts lazily and releases its document on collapse', async ({ page }) => {
-  await page.goto('/en/');
+  await page.goto('/');
   const section = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Deletion at list quote boundaries' }) });
   const demo = section.locator('.list-quote-input-example');
   await expect(demo).toHaveCount(0);

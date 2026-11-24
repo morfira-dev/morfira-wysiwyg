@@ -1,8 +1,8 @@
-# Свойства списка
+# List properties
 
-На [главной](/#editor) и в [playground](/playground) открой **«Свойства списка»** и нажми **«Загрузить свойства списка»**. Загрузка заменяет документ, сбрасывает историю и выбирает части двух пунктов обратным диапазоном. Поля — черновики команд; отдельное состояние показывает сохранённые значения.
+On the [homepage](/#editor) or [playground](/playground), open **List properties** and click **Load list properties sample**. Loading replaces the document, resets history and selects parts of two items backward. Fields are command drafts; separate state displays stored values.
 
-## Явное подключение
+## Explicit installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -11,7 +11,7 @@ import '@morfira-dev/wysiwyg/style.css';
 
 const editor = createEditor(host, {
   plugins: [listProperties()],
-  value: '<ol><li>Первый пункт</li><li>Второй пункт</li></ol>',
+  value: '<ol><li>First item</li><li>Second item</li></ol>',
 });
 const lists = listPropertyCommands(editor);
 editor.setSelection(1);
@@ -22,31 +22,31 @@ editor.transact(() => {
 });
 ```
 
-Три команды в примере дают одну общую Undo-ревизию. Плагин не входит в пресеты по умолчанию: с пресетом добавь `plugins: [listProperties()]` явно. Полная демка подключает его отдельно; built-in controls ready toolbar не расширены. Нет runtime-зависимостей, обязательного CSS, обработчика счётчиков или сетевых запросов. Импорт безопасен при SSR; создание редактора требует браузера. Экспортируются типы `ListMarker`, `ListPropertyCommands`, `ListPropertyState`.
+The three example commands share one Undo revision. Presets do not install the plugin by default: explicitly pass `plugins: [listProperties()]`. The full demo composes it separately; ready toolbar built-ins gain no controls. There are no runtime dependencies, required CSS, counter engine or network requests. Imports are SSR-safe; editor creation requires a browser. Public types are `ListMarker`, `ListPropertyCommands` and `ListPropertyState`.
 
-## Команды и сохранённое состояние
+## Commands and stored state
 
-| Метод | Значение |
+| Method | Value |
 | --- | --- |
-| `setStart(number \| false)` | Целое `-2147483648…2147483647` для OL; `false` удаляет явный start |
-| `setReversed(boolean)` | Добавляет/удаляет нативный reversed только на OL |
-| `setMarker(ListMarker \| false)` | Ставит маркер подходящего типа или удаляет только явный list-style-type |
-| `getState()` | Новый `{ disabled, kind, start, reversed, marker }` |
+| `setStart(number \| false)` | Integer `-2147483648…2147483647` on OL; `false` removes explicit start |
+| `setReversed(boolean)` | Sets/removes the native attribute on OL only |
+| `setMarker(ListMarker \| false)` | Applies a matching marker or removes only explicit list-style-type |
+| `getState()` | Fresh `{ disabled, kind, start, reversed, marker }` |
 
-`kind` — `'ordered'`, `'bullet'` или `false`. `start` — явное число или `false`, `reversed` — boolean, `marker` — явный enum или `false`. **Отсутствующий start остаётся `false`**, даже когда браузер вычисляет обычное начало 1 или обратное начало по числу пунктов. Состояние не выдаёт вычисленный CSS, унаследованный маркер или поля черновика за сохранённое свойство. `disabled` учитывает допустимость контейнера, read-only и composition; start/reversed дополнительно требуют `kind === 'ordered'`.
+`kind` is `'ordered'`, `'bullet'` or `false`. `start` is an explicit integer or `false`, `reversed` is boolean, and `marker` is the explicit enum or `false`. **Missing start remains `false`**, even when the browser computes a normal starting value of 1 or a reversed default from the item count. State does not substitute computed CSS, inherited markers or local draft fields for stored properties. `disabled` reflects container eligibility, read-only and composition; start/reversed additionally require `kind === 'ordered'`.
 
-UL принимает `disc`, `circle`, `square`; OL — `decimal`, `lower-alpha`, `upper-alpha`, `lower-roman`, `upper-roman`. Регистр и внешние пробелы импортированного CSS-маркера нормализуются; команда принимает только точные значения enum в нижнем регистре. Валидный маркер другого типа ничего не меняет; неверный payload отклоняется атомарно даже при неподдержанном текущем выделении. Изменение — одна транзакция/Undo; уже установленное значение не создаёт историю. Read-only и composition блокируют команды. Отсутствующий плагин и сохранённый API после уничтожения вызывают ошибку.
+UL accepts `disc`, `circle`, `square`; OL accepts `decimal`, `lower-alpha`, `upper-alpha`, `lower-roman`, `upper-roman`. Imported CSS marker case and outer whitespace normalize; commands accept only exact lowercase enum values. A valid marker for the other kind is a no-op; invalid payloads reject atomically even on an unsupported current selection. Each actual change is one transaction/Undo; setting an existing value adds no history. Read-only and composition block commands. Missing installation and retained handles after destruction throw.
 
-## Какой список меняется
+## Which list changes
 
-Оба конца нативного выделения должны разрешаться в один обычный существующий UL/OL и одну границу ячейки: оба в одной ячейке либо оба вне ячеек. Курсор внутри вложенного пункта нацеливает его ближайший контейнер; Range на самом UL/OL — этот контейнер. Поддержаны курсор, обратный диапазон, несколько прямых пунктов, пустой LI и list-level DOM offsets. Корневые позиции, разные списки/уровни/ячейки, owning-семантика, чужое namespace и неверные прямые дочерние элементы блокируют команду.
+Both native selection endpoints must resolve to one ordinary existing UL/OL and share the same cell boundary: both inside one cell or both outside cells. A caret inside a nested item targets its immediate container; a Range endpoint on UL/OL targets that container itself. Carets, backward ranges, several direct items, empty LI and list-level DOM offsets are supported. Root positions, different lists/levels/cells, owning semantics, foreign namespaces and malformed direct children disable the command.
 
-**Свойства относятся ко всему выбранному контейнеру**, даже когда выделена часть одного пункта. Меняются атрибуты/style фактического списка; пункты, текст, вложенные ветки, task-метаданные и выделение сохраняются. Дочерним контейнерам свойства явно не копируются; обычное наследование CSS продолжает действовать. Внешние controls должны восстановить актуальный диапазон перед командой; демка использует общий `run` стенда.
+**Properties apply to the entire resolved container**, even when only part of one item is selected. Attributes/style change on the actual list; item/text/branch nodes, task metadata and selection remain. Properties are not explicitly copied to child containers; ordinary CSS inheritance still applies. External controls must restore a valid range before activation; the demo uses its shared `run` helper.
 
-## HTML, JSON и совместимость
+## HTML, JSON and compatibility
 
-`ol.start` использует существующий signed-32-bit контракт. HTML `reversed` — boolean по наличию: **`reversed="false"` означает true** и канонизируется в `reversed=""`; отсутствие означает false. JSON принимает только пустую строку на OL; неверный тег/тип/непустое значение отклоняется до изменения документа. Эти свойства и безопасный маркер сохраняются в HTML/JSON/paste/истории без установки плагина. Схема остаётся v1; старый читатель может потерять reversed/marker и изменить нумерацию.
+`ol.start` follows the existing signed-32-bit contract. HTML reversed is presence-based: **`reversed="false"` means true** and normalizes to `reversed=""`; omission means false. JSON accepts only an empty string on OL; wrong tags/types/nonempty values reject before mutation. These properties and safe marker styles survive HTML/JSON/paste/history without installation. Schema stays v1; older readers may discard reversed/marker and change numbering.
 
-Для list-style-type разрешён только перечисленный enum на подходящем UL/OL. Функции, URL, `var()`, strings, escapes, custom counters и произвольные декларации не поддержаны. Неверный импортированный маркер фильтруется существующим style-контрактом; остальные безопасные стили сохраняются. Серверная проверка документов остаётся обязанностью приложения.
+Only the listed marker enum is allowed on matching UL/OL. Functions, URLs, `var()`, strings, escapes, custom counters and arbitrary declarations are unsupported. Invalid imported markers are filtered under the existing style contract; other safe styles remain. Applications still own server-side document validation.
 
-Структурные shallow-копии сохраняют атрибуты. Списки с явным start или reversed не соединяются автоматически как независимые числовые границы; конвертация UL/OL удаляет несовместимый marker, а новый UL не получает start/reversed. **Числовые смещения при разделении, продолженная нумерация между контейнерами и reverse-счётчики не пересчитываются**: браузер использует оставшиеся атрибуты и фактические пункты. `li.value`, deprecated `type`, `list-style-image` и `@counter-style` не добавлены. Это ограниченная настройка контейнера, не система произвольных счётчиков.
+Structural shallow clones retain attributes. Containers with explicit start or reversed are not automatically joined across independently specified numbering boundaries. UL/OL conversion drops incompatible marker values, while a new UL receives no start/reversed. **Numeric offsets after splitting, continued numbering across containers and reverse counters are not recalculated**: the browser uses retained attributes and actual items. `li.value`, deprecated `type`, `list-style-image` and `@counter-style` are not added. This is bounded container configuration, not an arbitrary counter system.

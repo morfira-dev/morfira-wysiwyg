@@ -2,47 +2,47 @@
 import AccessibilityExample from './.vitepress/theme/AccessibilityExample.vue';
 </script>
 
-# Доступность и узкие экраны
+# Accessibility and narrow screens
 
-Редактор использует нативный `contenteditable`, Selection/Range и отдельную опциональную панель. Это основа для проверки доступности, а не заявление о соответствии WCAG или одинаковом поведении всех вспомогательных технологий. Приложение отвечает за доступное имя редактора, контекст формы, сообщения об ошибках, цвета темы и собственные плагины.
+The editor uses native `contenteditable`, Selection/Range and a separate optional toolbar. These provide a basis for accessibility testing, without claiming WCAG conformance or identical behavior across assistive technologies. Applications own the editor's accessible name, form context, error messages, theme colors and custom plugins.
 
-Лаборатория ниже собирается из публичных `createStandardPreset()` и `createStandardEditorUI()`. Она проверяет встраивание в узкий контейнер отдельно от размера окна. Переключатели ширины, плотности, языка и read-only принадлежат примеру; новый API редактора для них не требуется. Плотность пересоздаёт только UI, сохраняя экземпляр редактора и его документ. Язык и read-only обновляются через `setLocale()` и `setReadOnly()`.
+The laboratory below uses public `createStandardPreset()` and `createStandardEditorUI()`. It exercises a narrow embedded host independently from the viewport. Width, density, language and read-only controls belong to the example; no new editor API is required. Changing density recreates only the UI, retaining the editor instance and document. Language and read-only update through `setLocale()` and `setReadOnly()`.
 
 <AccessibilityExample />
 
-## Клавиатура и фокус
+## Keyboard and focus
 
-1. Используйте Tab и Shift+Tab для перехода между внешними полями, панелью и текстом. Кнопка **«Фокус в редактор»** вызывает публичный `editor.focus()`.
-2. У панели один активный Tab-stop. На кнопках доступны ← / → и Home / End. Select и поле цвета сохраняют нативные клавиши; Alt+← / Alt+→ переводят фокус между элементами панели.
-3. **«Ещё»** раскрывает не поместившиеся группы. Escape закрывает раскрытую область и возвращает фокус её кнопке; Escape в обычной панели восстанавливает выделение/фокус редактора.
-4. Формы вставки следуют своим контрактам: [изображения](/ui) используют нативный modal dialog при выбранном dialog-режиме; [готовая панель](/editor-ui) может использовать немодальные popover. Поиск в floating-режиме остаётся немодальной полосой и позволяет работать с текстом.
-5. В read-only документ сохраняется, пользовательские изменения блокируются. Поиск и просмотр не следует отождествлять с разрешением редактирования; состояние кнопок зависит от конкретной команды.
+1. Use Tab and Shift+Tab between external fields, the toolbar and text. **“Focus editor”** calls public `editor.focus()`.
+2. The toolbar has one active Tab stop. Buttons support ← / → and Home / End. Selects and color inputs retain native keys; Alt+← / Alt+→ move between toolbar controls.
+3. **“More”** reveals groups that do not fit. Escape closes the expanded region and restores its button; Escape in the ordinary toolbar restores the editor selection/focus.
+4. Insertion forms follow their own contracts: [image forms](/ui) use a native modal dialog when dialog presentation is selected; the [ready toolbar](/editor-ui) can use nonmodal popovers. Floating search remains a nonmodal strip, allowing text interaction.
+5. Read-only preserves the document and blocks user edits. Searching/viewing does not imply permission to edit; button availability depends on each command.
 
-Сначала проверьте комфортную плотность. Compact уменьшает элементы на desktop. При `pointer: coarse` CSS сохраняет минимальную ширину и высоту элементов готовой панели 44 CSS px; это не подтверждение удобства или доступности на реальном устройстве. CSS-переменные `--mw-*` позволяют приложению менять размер/цвета, но после настройки тему надо проверить снова.
+Start with comfortable density. Compact reduces desktop controls. Under `pointer: coarse`, CSS keeps ready-toolbar controls at least 44 CSS px wide and high; this does not verify comfort or accessibility on a real device. `--mw-*` CSS variables let applications change sizes/colors, but a customized theme requires another review.
 
-В базовой теме затемнён `--mw-muted` до `#657185` для светлого фона; пользовательские сочетания цветов надо измерять отдельно. В `forced-colors` редактор и панель используют системный цвет `Highlight` для видимого фокуса. Поддержка этих правил не заменяет ручную проверку режима высокой контрастности.
+The base theme darkens `--mw-muted` to `#657185` for light backgrounds; custom color combinations require separate measurement. In `forced-colors`, the editor and toolbar use system `Highlight` for visible focus. These rules do not replace manual high-contrast testing.
 
-Первичные ориентиры W3C: [Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) для контраста текста, [Toolbar Pattern APG](https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/) для roving Tab-stop и клавиатуры, [Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html) для оценки переразмещения при увеличении и узкой области. Это ориентиры проверки, а не заявление о соответствии WCAG.
+Primary W3C review references: [Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) for text contrast, [Toolbar Pattern APG](https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/) for roving Tab stops and keyboard interaction, and [Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html) for evaluating rearrangement at zoom/narrow widths. These are review references, not a WCAG conformance claim.
 
-## Матрица доказательств
+## Evidence matrix
 
-| Среда | Что проверяется | Ограничение доказательств |
+| Environment | Scope | Evidence limits |
 | --- | --- | --- |
-| Chromium, Firefox, WebKit на desktop | Имеющиеся engine-регрессии фокуса, выделения, форм и read-only; текущий результат — в [журнале проверок](/testing) | Автоматизация браузера не равна проверке screen reader |
-| Лаборатория EN, desktop | Написаны focused-сценарии публичных переключателей, клавиатурного фокуса и отсутствия горизонтального переполнения страницы | Наличие теста не означает успешный запуск; фактический результат записывается отдельно |
-| Лаборатория RU, 390 × 844, touch/mobile emulation | Написаны focused-сценарии узкого контейнера, переключателей и базового фокуса | Эмуляция viewport/touch не является iPhone/Android, системной клавиатурой или Safari на iOS |
-| Реальные iOS/Android и экранная клавиатура | Среда недоступна проекту: поворот, zoom, scroll, выделение, IME, открытие/закрытие форм | **Не проверено в этом этапе** |
-| VoiceOver, NVDA, JAWS, TalkBack | Нет ручных доказательств объявлений, порядка чтения, ошибок и возврата фокуса | **Не проверено в этом этапе**; соответствие WCAG не заявляется |
+| Desktop Chromium, Firefox, WebKit | Existing engine regressions for focus, selection, forms and read-only; current results live in the [verification record](/testing) | Browser automation is not a screen-reader assessment |
+| EN desktop laboratory | Focused scenarios are authored for public controls, keyboard focus and no horizontal page overflow | An authored test is not a successful run; actual results are recorded separately |
+| RU laboratory, 390 × 844, touch/mobile emulation | Focused scenarios are authored for a narrow host, controls and basic focus | Viewport/touch emulation is not an iPhone/Android device, system keyboard or iOS Safari |
+| Real iOS/Android and software keyboards | Environment unavailable: rotation, zoom, scrolling, selection, IME and opening/closing forms | **Not verified in this stage** |
+| VoiceOver, NVDA, JAWS, TalkBack | Manual checks needed for announcements, reading order, errors and focus return | **Not verified in this stage**; no WCAG conformance claim |
 
-## Что проверить в вашем приложении
+## Application review
 
-Проверьте видимость фокуса и контраст с вашей темой, доступное имя редактора, подписи внешних полей и сообщения об ошибках. Пройдите доступный путь клавиатурой в поддерживаемой среде. Протестируйте браузерный zoom и узкий контейнер, длинные строки, таблицы и собственные элементы. Автоматические проверки не оценивают смысл alt-текста, качество подписей и понятность навигации.
+Review visible focus and contrast in your theme, the editor's accessible name, external field labels and error messages. Complete the available keyboard flow in the supported environment. Exercise browser zoom and a narrow host, long strings, tables and custom elements. Automated checks cannot assess alt-text meaning, label quality or understandable navigation.
 
-HTML/JSON и вставка продолжают проходить обычную валидацию схемы. Доступные подписи не дают доверия URL или загрузке: [границы безопасности](/security) остаются обязательными. Лаборатория не запускает загрузку, не обращается к внешним ресурсам и уничтожает свои UI/editor при уходе со страницы.
+HTML/JSON and paste still pass ordinary schema validation. Accessible labels do not establish trust in URLs or uploads: [security boundaries](/security) remain required. The laboratory starts no uploads or external resource requests and destroys its UI/editor when leaving the page.
 
-В Safari на macOS обход всех кнопок через Tab зависит от настроек клавиатурной навигации; Option+Tab даёт расширенный нативный обход. См. [инструкцию Apple](https://support.apple.com/en-ie/guide/safari/cpsh003/27.0/mac/27). Лаборатория сохраняет эту политику браузера.
+On Safari for macOS, reaching every clickable control with Tab depends on keyboard-navigation settings; Option+Tab provides the broader native traversal. See [Apple keyboard guidance](https://support.apple.com/en-ie/guide/safari/cpsh003/27.0/mac/27). The laboratory preserves that browser policy.
 
 
-## Недоступные среды
+## Unavailable environments
 
-Физические устройства и сессии со скринридерами недоступны владельцу проекта. Их статус — **не проверено**, отдельно от браузерной автоматизации и touch-эмуляции. Это не следующие задачи и не условие релиза; полная совместимость с устройствами/AT и соответствие WCAG не заявляются.
+Physical devices and screen-reader sessions are unavailable to the project owner. They remain explicitly **unverified**, separate from browser automation and touch emulation. They are not planned next tasks or a release prerequisite; do not infer complete device/AT compatibility or WCAG conformance.

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`checklist marker and shortcut through ${english ? 'English playground' : 'Russian homepage'} controls`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-checklists');
@@ -67,7 +67,7 @@ for (const english of [false, true]) test(`checklist marker and shortcut through
   await expect(parent).toHaveAttribute('data-checklist-checked', 'false');
   await expect(child).toHaveAttribute('data-checklist-checked', 'false');
   await panel.getByRole('link', { name: t('Мышь, клавиатура и формат чек-листа', 'Checklist mouse, keyboard and format'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/checklists$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/checklists$`));
   await expect(page.locator('.vp-doc')).toContainText('interactive: false');
   await expect(page.locator('.vp-doc')).toContainText('Ctrl+Enter');
 });

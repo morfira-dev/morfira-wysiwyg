@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`persistent mention controls retain ID and inspect read-only in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-persistent-mentions');
@@ -36,6 +36,6 @@ for (const english of [false, true]) test(`persistent mention controls retain ID
   await expect(panel.locator('[data-mention-references]')).toContainText('"id": "anna"');
   expect(await content.innerHTML()).toBe(before);
   await panel.getByRole('link', { name: t('Хранение ID и границы упоминаний', 'Mention ID storage and boundaries'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/persistent-mentions$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/persistent-mentions$`));
   await expect(page.locator('.vp-doc')).toContainText(t('не атомарный токен', 'not an atomic token'));
 });

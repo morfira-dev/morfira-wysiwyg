@@ -1,8 +1,8 @@
-# Контекстная панель таблиц
+# Contextual table toolbar
 
-На [главной](/#editor) и в [playground](/playground) явно включён переключатель **«Контекстная панель таблиц»**. Откройте лабораторию, загрузите пример и нажмите **«Выделить область 2 × 2»**. Alpha занимает две строки: в области три реальные ячейки. Объединение сохраняет их содержимое и оформление, разделение оставляет содержимое в исходной ячейке. Соседние ячейки сохраняются. Обычные Undo/Redo позволяют проверить каждую атомарную операцию.
+The [homepage](/#editor) and [playground](/playground) explicitly enable **Contextual table toolbar**. Open its laboratory, load the merged-grid sample and choose **Select 2 × 2 region**. Alpha spans two rows: the region includes three actual cells. Merge preserves their rich content; Split keeps the content in the origin cell. The surrounding cells remain intact. Use the ordinary Undo/Redo controls to inspect each atomic operation.
 
-## Подключение
+## Installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -16,7 +16,7 @@ const editor = createEditor(editorHost, { plugins: [tables()] });
 const api = tableCommands(editor);
 const tools = createContextualTableUI(overlayHost, editor, { gap: 8 });
 const stop = editor.events.on(tableSelectionChange, () => {
-  // После уведомления читаем актуальное состояние. Событие — не команда.
+  // Read current state after a notification; do not use events as commands.
   const state = getTableSelection(editor);
   console.log(state?.rectangle, state?.canMerge);
 });
@@ -27,38 +27,38 @@ const dispose = () => {
 };
 ```
 
-Перед созданием требуется `tables()`. Пресеты и готовая панель не устанавливают этот модуль. Runtime-зависимостей и неявного подключения CSS нет. Достаточно CSS ядра, таблиц и contextual-table; только ради этой панели forms/editor CSS не нужны. Импорты безопасны для SSR; создание требует браузера.
+`tables()` is required before mounting. Presets and ready toolbars do not install this module. There are no runtime dependencies or implicit CSS imports. Core, tables and contextual-table CSS are sufficient for this panel; forms/editor CSS are not required solely for it. Imports are SSR-safe; mounting needs a browser.
 
-`overlayHost` — пустой подключённый HTML-элемент приложения в документе редактора, вне его поверхности. Выберите слой относительно viewport без transformed/filter/perspective/paint-contained или обрезающих предков. Глобального overlay-сервиса нет. Контроллер предоставляет readonly `element`, `refresh()` и идемпотентный `destroy()`; refresh после уничтожения выбрасывает ошибку. Опции: необязательные `label`, `onError` и конечный `gap` от 0 до 32 CSS px, по умолчанию 8. Экспортируются `ContextualTableUIOptions`, `ContextualTableUIController`, `ContextualTableUIMessageKey` и RU/EN `contextualTableUIMessages`. Подписи действий используют каталог таблиц и язык редактора.
+`overlayHost` must be empty, connected, in the editor document and outside its surface. Choose an application-owned viewport layer without transformed, filtered, perspective, paint-contained or clipping ancestors. There is no global overlay service. The controller exposes readonly `element`, `refresh()` and idempotent `destroy()`; refresh after destruction throws. Options are optional `label`, `onError` and finite `gap` from 0 to 32 CSS px, default 8. Public exports include `ContextualTableUIOptions`, `ContextualTableUIController`, `ContextualTableUIMessageKey` and RU/EN `contextualTableUIMessages`. Action labels reuse the tables catalog and follow editor locale.
 
-## Выделение и доступность
+## Selection and capabilities
 
-`getTableSelection(editor, range?)` возвращает `TableSelectionState | undefined`. Чтение не меняет фокус, native Selection, приватное выделение, атрибуты или историю. Необязательный native Range проецирует допустимое выделение, пока фокус у внешнего элемента. Некорректные runtime-аргументы выбрасывают ошибку; чужое, отсоединённое или неоднозначное выделение возвращает undefined. Сохранённый Range не разрешает правку заменённого документа.
+`getTableSelection(editor, range?)` returns `TableSelectionState | undefined`. It does not focus, move native Selection, change private cell selection, add attributes or create history. The optional native Range projects a valid cell selection while an application control owns focus. Malformed runtime arguments throw; foreign, detached or ambiguous selections return undefined. A saved Range is not authority to mutate a replaced document.
 
-Состояние содержит фактический `table`, скопированный readonly-массив уникальных реальных `cells`, readonly `rectangle: CellRectangle`, логические `rows`/`columns`, `explicit`, `revision`, `canMerge` и `canSplit`. Координаты `top`, `left`, `bottom`, `right` включительные, с нуля. Spans расширяют прямоугольник до полностью покрытых ячеек. Явное выделение плагина приоритетно; конфликтующий native/переданный Range в другой ячейке или таблице отклоняется. Без него оба конца Range должны быть в одной обычной ячейке. Текстовый диапазон через ячейки, несколько native Range и поддельные `data-mw-selected` не становятся логическим прямоугольником.
+State contains actual `table`, a copied readonly array of actual unique `cells`, readonly `rectangle: CellRectangle`, logical `rows`/`columns`, `explicit`, `revision`, `canMerge` and `canSplit`. Rectangle coordinates `top`, `left`, `bottom`, `right` are inclusive and zero-based. Spans expand the rectangle to fully covered cells. Explicit plugin-owned selection takes precedence; a conflicting projected/native range in another cell/table is rejected. Without it, both Range endpoints must belong to the same ordinary cell. Cross-cell text ranges, multiple native Ranges and forged `data-mw-selected` attributes never become a logical rectangle.
 
-Чтение состояния — отдельный selective export: импорт только команд не загружает необязательную проверку сетки.
+The state reader is a separate selective export: command-only imports do not load its optional grid inspection.
 
-Поддерживается полная сетка до 100 × 100. Дыры, перекрытия, вложенное/чужое содержимое и таблицы с защищёнными семантическими потомками `data-mw-node` исключены из первого UI-профиля. Объединению нужны минимум две полностью покрытые реальные ячейки; разделению — выбранная ячейка со span. Read-only и composition блокируют действия. Флаги описывают снимок; команда всё равно проверяет актуальное состояние.
+Only complete bounded grids up to 100 × 100 qualify. Holes, overlaps, nested/foreign content and tables containing protected semantic `data-mw-node` descendants are unsupported in this first UI profile. Merge needs at least two fully covered actual cells; Split needs a spanning selected cell. Read-only and composition prevent actions. Capability flags describe a snapshot; commands still validate live state.
 
-`tableSelectionChange` — общий типизированный токен уведомления конкретного редактора с числовой ревизией. Плагин объединяет уведомления в microtask после транзакций и не отправляет их после уничтожения. Native/логическое выделение, API/история/документ и read-only/composition инвалидируют снимок. Подписывайтесь через `editor.events.on` и освобождайте подписку. События — наблюдение, **не RPC и не шина команд**.
+`tableSelectionChange` is a shared typed per-editor notification carrying a revision number. The plugin coalesces notifications in a microtask after transactions, and does not notify after disposal. Native/logical selection, API/history/document and read-only/composition changes invalidate the snapshot. Subscribe with `editor.events.on` and dispose your subscription. Events are observations, **not RPC or a mutation bus**.
 
-Внешний UI приложения может вызвать `api.registerSelectionHost(host)`, чтобы pointer-взаимодействие с ним сохраняло логическое выделение плагина. Возвращённую идемпотентную очистку вызывайте при unmount. Host — подключённый внешний HTML-элемент того же документа, вне surface и не предок, содержащий элемент редактора. Body/глобальные корни недопустимы. Регистрация принадлежит экземпляру и учитывает несколько владельцев; она не переводит фокус, не останавливает события и не меняет документ. Контекстный модуль регистрирует свою панель сам.
+External application controls can call `api.registerSelectionHost(host)` to preserve the plugin-owned logical selection during their pointer interaction; call the returned idempotent cleanup on unmount. Hosts must be connected same-document external HTML elements, outside the surface and not ancestors containing the editor element. Body/global roots are invalid. Registration is per-editor and reference-counted; it neither focuses, stops events nor changes content. The contextual module registers its own panel automatically.
 
-## Команды, фокус и история
+## Commands, focus and history
 
-Восемь native-кнопок вставляют строку выше/ниже, удаляют выбранные строки, вставляют столбец слева/справа, удаляют выбранные столбцы, объединяют и разделяют ячейки. Вставка отключена при достижении 100 по соответствующей оси. Команды используют существующие логическую сетку и транзакции, сохраняют незатронутое содержимое и корректируют spans. Успешное действие — один шаг Undo, после него панель закрывается. Удаление всех выбранных строк/столбцов может удалить таблицу; Undo восстанавливает её. Показ и позиционирование истории не создают.
+Eight native buttons insert a row above/below, delete selected rows, insert a column left/right, delete selected columns, merge and split. Insertion disables at the corresponding 100-axis limit. Structural commands use the existing logical grid and transactions, preserving unaffected content and adjusting spans. Each successful action is one Undo step and dismisses the panel; deleting every selected row/column can remove the table, with Undo restoring it. Showing and positioning do not create history.
 
-Сфокусированный курсор в обычной ячейке или явная область из нескольких ячеек открывают панель автоматически. Непустое текстовое выделение внутри ячейки использует текстовую панель; **Alt+F10** явно открывает табличные инструменты. Курсор в ссылке, точное выделение IMG, caption и защищённые семантические узлы исключены: их контексты принадлежат отдельным модулям. Новая модель структурного выделения и глобальный координатор меню не добавляются.
+A focused collapsed cell caret or explicit multi-cell rectangle opens automatically. A noncollapsed text range inside one cell uses text formatting; **Alt+F10** explicitly enters table tools instead. Carets in links, exact IMG selection, captions and protected semantic nodes are excluded, allowing their separate modules to own those contexts. This is not a new structural selection model or global overlay coordinator.
 
-**Alt+F10** из подходящей редактируемой поверхности фокусирует первое доступное действие. **Escape** закрывает видимую или ожидающую панель и один раз восстанавливает допустимый native Range. Внешнее pointer/focus-взаимодействие закрывает панель без перехвата фокуса. Новое выделение, намеренный API `select` или Alt+F10 открывают её снова; очередь закрытой сессии не переоткрывает её сразу. Native Tab-навигация таблицы сохраняется.
+**Alt+F10** from the eligible editable surface focuses the first enabled action. **Escape** closes visible or pending tools and restores a valid native cell Range once. Outside pointer/focus departure dismisses without taking focus. A new selection, intentional API `select` or Alt+F10 reopens; queued work for the dismissed session cannot immediately reopen it. Native table Tab navigation remains unchanged.
 
-Перед командой UI восстанавливает Range и после focus-callbacks проверяет ревизию, фактические таблицу/ячейки, прямоугольник и ограничения. API-замена, Undo с пересозданием узлов, другая таблица, read-only, composition и уничтожение инвалидируют старую цель. Устаревшее действие не редактирует заменённый объект. Destroy освобождает регистрацию host, подписки, события, observers и ожидающую геометрию; редактор и история остаются доступны.
+Before commands, the UI restores the saved Range and checks current revision, actual table/cell identities, rectangle and restrictions after focus callbacks. API replacement, Undo recreating nodes, another table, read-only, composition and disposal invalidate the old target. Stale or unsupported actions cannot silently edit a replacement. Destroy releases host registration, subscriptions, listeners, observers and pending layout work while leaving editor/history usable.
 
-## Безопасность, границы и вес
+## Security, scope and weight
 
-Подписи/ошибки выводятся как текст. UI не клонирует ячейки или изображения и сам не меняет DOM таблицы: правки принадлежат существующим валидируемым командам. Читается только активная сетка при изменении выделения/данных или активации; чистая геометрия не повторяет обход сетки. Fixed-позиционирование учитывает видимое обрезание, scroll, resize и VisualViewport, узкие кнопки переносятся/прокручиваются; polling отсутствует.
+Labels/errors render as text. The UI does not clone cell contents or images and issues no table mutations itself: existing validated commands own edits. It reads only the active grid on selection/data changes or activation; geometry-only work does not repeat grid scans. Fixed viewport placement handles visible clipping, scrolling, resize and VisualViewport, with wrapping/scrolling narrow controls and no polling.
 
-Цвет/границы ячеек, resize, clipboard-кнопки, header/caption UI и свойства таблицы сюда не добавлены; прежние [API таблиц](/plugins#таблицы) доступны отдельно. Код приложения/плагинов доверенный; проверки frontend не заменяют backend-валидацию или CSP. Полная сертификация touch, мобильных IME и доступности не заявляется.
+Cell colors/borders, resize, clipboard controls, header/caption UI and table properties are not added here; existing [table APIs](/plugins#tables) remain available. Application/plugin code is trusted, and frontend checks do not replace backend validation or CSP. Full touch, mobile IME and accessibility certification are not claimed.
 
-Модуль необязателен, с отдельным импортом и tree-shaking. Его бюджеты приёмки — 16000 gzip JS-байт и 3000 дополнительных минифицированных CSS-байт; профиль standard + table-context сохраняет лимиты 80000 gzip JS / 20000 минифицированных CSS-байт. Общие chunks считаются один раз; framework runtime, шрифты, maps и declarations исключены, raw/gzip/Brotli/CSS показываются отдельно. Бюджеты — не результаты измерения; фактическая проверка фиксируется в [плане](/roadmap#проверка-и-ограничения).
+This entry is optional and independently tree-shakeable. Its acceptance budgets are 16000 gzip JS bytes and 3000 additional minified CSS bytes; the deduplicated standard + table-context profile retains 80000 gzip JS / 20000 minified CSS bytes. Shared chunks count once, framework runtimes/fonts/maps/declarations are excluded, and raw/gzip/Brotli/CSS are reported separately. Budgets are not measured results; actual validation belongs in the [roadmap](/roadmap#verification-and-limits).

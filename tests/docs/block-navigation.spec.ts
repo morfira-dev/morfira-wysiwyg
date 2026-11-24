@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`root object navigation example supports insertion and undo in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
-  await page.goto(english ? '/en/block-navigation' : '/block-navigation');
+  await page.goto(english ? '/block-navigation' : '/ru/block-navigation');
   const example = page.locator('.block-navigation-example');
   const content = example.locator('.mw-content');
   await expect(content).toBeVisible();

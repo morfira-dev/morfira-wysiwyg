@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`Markdown codec controls and explicit import/export boundaries in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-markdown-codec');
@@ -43,6 +43,6 @@ for (const english of [false, true]) test(`Markdown codec controls and explicit 
   await expect(source).toHaveValue(/\*\*bold\*\*/);
   expect(await content.innerHTML()).toBe(before);
   await panel.getByRole('link', { name: t('Синтаксис и ограничения Markdown-кодека', 'Markdown codec syntax and limitations'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/markdown-codec$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/markdown-codec$`));
   await expect(page.locator('.vp-doc')).toContainText(t('Объединённые', 'Merged'));
 });

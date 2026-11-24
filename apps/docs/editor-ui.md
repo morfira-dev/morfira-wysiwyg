@@ -1,20 +1,20 @@
-# Готовая панель редактора
+# Ready editor toolbar
 
-Необязательный UI собирает готовый интерфейс поверх публичных команд редактора. Панель не устанавливает плагины, не меняет схему и не требует Vue/React/Svelte/Angular. Поведение выбирается через [пресеты](/presets), интерфейс — отдельным импортом. Главная и [playground](/playground) используют те же публичные фабрики.
+Optional UI composes a ready interface over the editor's public commands. It installs no plugins, changes no schema and requires no Vue/React/Svelte/Angular runtime. Choose behavior through [presets](/presets), and import its interface separately. The homepage and [playground](/playground) use the same public factories.
 
-## Выбор комплектации
+## Choose a composition
 
-| Импорт | Фабрика | Что подключается |
+| Import | Factory | What it loads |
 | --- | --- | --- |
-| `@morfira-dev/wysiwyg/ui/editor` | `createEditorUI` | Небольшая панель форматирования и пользовательские действия |
-| `@morfira-dev/wysiwyg/ui/standard` | `createStandardEditorUI` | Панель, формы ссылок/изображений/поиска и вставка таблицы |
-| `@morfira-dev/wysiwyg/ui/extended` | `createExtendedEditorUI` | Standard UI и существующие меню mentions/slash |
+| `@morfira-dev/wysiwyg/ui/editor` | `createEditorUI` | Small formatting toolbar and application actions |
+| `@morfira-dev/wysiwyg/ui/standard` | `createStandardEditorUI` | Toolbar, link/image/search forms and table insertion |
+| `@morfira-dev/wysiwyg/ui/extended` | `createExtendedEditorUI` | Standard UI plus current mention/slash menus |
 
-`createEditorUI` не требует table/image/search/suggestion-плагинов. Standard проверяет `tables`, `images` и `search` **до монтажа DOM и listeners**. Extended дополнительно требует `mentions` и `slash`; провайдеры данных задаёт приложение. Если стандартный пресет отключает обязательный модуль, используйте настраиваемый shell вместо Standard UI.
+`createEditorUI` requires no table/image/search/suggestion plugins. Standard validates `tables`, `images` and `search` **before mounting DOM or listeners**. Extended additionally requires `mentions` and `slash`; the application supplies their providers. If a standard preset disables required behavior, use the configurable shell instead of Standard UI.
 
-Все импорты безопасны при SSR. Создание UI требует браузерного DOM и пустого host вне `editor.surface`. Непустой host отклоняется без замены содержимого приложения. UI не регистрирует глобальные custom elements и не выполняет сетевые запросы.
+Imports are SSR-safe. Mounting requires browser DOM and an empty host outside `editor.surface`. A nonempty host is rejected without replacing application content. UI imports register no global custom elements and make no network requests.
 
-## Стандартный редактор
+## Standard editor
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -26,12 +26,12 @@ import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const editor = createEditor(editorHost, createStandardPreset({
-  locale: 'ru',
-  value: '<p>Начните писать.</p>',
+  locale: 'en',
+  value: '<p>Start writing.</p>',
 }));
 const ui = createStandardEditorUI(toolbarHost, editor, {
   density: 'comfortable',
-  images: { initialValues: { src: '/example.png', alt: 'Описание' } },
+  images: { initialValues: { src: '/example.png', alt: 'Description' } },
   table: { rows: 3, columns: 3 },
   onError: (error) => console.error(error),
 });
@@ -42,11 +42,11 @@ const dispose = () => {
 };
 ```
 
-URL изображения — пример значения приложения, а не встроенный ассет. Без callback загрузки поддерживается вставка по URL. Для загрузки передайте свой `images.upload` в behavior preset; транспорт, endpoint и авторизация принадлежат приложению. Закрытие панели отменяет только запрос, начатый её формой, и не отменяет более новую загрузку приложения. [Контракт изображений](/images).
+The image URL is application data, not a bundled asset. URL insertion works without an upload callback. For uploads, pass your `images.upload` into the behavior preset; transport, endpoint and authorization belong to the application. Closing a panel cancels only its form's request and cannot cancel a newer application upload. [Image contract](/images).
 
-CSS импортируется явно. `editor.css` содержит shell и стандартные панели; `forms.css` — переиспользуемые формы. Стили документа/таблиц подключаются отдельно. JavaScript не вставляет styles или шрифты автоматически.
+CSS imports are explicit. `editor.css` contains the shell and standard panels; `forms.css` contains reusable forms. Content/table styles are separate. JavaScript injects no styles or fonts.
 
-## Небольшой shell
+## Small shell
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -55,7 +55,7 @@ import { createEditorUI } from '@morfira-dev/wysiwyg/ui/editor';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/editor.css';
 
-const editor = createEditor(editorHost, createMinimalPreset({ locale: 'ru' }));
+const editor = createEditor(editorHost, createMinimalPreset({ locale: 'en' }));
 const ui = createEditorUI(toolbarHost, editor, {
   density: 'compact',
   overflow: 'more',
@@ -69,15 +69,15 @@ const ui = createEditorUI(toolbarHost, editor, {
 });
 ```
 
-Доступные builtin IDs: `undo`, `redo`, `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`, `blockquote`, `clear`, `indent`, `outdent`, `block`, `list`, `align`, `color`, `background`. `createDefaultEditorUIGroups()` возвращает свежие группы по умолчанию. Повторные/неизвестные идентификаторы отклоняются при создании.
+Available builtin IDs: `undo`, `redo`, `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`, `blockquote`, `clear`, `indent`, `outdent`, `block`, `list`, `align`, `color`, `background`. `createDefaultEditorUIGroups()` returns fresh default groups. Duplicate/unknown identifiers are rejected during creation.
 
-Порядок групп задаёт порядок панели; `groupPriorities` отдельно задаёт их приоритет при overflow. `block` включает абзац, заголовки и блок кода; `list` — обычный текст, bullet и ordered list; `align` — четыре текущих варианта выравнивания. Цвет и выделение используют нативный color input и отдельный сброс. Полная custom palette пока не реализована; приоритетный overflow включается явно, как в примере.
+Group order defines toolbar order; `groupPriorities` separately defines overflow priority. `block` provides paragraphs, headings and code blocks; `list` provides no list, bullet and ordered lists; `align` provides the four current alignment values. Text/highlight colors use native color inputs and separate reset controls. A full custom palette is not implemented; priority overflow is explicitly enabled as above.
 
-## Перенос строк или «Ещё»
+## Wrapping or More
 
-`overflow: 'wrap'` — значение по умолчанию для shell, standard и extended: все группы остаются видимыми с переносом строк. `overflow: 'more'` явно включает измерение ширины **host панели**, а не viewport. Панель переносит существующие целые группы в «Ещё» без копий controls; порядок, обработчики и состояние сохраняются. Очень широкая группа или узкий host используют ограниченный перенос строк.
+`overflow: 'wrap'` is the default for shell, standard and extended: all groups remain visible with wrapping. `overflow: 'more'` explicitly measures the **toolbar host**, rather than the viewport. It moves existing whole groups into More without copying controls; order, listeners and state remain. An oversized group or extremely narrow host uses bounded wrapping.
 
-В shell `groupPriorities` должен содержать ровно по одному конечному числу на группу. Большее число дольше сохраняет группу на панели; при равенстве раньше скрывается более поздняя группа. Неверный режим, длина или число отклоняются до монтажа. Standard/extended задают собственные приоритеты; позиционный массив им не передаётся:
+Shell `groupPriorities` must contain exactly one finite number per group. Higher values retain groups longer; ties hide later groups first. Invalid modes, lengths or numbers reject before mounting. Standard/extended own their priorities; do not pass them a positional array:
 
 ```ts
 import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
@@ -85,15 +85,15 @@ import { createStandardEditorUI } from '@morfira-dev/wysiwyg/ui/standard';
 const ui = createStandardEditorUI(toolbarHost, editor, { overflow: 'more' });
 ```
 
-Нативная кнопка «Ещё» имеет `aria-expanded` и `aria-controls`. Это раскрываемая немодальная область с обычными кнопками/select/input, а не ARIA menu. Закрытые controls исключены из навигации. Открытие с клавиатуры переводит фокус к первому доступному control; Escape закрывает область и возвращает фокус кнопке «Ещё». Внешнее действие закрывает её без перехвата фокуса; команда закрывает overflow, сохраняя фокус редактора или открытой формы.
+The native More disclosure has `aria-expanded` and `aria-controls`. Its nonmodal region contains ordinary buttons/selects/inputs, not ARIA menu items. Closed controls are excluded from navigation. Keyboard opening focuses the first enabled control; Escape closes it and returns focus to More. Outside interaction dismisses it without stealing focus; an action closes overflow while keeping focus in the editor or a newly opened form.
 
-Измерение и открытие не меняют документ, выделение или историю. Фокусируемая группа остаётся на месте при resize до ухода фокуса; сохранение открытого системного picker при resize не обещается. `refresh()` повторно учитывает ширину и локализацию; без ResizeObserver его вызывают явно. Destroy отключает observer и запланированные callbacks. Новых runtime-зависимостей нет; headless-ядро не загружает overflow UI.
+Measurement and opening do not change content, selection or history. An actively focused group stays in place during resize until focus leaves; preservation of an open OS picker during resize is not promised. `refresh()` recomputes widths and localized labels; call it explicitly without ResizeObserver. Destroy disconnects observers and scheduled callbacks. There are no new runtime dependencies, and headless core does not load overflow UI.
 
-На главной и в playground переключатель **«Режим панели»** меняет только UI через destroy/remount, сохраняя редактор, документ, историю и выделение. Режим по умолчанию — перенос строк. При смене режима открытые UI-панели и их несохранённые черновики пересоздаются; это не замена документа. Отдельная [контекстная панель текста](/contextual-toolbar) подключается явно; изменение режима overflow по умолчанию остаётся будущим решением; [контекстные действия таблиц](/contextual-tables) подключаются отдельно. Для точного IMG есть отдельные [контекстные свойства](/contextual-images).
+On the homepage and playground, **Toolbar layout** remounts only UI while preserving the editor, document, history and selection. The default is wrapping. Switching modes recreates open UI panels and their unsaved drafts; it does not replace the document. The separate [text contextual toolbar](/contextual-toolbar) is explicitly installed; changing the default overflow mode remains a future decision. [Table context actions](/contextual-tables) are explicitly installed separately. Exact IMG selection has separate [contextual image properties](/contextual-images).
 
-## Действие через SDK
+## An action using the SDK
 
-ID пользовательского действия нужен только UI. Типизированная команда сохраняет собственную идентичность и проверку payload; новый строковый command bus не создаётся.
+Application action IDs identify UI only. The typed command keeps its own identity and payload validation; there is no second string command bus.
 
 ```ts
 import { createEditorCommand } from '@morfira-dev/wysiwyg';
@@ -111,7 +111,7 @@ const unregister = editor.commands.register(emphasize, {
 const ui = createEditorUI(toolbarHost, editor, {
   groups: [['undo', 'redo'], [{
     id: 'app:emphasize',
-    label: 'Выделить полужирным',
+    label: 'Emphasize selection',
     text: 'B+',
     run: (instance) => { instance.commands.execute(emphasize, undefined); },
     enabled: (instance) => instance.commands.getState(emphasize).enabled,
@@ -120,9 +120,9 @@ const ui = createEditorUI(toolbarHost, editor, {
 });
 ```
 
-В cleanup вызовите `ui.destroy()` и `unregister()`. Custom action принимает `icon` из небольшого встроенного набора либо безопасный `text`, `enabled`, `pressed` и `mutates` (по умолчанию true). Для немутирующего действия можно задать `mutates: false`. Исходные ошибки передаются в `onError`; пользователь видит безопасное локализованное сообщение. Несколько изменений внутри одного действия оформляйте [SDK-командой/транзакцией](/plugin-sdk).
+Call `ui.destroy()` and `unregister()` during cleanup. A custom action accepts an `icon` from the small built-in set or safe `text`, plus `enabled`, `pressed` and `mutates` (default true). Set `mutates: false` for non-mutating actions. Original errors go to `onError`; users see a safe localized message. Compose multiple changes through an [SDK command/transaction](/plugin-sdk).
 
-## Extended и меню подсказок
+## Extended suggestion menus
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -135,58 +135,57 @@ import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const editor = createEditor(editorHost, createExtendedPreset({
-  locale: 'ru',
+  locale: 'en',
   mentions: { provide: applicationPeopleProvider },
   slash: { provide: applicationCommandProvider },
 }));
 const ui = createExtendedEditorUI(toolbarHost, editor, { density: 'compact' });
 ```
 
-Провайдеры в примере определяет приложение. При отсутствии `slash.actions` preset подключает текущие структурные действия `createSlashActions()`. Extended UI владеет двумя меню подсказок и стандартной панелью, но не добавляет новые плагины или провайдеры. Не создавайте второе меню для того же suggestion controller. Mentions по умолчанию остаются обычным текстом; явное `mentions.persistent: true` в конфигурации extended preset включает [редактируемые ссылки с ID](/persistent-mentions). Демка дополнительно включает [атомарную навигацию и удаление](/atomic-mentions); общий SDK атомов этим не обещается. [Подсказки и ограничения](/suggestions).
+The application defines these providers. If `slash.actions` is absent, the preset supplies the current structural `createSlashActions()` set. Extended UI owns two suggestion menus and the standard toolbar, but installs no behavior or provider. Do not mount a second menu for the same suggestion controller. Mentions retain plain text by default; explicit `mentions.persistent: true` in extended preset configuration enables [editable ID references](/persistent-mentions). The demo additionally enables [atomic navigation and deletion](/atomic-mentions); this is not a universal atom SDK. [Suggestions and limits](/suggestions).
 
-## Выделение, клавиатура и состояние
+## Selection, keyboard and state
 
-Панель сохраняет настоящий DOM Range и направление выделения до перехода в controls, включая пустые блоки. Перед изменением восстанавливается только допустимая цель. Внешняя замена документа сбрасывает старую цель и закрывает Standard panel; повторно выделите текст в редакторе. Открытие/закрытие панели, смена языка и темы не создают undo-ревизии.
+The toolbar remembers the actual DOM Range and selection direction before controls take focus, including empty blocks. Only a valid target is restored before a mutation. External document replacement invalidates the old target and closes the Standard panel; select text in the editor again. Opening/closing panels and changing language/theme create no undo revision.
 
-В toolbar один roving tab stop. Стрелки в ряду кнопок и Home/End перемещают фокус; Tab выходит из панели. Нативные select/color input сохраняют собственные клавиши; **Alt+ArrowLeft/ArrowRight** переводит фокус между controls, когда текущий control нативный. Escape возвращает фокус редактору; в открытой Standard panel сначала закрывает панель и возвращает фокус launcher-кнопке. Outside click закрывает только принадлежащую UI панель и не перехватывает фокус внешнего target.
+There is one roving toolbar tab stop. Arrow keys on button rows and Home/End move focus; Tab leaves the toolbar. Native selects/color inputs retain their own keys; **Alt+ArrowLeft/ArrowRight** moves between controls when the current control is native. Escape returns focus to the editor; inside an open Standard panel it first closes the panel and returns focus to its launcher. Outside interaction dismisses only the owned panel without stealing focus from the clicked target.
 
-`aria-pressed` отражает активный или mixed формат, disabled controls пропускаются клавиатурной навигацией. Read-only блокирует изменение документа; поиск/навигация остаются доступны. Во время composition mutating controls защищены редактором, а Standard launchers не открывают отвлекающую панель. Переиспользуемые формы не создают вложенных native `<form>` и не отправляют форму приложения по Enter.
+`aria-pressed` reflects active/mixed formats, and keyboard navigation skips disabled controls. Read-only blocks mutations while allowing search/navigation. Composition protects mutating controls, and Standard launchers avoid opening a distracting panel. Reusable controls create no nested native `<form>` and do not submit the application's form on Enter.
 
-## Язык, оформление и lifecycle
+## Language, appearance and lifecycle
 
-Builtin UI использует RU/EN-каталоги `ui.editor.*` и `ui.standard.*`, формы — свои `ui.links.*`, `ui.images.*`, `ui.search.*`. `editor.setLocale(...)` обновляет подписи и сообщения без замены документа и черновиков. Явный `label` и custom action labels принадлежат приложению; callback `label: (editor) => ...` позволяет им реагировать на locale.
+Built-in UI uses RU/EN catalogs `ui.editor.*` and `ui.standard.*`; forms use `ui.links.*`, `ui.images.*` and `ui.search.*`. `editor.setLocale(...)` updates labels/messages without replacing the document or drafts. Explicit `label` and custom action labels belong to the application; `label: (editor) => ...` can react to locale changes.
 
-Плотность — `comfortable` или `compact`. Scoped CSS использует `--mw-*`: существующие surface/text/accent/border/hover плюс `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Стили документа не переписываются при смене темы. Поддерживаются responsive wrapping, явный More/priority overflow и reduced motion; отдельная [текстовая контекстная панель](/contextual-toolbar) реализована и прошла локальную поэтапную проверку, описанную в [дорожной карте](/roadmap#проверки-и-ограничения); контекстные инструменты таблиц имеют [отдельный модуль](/contextual-tables); [свойства изображения](/contextual-images) подключаются отдельным модулем.
+Density is `comfortable` or `compact`. Scoped CSS uses `--mw-*`: existing surface/text/accent/border/hover tokens plus `--mw-ui-font-size`, `--mw-ui-control-size`, `--mw-ui-icon-size`, `--mw-ui-padding`, `--mw-ui-group-gap`, `--mw-ui-control-gap`, `--mw-ui-control-radius`, `--mw-ui-radius`, `--mw-popup-surface`, `--mw-popup-shadow`, `--mw-ui-panel-padding`, `--mw-ui-error`. Theme changes do not rewrite content styles. Responsive wrapping, explicit More/priority overflow and reduced motion are supported; the separate [text contextual toolbar](/contextual-toolbar) is implemented with staged local validation recorded in the [roadmap](/roadmap#verification-and-limits); table context controls have a separate [explicit module](/contextual-tables); [contextual image properties](/contextual-images) are a separate explicit module.
 
-Контроллеры предоставляют `element`, `refresh()` и идемпотентный `destroy()`. Destroy UI оставляет редактор и application-owned search state рабочими; editor destroy автоматически освобождает связанный UI. Отсоединённые controls инертны. Все подписки, формы и меню имеют cleanup. Desktop browser tests не являются сертификацией mobile/IME или скринридеров.
+Controllers expose `element`, `refresh()` and idempotent `destroy()`. Destroying UI leaves the editor and application-owned search state usable; editor destruction automatically disposes related UI. Detached controls are inert. Every subscription, form and menu has cleanup. Desktop browser tests do not certify mobile/IME or screen-reader behavior.
 
-Размеры измеряются отдельно как minified JS, gzip, Brotli и CSS, с устранением общих чанков. Framework runtime, карты исходников и декларации не входят в runtime-size. Состав и ограничения профилей — на странице [пресетов](/presets).
+Measure minified JS, gzip, Brotli and CSS separately, counting shared chunks once. Framework runtimes, maps and declarations are excluded from runtime size. See [presets](/presets) for profile contents and limits.
 
-Дополнительно можно явно подключить [действия ссылки у курсора](/contextual-links): просмотр безопасного адреса, Open/Edit/Remove и существующая форма. Это отдельный `/ui/contextual-link`, без изменения пресета или ready toolbar; image/table contexts остаются вне первого среза.
-
-
-Явные [контекстные свойства изображения](/contextual-images) добавляют описание/Свойства/Удалить для точного нативного IMG-выделения, с edit-only формой и существующими командами images. Пресеты не меняются; resize/crop и более широкая модель выделения не подразумеваются.
-
-## Контекстные действия таблиц
-
-Явно подключаемая [контекстная панель таблиц](/contextual-tables) добавляет вставку/удаление строк и столбцов, merge/split поверх существующей логической сетки, восстановление native Range и один шаг Undo на команду. Подключите `/ui/contextual-table` и его CSS вместе с `tables()` и CSS таблиц; пресеты не меняются. `getTableSelection(editor, range?)` возвращает наблюдаемый `TableSelectionState`, `registerSelectionHost(host)` задаёт владение внешними контролами, а `tableSelectionChange` — типизированное уведомление экземпляра, не RPC. Гайд описывает spans, недоступные действия, клавиатуру/lifecycle и отдельные gzip-бюджеты.
+You can separately install [link actions at the caret](/contextual-links): a validated address preview, Open/Edit/Remove and the existing form. This independent `/ui/contextual-link` changes neither presets nor ready toolbar; image/table contexts remain outside this first slice.
 
 
-Необязательный [выбор размера таблицы](/table-picker) подключается явным импортом фабрики и CSS; [вставка изображения из буфера/drop](/image-input) использует callback загрузки приложения. Пресеты автоматически их не включают.
+Explicit [contextual image properties](/contextual-images) add summary/Properties/Remove for exact native IMG selection, using edit-only forms and existing image commands. Presets remain unchanged; image drag resize/crop and broader node selection are not implied.
+
+## Contextual table actions
+
+The explicit [contextual table toolbar](/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions and independent gzip budgets.
 
 
-[Свойства таблиц и ячеек](/table-properties) подключаются отдельными `/plugins/table-properties` и `/ui/table-properties`: ширина/расположение таблицы, фон/цвет границ/вертикальное выравнивание выбранных ячеек. Форма применяет только изменённые поля одним Undo, использует существующий `/ui/forms.css` и не входит в пресеты.
+Optional [table size picker](/table-picker) uses an explicit factory and CSS import; [image clipboard/drop input](/image-input) delegates to the application-owned images upload callback. Neither changes preset defaults.
 
-## Всплывающие формы вставки и немодальный поиск
 
-Передайте `presentation: 'floating'` готовой standard/extended-панели: ссылки и
-таблицы откроются в компактных окнах у кнопки, изображения — в модальном окне.
-Совместимый режим по умолчанию — `inline`. Поиск — **немодальная полоса под
-toolbar**: она остаётся открытой при клике и вводе в документе. Нет затемнения,
-блокировки документа или ловушки фокуса. Escape и кнопка закрытия убирают полосу.
-Таблицы сохраняют сетку и числовые размеры 1–100. Всплывающие окна ограничены
-областью экрана и закрываются снаружи; изображения используют нативный dialog.
-Валидация, выделение и история операций сохраняют обычные правила.
+[Table and cell properties](/table-properties) use independent `/plugins/table-properties` and `/ui/table-properties` entries: table width/placement and selected-cell background/border color/vertical alignment. The form applies only dirty fields in one Undo, uses existing `/ui/forms.css`, and is outside preset defaults.
+
+## Floating insertion UI and docked search
+
+Use `presentation: 'floating'` in standard/extended UI for compact anchored link
+and table popovers and an image dialog. The compatible default is `inline`.
+Search is a **nonmodal strip below the toolbar**: it stays open while you edit or
+click the document. It has no backdrop, inert document or focus trap. Escape or
+Close dismisses it. Tables retain the grid and numeric dimensions 1–100. Popovers
+fit the viewport and close on outside activation; modal image forms use native
+dialog focus containment. Every operation retains normal validation and history.
 
 ```ts
 const ui = createStandardEditorUI(host, editor, {
@@ -195,7 +194,7 @@ const ui = createStandardEditorUI(host, editor, {
 });
 ```
 
-Фабрики импортируются отдельно из `/ui/standard` и `/ui/table-picker`; подключите
-их документированные CSS. Настройки `images.presentation` и `table.presentation`
-позволяют отдельно выбрать представление для интерфейса приложения. Эта настройка
-не добавляет видеовставки или обработку медиа.
+Both factories are independently imported from `/ui/standard` and `/ui/table-picker`;
+include their documented CSS. `images.presentation` and `table.presentation` can
+override the common setting for application-specific layout. No media embed or
+video processing capability is implied by this presentation option.

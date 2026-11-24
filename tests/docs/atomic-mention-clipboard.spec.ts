@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`atomic mention memory clipboard through ${english ? 'English' : 'Russian'} demo controls`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-mention-clipboard');
@@ -38,14 +38,14 @@ for (const english of [false, true]) test(`atomic mention memory clipboard throu
   await expect(button('Вырезать в память', 'Cut to memory')).toBeDisabled();
   await expect(button('Вставить с ID', 'Paste with ID')).toBeDisabled();
   await panel.getByRole('link', { name: t('Буфер, безопасность и ограничения', 'Clipboard, safety and boundaries'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/atomic-mention-clipboard$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/atomic-mention-clipboard$`));
   await expect(page.locator('.vp-doc')).toContainText('text/plain');
   await expect(page.locator('.vp-doc')).toContainText('mentionClipboardCommands');
 });
 
 for (const english of [false, true]) test(`atomic mention level intervals through ${english ? 'English' : 'Russian'} demo controls`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-mention-clipboard');
@@ -102,7 +102,7 @@ for (const english of [false, true]) test(`atomic mention level intervals throug
 
 for (const english of [false, true]) test(`atomic mention block transfers through ${english ? 'English' : 'Russian'} demo controls`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-mention-clipboard');
@@ -145,7 +145,7 @@ for (const english of [false, true]) test(`atomic mention block transfers throug
 
 for (const english of [false, true]) test(`atomic mention list transfers through ${english ? 'English' : 'Russian'} demo controls`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-mention-clipboard');
@@ -195,7 +195,7 @@ for (const english of [false, true]) test(`atomic mention list transfers through
 
 for (const english of [false, true]) test(`atomic mention nested branches through ${english ? 'English' : 'Russian'} demo controls`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-mention-clipboard');

@@ -13,7 +13,7 @@ const replaceHTML = async (page: Page, value: string) => {
 
 for (const english of [false, true]) test(`heading exit and block joins retain history on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/');
+  await page.goto(english ? '/' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByLabel(t('Формат документа', 'Document format'), { exact: true }).selectOption('html');
@@ -48,7 +48,7 @@ for (const english of [false, true]) test(`heading exit and block joins retain h
 
 test('homepage exposes the complete laboratory, tables, theme and HTML/JSON', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/');
+  await page.goto('/ru/');
   await expect(page.locator('h1')).toContainText('Morfira WYSIWYG');
   await expect(page.getByRole('textbox', { name: 'Попробуйте Morfira', exact: true })).toBeVisible();
   await expect(page.getByText('Буфер диапазона · HTML / TSV', { exact: true })).toBeVisible();
@@ -68,7 +68,7 @@ test('homepage exposes the complete laboratory, tables, theme and HTML/JSON', as
 });
 
 test('full demo formats text, changes blocks and inserts a checked link and local image', async ({ page }) => {
-  await page.goto('/playground'); await replaceHTML(page, '<p>Hello world</p>');
+  await page.goto('/ru/playground'); await replaceHTML(page, '<p>Hello world</p>');
   const content = page.getByRole('textbox', { name: 'Попробуйте Morfira', exact: true });
   await content.focus();
   await content.evaluate((element) => {
@@ -95,7 +95,7 @@ test('full demo formats text, changes blocks and inserts a checked link and loca
 });
 
 test('table controls preserve a range while using forms, merge/split and paste TSV', async ({ page }) => {
-  await page.goto('/playground'); await sample(page, 'empty');
+  await page.goto('/ru/playground'); await sample(page, 'empty');
   await page.locator('.demo-inspector').getByRole('button', { name: 'Вставить таблицу', exact: true }).click();
   await page.locator('.mw-content td').first().click();
   await page.locator('.lab-tables').getByRole('button', { name: 'Выделить диапазон', exact: true }).click();
@@ -113,7 +113,7 @@ test('table controls preserve a range while using forms, merge/split and paste T
 });
 
 test('invalid JSON is rejected visibly without altering the editor', async ({ page }) => {
-  await page.goto('/playground'); const before = await page.locator('.mw-content').innerHTML();
+  await page.goto('/ru/playground'); const before = await page.locator('.mw-content').innerHTML();
   await page.getByLabel('Формат документа', { exact: true }).selectOption('json');
   await page.getByLabel('Исходник документа', { exact: true }).fill('{"version":99,"children":[]}');
   await page.getByRole('button', { name: 'Применить документ', exact: true }).click();
@@ -121,15 +121,33 @@ test('invalid JSON is rejected visibly without altering the editor', async ({ pa
 });
 
 test('English homepage and lab localize controls and support readonly', async ({ page }) => {
-  await page.goto('/en/'); await expect(page.getByText('Try everything that works today.', { exact: true })).toBeVisible();
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByText('Try everything that works today.', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Buffer contents', { exact: true })).toBeVisible();
-  await page.goto('/en/guide'); await expect(page.getByRole('heading', { name: /^Getting started/ })).toBeVisible();
-  await page.goto('/en/playground'); await page.getByRole('button', { name: 'Read only', exact: true }).click();
+  await page.goto('/guide'); await expect(page.getByRole('heading', { name: /^Getting started/ })).toBeVisible();
+  await page.goto('/playground'); await page.getByRole('button', { name: 'Read only', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Try Morfira', exact: true })).toHaveAttribute('contenteditable', 'false');
   await expect(page.getByRole('toolbar', { name: 'Formatting', exact: true }).getByRole('button', { name: 'Insert table', exact: true })).toBeDisabled();
 });
 
-for (const route of ['/', '/playground', '/en/']) {
+test('the language switcher opens the corresponding guide in both directions', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/guide');
+  await page.getByRole('button', { name: 'Change language' }).hover();
+  await page.getByRole('link', { name: 'Русский', exact: true }).click();
+  await expect(page).toHaveURL(/\/ru\/guide$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+  await expect(page.getByRole('heading', { name: /^Быстрый старт/, level: 1 })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Сменить язык' }).hover();
+  await page.getByRole('link', { name: 'English', exact: true }).click();
+  await expect(page).toHaveURL(/\/guide$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('heading', { name: /^Getting started/, level: 1 })).toBeVisible();
+});
+
+for (const route of ['/ru/', '/ru/playground', '/']) {
   test(`mobile full laboratory has no horizontal page overflow: ${route}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 }); await page.goto(route);
     await expect(page.locator('.mw-content')).toBeVisible();
@@ -140,7 +158,7 @@ for (const route of ['/', '/playground', '/en/']) {
 for (const english of [false, true]) {
   test(`homepage list sample exposes nesting, format controls and localized toolbar: ${english ? 'en' : 'ru'}`, async ({ page }) => {
     const errors: string[] = []; page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(english ? '/en/' : '/'); await sample(page, 'lists', english);
+    await page.goto(english ? '/' : '/ru/'); await sample(page, 'lists', english);
     const toolbar = page.getByRole('toolbar', { name: english ? 'Formatting' : 'Форматирование', exact: true });
     await expect(toolbar).toBeVisible(); await expect(page.locator('.mw-content ul > li > ol')).toHaveCount(1);
     await page.locator('.mw-content > ul > li').nth(1).evaluate((item) => { const range = document.createRange(); range.selectNodeContents(item); range.collapse(true); const s = window.getSelection()!; s.removeAllRanges(); s.addRange(range); });
@@ -161,7 +179,7 @@ for (const english of [false, true]) {
 }
 
 test('homepage dropdowns retain a multi-paragraph range and show mixed list state', async ({ page }) => {
-  await page.goto('/'); await replaceHTML(page, '<p>A</p><p>B</p><p>C</p>');
+  await page.goto('/ru/'); await replaceHTML(page, '<p>A</p><p>B</p><p>C</p>');
   await page.locator('.mw-content').evaluate((root) => { const range = document.createRange(); const blocks = root.querySelectorAll('p'); range.setStart(blocks[0].firstChild!, 0); range.setEnd(blocks[1].firstChild!, 1); const s = window.getSelection()!; s.removeAllRanges(); s.addRange(range); });
   await page.getByLabel('Тип списка', { exact: true }).selectOption('ordered');
   await expect(page.locator('.mw-content > ol > li')).toHaveCount(2); await expect(page.locator('.mw-content > p')).toHaveText('C');
@@ -174,7 +192,7 @@ test('homepage dropdowns retain a multi-paragraph range and show mixed list stat
 
 for (const english of [false, true]) test(`colors and link forms preserve caret and drafts on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/');
+  await page.goto(english ? '/' : '/ru/');
   await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'styling', english);
   const colored = page.locator('.mw-content span').first();
   await colored.evaluate((element) => { const range = document.createRange(); range.selectNodeContents(element); const native = window.getSelection()!; native.removeAllRanges(); native.addRange(range); (element.closest('.mw-content') as HTMLElement).focus(); });
@@ -199,7 +217,7 @@ for (const english of [false, true]) test(`colors and link forms preserve caret 
 
 for (const english of [false, true]) test(`image metadata, captions and undo work on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'images', english);
+  await page.goto(english ? '/' : '/ru/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'images', english);
   await page.locator('.mw-content img').click();
   await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
   const imageForm = page.locator('.mw-image-dialog[open] .mw-image-form');
@@ -229,7 +247,7 @@ for (const english of [false, true]) test(`image metadata, captions and undo wor
 
 for (const english of [false, true]) test(`image upload cancellation, result and file errors are visible in ${english ? 'English' : 'Russian'} demo`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'empty', english);
+  await page.goto(english ? '/' : '/ru/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'empty', english);
   await page.locator('.mw-content').click();
   await page.getByRole('button', { name: t('Вставить изображение…', 'Insert image…'), exact: true }).click();
   const form = page.locator('.mw-image-dialog[open] .mw-image-form');
@@ -251,7 +269,7 @@ for (const english of [false, true]) test(`image upload cancellation, result and
 
 for (const english of [false, true]) test(`literal search, replacement forms and one-step undo on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'search', english);
+  await page.goto(english ? '/' : '/ru/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'search', english);
   await page.locator('.lab-search summary').click();
   const panel = page.locator('.lab-search');
   await panel.getByLabel(t('Найти текст', 'Find text'), { exact: true }).fill('Morfira');
@@ -285,7 +303,7 @@ for (const english of [false, true]) test(`literal search, replacement forms and
 
 for (const english of [false, true]) test(`search options, no results and read-only navigation on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'search', english);
+  await page.goto(english ? '/' : '/ru/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'search', english);
   await page.locator('.lab-search summary').click(); const panel = page.locator('.lab-search');
   await panel.getByLabel(t('Целое слово', 'Whole word'), { exact: true }).check();
   await panel.getByRole('button', { name: t('Найти', 'Find'), exact: true }).click(); await expect(panel.locator('.mw-form').getByRole('status')).toHaveText(t('Совпадение 1 из 7', 'Match 1 of 7'));
@@ -301,7 +319,7 @@ for (const english of [false, true]) test(`search options, no results and read-o
 
 for (const english of [false, true]) test(`Unicode document and selection statistics on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible();
+  await page.goto(english ? '/' : '/ru/'); await expect(page.locator('.mw-content')).toBeVisible();
   await sample(page, 'statistics', english); await expect(page.locator('.mw-content')).toContainText('👨‍👩‍👧‍👦');
   await page.getByLabel(t('Формат документа', 'Document format'), { exact: true }).selectOption('html');
   await page.getByLabel(t('Исходник документа', 'Document source'), { exact: true }).fill('<p><strong>e</strong>\u0301 👨‍👩‍👧‍👦 cat</p><p>dog</p><figure><img src="/logo.svg" alt="ignored words"><figcaption>caption</figcaption></figure><p><br></p>');
@@ -318,7 +336,7 @@ for (const english of [false, true]) test(`Unicode document and selection statis
 
 for (const english of [false, true]) test(`Markdown block and inline typing with conversion history on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible();
+  await page.goto(english ? '/' : '/ru/'); await expect(page.locator('.mw-content')).toBeVisible();
   await page.locator('.lab-markdown summary').click(); const panel = page.locator('.lab-markdown');
   await panel.getByRole('button', { name: t('Начать с пустого абзаца', 'Start with an empty paragraph'), exact: true }).click();
   await page.keyboard.type('# '); await expect(page.locator('.mw-content h1')).toHaveCount(1);
@@ -338,7 +356,7 @@ for (const english of [false, true]) test(`Markdown block and inline typing with
 for (const english of [false, true]) test(`Markdown literal samples, toggle and readonly on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'markdown', english);
+  await page.goto(english ? '/' : '/ru/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'markdown', english);
   await expect(page.locator('.mw-content')).toContainText('**'); await expect(page.locator('.mw-content strong')).toHaveCount(0); await expect(page.locator('.mw-content h1')).toHaveCount(0);
   await page.locator('.lab-markdown summary').click(); const panel = page.locator('.lab-markdown');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
@@ -352,7 +370,7 @@ for (const english of [false, true]) test(`Markdown literal samples, toggle and 
 
 for (const english of [false, true]) test(`mentions and slash snippets support native keyboard, pointer and history on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'empty', english);
+  await page.goto(english ? '/' : '/ru/'); await expect(page.locator('.mw-content')).toBeVisible(); await sample(page, 'empty', english);
   await page.locator('.lab-suggestions summary').click(); const panel = page.locator('.lab-suggestions');
   await panel.getByLabel(t('Задержка, мс', 'Delay, ms'), { exact: true }).fill('0');
   await page.locator('.mw-content').click(); await page.keyboard.type('@an');
@@ -378,7 +396,7 @@ for (const english of [false, true]) test(`mentions and slash snippets support n
 for (const english of [false, true]) test(`suggestion empty/error/loading, cancellation and readonly on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(english ? '/en/' : '/'); await expect(page.locator('.mw-content')).toBeVisible();
+  await page.goto(english ? '/' : '/ru/'); await expect(page.locator('.mw-content')).toBeVisible();
   await page.locator('.lab-suggestions summary').click(); const panel = page.locator('.lab-suggestions');
   await panel.getByLabel(t('Задержка, мс', 'Delay, ms'), { exact: true }).fill('0');
   await panel.getByLabel(t('Ответ провайдера', 'Provider response'), { exact: true }).selectOption('error');
@@ -401,7 +419,7 @@ for (const english of [false, true]) test(`suggestion empty/error/loading, cance
 
 for (const english of [false, true]) test(`structural slash headings and tables keep one-step history on ${english ? 'English' : 'Russian'} homepage`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/');
+  await page.goto(english ? '/' : '/ru/');
   await expect(page.locator('.mw-content')).toBeVisible();
   await page.locator('.lab-suggestions summary').click();
   const panel = page.locator('.lab-suggestions');
@@ -436,7 +454,7 @@ for (const english of [false, true]) test(`structural slash headings and tables 
 for (const english of [false, true]) test(`performance guide documents explicit tools without mounting an editor in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(english ? '/en/performance' : '/performance');
+  await page.goto(english ? '/performance' : '/ru/performance');
   await expect(page.locator('.vp-doc h1')).toContainText(english ? 'Performance and history' : 'Производительность и история');
   await expect(page.locator('.vp-doc')).toContainText('pnpm run benchmark');
   await expect(page.locator('.vp-doc')).toContainText('nativeDispatch');
@@ -447,7 +465,7 @@ for (const english of [false, true]) test(`performance guide documents explicit 
 for (const english of [false, true]) test(`security guide explains deployment boundaries in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(english ? '/en/security' : '/security');
+  await page.goto(english ? '/security' : '/ru/security');
   const article = page.locator('.vp-doc');
   await expect(article.locator('h1')).toHaveText(english ? 'Security and trust boundaries' : 'Безопасность и границы доверия');
   await expect(article).toContainText("require-trusted-types-for 'script'");

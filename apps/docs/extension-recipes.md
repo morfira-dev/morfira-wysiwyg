@@ -1,4 +1,4 @@
-# Прикладные рецепты расширений
+# Application extension recipes
 
 <script setup lang="ts">
 import RecipesExample from './.vitepress/theme/RecipesExample.vue';
@@ -6,71 +6,71 @@ import RecipesExample from './.vitepress/theme/RecipesExample.vue';
 
 <RecipesExample />
 
-Это код приложения поверх публичных API. Он не добавляет сеть, хранилище или
-бизнес-правила в ядро. Сервисы лаборатории работают локально; имитация загрузки
-возвращает известный ресурс сайта и не отправляет пользовательские файлы.
+These application-owned examples use public APIs. They add no network, storage or
+business policy to core. Laboratory services are local; simulated upload returns a
+known site asset and does not send user files.
 
-## Пользовательский узел, плагины и жизненный цикл
+## Custom nodes, plugins and lifecycle
 
-Фабрика создаётся один раз для экземпляра компонента. При смене document ID создайте новую сессию и экземпляр редактора; серверная версия принадлежит конкретному документу. Регистрация атома сохраняет
-ограниченный ID; надпись не предоставляет серверных прав доступа. На unmount адаптер
-уничтожает редактор и плагины. Дополнительные UI-контроллеры приложения также нужно
-уничтожать; подписку можно связать с событием `destroy`.
+Create the factory once per component instance. When the document ID changes, create a new session/editor instance: the server version belongs to that specific document. The atom stores a bounded opaque
+ID; its label grants no backend authorization. Adapters destroy editors/plugins on
+unmount. Applications must also dispose their optional UI controllers; bind their
+cleanup to the editor destroy event when appropriate.
 
 <<< @/.vitepress/theme/recipes/index.ts
 
-## Загрузка с прогрессом
+## Upload progress
 
-Рецепт XMLHttpRequest показывает реальный прогресс отправки, отмену, таймаут и
-проверку ответа. Это самостоятельный пример для собственного endpoint, а не
-транспорт демки. Endpoint и результирующий URL ограничены текущим origin.
-XHR следует перенаправлениям: сервер загрузки не должен перенаправлять тело запроса
-на другой origin; для принудительного ограничения задайте CSP `connect-src 'self'`.
-Проверка конечного URL не отменяет уже выполненный redirect. Сервер обязан проверять
-авторизацию, CSRF, содержимое файла, MIME, размер и правила хранения. Имя/MIME файла
-в браузере не являются доказательством его типа. Предел обработки ответа — 64 КБ;
-наблюдаемый слишком большой download отменяется. Это не гарантия предела внутренних
-буферов браузера.
+The XMLHttpRequest recipe demonstrates actual upload progress, cancellation,
+timeout and response validation. It targets your own endpoint and is separate
+from the laboratory transport. Endpoint and returned image URL are same-origin.
+XHR follows redirects: the upload server must not redirect the request body to a
+foreign origin; enforce CSP `connect-src 'self'` when this restriction is required.
+Checking the final URL cannot undo an earlier redirect. The server owns auth,
+CSRF, file-content/MIME/size validation and storage policy. Browser file names and
+MIME labels are not evidence of actual type. Response processing is bounded to
+64 KB and oversized observed downloads abort; browser-internal buffering is not
+claimed to obey that bound.
 
 <<< @/.vitepress/theme/recipes/upload.ts
 
-## Асинхронные упоминания
+## Async mentions
 
-Провайдер соблюдает signal/limit, возвращает непрозрачные строковые ID и не хранит
-общую mutable-выборку между экземплярами. В приложении замените локальный справочник
-авторизованным запросом сервера. Приём ID на backend требует отдельной проверки.
+The provider honors signal/limit, returns opaque string IDs and does not expose a
+shared mutable result array across instances. Replace the local directory with
+an authorized server query. The backend must validate accepted identity references.
 
 <<< @/.vitepress/theme/recipes/mentions.ts
 
-## Сохранение и конфликт версий
+## Saving and version conflicts
 
-Передавайте серверную версию как precondition (`If-Match` или поле контракта).
-Конфликт не обновляет локальный токен и не превращает retry в перезапись чужого
-документа. Явный Reload сначала загружает ответ, затем приложение проверяет его
-`editor.schema.validateDocument`, убеждается, что локальных изменений за время
-ожидания не было, и вызывает `editor.setJSON`. Только после успешного применения
-вызывается `session.acceptReload(snapshot)`. Это внешняя замена: история
-сбрасывается по существующему контракту. Демо не делает автоматическое слияние.
+Send the server version as a precondition (`If-Match` or an API field). A conflict
+does not advance the local token or turn Retry into an overwrite. Explicit Reload
+first fetches a snapshot; the application validates it with
+`editor.schema.validateDocument`, confirms no local changes occurred while waiting,
+and calls `editor.setJSON`. Only after successful application call
+`session.acceptReload(snapshot)`. External replacement clears history under the
+existing contract. The demo does not automatically merge documents.
 
 <<< @/.vitepress/theme/recipes/save.ts
 
-## Ленивая подсветка
+## Lazy highlighting
 
-Модуль загружается только при первом использовании. Успешная загрузка кешируется;
-ошибка позволяет повторить загрузку. Отмена проверяется после загрузки и работы
-провайдера. Демонстрационный tokenizer ограничен и не является полной грамматикой;
-настоящую библиотеку/грамматики выбирает приложение, вне ядра и пресетов.
+The first use loads a module. Successful loading is cached, failures permit retry,
+and cancellation is rechecked after loading and provider execution. The bounded
+demonstration tokenizer is not a complete grammar. The application chooses actual
+libraries/grammars outside core and presets.
 
 <<< @/.vitepress/theme/recipes/highlight.ts
 
-## Пять адаптеров
+## Five adapters
 
-Следующие файлы используют одну фабрику и публичные импорты. Vue/React/Web Component
-типизируются вместе с документацией, Vue и React StrictMode имеют целевые runtime-
-проверки. Svelte проходит отдельную компиляцию шаблона, Angular 21 — строгую AOT-
-компиляцию примера. Это не полный consumer matrix и не новая проверка Angular 22.
-SSR-импорт общих рецептов не обращается к DOM или сети; Web Component регистрируется
-только при явном вызове в браузере.
+These files share one factory and public imports. Vue/React/Web Component are
+type-checked with the docs; Vue and React StrictMode have focused runtime checks.
+Svelte receives a separate template compilation and Angular 21 a strict AOT build
+of the example. This is not the full consumer matrix or a fresh Angular 22 check.
+Importing shared recipes during SSR does not access DOM/network; Web Component
+registration is explicitly browser-only.
 
 ### Vue
 
@@ -78,7 +78,7 @@ SSR-импорт общих рецептов не обращается к DOM и
 
 ### React
 
-Монтируйте компонент под `React.StrictMode`; стабилизируйте фабрику через useMemo.
+Mount under React.StrictMode and stabilize the factory with useMemo.
 
 <<< @/.vitepress/theme/recipes/wrappers/RecipeReact.tsx
 
@@ -94,6 +94,5 @@ SSR-импорт общих рецептов не обращается к DOM и
 
 <<< @/.vitepress/theme/recipes/wrappers/web-component.ts
 
-Текущие выполненные проверки — в [отчёте](/testing). Локальные сервисы и примеры
-не заявляют серверную безопасность, универсальную Office-совместимость или
-сертификацию доступности.
+Actual executed evidence is recorded in [Testing](/testing). Local services and
+examples do not certify server security, universal Office fidelity or accessibility.

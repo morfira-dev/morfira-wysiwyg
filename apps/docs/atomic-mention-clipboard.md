@@ -1,6 +1,6 @@
-# Копирование атомарных упоминаний
+# Copying atomic mention references
 
-В профиле `mentions({ persistent: true, atomic: true })` копирование, вырезание и вставка сохраняют ID через `text/html`. Формат `text/plain` содержит только видимый текст. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing). Синтетические ClipboardEvent не подтверждают поведение системного буфера всех ОС.
+With `mentions({ persistent: true, atomic: true })`, copy, cut and paste retain IDs through `text/html`. The `text/plain` representation contains visible text only. Current browser/example execution results and their limits are recorded under [testing](/testing). Synthetic ClipboardEvents do not prove OS clipboard behavior across platforms.
 
 ## API
 
@@ -13,103 +13,103 @@ import type {
 } from '@morfira-dev/wysiwyg/plugins/mentions';
 
 const clipboard = mentionClipboardCommands(editor);
-const copied = clipboard.copy(); // { html, text } | undefined; текущее выделение
-const cut = clipboard.cut(); // возвращает данные и удаляет выделение
-// После выбора нового места вставки:
+const copied = clipboard.copy(); // { html, text } | undefined; current selection
+const cut = clipboard.cut(); // returns data and deletes the selection
+// After choosing a new paste position:
 if (copied) clipboard.paste(copied); // boolean
-if (cut) clipboard.paste({ text: cut.text }); // только подпись, без ID
+if (cut) clipboard.paste({ text: cut.text }); // label only, no ID
 ```
 
-`MentionClipboardData` содержит строки `html` и `text`; `MentionClipboardInput` допускает необязательные `html` и `text`. Команды работают с актуальным нативным выделением редактора. Вызов getter без установленного атомарного профиля отклоняется. API не запрашивает разрешения и не читает/пишет системный буфер: приложение самостоятельно владеет возвращённым объектом. Для кнопок сохраните нативное выделение; `copy()` сам не фокусирует редактор и не меняет выделение, документ или историю.
+`MentionClipboardData` holds `html` and `text` strings; `MentionClipboardInput` accepts optional `html` and `text`. Commands use the editor's current native selection. The getter rejects when the atomic profile is not installed. The API requests no permissions and does not read or write the OS clipboard: the application owns the returned object. Preserve native selection for external buttons; `copy()` itself changes neither focus, selection, document nor history.
 
-| Команда | Контракт |
+| Command | Contract |
 | --- | --- |
-| `copy()` | Непустое выделение с упоминанием в одном потоке, между допустимыми соседними абзацами/заголовками или допустимом диапазоне одного обычного дерева списка; частичный токен копируется целиком. Возвращает `undefined`, если действие недоступно |
-| `cut()` | Те же границы; возвращает данные и удаляет содержимое одной транзакцией. В read-only возвращает `undefined` |
-| `paste(input)` | Вставляет строчное содержимое, один абзац/заголовок или их последовательность, а в допустимый пункт — и поддержанное дерево UL/OL. Возвращает `false` при отказе, включая read-only |
+| `copy()` | Nonempty selection touching a mention within one flow, eligible sibling paragraphs/headings or supported intervals in one ordinary list tree; partial tokens are copied whole. Returns `undefined` when unavailable |
+| `cut()` | Same boundaries; returns data and deletes content in one transaction. Returns `undefined` read-only |
+| `paste(input)` | Inserts inline content, one paragraph/heading or an ordinary sequence, plus a supported UL/OL tree at an eligible item target. Returns `false` on refusal, including read-only |
 
-Копирование допускается в read-only. При вставке выбранные токены заменяются целиком, курсор оказывается снаружи вставленного упоминания. Следующий обычный ввод не изменяет подпись токена. Cut/paste создают по одному Undo/Redo с восстановлением ID и выделения; отказ не добавляет историю.
+Copy works read-only. Paste replaces selected tokens whole and leaves the caret outside the inserted mention. Following ordinary input does not modify the token label. Each successful cut/paste creates one Undo/Redo revision restoring IDs and selection; refusal creates none.
 
-## Форматы и границы
+## Formats and boundaries
 
-HTML несёт зарегистрированные `data-mw-node="morfira:mention"` и `data-mention-id`, подпись и поддержанное окружение `strong/em/u/s/sub/sup/span/br`. Runtime-аннотация `contenteditable`, классы и непроверенные атрибуты не экспортируются. Plain text содержит подписи, обычный текст и переносы BR; `@Anna` из текста не становится ссылкой с ID.
+HTML carries registered `data-mw-node="morfira:mention"` and `data-mention-id`, the label and supported surrounding `strong/em/u/s/sub/sup/span/br` formatting. Runtime `contenteditable`, classes and unchecked attributes are not exported. Plain text contains visible labels, ordinary text and BR newlines; a plain `@Anna` never invents an ID reference.
 
-Поддержаны обычные потоки абзацев/заголовков, списков, цитат и абзацев ячейки, включая объединённую ячейку без изменения сетки. Дополнительно можно переносить ссылки между соседними `p`/`h1`–`h6` с одним родителем: поверхностью редактора, обычной цитатой, одной ячейкой или одним пунктом списка. Начало и конец выделения должны находиться внутри этих блоков; offsets самого контейнера пока не поддержаны. Каждый пересечённый блок должен быть обычным допустимым листом. Между блоками разрешены только служебные пробельные текстовые узлы.
+Ordinary paragraph/heading, list, quote and cell-paragraph flows are supported, including a merged cell without grid changes. References can also transfer across sibling `p`/`h1`–`h6` leaves under one parent: the editor surface, an ordinary quote, one cell or one list item. Both selection endpoints must be inside these leaves; offsets of the container itself remain unsupported. Every crossed block must be an eligible ordinary leaf. Only formatting whitespace text nodes may separate the blocks.
 
-Одно выделение через несвязанные деревья списков, контейнеры, ячейки или по разные стороны цитат, картинки, таблица как входящий фрагмент, ссылки/code и другие семантические владельцы отклоняются. Для разных уровней одного обычного дерева действует отдельный структурный профиль ниже. Соседние пункты одного списка, в том числе с полностью выбранными допустимыми хвостовыми ветками, используют отдельный профиль ниже. Структура проверяется до изменения; частичного удаления при отказе нет. Это ограниченный контракт упоминаний, не универсальный движок богатого буфера. Явное табличное выделение и файловые вставки сохраняют своих владельцев.
+A single selection across unrelated list trees, containers, cells or quote boundaries, images, incoming table fragments, links/code and other semantic owners refuses. Different levels within one ordinary tree use the structural profile below. Consecutive items of one list, including fully selected supported trailing branches, use the separate profile below. Preflight checks structure before mutation; refusal never partially deletes a reference. This is a bounded mention contract, not a universal rich clipboard engine. Explicit table selections and file pastes retain their existing owners.
 
-## Между абзацами и заголовками
+## Across paragraphs and headings
 
-При многоблочном копировании HTML содержит выбранные части в исходных безопасных `p`/`h`-обёртках с атрибутами и строчным форматированием. Непокрытый текст не копируется, а частично выбранный атом переносится целиком. В `text/plain` границы блоков разделяются LF; BR также даёт перенос. Пустые выбранные блоки сохраняют границы. ID не кодируется в текстовом формате.
+Multiblock copy retains selected fragments inside their original safe `p`/`h` tags with attributes and supported inline marks. Unselected text is excluded, while partial atom endpoints expand to whole references. `text/plain` separates block fragments with LF; BR also adds a newline. Empty selected blocks retain their boundaries. Text never encodes hidden IDs.
 
-Вырезание сохраняет фактический первый блок, его атрибуты и префикс, переносит туда оставшийся суффикс последнего блока и убирает покрытые последующие блоки. Курсор остаётся в точке соединения, вне упоминания. Нетронутые соседи, контейнер списка/цитаты и ячейки не пересоздаются. Полностью пустой результат получает редактируемый BR.
+Cut keeps the actual first block, its attributes and prefix, moves the last block's surviving suffix into it and removes the selected later blocks. The caret remains at the join, outside a mention. Untouched siblings, list/quote containers and cells retain identity. A fully empty result receives an editable BR.
 
-| Входящие данные | Результат вставки |
+| Incoming data | Paste composition |
 | --- | --- |
-| Строчное содержимое или один обычный `p` | Вставка в исходный строчный контекст первого блока, затем присоединение суффикса последнего; `p` входящего фрагмента снимается |
-| Несколько `p`/`h` | Дети первого входящего блока добавляются в сохранённый левый блок; промежуточные обёртки сохраняются, последняя входящая обёртка получает суффикс. Курсор находится перед суффиксом |
-| Один заголовок | Отдельный заголовок между сохранёнными префиксом и суффиксом; курсор перед суффиксом |
+| Inline content or one ordinary `p` | Inserts in the first block's original inline context, then joins the last source suffix; the incoming `p` is unwrapped |
+| Multiple `p`/`h` blocks | First incoming children join the retained left block; intermediate wrappers survive; the final incoming wrapper receives the suffix. The caret stays before that suffix |
+| One heading | A standalone heading between retained prefix and suffix wrappers, with the caret before the suffix |
 
-Такая же композиция работает в курсор внутри одного блока, разделяя его префикс/суффикс. Атрибуты исходного первого блока имеют приоритет над первой входящей обёрткой при многоблочной вставке. Placeholder BR на соединяемом краю не добавляет лишнюю строку; реальные BR и пустые промежуточные абзацы сохраняются. Смешанные строчные/блочные и неподдержанные структурные фрагменты отклоняются; отдельный профиль дерева списка описан ниже.
+The same composition works at a caret inside one block by splitting its prefix/suffix. For multiple incoming blocks, the original first source block's attributes win over the first incoming wrapper. Placeholder BR at joined edges does not create an extra line; real BR and empty middle paragraphs survive. Mixed inline/block and unsupported structural payloads refuse; the separate list-tree profile is described below.
 
-Непустой HTML имеет приоритет над text. Если зарегистрированное упоминание не проходит схему, вставка отклоняется без незаметного перехода к подписи из text. Получатель заново проверяет ID и текстовую подпись по [атомарной схеме](/atomic-mentions). Без зарегистрированной схемы HTML-читатель может сохранить текст и отбросить ID; редактируемый persistent-читатель сохраняет ID без атомарного поведения.
+Nonempty HTML takes precedence over text. An invalid registered mention rejects without silently falling back to its plain-text label. The receiver validates the ID and text-only label through the [atomic schema](/atomic-mentions). A missing-schema HTML reader may keep text and drop IDs; an editable persistent reader retains IDs without atomic behavior.
 
-## Между пунктами списка
+## Between list items
 
-Поддержаны последовательные обычные `li` одного фактического `ul` или `ol`. Тело пункта может содержать прямой строчный текст либо последовательность обычных `p`/`h1`–`h6`; начальный и конечный пункты могут использовать разные варианты. Диапазон должен начинаться и заканчиваться внутри собственных тел пунктов. Несвязанные деревья списков/ячейки, offsets на самом контейнере списка, чек-листы, цитаты/code и смешанное прямое/блочное тело отклоняются. Для разных уровней одного дерева действует отдельный структурный профиль ниже.
+Consecutive ordinary `li` siblings of one actual `ul` or `ol` are supported. An item body may be direct inline text or a sequence of ordinary `p`/`h1`–`h6` leaves; endpoint items may use different representations. Selection must start and end inside the items' own bodies. Unrelated list trees/cells, offsets on the list container itself, checklists, quotes/code and mixed direct/block item bodies refuse. Different levels within one tree use the separate structural profile below.
 
-Копирование сохраняет выбранные части пунктов с ID и форматированием внутри безопасной исходной `ul`/`ol`-обёртки. В `text/plain` тела и пункты разделяются LF, без маркеров и скрытой записи ID. Атрибуты `start`, `reversed` и вида маркера копируются как сохранены; нумерация относительно начала выделения не пересчитывается.
+Copy retains selected item fragments, IDs and marks inside a safe original `ul`/`ol` wrapper. `text/plain` separates bodies and items with LF, without bullets or hidden ID syntax. Stored `start`, `reversed` and marker attributes are copied as-is; selection-relative numbering is not recalculated.
 
-Вырезание оставляет фактический первый `li`, его предыдущие тела и префикс, присоединяет суффикс последнего выбранного тела и убирает покрытые последующие пункты. Непокрытые последующие тела и хвостовые ветки последнего пункта перемещаются как фактические узлы в исходном порядке. Прямое тело при необходимости получает `p`-обёртку, чтобы не смешивать строчный текст с последующими блоками. Вложенных `li` непосредственно внутри `li` не создаётся; пустая точка соединения остаётся редактируемой.
+Cut keeps the actual first `li`, its preceding bodies and prefix, joins the last selected body's suffix and removes covered later items. The final item's unselected subsequent bodies and trailing branches move as actual nodes in their original order. A direct-inline retained body receives a `p` wrapper only when needed to avoid mixing inline content with later blocks. No `li` is nested directly in another `li`; an empty join remains editable.
 
-| Входящий фрагмент в пункт | Результат |
+| Incoming data at an item target | Composition |
 | --- | --- |
-| Inline или один `p` | Вставка в сохранённое первое тело; последний исходный суффикс присоединяется после неё |
-| Несколько `p`/`h` или один заголовок | Обычные тела внутри сохранённого пункта; заголовок остаётся отдельным телом |
-| Один `ul`/`ol` с обычными `li` и допустимыми хвостовыми вложенными ветками | Первое входящее тело соединяется с префиксом; последующие пункты вставляются соседями в целевой список. Последний получает суффикс, последующие тела и ветки; курсор перед суффиксом |
+| Inline or one `p` | Inserts into the retained first body, then joins the last source suffix |
+| Multiple `p`/`h` leaves or one heading | Ordinary bodies within the retained item; a heading stays a separate body |
+| One `ul`/`ol` with ordinary `li` bodies and supported trailing nested branches | First incoming body joins the prefix; later items become siblings in the target list. The final item receives the suffix, subsequent bodies and branches, with the caret before the suffix |
 
-Списочный фрагмент разрешён только в допустимом пункте, в курсор или поверх выделения. Тип и атрибуты внешнего целевого списка сохраняются: вставка OL в UL создаёт пункты существующего UL. Вложенные ветки сохраняют собственные виды и атрибуты. Если входящий пункт один, новый сосед не требуется. Сохраняются поддержанные атрибуты последующих входящих пунктов/тел; автоматическое перенумерование или объединение списков не добавлено. Checklist-метаданные и смешанные/осиротевшие корни отклоняются.
+A list payload requires an eligible item caret or selection. Target outer list type and attributes win: an OL pasted into a UL becomes items of that existing UL. Nested branch kinds and attributes remain their own. One incoming item needs no additional sibling. Supported later incoming item/body attributes survive; no automatic counter recalculation or list coalescing is added. Checklist metadata and mixed/orphan roots refuse.
 
-### Через выбранные хвостовые ветки
+### Through selected trailing branches
 
-Полностью покрытые хвостовые `ul`/`ol` первого и промежуточных пунктов переносятся рекурсивно. Каждый вложенный пункт содержит прямой строчный текст или обычные P/H-тела, после которых идут ветки такой же формы. HTML сохраняет иерархию, порядок, виды и атрибуты веток, все ID без выравнивания или объединения списков. Обычный текст выводит видимые подписи в исходном порядке с LF между телами, пунктами и ветками, без маркеров, отступов и скрытых ID.
+Fully covered trailing `ul`/`ol` branches of the first and intermediate items transfer recursively. Each nested item has direct inline content or ordinary P/H bodies followed by branches of the same shape. HTML keeps the hierarchy, order, branch kinds/attributes and IDs without flattening or coalescing. Plain text emits visible labels in source order with LF between bodies, items and branches; it adds no bullets, indentation or hidden IDs.
 
-Вырезание удаляет выбранные ветки из источника только после успешной записи обоих нативных форматов. Замена того же диапазона inline/P/H-содержимым также удаляет эти выбранные ветки. Непокрытые последующие тела и хвостовые ветки последнего исходного пункта не входят в буфер и сохраняются как фактические узлы. Undo возвращает всё исходное дерево и выделение одной операцией.
+Cut removes the selected branches from the source after both native clipboard formats are written successfully. Replacing that interval with inline/P/H content also removes those selected branches. The final source item's unselected later bodies and trailing branches remain outside copied data and survive as actual nodes. Undo restores the entire source tree and selection in one step.
 
-При вставке ветки первого входящего пункта остаются под сохранённым первым целевым пунктом; последующие внешние пункты вставляются соседями. Последний входящий пункт получает исходный суффикс и непокрытые последующие собственные тела **до** хвостовых веток. Затем идут входящие ветки и непокрытые исходные ветки. Для фрагмента из одного пункта тот же порядок соблюдается в сохранённом пункте. Собственное тело не помещается после ветки, а LI не становится прямым ребёнком другого LI.
+On paste, branches belonging to the first incoming item remain under the retained first target item; later incoming outer items become siblings. The final incoming item receives the source suffix and unselected following own bodies **before** trailing branches. Incoming branches then precede unselected source branches. A one-item payload uses the same order within the retained item. No own-body block is put after a branch, and no LI is nested directly in another LI.
 
-Для соседних пунктов действует профиль с соединением краёв выше. Разные уровни одного обычного дерева используют структурный диапазон ниже. Тела после веток и защищённые структуры остаются барьерами. Выбранные исходные и входящие ветки проходят общую ограниченную рекурсивную проверку: ресурсные, foreign/task/чужие семантические узлы, ссылки/code, цитаты/таблицы и превышение глубины/объёма отклоняют всю операцию до изменения или нативной записи буфера. Непокрытые потомки последней ветки остаются непрозрачными и не клонируются ради сохранения. Это ограниченный перенос дерева, не произвольное структурное выделение.
+Sibling endpoints use the joining profile above. Different levels within one ordinary tree use the structural interval below. Bodies after branches and protected structures remain unsupported. Source and incoming selected branches share bounded recursive validation: resource/foreign/task/other-owned content, links/code, quotes/tables and excessive depth/size reject the complete operation before mutation or native clipboard writes. Unselected final branch descendants stay opaque and are not cloned merely to preserve them. This is a bounded tree transfer, not arbitrary structural selection.
 
-Проверяются фактические пункты, тела, список, выделение и ревизии после фокуса и clipboard callbacks. Для успешного вырезания/вставки остаётся один Undo/Redo; HTML проходит схему получателя до рендеринга. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+Actual items, bodies, list, selection and revisions are rechecked after focus and clipboard callbacks. Each successful cut/paste retains one Undo/Redo revision; incoming HTML passes the receiver schema before rendering. Current browser/example execution results and their limits are recorded under [testing](/testing).
 
-## Между уровнями списка
+## Between list levels
 
-Концы в собственных телах могут находиться у родителя и потомка, у потомка и последующего внешнего пункта либо в соседних ветках одного обычного дерева. Контекст задаёт ближайший общий фактический UL/OL. Прежние пути одного потока и соседних пунктов сохраняют приоритет. Несвязанные деревья/ячейки, защищённые пути, checklist-метаданные, тела после веток и offsets корня/контейнера списка остаются барьерами.
+Own-body endpoints may belong to a parent and descendant, a descendant and a later outer item, or cousin branches of the same ordinary list tree. The closest common actual UL/OL provides context. Existing same-flow/sibling behavior keeps priority. Unrelated trees/cells, protected paths, checklist metadata, bodies after branches and root/list container offsets remain barriers.
 
-Копирование восстанавливает выбранную иерархию с ID и необходимыми обёртками предков. Непокрытый текст предков и внешние соседи исключаются; пустое собственное тело контекстной обёртки может получить редактируемый BR. Эти обёртки — обычные HTML-данные: последующая вставка не вычисляет изменение относительной глубины. Plain text сохраняет прежние LF-разделители; иерархия выражена HTML.
+Copy reconstructs the selected hierarchy with IDs and necessary ancestor shells. Unselected ancestor text and outside siblings are excluded; context-only own bodies may contain an editable BR. These shells are ordinary HTML data: a later paste does not infer a relative nesting-depth change. Plain text retains the established LF policy; hierarchy lives in HTML.
 
-**Вырезание между уровнями оставляет частичные пути на исходных уровнях.** Удаляются выбранный текст и целые поддеревья, пустые затронутые собственные тела получают редактируемые placeholders, а непокрытые суффиксы остаются в своих обёртках. Концы не соединяются, пункты не поднимаются, ветки не выравниваются; нетронутые узлы не пересоздаются. Курсор остаётся в сохранённой начальной границе. Это отличается от соединения краёв соседних пунктов.
+**Different-level cut preserves partial paths at their existing levels.** It removes selected text and complete subtrees, repairs affected empty own bodies, and leaves unselected suffixes in their surviving wrappers. It does not join endpoints, dedent, flatten or rebuild unrelated branches. The caret stays at the retained start boundary. This differs deliberately from the joining operation between sibling items.
 
-Вставка сначала удаляет такой структурный диапазон, затем применяет прежнюю композицию inline/P-H/списка внутри одного пункта к сохранённому начальному курсору. Весь шаг имеет одну транзакцию/change/Undo; история восстанавливает прямое/обратное выделение. Тип внешнего списка payload адаптируется к целевому, внутренняя иерархия и ID сохраняются. Целевые ветки перемещаются только по этим прежним правилам вставки. Исходные пути/поддеревья, фактические узлы и ревизии проверяются повторно после callbacks; некорректные данные отклоняют всю операцию до нативной записи буфера или изменения.
+Paste removes the same structural interval and applies the existing same-item inline/P-H/list composition at the retained start caret. One transaction/change/Undo covers the complete step; forward/backward selection is restored by history. Incoming outer list type adapts to the target list while internal hierarchy and IDs survive. Target branches move only under those established paste rules. Source paths/subtrees, actual nodes and revisions are validated again after callbacks; malformed data rejects atomically before native clipboard writes or mutation.
 
-Это завершает запланированный объём clipboard упоминаний в текущем этапе. Дальнейшая работа возвращается к общему roadmap; конкретные регрессии исправляются по необходимости. Проверка поведения браузера/ОС остаётся отложенной при паузе локальных тестов; универсальное структурное редактирование не заявляется.
+This completes the planned mention clipboard feature scope for this milestone. Later work returns to the wider roadmap, with concrete regression fixes as needed. Browser/OS acceptance remains pending while local tests are paused; this is not a claim of universal structural editing.
 
-## Нативные события и безопасность
+## Native events and safety
 
-Обработчики работают с отменяемыми `copy/cut/paste` и их `clipboardData`; нет `navigator.clipboard`, сети или новых зависимостей. Paste перехватывается для входящих упоминаний или затронутого токена; обычные вставки остаются у существующих обработчиков. Уже обработанное событие, IME и файловые данные не запускают вторую синтетическую правку.
+Handlers use cancelable `copy/cut/paste` events and their `clipboardData`; there is no `navigator.clipboard`, network or new dependency. Paste is intercepted for incoming mentions or a touched token; unrelated pastes remain with existing handlers. Previously handled events, IME and file data do not start a second synthetic edit.
 
-Нативный cut сначала успешно записывает оба формата и только затем удаляет выделение. Ошибка записи сохраняет документ и историю; откат частично изменённого системного буфера не обещается. Обработчики повторно проверяют документ/выделение после пользовательских callback и фокуса, чтобы не удалить другой документ. Входящие данные проверяются схемой до активного рендеринга; содержимое не клонируется вместе с активными ресурсными узлами.
+Native cut writes both formats successfully before deleting the selection. A write failure preserves document/history; rollback of a partially modified OS clipboard is not promised. Handlers revalidate document/selection after application callbacks and focus to avoid deleting a replacement document. Input is schema-checked before active rendering; active resource subtrees are not cloned just for serialization.
 
-ID — недоверенная ссылка на сущность. Проверка схемы не подтверждает существование пользователя, tenant или права: эти проверки, авторизация загрузок, уведомлений и CSP остаются обязанностью приложения и backend. Ограничения фронтенда не являются границей серверного доверия.
+An ID is an untrusted entity reference. Schema validation proves neither user existence, tenant membership nor permission: those checks, upload/notification authorization and CSP remain application/backend responsibilities. Frontend filtering is not a server trust boundary.
 
-## Демо
+## Demo
 
-На [главной](/#editor) и [полигоне](/playground) раскройте «Буфер упоминаний: ID и обычный текст». Загрузите пример, выделите `@Anna`, скопируйте в память и выберите место после токена. «Вставить с ID» создаёт ещё одну ссылку `anna`; «Вставить только текст» добавляет подпись без ID. Снимки HTML/text и `{id,text}` позволяют увидеть разницу. Кнопки не обращаются к системному буферу; загрузка примера заменяет документ. Нативные сочетания клавиш проверяются отдельно в целевом браузере/ОС после возобновления проверок.
+On the [homepage](/#editor) and [playground](/playground), expand “Mention clipboard: IDs and plain text”. Load the sample, select `@Anna`, copy to memory and choose the position after the token. “Paste with ID” creates another `anna` reference; “Paste plain text” inserts only the label. HTML/text and `{id,text}` snapshots expose the difference. Buttons never access the OS clipboard; loading the example replaces the document. Native shortcuts require separate target-browser/OS verification when checks resume.
 
-Для переноса между блоками нажмите «Загрузить буфер между блоками» → «Выделить блоки назад» → «Копировать в память». HTML содержит абзац, заголовок и абзац с `anna`/`boris`; текст показывает LF-разделители. «Курсор в целевом абзаце» или «Выделить целевые блоки» задаёт место для «Вставить с ID». Для проверки вырезания загрузите образец заново, выделите блоки и нажмите «Вырезать в память»: остатки `Before`/`after` соединятся, Undo вернёт исходные блоки и ID. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+For a multiblock transfer, choose “Load block clipboard sample” → “Select blocks backward” → “Copy to memory”. HTML contains a paragraph, heading and paragraph with `anna`/`boris`; plain text exposes LF separators. “Caret in destination paragraph” or “Select destination blocks” chooses the target for “Paste with ID”. To try cut, reload the sample, select blocks and choose “Cut to memory”: retained `Before`/`after` join; Undo restores source blocks and IDs. Current browser/example execution results and their limits are recorded under [testing](/testing).
 
-Для переноса пунктов выберите «Загрузить буфер между пунктами» → «Выделить пункты назад» → «Копировать в память». В HTML видны OL с тремя LI и два ID; текст содержит `@Anna first`, `Shared item` и `@Boris` через LF. «Курсор в целевом пункте» или «Выделить целевые пункты» задаёт место в UL: «Вставить с ID» сохраняет его тип и непокрытые последующие тело/ветку. Для вырезания перезагрузите образец и вырежьте исходные пункты: `Before`/`after` соединятся, `Retained body` и `Retained branch` останутся. Undo восстановит пункты и ID. Кнопки используют память страницы, а не системный буфер.
+For item transfer, choose “Load list clipboard sample” → “Select list items backward” → “Copy to memory”. HTML exposes an OL with three LIs and two IDs; text shows `@Anna first`, `Shared item` and `@Boris` separated by LF. “Caret in destination item” or “Select destination items” targets the UL: “Paste with ID” keeps its type and unselected subsequent body/branch. To try cut, reload the sample and cut the source items: `Before`/`after` join while `Retained body` and `Retained branch` stay. Undo restores items and IDs. These buttons use page memory, not the OS clipboard.
 
-Для выбранных веток нажмите «Загрузить буфер с вложенными ветками» и используйте те же кнопки выделения пунктов, копирования и вставки. В трёх внешних пунктах есть ветки первого/промежуточного пунктов и более глубокий OL с пятью ID: `anna`, `elena`, `deep`, `liam`, `boris`. HTML показывает иерархию, текст — подписи в порядке обхода. Вставка в целевой UL сохраняет вложенные виды UL/OL и непокрытые последнее тело/ветку получателя. После повторной загрузки вырезание убирает выбранные ветки; `Retained body` и `Retained branch` остаются вне вырезанного. Undo возвращает дерево. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+For selected branches, choose “Load nested branch clipboard sample” and reuse the item selection/copy/paste buttons. The three outer items include first/middle branches and a deeper OL with five IDs: `anna`, `elena`, `deep`, `liam` and `boris`. HTML shows the hierarchy; text shows labels in traversal order. Paste into the destination UL retains nested UL/OL kinds and the final unselected destination body/branch. Reload and cut to see selected branches removed while `Retained body` and `Retained branch` stay outside the cut. Undo restores them. Current browser/example execution results and their limits are recorded under [testing](/testing).
 
-Для разных уровней нажмите «Загрузить буфер между уровнями», затем «Родитель → вложенный пункт», «Вложенный → внешний пункт» или «Между соседними ветками». Каждая кнопка создаёт обратное выделение нужных ID. Скопируйте в память, выберите «Место вставки дерева» и вставьте с ID, чтобы увидеть сохранённые обёртки предков. После повторной загрузки вырежьте диапазон между соседними ветками: `Left` и `right tail` останутся в исходных UL/OL-ветках, а не соединятся; родительский `anna` и последующий внешний `boris` сохранятся. Undo вернёт весь диапазон. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+For level intervals, choose “Load different-level clipboard sample”, then “Parent → nested item”, “Nested → outer item” or “Between cousin branches”. Each button creates a backward selection with the relevant IDs. Copy to memory, choose “Tree paste position” and paste with ID to inspect preserved ancestor shells. Reload and cut between cousin branches: `Left` and `right tail` stay in their original UL/OL branches, rather than joining; parent `anna` and later outer `boris` remain untouched. Undo restores the entire interval. Current browser/example execution results and their limits are recorded under [testing](/testing).

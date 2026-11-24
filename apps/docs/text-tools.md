@@ -2,16 +2,16 @@
 import TextToolsExample from './.vitepress/theme/TextToolsExample.vue';
 </script>
 
-# Интервалы и перенос форматирования
+# Text layout and format painter
 
-Два независимых плагина дополняют обычное оформление: `textLayout()` управляет
-межстрочным интервалом и отступами абзацев, `formatPainter()` переносит inline-
-форматирование. Они не включаются в пресеты автоматически и не имеют runtime-
-зависимостей. UI и CSS подключаются отдельно.
+Two independent plugins extend everyday formatting: `textLayout()` manages line
+height and paragraph spacing; `formatPainter()` copies inline formatting. Neither
+is installed by presets, and neither has runtime dependencies. UI and CSS are
+separate imports.
 
 <TextToolsExample />
 
-## Подключение
+## Setup
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -28,66 +28,66 @@ const spacing = textLayoutCommands(editor);
 const painter = formatPainterCommands(editor);
 const layoutUI = createTextLayoutUI(layoutHost, editor);
 const painterUI = createFormatPainterUI(painterHost, editor);
-// Хосты — пустые подключённые элементы снаружи документа редактора.
-// При размонтировании: layoutUI.destroy(); painterUI.destroy(); editor.destroy();
+// Hosts are empty connected elements outside the editor document.
+// On unmount: layoutUI.destroy(); painterUI.destroy(); editor.destroy();
 ```
 
-## Интервалы
+## Spacing
 
-| Метод | Значение |
+| Method | Value |
 | --- | --- |
-| `setLineHeight(value)` | Число 0.5–4, максимум три десятичных знака; `false` сбрасывает |
-| `setSpaceBefore(value)` | Целое 0–96 px перед абзацем; `false` сбрасывает |
-| `setSpaceAfter(value)` | Целое 0–96 px после абзаца; `false` сбрасывает |
-| `getState()` | `disabled`, `lineHeight`, `spaceBefore`, `spaceAfter` и три `*Mixed` |
+| `setLineHeight(value)` | Number 0.5–4, at most three decimals; `false` resets |
+| `setSpaceBefore(value)` | Integer 0–96 px before the paragraph; `false` resets |
+| `setSpaceAfter(value)` | Integer 0–96 px after the paragraph; `false` resets |
+| `getState()` | `disabled`, `lineHeight`, `spaceBefore`, `spaceAfter` and three `*Mixed` flags |
 
-Состояние показывает явные значения, не вычисленные стили темы. Отсутствие и
-смешанное значение возвращают `false`, смешанность отмечается отдельно. UI
-показывает импортированное допустимое значение как «Текущий», если его нет в
-готовом списке. Сброс восстанавливает наследование/правила CSS приложения.
+State reports explicit values, not computed theme styles. Absent and mixed values
+return `false`, with separate mixed flags. A safe imported value outside the
+predefined UI choices is shown as “Current”. Reset restores inheritance/application
+CSS. Adjacent paragraph margins can collapse under ordinary CSS rules; this is
+not a promise of a fixed pixel gap.
 
-Цель — обычный P/H1–H6 у курсора или соседние такие блоки одного родителя и
-одной ячейки. Поддерживаются блоки внутри пункта списка и цитаты. Между пунктами,
-ячейками, через вложенные ветки, PRE, semantic nodes или блоки с изображениями
-команда недоступна. Конечный блок включается даже при конце выделения в его
-начале. Команда сохраняет реальные узлы и направление выделения; одно изменение
-— один Undo. Read-only/composition блокируют редактирование.
+The target is an ordinary P/H1–H6 at a caret or a sibling interval sharing one
+parent and table cell. Paragraphs/headings inside list items and quotes work.
+Cross-item, cross-cell, intervening list branches, PRE, semantic nodes and blocks
+containing images refuse. An endpoint at the next block's start includes that
+block. Commands retain actual nodes and selection direction; one change is one
+Undo. Read-only and composition block mutations.
 
-`line-height`, `margin-top`, `margin-bottom` сохраняются через HTML/JSON и без
-плагина, только на P/H1–H6 и в указанных диапазонах. Произвольные CSS, проценты,
-функции и отрицательные отступы не разрешены. Номер schema v1 не меняется;
-старые читатели могут потерять новые стили. Соседние вертикальные отступы могут
-схлопываться по обычным правилам CSS: это не фиксированное расстояние в пикселях.
+`line-height`, `margin-top`, and `margin-bottom` round-trip through HTML/JSON even
+without the plugin, only on P/H1–H6 and within the stated bounds. Arbitrary CSS,
+percentages, functions and negative spacing are rejected. Schema v1 is retained;
+older readers may lose these styles.
 
-## Перенос форматирования
+## Format painter
 
-`capture(): boolean` запоминает единообразное форматирование у курсора или в
-выделении **внутри одного обычного абзаца/заголовка**. Копируются bold, italic,
-underline, strike, code, subscript, superscript, цвет, фон, семейство и размер
-шрифта. Отсутствующие параметры становятся сбросом соответствующего формата.
-Смешанный источник отклоняется, предыдущий снимок сохраняется.
+`capture(): boolean` remembers uniform formatting at a caret or within a selected
+range **inside one ordinary paragraph/heading**. It copies bold, italic, underline,
+strike, code, subscript, superscript, color, background, font family and font size.
+Absent properties become resets. A mixed source refuses without replacing a
+previous snapshot.
 
-`apply(): boolean` заменяет эти форматы только у выделенного текста одного
-обычного блока. Ссылки, текст за пределами выделения, структура, ID упоминаний,
-отступы и тип заголовка не копируются. Блоки с semantic nodes/изображениями и
-структурные выделения не поддерживаются. Применение — одна транзакция истории.
-Снимок остаётся доступен для следующих применений; `clear()` очищает его.
-`getState()` возвращает `captured`, `canCapture`, `canApply`.
+`apply(): boolean` replaces these formats only on selected text inside one ordinary
+block. Links, unselected text, structure, mention IDs, paragraph spacing and heading
+type are not copied. Semantic/image-containing blocks and structural selections
+are unsupported. Apply is one history transaction. The snapshot remains available
+for subsequent applications; `clear()` removes it. `getState()` returns `captured`,
+`canCapture`, and `canApply`.
 
-Снимок принадлежит экземпляру: замена документа через API и destroy его
-очищают. Capture не изменяет документ или историю, допускается в read-only и
-отклоняется при composition. Apply запрещён в read-only/composition и повторно
-проверяет точные границы после фокуса, чтобы callback не перенаправил старую
-команду на новое выделение. Внешний UI использует revision-bound selection handles
-и отказывается применять устаревшую цель. UI реагирует на RU/EN locale, read-only
-и destroy; все слушатели удаляются вместе с контроллером.
+Snapshots are per editor; external API replacement and destroy clear them. Capture
+is observational, allowed in read-only and refused during composition. Apply is
+blocked in read-only/composition and rechecks exact target points after focus so
+an application callback cannot redirect the old command onto a new selection.
+External UI uses revision-bound selection handles and refuses stale targets. UI
+responds to RU/EN locale, read-only and destroy; controller disposal removes all
+owned listeners.
 
-Новые проверки и размеры фиксируются по фактическому прогону в [статусе](/testing).
-Доступность физических устройств и скринридеров этим примером не подтверждается.
+Actual test and size evidence is recorded in [testing status](/testing). This
+example does not establish physical-device or screen-reader coverage.
 
 
-CSS готовых элементов управления использует нативную вложенность селекторов: Chrome 112+, Firefox 117+, Safari 16.5+. Команды плагинов не зависят от этого CSS.
+The optional controls stylesheet uses native CSS nesting: Chrome 112+, Firefox 117+, Safari 16.5+. Plugin commands do not depend on this stylesheet.
 
-CSS двух необязательных UI использует native nesting: Chrome 112+, Firefox 117+,
-Safari 16.5+. Это требование только этих стилей, не headless-команд или ядра.
-Для более старых CSS-движков приложение может преобразовать стили своим сборщиком.
+Both optional UI stylesheets use native CSS nesting: Chrome 112+, Firefox 117+,
+Safari 16.5+. This applies only to these styles, not headless commands or core.
+Applications supporting older CSS engines can transform them in their CSS toolchain.

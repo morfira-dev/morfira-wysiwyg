@@ -10,7 +10,7 @@ for (const english of [false, true]) {
       requests.push(route.request().url());
       await route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Intercepted video</title>' });
     });
-    await page.goto(english ? '/en/media-formula' : '/media-formula');
+    await page.goto(english ? '/media-formula' : '/ru/media-formula');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(t('Медиа и формулы', 'Media and formulas'));
     const demo = page.locator('.media-formula-example');
     const sample = demo.getByRole('button', { name: t('Загрузить пример', 'Load sample'), exact: true });
@@ -73,7 +73,7 @@ for (const english of [false, true]) {
   test(`homepage media/formula editor mounts only while its optional section is open (${english ? 'EN' : 'RU'})`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(english ? '/en/' : '/');
+    await page.goto(english ? '/' : '/ru/');
     const optional = page.locator('.home-optional-examples');
     const summary = optional.locator('summary').filter({ hasText: t('Видео и математические формулы', 'Video and mathematical formulas') });
     const example = optional.locator('.media-formula-example');

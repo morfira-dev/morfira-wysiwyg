@@ -2,16 +2,16 @@
 import InlineNodeViewsExample from './.vitepress/theme/InlineNodeViewsExample.vue';
 </script>
 
-# Визуальные узлы внутри редактора
+# Visual nodes in the editing area
 
 <ClientOnly><InlineNodeViewsExample /></ClientOnly>
 
-`createInlineNodeViews` показывает неперсистентный вид зарегистрированного атома или текстового блочного узла непосредственно над его местом в области редактирования. Исходные HTML, JSON и текст остаются каноническими. Для обычных редактируемых inline-узлов этот контракт не применяется.
+`createInlineNodeViews` paints a nonpersisted view of a registered atom or text-only block node directly over its location in the editing area. Canonical HTML, JSON and text remain unchanged. Ordinary editable inline extensions are outside this contract.
 
 ```ts
 import { createInlineNodeViews, nodeExtension } from '@morfira-dev/wysiwyg/sdk';
 
-// Установите nodeExtension(..., { atomic: true }) при создании editor.
+// Install nodeExtension(..., { atomic: true }) when creating editor.
 const views = createInlineNodeViews(editor, {
   name: 'app:record',
   create: (context) => {
@@ -20,25 +20,24 @@ const views = createInlineNodeViews(editor, {
       element.textContent = `◆ ${next.text}`;
     };
     update(context);
-    return { element, update, destroy: () => { /* освободить ресурсы приложения */ } };
+    return { element, update, destroy: () => { /* release application resources */ } };
   },
 });
-// При отключении UI:
 views.destroy();
 ```
 
-`InlineNodeViewsOptions` содержит `name`, `create` и необязательный `onError`. Контроллер предоставляет `element`, `refresh()` и идемпотентный `destroy()`. Типы `NodeView` и `NodeViewContext` совпадают с внешними node views. Новый вид не устанавливается пресетами и не импортирует CSS.
+`InlineNodeViewsOptions` has `name`, `create` and optional `onError`. The controller exposes `element`, `refresh()` and idempotent `destroy()`. `NodeView` and `NodeViewContext` match the existing external node views. Presets do not install this view and SDK imports no stylesheet.
 
-## Как устроено отображение
+## Presentation and layout
 
-SDK создаёт позиционированный слой внутри `editor.element`, отдельный от `editor.surface`. Карточка ограничена размерами реального исходного узла и областью редактирования. Стандартный CSS редактора уже задаёт `position: relative`; пользовательская тема должна сохранить позиционированный контейнер. Для большей карточки приложение задаёт геометрию исходного семантического узла своим CSS, не записывая служебный DOM в документ. Масштаб контейнера учитывается; переносимый на несколько прямоугольников inline-узел скрывает overlay, сохраняя исходный текст.
+An owned positioned layer sits inside `editor.element`, outside `editor.surface`. Each view is bounded to the actual source node's geometry and clipped to the editing area. Standard editor CSS already provides `position: relative`; a custom theme must preserve a positioned editor container. Applications can reserve larger source-node geometry with their own CSS without putting presentation DOM in saved content. Container scaling is accounted for; multiline inline nodes with several rectangles hide the overlay while source text remains visible.
 
-ResizeObserver, resize, scroll и уведомления редактора обновляют геометрию с объединением кадров. Когда ResizeObserver недоступен, после собственного изменения раскладки приложение вызывает `refresh()`.
+ResizeObserver, resize, captured scroll and editor notifications coalesce geometry updates. Without ResizeObserver, applications call `refresh()` after their own layout changes.
 
-Нажатие выбирает настоящий семантический узел. Навигация, Backspace/Delete и Undo остаются у атомарного или блочного плагина. Только визуальный вывод становится inert: текстовый блочный источник не получает новую универсальную атомарную модель редактирования. Read-only сохраняет внешний вид, блокируя действие выбора. Замена документа уничтожает старые экземпляры. Потеря владения слоем прекращает работу и освобождает обработчики/наблюдатели.
+Pointer activation selects the actual semantic node. Existing atom/block behavior owns navigation, Backspace/Delete and Undo. Only rendered output becomes inert; text-only block source does not acquire a new generic atomic editing model. Read-only keeps the visual presentation but blocks selection actions. Document replacement disposes obsolete views. Lost layer ownership stops the controller and releases listeners/observers.
 
-## Границы и безопасность
+## Limits and safety
 
-Это визуальная overlay-проекция **внутри области редактора**, а не editable `contentDOM`, произвольный виджет или замена модели документа. Вывод `create` — доверенный код приложения, он не является санитайзером HTML. SDK делает возвращённый элемент inert и скрывает дублирующий вид от accessibility tree; содержимое не предназначено для интерактивных форм. Сеть и ресурсы, загружаемые самим callback, контролирует приложение. SDK не делает сетевых запросов.
+This is a visual overlay **inside the editing area**, not editable `contentDOM`, an arbitrary widget engine or a document model replacement. `create` executes trusted application code, not HTML sanitization. Returned elements become inert; duplicate visual content is hidden from the accessibility tree. Interactive forms do not belong in these views. Applications control resources loaded by callbacks; the SDK itself makes no network requests.
 
-Экспорт, поиск и буфер содержат исходный текст/ID, а не подписи и DOM карточек. Карточка не добавляет историю. Ошибки setup очищают частичные ресурсы; поздние ошибки завершают контроллер и передаются необязательному `onError`. Проверки на физических устройствах и со скринридерами остаются отдельно непроверенными; эта страница не заявляет их сертификацию.
+Export, search and clipboard contain canonical source text/IDs, never view labels or callback DOM. Painting adds no history. Setup failures clean partial resources; later failures stop the controller and notify optional `onError`. Physical-device/screen-reader evidence remains separately unavailable; this page does not claim certification.

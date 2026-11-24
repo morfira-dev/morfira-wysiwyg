@@ -1,10 +1,10 @@
-# Перетаскивание текста
+# Text drag and drop
 
-`textDrop()` добавляет перенос и копирование выделенного текста с форматированием внутри редактора и копирование внешнего текста или безопасного inline HTML в точку сброса. Это отдельный плагин `/plugins/text-drop`: core по умолчанию блокирует drop, пресеты не подключают плагин автоматически. Дополнительный CSS не нужен.
+`textDrop()` adds rich selection moves/copies within an editor and copying external text or safe inline HTML at the drop point. It is a separate `/plugins/text-drop` plugin: core blocks drop by default, and presets do not install this plugin automatically. No additional CSS is required.
 
-На главной и в [демо](/playground) откройте «Перетаскивание текста» и загрузите пример. Фрагмент **Move _this_** уже выделен: перетащите именно выделение в абзац Destination, обычный пункт или ячейку. Кнопка «Выделить Move this» помогает повторить опыт после Undo.
+On the homepage and in the [playground](/playground), open “Text drag and drop” and load the sample. **Move _this_** is already selected: drag the selection into Destination, an ordinary list item or a cell. “Select Move this” prepares another attempt after Undo.
 
-## Подключение и API
+## Setup and API
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -21,33 +21,33 @@ const editor = createEditor(host, {
 const drop = textDropCommands(editor);
 drop.setEnabled(false);
 drop.setEnabled(true);
-const preference = drop.getState(); // { enabled: true }, новый объект
+const preference = drop.getState(); // { enabled: true }, a fresh object
 ```
 
-`enabled` по умолчанию `true`. `setEnabled` меняет предпочтение без операции с документом и доступен в read-only. Фактический drop в read-only и во время composition запрещён. После уничтожения редактора сохранённые команды отклоняются. Плагин освобождает обработчики и состояние вместе с редактором; импорт и создание фабрики не требуют DOM. Ошибки не должны отправлять содержимое переноса в логи — пример callback получает диагностику, а не текст документа.
+`enabled` defaults to `true`. `setEnabled` changes a preference without a document operation and remains available read-only. Actual drops are blocked read-only and during composition. Retained commands reject after editor destruction. Editor disposal releases listeners and gesture state; imports and factory creation do not need DOM globals. Do not log transferred document content: the example callback receives diagnostics rather than the transfer text.
 
-## Что переносится
+## Supported source and destination
 
-Исходное выделение должно целиком находиться внутри одного обычного потока текста: абзаца, заголовка, direct-inline пункта списка, цитаты или ячейки. Абзац или заголовок внутри пункта — отдельный такой поток. Поддержаны текст, переносы BR, обычные inline-метки и проверенные ссылки. Сброс может перейти в другой поддержанный поток, сохраняя его контейнер и соседей, в том числе rowspan/colspan ячейки.
+The source selection must stay within one ordinary inline flow: a paragraph, heading, direct-inline list item, quote or cell. A paragraph or heading inside a list item is its own flow. Text, BR breaks, ordinary inline marks and validated links are supported. The destination may be another supported flow while retaining its container and neighbors, including cell rowspan/colspan.
 
-| Действие | Результат |
+| Action | Result |
 | --- | --- |
-| Обычный drop внутри того же редактора | Перенос источника и вставка в одной транзакции |
-| Ctrl, Meta или Alt при drop | Копирование с сохранением источника |
-| Внешний перенос или другой редактор | Всегда копирование |
-| Drop внутрь или на край исходного диапазона | Поглощённый no-op, без нового Undo |
-| Изменение документа до drop | Устаревший перенос не удаляет источник |
+| Ordinary drop within the same editor | Source removal and insertion in one transaction |
+| Ctrl, Meta or Alt during drop | Copy while retaining the source |
+| External transfer or another editor | Always copy |
+| Drop inside or on an edge of the source range | Consumed no-op with no new Undo |
+| Document change before drop | Stale gesture never deletes the source |
 
-Один Undo возвращает содержимое и исходное выделение до жеста, Redo — результат с курсором после вставки. Следующий ввод продолжается в месте сброса. Пустой источник остаётся редактируемым. Перенос не использует глобальные текстовые offset для угадывания позиции: браузер разрешает реальный DOM Range по координатам события.
+One Undo restores content and the pre-gesture source selection; Redo restores the result and post-insertion caret. Next typing continues at the destination. An emptied source stays editable. The browser resolves an actual DOM Range from event coordinates rather than the plugin guessing positions through global text offsets.
 
-## Внешний текст и HTML
+## External text and HTML
 
-Каждое исходное представление ограничено 20 000 UTF-16 единицами. Обычный текст остаётся буквальным: CRLF/CR нормализуются в LF, новые строки становятся BR, а `<script>` как plain text остаётся текстом. Непустой HTML проходит инертный разбор и проверку; разрешены inline-узлы или один обычный P/H-контейнер, который раскрывается в inline-содержимое. При отклонении HTML плагин не переключается на plain text незаметно.
+Each original representation is limited to 20,000 UTF-16 units. Plain text stays literal: CRLF/CR normalize to LF, newlines become BR, and a plain-text `<script>` stays text. Nonempty HTML is parsed inertly and validated; inline nodes or one ordinary P/H wrapper are accepted, with the wrapper unwrapped to inline content. Rejected HTML does not silently fall back to plain text.
 
-Файловый перенос плагин не присваивает себе: он остаётся за [модулем изображений](/image-input). Таблицы, несколько исходных блоков, изображения/фигуры/подписи, pre/code, foreign namespaces, semantic-узлы, упоминания и `contenteditable=false` не являются поддержанным текстовым переносом. Для этих объектов действуют их отдельные команды и контракты буфера. Плагин не загружает ресурсы при подготовке представления и не расширяет схему документа.
+The plugin does not claim file transfers; those stay with [image input](/image-input). Tables, multi-block sources, images/figures/captions, pre/code, foreign namespaces, semantic nodes, mentions and `contenteditable=false` are outside supported text gestures. Their separate commands and clipboard contracts still apply. Preparing a representation does not fetch resources or expand the document schema.
 
-## Клавиатура и ограничения проверки
+## Keyboard alternative and validation limits
 
-Для клавиатуры используйте обычные Cut/Copy, поставьте курсор и выполните Paste. Это операции существующего буфера; они не объявляются одним drag-жестом и сохраняют собственные правила истории. Нативные drag-события и клавиши-модификаторы зависят от браузера и ОС. Точечные браузерные сценарии с `DragEvent`/`DataTransfer` проверяют обработчики, координаты и документ, но не сертифицируют реальные OS drag/drop, touch или assistive technology.
+Use the normal Cut/Copy shortcuts, place the caret and Paste for keyboard operation. These are existing clipboard operations, not a promise of one drag gesture or a shared history step. Native drag behavior and modifier conventions depend on browser and OS. Focused browser scenarios with `DragEvent`/`DataTransfer` exercise handlers, coordinates and document results; they do not certify real OS drag/drop, touch or assistive technology.
 
-`onError` — доверенный callback приложения, не граница sandbox. Read-only, IME, focus-time замена документа, отменённые события и уничтожение экземпляра повторно проверяются перед изменением; сам плагин не является серверной политикой безопасности.
+`onError` is trusted application code, not a sandbox boundary. Read-only, IME, focus-time document replacement, canceled events and instance disposal are revalidated before mutation; the plugin is not a server security policy.

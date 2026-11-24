@@ -1,6 +1,6 @@
-# Темизация
+# Theming
 
-Подключите `@morfira-dev/wysiwyg/style.css` один раз. Переменные задаются на обёртке для отдельного редактора или на `:root` для всего приложения. Ядро не вставляет стили через JavaScript и работает без стандартной панели.
+Import `@morfira-dev/wysiwyg/style.css` once. Set variables on a wrapper to scope them to one editor, or on `:root` for the entire application. The core does not inject styles at runtime. It works without the default toolbar.
 
 ```css
 .article-editor {
@@ -23,37 +23,37 @@
 }
 ```
 
-## CSS-переменные
+## CSS variables
 
-| Переменная | По умолчанию | Назначение |
+| Variable | Default | Purpose |
 | --- | --- | --- |
-| `--mw-font` | системный sans-serif | Шрифт редактора и панели |
-| `--mw-font-size` | `16px` | Размер текста |
-| `--mw-line-height` | `1.75` | Высота строки |
-| `--mw-text` | `#263043` | Текст и кнопки |
-| `--mw-muted` | `#8490a1` | Placeholder и вторичный текст |
-| `--mw-surface` | `#ffffff` | Фон редактора |
-| `--mw-toolbar-bg` | `#fafbfc` | Фон панели |
-| `--mw-border` | `#e4e8ef` | Границы редактора и таблиц |
-| `--mw-accent` | `#6658e8` | Ссылки, фокус, активные действия |
-| `--mw-accent-soft` | `#eeebff` | Фон активной кнопки |
-| `--mw-hover` | `#f0f2f7` | Наведение и фон кода |
-| `--mw-radius` | `12px` | Скругление контейнера и панели |
-| `--mw-padding` | `32px` | Внутренний отступ документа |
-| `--mw-min-height` | `320px` | Минимальная высота ввода |
-| `--mw-button-size` | `34px` | Размер кнопки панели |
-| `--mw-focus-ring` | `0 0 0 3px #6658e82b` | Тень фокуса |
+| `--mw-font` | system sans-serif stack | Editor and toolbar font |
+| `--mw-font-size` | `16px` | Document text size |
+| `--mw-line-height` | `1.75` | Document line height |
+| `--mw-text` | `#263043` | Text and controls |
+| `--mw-muted` | `#8490a1` | Placeholder and secondary text |
+| `--mw-surface` | `#ffffff` | Editor background |
+| `--mw-toolbar-bg` | `#fafbfc` | Toolbar background |
+| `--mw-border` | `#e4e8ef` | Editor and default table borders |
+| `--mw-accent` | `#6658e8` | Links, focus, active controls |
+| `--mw-accent-soft` | `#eeebff` | Active control background |
+| `--mw-hover` | `#f0f2f7` | Hover and code background |
+| `--mw-radius` | `12px` | Editor and toolbar radius |
+| `--mw-padding` | `32px` | Document inner padding |
+| `--mw-min-height` | `320px` | Editable surface minimum height |
+| `--mw-button-size` | `34px` | Toolbar button size |
+| `--mw-focus-ring` | `0 0 0 3px #6658e82b` | Focus shadow |
 
-## Собственный интерфейс
+## Custom interface
 
-Свои кнопки вызывают `editor.format`, `editor.undo` и `editor.redo`. При переходе фокуса на панель сохраняйте выделение документа; `createToolbar` это уже делает. Третий аргумент принимает названия, текстовые значки и действия. Диалоги ссылок и изображений, выпадающие списки и меню можно реализовать компонентами приложения.
+Use `editor.format`, `editor.undo`, and `editor.redo` from your own buttons. Preserve the document selection when moving focus to the toolbar. `createToolbar` already does this. Its third argument accepts your own labels, text icons, and actions. Link/image dialogs, dropdown controls, and menus can be implemented in the host application's UI system.
 
-## Таблицы и HTML на выходе
+## Tables and exported HTML
 
-Переменные табличного интерфейса связаны с темой ядра. Цвета фона и границ, явно выбранные пользователем, считаются содержанием и сохраняются при переключении темы. Экспорт HTML сохраняет содержимое, а не тему панели. Для отображения вне редактора подготовьте собственные стили текста, списков и таблиц.
+Table UI uses variables bridged to the core theme. Explicit user-selected cell backgrounds/borders are document content and remain unchanged when switching themes. HTML export carries semantic content, not the toolbar theme. If you display exported HTML outside the editor, provide typography/list/table styles for your reader view.
 
-## Доступность
+## Accessibility
 
-Сохраняйте контраст пользовательских цветов. У кнопок есть доступные названия, нажатое состояние и заметный фокус. Документ представлен многострочным textbox с состоянием чтения. Полная проверка скринридеров, touch/mobile и клавиатурного управления таблицами ещё впереди; эта версия не заявляет соответствие стандарту доступности.
+Keep sufficient contrast for custom colors. Controls have accessible names, pressed state and visible keyboard focus. The document exposes a multiline textbox and read-only state. Full assistive-technology, mobile/touch, and keyboard-only table audits are still pending; this preview is not an accessibility conformance claim.
 
-Токены таблиц: `--mw-table-cell-padding`, `--mw-table-selection`, `--mw-table-menu-width`.
+Table tokens: `--mw-table-cell-padding`, `--mw-table-selection`, `--mw-table-menu-width`.

@@ -4,7 +4,7 @@ for (const english of [false, true]) test(`simulated image progress, recoverable
   const t = (ru: string, en: string) => english ? en : ru;
   const posted: string[] = [];
   page.on('request', (request) => { if (request.method() === 'POST') posted.push(request.url()); });
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByLabel(t('Пример документа', 'Document sample'), { exact: true }).selectOption('empty');

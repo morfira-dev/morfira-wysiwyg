@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) {
   test(`multi-block list paste demo retains suffix and following bodies in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     const t = (ru: string, en: string) => english ? en : ru;
-    await page.goto(english ? '/en/' : '/');
+    await page.goto(english ? '/' : '/ru/');
     const content = page.locator('.mw-content');
     await expect(content).toBeVisible();
     const panel = page.locator('.lab-list-selection');
@@ -42,7 +42,7 @@ for (const english of [false, true]) {
 
   test(`multi-block list paste demo replaces text within one body in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     const t = (ru: string, en: string) => english ? en : ru;
-    await page.goto(english ? '/en/playground' : '/playground');
+    await page.goto(english ? '/playground' : '/ru/playground');
     const content = page.locator('.mw-content');
     await expect(content).toBeVisible();
     const panel = page.locator('.lab-list-selection');

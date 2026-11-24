@@ -6,23 +6,26 @@ const ru = ['Редактирование HTML', 'Представления у�
 export default defineConfig({
   title: 'Morfira WYSIWYG',
   description: 'A modular TypeScript editor. A small core, room for more.',
+  base: process.env.DOCS_BASE_PATH || '/',
   cleanUrls: true,
   lastUpdated: false,
   locales: {
     root: {
-      label: 'Русский', lang: 'ru', themeConfig: {
-        nav: [{ text: 'Документация', link: '/guide' }, { text: 'Редактор', link: '/playground' }],
-        sidebar: [{ text: 'Morfira WYSIWYG', items: pages.map((page, i) => ({ text: ru[i], link: `/${page}` })) }, { text: 'Попробовать', items: [{ text: 'Интерактивный редактор', link: '/playground' }] }],
-        outline: { label: 'На этой странице' }, docFooter: { prev: 'Назад', next: 'Далее' },
+      label: 'English', lang: 'en', themeConfig: {
+        nav: [{ text: 'Documentation', link: '/guide' }, { text: 'Playground', link: '/playground' }],
+        sidebar: [{ text: 'Morfira WYSIWYG', items: pages.map((page, i) => ({ text: en[i], link: `/${page}` })) }, { text: 'Try it', items: [{ text: 'Interactive editor', link: '/playground' }] }],
       }
     },
-    en: {
-      label: 'English', lang: 'en', themeConfig: {
-        nav: [{ text: 'Documentation', link: '/en/guide' }, { text: 'Playground', link: '/en/playground' }],
-        sidebar: [{ text: 'Morfira WYSIWYG', items: pages.map((page, i) => ({ text: en[i], link: `/en/${page}` })) }, { text: 'Try it', items: [{ text: 'Interactive editor', link: '/en/playground' }] }],
+    ru: {
+      label: 'Русский', lang: 'ru', themeConfig: {
+        nav: [{ text: 'Документация', link: '/ru/guide' }, { text: 'Редактор', link: '/ru/playground' }],
+        sidebar: [{ text: 'Morfira WYSIWYG', items: pages.map((page, i) => ({ text: ru[i], link: `/ru/${page}` })) }, { text: 'Попробовать', items: [{ text: 'Интерактивный редактор', link: '/ru/playground' }] }],
+        langMenuLabel: 'Сменить язык',
+        outline: { label: 'На этой странице' }, docFooter: { prev: 'Назад', next: 'Далее' },
+        footer: { message: 'Модульный редактор на TypeScript' },
       }
     },
   },
-  themeConfig: { search: { provider: 'local' }, logo: '/logo.svg', footer: { message: 'TypeScript · Modular by design · Local preview' } },
+  themeConfig: { search: { provider: 'local' }, logo: '/logo.svg', footer: { message: 'A modular TypeScript editor' } },
   vite: { server: { fs: { allow: ['../..'] } } },
 });

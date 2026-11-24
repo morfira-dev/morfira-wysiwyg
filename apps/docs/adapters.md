@@ -1,6 +1,6 @@
-# Адаптеры фреймворков
+# Framework adapters
 
-Адаптеры используют общий HTML-контракт и жизненный цикл ядра. Экземпляры создаются после монтирования; Svelte требует соответствующего сборщика. Подключайте CSS один раз в клиентской точке входа. Во Vue/React/Svelte/Angular плагины, placeholder и label фиксируются при создании: для изменения пересоздайте компонент. `readOnly`, значение документа, `locale` и `translations` реактивны. Фреймворк в адаптер не встраивается. Web Component не требует фреймворка и описан отдельно ниже.
+Adapters share the core HTML contract and lifecycle. Instances are created after mounting; Svelte source requires a Svelte-aware bundler. Import the CSS once in the client entry. In Vue/React/Svelte/Angular, plugins, placeholder, and label are creation-time options; recreate the component to change them. `readOnly`, the document value, `locale` and `translations` update reactively. No adapter bundles its framework. The framework-free Web Component is described separately below.
 
 ## Vue 3.5+
 
@@ -11,16 +11,16 @@ import { MorfiraEditor } from '@morfira-dev/wysiwyg/vue';
 import { tables } from '@morfira-dev/wysiwyg/plugins/tables';
 import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
-const html = ref('<p>Привет</p>');
+const html = ref('<p>Hello</p>');
 const plugins = [tables()];
 </script>
 
 <template>
-  <MorfiraEditor v-model="html" :plugins="plugins" label="Статья" />
+  <MorfiraEditor v-model="html" :plugins="plugins" label="Article" />
 </template>
 ```
 
-События: `update:modelValue` с HTML, `change` с `EditorChange`, `ready` с `Editor`. Через ref доступен `getEditor()` после монтирования. Размонтирование уничтожает экземпляр.
+Events: `update:modelValue` with HTML, `change` with `EditorChange`, and `ready` with `Editor`. The exposed `getEditor()` returns the instance after mounting. Unmounting destroys the instance.
 
 ## React 18 / 19
 
@@ -30,15 +30,15 @@ import { MorfiraEditor } from '@morfira-dev/wysiwyg/react';
 import '@morfira-dev/wysiwyg/style.css';
 
 export const Article = () => {
-  const [value, setValue] = useState('<p>Привет</p>');
+  const [value, setValue] = useState('<p>Hello</p>');
   return <MorfiraEditor value={value}
-    onChange={({ html }) => setValue(html)} label="Статья" />;
+    onChange={({ html }) => setValue(html)} label="Article" />;
 };
 ```
 
-`onReady(editor)` передаёт экземпляр; forwarded ref предоставляет `getEditor()`. Очистка при монтировании поддерживает цикл StrictMode setup/cleanup. Без `value` документом можно управлять через открытый API. onChange использует актуальный callback из props.
+`onReady(editor)` exposes the instance; a forwarded ref exposes `getEditor()`. The mount cleanup supports StrictMode's setup/cleanup cycle. Omit `value` to manage document updates through the exposed API. The onChange callback always uses the latest prop.
 
-В браузере создание редактора, синхронизация controlled value и read-only выполняются в layout effects. Родительский layout effect может выполнить следующую команду, и подтверждение предыдущего значения не перезапишет эту правку и не сбросит курсор/историю. При серверном рендеринге используется passive effect fallback и выводится только контейнер. Намеренно задержанные или преобразованные значения остаются внешними заменами; адаптер не определяет протокол подтверждения приложения.
+In the browser, mounting, controlled value synchronization and read-only updates use layout effects. A parent layout effect can issue a subsequent command without an older acknowledgement overwriting that edit or resetting its caret/history. Server rendering uses the passive effect fallback and emits only the host element. Deliberately delayed or transformed values remain external replacements; the adapter does not infer an application acknowledgement protocol.
 
 ## Svelte 5
 
@@ -46,17 +46,17 @@ export const Article = () => {
 <script lang="ts">
   import { MorfiraEditor } from '@morfira-dev/wysiwyg/svelte';
   import '@morfira-dev/wysiwyg/style.css';
-  let html = $state('<p>Привет</p>');
+  let html = $state('<p>Hello</p>');
 </script>
 
-<MorfiraEditor bind:value={html} label="Статья" />
+<MorfiraEditor bind:value={html} label="Article" />
 ```
 
-Используйте callback props `onchange` и `onready`; `bind:this` открывает `getEditor()`. `value` поддерживает bind. Svelte 4 этим адаптером не поддерживается.
+Use callback props `onchange` and `onready`; `bind:this` exposes `getEditor()`. `value` is bindable. Svelte 4 is not supported by this adapter.
 
 ## Angular 21 / 22
 
-`MorfiraEditor` — standalone-компонент с selector `morfira-editor` и ControlValueAccessor. Импортируйте его непосредственно в `imports` компонента приложения. Для reactive forms подключите `ReactiveFormsModule`:
+`MorfiraEditor` is a standalone component with selector `morfira-editor` and ControlValueAccessor. Import it directly in your application's component `imports`. Add `ReactiveFormsModule` for reactive forms:
 
 ```ts
 import { Component } from '@angular/core';
@@ -70,27 +70,27 @@ import '@morfira-dev/wysiwyg/style.css';
   standalone: true,
   imports: [MorfiraEditor, ReactiveFormsModule],
   template: `<morfira-editor [formControl]="body" [locale]="language"
-    [translations]="messages" label="Статья" (ready)="onReady($event)" />`,
+    [translations]="messages" label="Article" (ready)="onReady($event)" />`,
 })
 export class Article {
-  readonly body = new FormControl('<p>Привет</p>', { nonNullable: true });
-  language = 'ru';
-  readonly messages: EditorTranslations = { 'editor.placeholder': 'Текст статьи…' };
+  readonly body = new FormControl('<p>Hello</p>', { nonNullable: true });
+  language = 'en';
+  readonly messages: EditorTranslations = { 'editor.placeholder': 'Article text…' };
   readonly onReady = (editor: Editor) => {
     console.log(editor.getHTML());
   };
 }
 ```
 
-Для template-driven forms подключите `FormsModule` и используйте `[(ngModel)]="html"`. Для прямого HTML-binding без Angular forms используйте `[(value)]="html"`, либо `[value]="html" (valueChange)="html = $event"`. Не совмещайте `[value]` и form binding на одном экземпляре: владельцем значения должна быть одна модель.
+For template-driven forms, import `FormsModule` and use `[(ngModel)]="html"`. For direct HTML binding without Angular forms, use `[(value)]="html"`, or `[value]="html" (valueChange)="html = $event"`. Do not combine `[value]` with a form binding on the same instance: one model must own the value.
 
-Входы: `value`, `readOnly`, `locale`, `translations`, `plugins`, `label`, `placeholder`. Выходы: `valueChange` со строкой HTML, `change` с `EditorChange`, `ready` с `Editor`. Через component ref доступен `getEditor()` после `ready`. Ввод обновляет CVA и outputs, внешние `writeValue`/binding updates остаются тихими. `null` в CVA сбрасывает документ в пустой. `control.disable()` и `[readOnly]` объединяются: любой из них блокирует изменение документа. Выход фокуса за пределы компонента помечает control touched.
+Inputs are `value`, `readOnly`, `locale`, `translations`, `plugins`, `label` and `placeholder`. Outputs are `valueChange` with an HTML string, `change` with `EditorChange`, and `ready` with `Editor`. A component ref exposes `getEditor()` after `ready`. User input updates the CVA and outputs; external `writeValue`/binding updates remain silent. CVA `null` resets the document to empty. `control.disable()` and `[readOnly]` combine: either blocks document mutations. Focus leaving the component marks the control touched.
 
-Редактор создаётся в `afterNextRender`, не во время SSR, и уничтожается вместе с компонентом. Библиотека поставляется partial-compiled; Angular linker приложения завершает компиляцию, скрытого JIT fallback не требуется. Angular core/common/forms — peers, CSS и runtime Angular в адаптер не встроены. Совместимость Angular 22 проверяется отдельным consumer-профилем с его Node/TypeScript toolchain, а не выводится только из peer range.
+The editor is created in `afterNextRender`, never during SSR, and is destroyed with its component. The library is partial-compiled; the application's Angular linker completes compilation without a hidden JIT fallback. Angular core/common/forms are peers, and the adapter bundles neither CSS nor Angular runtime. Angular 22 compatibility uses a separate consumer profile with its required Node/TypeScript toolchain, rather than being inferred solely from peer ranges.
 
-## Web Component без фреймворка
+## Framework-free Web Component
 
-Регистрация явная: импорт `/web-component` сам не создаёт custom element и безопасен при SSR. В браузере вызовите `defineMorfiraEditor()`; стандартное имя — `morfira-wysiwyg`:
+Registration is explicit: importing `/web-component` does not define a custom element and remains safe during SSR. Call `defineMorfiraEditor()` in the browser; its default tag is `morfira-wysiwyg`:
 
 ```ts
 import { defineMorfiraEditor } from '@morfira-dev/wysiwyg/web-component';
@@ -102,9 +102,9 @@ import '@morfira-dev/wysiwyg/plugins/tables.css';
 
 defineMorfiraEditor();
 const field = document.createElement('morfira-wysiwyg') as MorfiraEditorElement;
-field.value = '<p>Привет</p>';
-field.locale = 'ru';
-field.translations = { 'tables.resizeColumn': 'Ширина колонки' };
+field.value = '<p>Hello</p>';
+field.locale = 'en';
+field.translations = { 'tables.resizeColumn': 'Column width' };
 field.plugins = [tables()];
 field.addEventListener('value-change', (event) => {
   const html = (event as CustomEvent<string>).detail;
@@ -122,31 +122,31 @@ field.addEventListener('ready', (event) => {
 document.querySelector('#editor-host')!.append(field);
 ```
 
-Элемент использует light DOM, поэтому импортируйте CSS вручную и задавайте `--mw-*` на обёртке/самом элементе. Свойства `value`, `readOnly`, `locale`, `translations`, `label` и `placeholder` можно обновлять после подключения. `plugins` задаются до подключения или после отключения; изменение списка у работающего редактора отклоняется. `getEditor()` возвращает текущий экземпляр только пока элемент подключён.
+The element uses light DOM: import CSS manually and scope `--mw-*` variables to its wrapper or the element itself. Properties `value`, `readOnly`, `locale`, `translations`, `label` and `placeholder` update after connection. Set `plugins` before connection or after disconnection; changing the list of an active editor throws. `getEditor()` returns the current instance only while connected.
 
-Поддерживаются атрибуты `value`, `readonly`, `locale`, `label`, `placeholder`; переводы и плагины передавайте свойствами. `readonly` — boolean presence attribute: даже `readonly="false"` включает режим чтения, поэтому для выключения удалите атрибут или установите `field.readOnly = false`. Для HTML-значений предпочтительно свойство `value`.
+Attributes `value`, `readonly`, `locale`, `label` and `placeholder` are supported; pass translations and plugins as properties. `readonly` is a boolean presence attribute: even `readonly="false"` enables read-only, so remove it or set `field.readOnly = false` to disable it. Prefer the `value` property for HTML strings.
 
-События `value-change`, `change`, `ready` — native CustomEvent с `detail`; они всплывают. Внешняя установка `value` не создаёт обратных событий, same-value feedback сохраняет курсор/историю. Disconnect уничтожает редактор, reconnect восстанавливает последний проверенный HTML в новом экземпляре с новой историей. Это пока **не form-associated custom element**: автоматических FormData/валидации/disabled-связи с `<form>` нет, приложение связывает значение самостоятельно.
+`value-change`, `change` and `ready` are bubbling native CustomEvents with `detail`. External `value` assignment emits no feedback events; same-value feedback preserves caret/history. Disconnect destroys the editor; reconnect restores the last validated HTML into a new instance with fresh history. This is **not yet a form-associated custom element**: it has no automatic FormData/validation/disabled relationship with `<form>`. The application binds the value itself.
 
-## Реактивная локализация
+## Reactive localization
 
-Все четыре framework-адаптера и Web Component передают `locale` и `translations` в instance-local API. Для обновления translations передавайте новый record; язык не заменяет документ и не создаёт пользовательского change. Явные label/placeholder и пользовательские подписи остаются приоритетными. Языковые теги, fallback и каталог ключей — в [руководстве локализации](/localization).
+All four framework adapters and the Web Component forward `locale` and `translations` to the instance-local API. Supply a new translations record for reactive updates; language changes neither replace the document nor emit a user change. Explicit label/placeholder and custom labels retain precedence. See [localization](/localization) for language tags, fallback and the key catalog.
 
-## Синхронизация
+## Synchronization
 
-Ввод вызывает пользовательское событие. Возврат того же HTML через binding не заменяет документ и не сбрасывает курсор. Другое внешнее значение заменяет документ, очищает историю и не вызывает обратное событие адаптера. Не преобразовывайте HTML на каждом нажатии: нормализацию лучше выполнять явно при сохранении.
+Typing emits a user change. Feeding that HTML back through the binding does not replace the document or reset the caret. A different external value replaces the document, clears history, and does not emit a feedback change from the adapter. Avoid transforming HTML on every keystroke; use explicit normalization on save.
 
-## Проверка устанавливаемых пакетов
+## Installable package verification
 
 ```sh
 pnpm run build
 pnpm run consumers:check
-# Отдельный Angular 22 профиль, на совместимом Node:
+# Separate Angular 22 profile, on a compatible Node:
 pnpm run consumers:angular22
 ```
 
-Проверка рассчитана на восемь библиотек в настоящих tarball и отдельный временный проект вне workspace. Все Morfira-зависимости и overrides указывают на эти архивы; source aliases и ссылки на исходники не используются. Версии инструментария и его транзитивные зависимости берутся из текущей установленной среды и проверяются после установки. Базовый `pnpm install --offline` не скачивает недостающий кеш: в этом случае проверка явно завершится ошибкой.
+The check targets eight library tarballs installed into a separate temporary project outside the workspace. Every Morfira dependency/override points at these archives; source aliases and workspace-source links are forbidden. Tool versions and their transitive dependency edges come from the currently installed environment and are verified after installation. The baseline `pnpm install --offline` never fetches a missing cache entry: it fails explicitly.
 
-Базовый профиль охватывает tsc/vue-tsc/svelte-check, Angular AOT/linker, production-примеры Vue SFC, React StrictMode, Svelte 5, Angular 21 и Web Component: пятнадцать browser smoke-сценариев в Chromium/Firefox/WebKit. `consumers:angular22` добавляет ещё три сценария и отдельный TypeScript toolchain во временном проекте; ему нужен Node 22.22.3+ из ветки 22 либо совместимый Node 24.15+. Профиль может потребовать сеть для получения Angular 22 toolchain, не изменяя root lockfile. Проверяются controlled feedback, структурный slash с одной нотификацией, история и дальнейший ввод, внешнее значение, реактивные locale/read-only и unmount. Production StrictMode не доказывает dev effect replay; он отдельно проверяется основным adapter suite. Перечисление покрытия — контракт инструмента, а не утверждение о результате последнего запуска.
+The baseline covers tsc/vue-tsc/svelte-check, Angular AOT/linker and production examples for Vue SFC, React StrictMode, Svelte 5, Angular 21 and Web Component: fifteen Chromium/Firefox/WebKit browser smoke scenarios. `consumers:angular22` adds three scenarios and a separate TypeScript toolchain in its temporary project; it requires Node 22.22.3+ on the 22 branch or a compatible Node 24.15+. This profile may need network access to obtain its Angular 22 toolchain, without modifying the root lockfile. They cover controlled feedback, one-notification structural slash actions, history/following input, external values, reactive locale/read-only and unmount. Production StrictMode does not prove development effect replay; the main adapter suite covers that separately. This describes the tooling coverage contract, not the outcome of the latest run.
 
-Отчёты `artifacts/consumer-packages.json` и `artifacts/consumer-angular22.json` содержат версии, SHA-256 архивов, реальные пути разрешения экспортов и результаты браузеров соответствующего профиля. Временный каталог удаляется в finally. Это проверка устанавливаемых артефактов, а не публикация в npm и не утверждение о состоянии CI.
+`artifacts/consumer-packages.json` and `artifacts/consumer-angular22.json` record versions, archive SHA-256 hashes, actual export-resolution paths and browser results for their respective profiles. The temporary project is removed in finally. This verifies installable artifacts, not npm publication or live CI status.

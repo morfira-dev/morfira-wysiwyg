@@ -4,7 +4,7 @@ for (const english of [false, true]) test(`structural mapping demo preserves pat
   const t = (russian: string, translated: string) => english ? translated : russian;
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(english ? '/en/structural-mapping' : '/structural-mapping');
+  await page.goto(english ? '/structural-mapping' : '/ru/structural-mapping');
   const demo = page.locator('.structural-mapping-example');
   const points = demo.locator('.structural-mapping-points');
   await expect(points).toHaveText('[{"path":[0],"offset":5,"deleted":false},{"path":[2,0,1,0,0],"offset":3,"deleted":false}]');

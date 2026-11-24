@@ -1,97 +1,96 @@
-# Тесты и релизы
+# Testing and releases
 
-## Расширения и исходник — 23 ноября 2026
+## Extensions and source — 23 November 2026
 
-Блоки 4–7 реализованы локально: HTML-исходник, overlay-представления узлов, структурные позиции и прикладные рецепты. Итоговые целевые проверки — **225/225** в трёх браузерах, отдельно прежние pending-шрифты/цвета — **6/6**; RU/EN-демо и главная — **10/10** в Chromium. Сборки, типы, выборочные импорты, архивы и точечный smoke девяти импортов из tarball прошли. Svelte-рецепт скомпилирован, Angular 21-рецепт прошёл strict AOT; полный consumer matrix и Angular 22 не запускались. Ядро — 35946 gzip байт, Standard ready — 75738, Standard с исходником — 78255, Standard с прежними authoring tools — 86328. Source/SDK остаются opt-in. Подробные границы описаны на страницах [исходника](/source-editing), [представлений](/inline-node-views), [mapping](/structural-mapping) и [рецептов](/extension-recipes).
+Blocks 4–7 are implemented locally: HTML source, overlay node views, structural positions and application recipes. Final focused checks passed **225/225** in three browsers, plus **6/6** prior pending-font/color regressions; RU/EN demos/homepage passed **10/10** in Chromium. Builds, types, selective imports, archives and a focused nine-subpath tarball smoke passed. The Svelte recipe compiled and Angular 21 strict AOT passed; the full consumer matrix and Angular 22 were not run. Core is 35946 gzip bytes, Standard ready 75738, Standard with source 78255, Standard with prior authoring tools 86328. Source/SDK remain opt-in. Limits: [source](/source-editing), [views](/inline-node-views), [mapping](/structural-mapping), [recipes](/extension-recipes).
 
-## Инструменты редактирования — 23 ноября 2026
+## Authoring tools — 23 November 2026
 
-Новые инструменты: навигация вокруг объектов, интервалы и перенос форматирования, блоки кода. Целевые проверки подтверждены поэтапно: 57/57 навигации/оформления, 39/39 кода и 15/15 безопасности в трёх браузерах; RU/EN-демо и главная — 8/8 в Chromium. Сборки, типы, выборочные импорты и точечный tarball smoke прошли. Полные наборы и CI не запускались. Совместный Standard с инструментами — 83305 gzip байт JS и 19913 raw байт CSS. Подсветка кода показана во внешнем preview; вложенные объекты и универсальный structural mapping не заявлены.
+New authoring tools add object navigation, paragraph layout/format painter and code blocks. Focused evidence is staged: 57/57 navigation/text-tool executions, 39/39 code and 15/15 security executions in three browsers; RU/EN demos/homepage passed 8/8 in Chromium. Builds, types, selective imports and focused real-tarball smoke passed. Full suites and CI were not run. Standard with the tools uses 83305 gzip JS bytes and 19913 raw CSS bytes. Syntax highlighting is an external preview; nested object navigation and universal structural mapping are not claimed.
 
-## Текущая политика бюджета — 23 ноября 2026
+## Current budget policy — 23 November 2026
 
-После приведённых ниже прогонов лимит Standard по решению пользователя поднят
-до **90000 gzip байт JS**. Последний измеренный максимум 79961 оставляет **10039**
-байт запаса. Это изменение порога, не новая сборка или прогон тестов. Старые
-результаты сохраняют действовавшие тогда лимиты. Физические устройства и
-скринридеры недоступны; их проверка отмечается как ограничение доказательств,
-не следующая задача и не условие релиза.
+After the runs recorded below, the user raised Standard to **90000 gzip JS bytes**.
+The last measured maximum of 79961 leaves **10039 bytes** of allowance. This changes
+the guard, not the bundle or test evidence. Historical results retain their original
+limits. Physical devices and screen readers are unavailable; this is an evidence
+limitation, not a next task or release requirement.
 
-## Границы цитат в списке и запас бандла — 23 ноября 2026
+## Quote/list boundaries and bundle reserve — 23 November 2026
 
-Целевые браузерные проверки прошли **579/579**, отдельный сценарий React StrictMode
-— **3/3**. Затронутые RU/EN-примеры — **12/12**, ленивое открытие нового примера
-на главной — **1/1**. Сборки/типы, архивы, selective imports и tarball-smoke прошли.
-Полные наборы и GitHub CI не запускались.
+Focused browser checks passed **579/579**, with a separate **3/3** React StrictMode
+case. Affected RU/EN examples passed **12/12** and the new homepage mount case
+**1/1**. Builds/types, archive/selective-import guards and focused tarball smoke
+passed. Full suites and GitHub CI were not run.
 
-[Демо границ цитат](/list-quote-input) показывает обычные Backspace/Delete и
-барьеры вложенных веток. Все лимиты пройдены: standard ready — 72638 gzip байт,
-standard со свойствами таблиц — 79961/80000, extended — 89488. Запас всего 39 байт,
-существенного резерва пока нет. Возможности и проверки не убирались, бюджеты и
-настройки сжатия не менялись.
+[Quote input demo](/list-quote-input) shows native Backspace/Delete joins and
+branch barriers. All size guards pass: standard ready 72638 gzip JS bytes, standard
+with table properties 79961/80000 and extended 89488. The 39-byte reserve remains
+very tight; a substantial reserve is not achieved. No feature or validation was
+removed and no budget/compression setting changed.
 
-## Доступность и адаптивный UI — 23 ноября 2026
+## Accessibility and responsive UI — 23 November 2026
 
-Целевой прогон прошёл **135/135** в Chromium, Firefox и WebKit; готовые RU/EN-
-примеры — **8/8** в Chromium. Типы, сборки, selective imports, архивы и точечный
-smoke установленных tarball-пакетов прошли. Проверены roving focus, нативные
-клавиши, вычисленный контраст, forced colors, coarse-pointer цели, короткие
-модалки и узкий контейнер поиска внутри широкого окна.
+The focused run passed **135/135** in Chromium, Firefox and WebKit; built RU/EN
+examples passed **8/8** in Chromium. Types, builds, selected-import guards,
+archives and the focused actual-tarball UI smoke passed. The set covers toolbar
+roving focus, native keys, computed contrast, forced colors, coarse-pointer sizes,
+short native dialogs and narrow search containers inside wide windows.
 
-[Публичная лаборатория](/accessibility) отделяет desktop-автоматизацию и touch-
-эмуляцию от физических устройств и скринридеров. Реальные iOS/Android, OS IME,
-VoiceOver/NVDA/JAWS/TalkBack и нативный zoom остаются непроверенными. Полные
-наборы и GitHub CI не запускались. JS ядра прежний — 32383 gzip байта;
-standard ready — 72279, extended ready — 89125. Все действующие лимиты сохранены.
+The [public laboratory](/accessibility) separates desktop automation and touch
+emulation from physical devices and screen readers. Actual iOS/Android, OS IME,
+VoiceOver/NVDA/JAWS/TalkBack and native zoom remain unverified. Full suites and
+GitHub CI were not run. Core JS is unchanged at 32383 gzip bytes; standard ready
+is 72279 and extended ready 89125, with all existing guards preserved.
 
-## SDK расширений и Office-корпус — 23 ноября 2026
+## Extension SDK and Office corpus — 23 November 2026
 
-Итоговый целевой прогон: **267/267** в Chromium, Firefox и WebKit и **6/6**
-RU/EN-примеров документации в Chromium. Прошли mapping/history, узлы и атомы,
-внешние node views, decorations, реальный Office-корпус и затронутые транзакции/
-ссылки. Типы, сборки, архивы, selective imports и tarball-consumer прошли.
-Это целевой набор текущих изменений, не полный повтор всех старых проверок.
+The final focused run passed **267/267** in Chromium, Firefox and WebKit and
+**6/6** RU/EN documentation examples in Chromium. It covers mapping/history,
+nodes/atoms, external node views, decorations, the real Office corpus and affected
+transactions/links. Types, builds, archives, selective imports and tarball consumers
+passed. This is the changed features' focused set, not a full-suite rerun.
 
-Универсальный structural mapping, editable contentDOM и widget decorations не
-реализованы. Word/Excel используются как закреплённые upstream captures; свежий
-Google Docs payload получен native Cmd+C, а его editor-проверки воспроизводят
-сохранённый MIME через paste event. Подробности и потери — в [Office guide](/office-paste).
-
-
-## Целевые проверки SDK — 23 ноября 2026
-
-Новый `editor.selection` и интеграция формы ссылок прошли **156/156** целевых
-проверок в Chromium, Firefox и WebKit. RU/EN-примеры SDK и затронутые формы —
-**12/12** в Chromium. Сборки, типы, архивы, tree-shaking и бюджеты прошли;
-отдельный потребитель из настоящих архивов подтвердил публичные типы и поведение.
-Прибавка ядра — **904 байта gzip**, новых runtime-зависимостей нет.
-
-Это целевой прогон текущего этапа, не повтор полного набора ниже. Общие node views,
-decorations и перенос позиций через изменения пока не реализованы.
+Universal structural mapping, editable contentDOM and widget decorations are not
+implemented. Word/Excel use pinned upstream captures; the fresh Google Docs payload
+came from native Cmd+C and editor checks replay its saved MIME through paste events.
+See the [Office guide](/office-paste) for provenance and losses.
 
 
-## Полная локальная проверка — 20 ноября 2026
+## Focused SDK verification — 23 November 2026
 
-Свежий локальный прогон завершился успешно: **4714 editor/adapter-исполнения** в
-Chromium, Firefox и WebKit. Два существующих пропуска исключают повтор одного
-браузерно-независимого Node-теста Markdown-кодека; он прошёл в Chromium-проекте.
-Падений и flaky-результатов нет. Также прошли все **247 RU/EN-проверок документации**,
-**15 consumer-сценариев** пяти адаптеров, отдельные **3 сценария Angular 22** и
-**15 тестов release-скриптов**. Статика, declarations, экспорты архивов, выборочные
-импорты и бюджеты бандлов прошли.
+The new `editor.selection` API and link-form integration passed **156/156** focused
+checks in Chromium, Firefox and WebKit. RU/EN SDK examples and affected forms
+passed **12/12** in Chromium. Builds, types, archives, tree shaking and size guards
+passed; a separate actual-tarball consumer verified public types and behavior.
+Core overhead is **904 gzip bytes**, with no new runtime dependencies.
 
-Это подтверждает автоматизированные сценарии на проверенном локальном коде.
-Полная совместимость Office, реальные устройства с IME, системная палитра ОС и
-screen-reader-сертификация этим прогоном не заявляются. Результат не подтверждает
-GitHub CI или публикацию в npm. Ссылки текущего статуса в руководствах относятся
-к этому запуску; старые датированные результаты ниже сохраняют исторический смысл.
+This is the current stage's focused run, not a repeat of the full suite below.
+General node views, decorations and position mapping are not implemented yet.
 
 
-Composition проверяется последовательностями `compositionstart`, промежуточных `beforeinput`/`input`, `compositionend` и завершающего composition input с явными DOM-изменениями. Проверяются Unicode, история, выделение, внешняя замена, read-only и защита плагинов от подтверждения кандидата. Синтетическое событие не запускает системную IME: окна кандидатов японской/китайской/корейской раскладки и мобильные клавиатуры остаются ручной проверкой. Enter/Shift+Enter и Backspace/Delete на границах обычных блоков дополнительно проверяются настоящим браузерным клавиатурным вводом.
+## Complete local verification — 20 November 2026
 
-## Локальные проверки
+The fresh local run passed **4714 editor/adapter executions** in Chromium,
+Firefox and WebKit. Two existing skips avoid repeating the same browser-independent
+Node Markdown-codec process check; that check passed in the Chromium project.
+There were no failed or flaky results. All **247 RU/EN documentation checks**,
+**15 installed-consumer scenarios** across five adapters, the separate **3 Angular
+22 scenarios**, and **15 release-tooling tests** passed. Static checks, declarations,
+archive exports, selective imports and bundle guards also passed.
 
-`AGENTS.md`, `skills/morfira-sdd/SKILL.md` и `specs/` определяют разработку по спецификациям. `pnpm run check:project` проверяет стиль исходников, лицензии и runtime-границы.
+This confirms the automated scenarios on the checked local source, without a
+claim of complete Office fidelity, real-device IME, physical OS color-picker or
+screen-reader certification. It does not establish GitHub CI or npm publication.
+The public guides' current status links refer to this run; older dated checkpoints
+below retain their historical scope.
+
+
+Composition tests use `compositionstart`, intermediate `beforeinput`/`input`, `compositionend` and trailing composition input sequences with explicit DOM changes. They check Unicode, history, selection, external replacement, read-only and plugin candidate-confirmation guards. Synthetic events do not start a system IME: Japanese/Chinese/Korean candidate windows and mobile keyboards remain manual checks. Ordinary-block Enter/Shift+Enter and Backspace/Delete boundaries additionally use real browser keyboard input.
+
+## Local checks
+
+`AGENTS.md`, `skills/morfira-sdd/SKILL.md`, and `specs/` define specification-driven changes. `pnpm run check:project` checks source conventions, licenses and runtime boundaries.
 
 ```sh
 pnpm install
@@ -100,82 +99,82 @@ pnpm run check
 pnpm run docs:build
 ```
 
-`check` проверяет TypeScript/Svelte, собирает пакеты, контролирует вес и запускает браузерные тесты. Тесты используют собранные публичные exports, а не алиасы исходников. Для короткого прогона есть `pnpm test --project=chromium`. Браузеры нужны только для разработки.
+`check` runs TypeScript/Svelte checks, package builds and size budgets, then browser tests. Browser tests use the built public package exports, not source aliases. `pnpm test --project=chromium` is useful for a focused local run. Browser downloads are development-only.
 
-Проверяются форматирование и undo/redo, очистка HTML при импорте/вставке/экспорте, замена выделения, создание и структура таблиц, объединение/разделение и восстановление документа, режим чтения, локализация, уничтожение экземпляра и синхронизация/события/lifecycle Vue/React/Svelte/Angular и Web Component. React монтируется в StrictMode. Это покрытие поведения, а не заявление о 100% покрытии исходников.
+Coverage includes text formatting and undo/redo, HTML sanitization at import/paste/export, replacing selected text, table insertion and structural operations, merge/split and document round-trips, read-only mode, localization, disposal, and Vue/React/Svelte/Angular/Web Component value/event/lifecycle behavior. React is mounted in StrictMode. This is behavioral coverage, not a claim of 100% source coverage.
 
-Новые функции должны получать реальные сценарии: вставка между ячейками, сложные rowspan/colspan, IME, большие документы, граничные клавиатурные операции, внешние clipboard-примеры, touch/mobile, доступность и освобождение памяти. В regression fixtures не должно быть клиентских данных.
+New features should add real document scenarios: cross-cell paste, irregular rowspan/colspan, IME composition, large documents, keyboard boundary behavior, external clipboard fixtures, mobile/touch, accessibility, and memory lifecycle. Regression fixtures should be sanitized and contain no customer data.
 
-## Автоматические семантические релизы
+## Automated semantic releases
 
-Версии восьми библиотечных workspace независимы: core, plugins, vue, react, svelte, angular, web-component и публичный facade. semantic-release анализирует Conventional Commits только для файлов изменённого пакета; multi-semantic-release согласует версии внутренних зависимостей и повышает версии зависимых пакетов с тем же уровнем изменения. Приложение документации приватное.
+The eight library workspaces have independent versions: core, plugins, vue, react, svelte, angular, web-component and the public facade. semantic-release analyzes Conventional Commits for each package's changed files. multi-semantic-release coordinates internal dependency versions and propagates the highest dependency release type to dependent packages. The documentation app stays private.
 
 - `fix(core): ...`, `perf(core): ...` — patch.
 - `feat(plugins): ...` — minor.
-- `break(core): ...` — отдельная явная метка major, включая зависимые адаптеры и публичный пакет. Стандартные `feat(core)!: ...` и footer `BREAKING CHANGE: ...` также распознаются.
-- Коммиты только с документацией, тестами или chore не выпускают библиотеку.
+- `break(core): ...` — the explicit major marker, including dependent adapters and the public facade. Standard `feat(core)!: ...` and `BREAKING CHANGE: ...` footers are also recognized.
+- Documentation, test and chore commits alone do not release a library.
 
-Scope коммита помогает читать историю; пакет определяется изменёнными файлами. Формат тегов: `@morfira-dev/wysiwyg-core@1.0.0`, `@morfira-dev/wysiwyg@1.0.0` и аналогично для остальных. История релизов определяется отдельно для каждого имени: у нового пакета без распознанного release-тега semantic-release по умолчанию планирует начальный `1.0.0`; у существующих пакетов продолжает их собственные версии. Не выводите версии всех пакетов из одного общего «первого релиза». После успешного релиза версии и внутренние диапазоны в исходниках синхронизируются с опубликованными пакетами одним служебным коммитом. Это не обещание полного набора возможностей зрелых редакторов.
+Commit scopes help readers; changed files determine affected packages. Tag format examples are `@morfira-dev/wysiwyg-core@1.0.0`, `@morfira-dev/wysiwyg@1.0.0`, and the other package names. Release history is determined per name: a new package without a recognized release tag defaults to an initial `1.0.0` plan; existing packages continue their own versions. Do not infer every package version from a single global "first release". After a successful release, source versions and internal dependency ranges are synchronized with the published packages in one service commit. This does not promise full feature parity with mature editors.
 
 ```sh
 pnpm run test:release
 pnpm run release:plan
 ```
 
-План не публикует пакеты, не пушит теги, не создаёт GitHub Release и не требует npm-доступа. В полноценном релизе появляются заметки GitHub Release. `pnpm run release` разрешён только внутри GitHub Actions после проверок. После успешной публикации всех пакетов release job обновляет `pnpm-lock.yaml` через `pnpm install --lockfile-only --ignore-scripts --no-frozen-lockfile` и сохраняет манифесты с lockfile одним коммитом `chore(release): sync package versions [skip ci]` от github-actions[bot]. Push выполняется с GITHUB_TOKEN без force. Этот push не запускает новый workflow; тип `chore` также не создаёт релиз при ручном повторном запуске. Dry-run, ошибка публикации или отсутствие новых релизов не создают коммитов. Если main успел измениться, push отклоняется; опубликованные версии при этом не удаляются.
+Planning publishes nothing, pushes no tags, creates no GitHub Release and needs no npm credentials. Actual releases include GitHub release notes. `pnpm run release` runs only inside GitHub Actions after checks. After all packages publish successfully, the release job refreshes `pnpm-lock.yaml` with `pnpm install --lockfile-only --ignore-scripts --no-frozen-lockfile` and saves manifests and lockfile in one `chore(release): sync package versions [skip ci]` commit authored by github-actions[bot]. It pushes with GITHUB_TOKEN without force. This push does not trigger another workflow; the `chore` type also produces no release on a manual rerun. Dry runs, publication failures and no-release runs create no commits. If main has advanced, the push is rejected; published versions are preserved.
 
-## GitHub Actions и npm OIDC
+## GitHub Actions and npm OIDC
 
-Workflow `release.yml` запускается для main и вручную. Полный Check проверяет редактор в Chromium/Firefox/WebKit, типы, сборку, бюджеты, сайт и демки; независимый dry-run параллельно сохраняет артефакт `release-plan`. Для браузерных jobs используется официальный контейнер Playwright с версией из frozen lockfile: браузеры и системные библиотеки уже внутри, отдельная установка через apt не нужна. Все сценарии остаются обязательными: четыре шарда Chromium, шесть Firefox, четыре WebKit, два шарда сайта и оба consumer-профиля. Публикация ждёт успешных Check и плана и использует проверенные сборки того же коммита из текущего workflow без повторной сборки. Цель полного цикла — до семи минут; реальное время зависит также от очереди GitHub и доступности внешних сервисов и фиксируется по фактическому запуску. Публикация включается только переменной репозитория `NPM_PUBLISH_ENABLED=true`; без неё успешно выполняются проверки и план, а publish пропускается. PR не публикует пакеты. Сайт остаётся локальным.
+`release.yml` runs on main pushes and manual dispatch. The complete Check workflow covers Chromium/Firefox/WebKit editor tests, types, builds, budgets, documentation and demos; an independent dry-run uploads the `release-plan` artifact in parallel. Browser jobs use the official Playwright container matching the frozen lockfile version: browsers and system libraries are already included, with no separate apt installation. Every scenario remains mandatory: four Chromium, six Firefox and four WebKit shards, two documentation shards and both consumer profiles. Publication waits for successful Check and planning jobs and restores the checked builds for the same commit from the current workflow without rebuilding. The complete-cycle target is seven minutes; actual time also depends on GitHub queues and external service availability and is recorded from a real run. Publication requires repository variable `NPM_PUBLISH_ENABLED=true`; without it, checks and planning run successfully and publishing is skipped. PRs never publish packages. The Release workflow also deploys documentation to GitHub Pages after a successful Check on `main`.
 
-Для **каждого** из восьми имён `@morfira-dev/wysiwyg-core`, `@morfira-dev/wysiwyg-plugins`, `@morfira-dev/wysiwyg-vue`, `@morfira-dev/wysiwyg-react`, `@morfira-dev/wysiwyg-svelte`, `@morfira-dev/wysiwyg-angular`, `@morfira-dev/wysiwyg-web-component`, `@morfira-dev/wysiwyg` в npm → Settings → Trusted publishing добавьте GitHub Actions:
+For **each** of the eight names (`@morfira-dev/wysiwyg-core`, `@morfira-dev/wysiwyg-plugins`, `@morfira-dev/wysiwyg-vue`, `@morfira-dev/wysiwyg-react`, `@morfira-dev/wysiwyg-svelte`, `@morfira-dev/wysiwyg-angular`, `@morfira-dev/wysiwyg-web-component`, `@morfira-dev/wysiwyg`), add GitHub Actions under npm → Settings → Trusted publishing:
 
-| Поле | Значение |
+| Field | Value |
 | --- | --- |
 | Organization/user | `morfira-dev` |
 | Repository | `morfira-wysiwyg` |
 | Workflow filename | `release.yml` |
-| Environment | оставить пустым |
+| Environment | leave empty |
 | Allowed action | `npm publish` |
 
-Workflow получает `id-token: write` и `contents: write`; постоянный `NPM_TOKEN` не нужен. Публичные пакеты из публичного репозитория получают provenance. Не задавайте registry-url в setup-node: npm-плагин semantic-release сам управляет аутентификацией. [Официальная инструкция npm](https://docs.npmjs.com/trusted-publishers/).
+The workflow grants `id-token: write` and `contents: write`, with no permanent `NPM_TOKEN`. Public packages from this public repository get provenance. Do not set setup-node registry-url: the semantic-release npm plugin manages authentication. [Official npm instructions](https://docs.npmjs.com/trusted-publishers/).
 
-Если npm ещё не позволяет настроить доверие для нового имени, владелец scope может один раз опубликовать **только это ещё не опубликованное имя** интерактивно с 2FA. Сначала проверьте текущий `version` его `package.json` и наличие имени/версии в npm; уже опубликованные пакеты повторно не публикуйте. Например, после `pnpm run build` и `npm login` выберите нужную команду только для нового Angular или Web Component:
+If npm does not allow trust configuration for a new name, its scope owner can publish **only that not-yet-published name** once interactively with 2FA. First inspect its current package.json version and npm name/version availability; do not republish existing packages. For example, after `pnpm run build` and `npm login`, select the relevant command only for a new Angular or Web Component name:
 
 ```sh
-# Только если это имя ещё не опубликовано:
+# Only if this name has not been published:
 pnpm --filter @morfira-dev/wysiwyg-angular publish --access public
-# Отдельно, только если это имя ещё не опубликовано:
+# Separately, only if this name has not been published:
 pnpm --filter @morfira-dev/wysiwyg-web-component publish --access public
 ```
 
-Это реальная публикация **текущей версии манифеста**, а не dry-run. Выполнять её нужно только при намерении выпустить выбранный новый пакет. Затем настройте trusted publisher для этого имени; проверьте наличие связей для остальных пакетов, включите переменную и запустите Release. Автоматический план покажет версию каждого пакета и согласованные внутренние зависимости. Не создавайте фиктивные release-теги до публикации. Если связь npm истекла, создайте её заново по актуальной инструкции npm. Доступ к npm и успешную OIDC-публикацию нельзя подтвердить локальными тестами.
+This really publishes **the current manifest version**; it is not a dry-run. Run it only when intending to release the selected new package. Then configure that name's trusted publisher, verify the other packages' bindings, enable the repository variable and run Release. The automated plan shows each package's version and coordinated internal dependencies. Do not create fictional release tags before publishing. Recreate expired npm bindings using the current npm instructions. Local tests cannot verify npm access or a successful OIDC publication.
 
-Для OIDC publish job явно устанавливает npm CLI `11.21.2`. Перед созданием тегов скрипт проверяет npm >=11.5.1 и доступность GitHub OIDC. pnpm остаётся менеджером workspace. При сбое после создания тега версия могла не попасть в npm: проверяйте реестр, не считайте тег доказательством публикации и не удаляйте опубликованные версии.
+The OIDC publish job explicitly installs npm CLI `11.21.2`. Before creating tags, the script checks npm >=11.5.1 and GitHub OIDC availability. pnpm remains the workspace manager. A failure after tag creation may leave that version absent from npm: verify the registry, do not treat a tag as proof of publication, and do not remove published versions.
 
-`pnpm run check` также запускает `check:tree-shaking`: реальные публичные импорты потребителя не должны сохранять посторонние плагины, фреймворки или обязательный CSS. Проверки исходников закрепляют владение именованными типами и направление зависимостей ядра.
+`pnpm run check` also runs `check:tree-shaking`: real public consumer imports must not retain unrelated plugins, framework runtimes or mandatory CSS. Source checks enforce feature-owned named types and core dependency direction.
 
-Отдельные интеграционные проверки после сборки: `pnpm run consumers:check` — восемь tarball и пятнадцать базовых сценариев; `pnpm run consumers:angular22` — ещё три сценария Angular 22 с отдельным TypeScript toolchain. Для второго используйте совместимый Node 24.15+ либо Node 22.22.3+ из ветки 22; получение отдельного toolchain может требовать сеть и не меняет root lockfile. Эти числа описывают охват инструмента, а результаты фиксируются в отчётах каждого запуска. Наблюдательные [бенчмарки производительности/истории](/performance): `pnpm run benchmark`; они не входят в обычный gate корректности без timing-порогов.
+Explicit package integration after build: `pnpm run consumers:check` targets eight tarballs and fifteen baseline scenarios; `pnpm run consumers:angular22` adds three Angular 22 scenarios with its separate TypeScript toolchain. Use a compatible Node 24.15+ or Node 22.22.3+ on the 22 branch for the second profile; obtaining its toolchain may require network access and does not change the root lockfile. These numbers describe tooling coverage; each run's reports record its actual results. Observational [performance/history benchmarks](/performance): `pnpm run benchmark`; not part of the normal timing-free correctness gate.
 
 
-## Необязательное уведомление в Telegram
+## Optional Telegram notification
 
-После успешной live-публикации и сохранения версий workflow может отправить **одно общее сообщение с реально выпущенными именами и версиями пакетов** через `@nuykon/semantic-release-tg-bot`. Плагин — devDependency release tooling; он не входит в ядро, плагины редактора или браузерный бандл. Минимум Node для private tooling — 22.20.0.
+After successful live publication and version persistence, the workflow can send **one aggregate message listing the package names and versions actually released** through `@nuykon/semantic-release-tg-bot`. The plugin is a release-tooling devDependency, outside editor core/plugins and browser bundles. Private tooling requires Node 22.20.0 or newer.
 
-Сообщение группирует изменения по пакетам: под каждой версией отображаются заголовки коммитов с метками (`feat(core)`, `fix(plugins)`, `perf`, `break` и `!` для breaking changes) и ссылками на конкретные коммиты. Список берётся из собственного диапазона и каталога каждого пакета; зависимый адаптер не получает чужой список изменений ядра. Если пакет выпущен только из-за внутренних зависимостей, это отмечается отдельно. Тела коммитов, авторы и служебные коммиты версий не включаются. Для большого релиза сообщение показывает сокращённые списки с количеством остальных изменений и ссылкой на полные release notes каждого пакета. Коммиты распределяются между пакетами, чтобы один длинный changelog не вытеснил остальные версии. Новых секретов для этого не требуется.
+The message groups changes by package: each version lists commit subjects with their labels (`feat(core)`, `fix(plugins)`, `perf`, `break`, and `!` for breaking changes) and links to the exact commits. Each package uses its own directory and release range; a dependent adapter does not inherit the core package's commit list. Releases caused only by internal dependency updates say so explicitly. Commit bodies, authors and generated version-sync commits are excluded. Large releases use shorter previews, omitted-change counts and a link to each package's complete release notes. Space is shared across packages so one long changelog cannot displace the other versions. No additional secrets are required.
 
-В репозитории откройте Settings → Secrets and variables → Actions и добавьте secrets:
+In repository Settings → Secrets and variables → Actions, configure:
 
-| Secret | Назначение |
+| Secret | Purpose |
 | --- | --- |
-| `TELEGRAM_BOT_TOKEN` | Токен вашего бота |
-| `TELEGRAM_CHAT_ID` | Числовой ID чата получателя либо `@username` канала |
-| `TELEGRAM_BOT_PROXY` | Необязательный proxy в поддерживаемом плагином формате |
+| `TELEGRAM_BOT_TOKEN` | Your bot token |
+| `TELEGRAM_CHAT_ID` | Recipient’s numeric chat ID or a channel’s `@username` |
+| `TELEGRAM_BOT_PROXY` | Optional proxy in the format supported by the plugin |
 
-Для личного сообщения сначала откройте бота и отправьте `/start`: бот не может первым начать личный диалог. Получите числовой chat ID из `message.chat.id` обновления в своём Bot API-клиенте; username пользователя не заменяет этот ID. Для канала можно использовать его `@username`, предоставив боту право публикации. Не помещайте токен, приватный chat ID или proxy credentials в исходники, командную строку и логи; используйте secrets. Отсутствие обязательных secrets отключает уведомление и не мешает npm-релизу.
+For a private message, open the bot and send `/start` first: a bot cannot initiate a private conversation. Obtain the numeric ID from an update’s `message.chat.id` in your own Bot API client; a user’s username is not a replacement for that ID. A channel can use its `@username` when the bot has permission to publish. Keep the token, private chat ID and proxy credentials out of source, command arguments and logs; use secrets. Missing required secrets skip notification without blocking npm publication.
 
-Обычный `release-plan.json` по-прежнему содержит план и не является доказательством публикации. Скрипт очищает отдельный `release-published.json` до любого запуска релиза/планирования и записывает его только после успешной фактической публикации, служебного коммита версий и записи плана. Report содержит исходный SHA до служебного коммита, GitHub run ID/attempt и только выпущенные package/version. Отправитель сверяет эти значения с текущим workflow. Dry-run, отсутствие новых релизов и ошибка публикации/persistence не отправляют success-сообщение. Повторный запуск без новых выпущенных пакетов тоже не уведомляет.
+The existing `release-plan.json` remains a plan, not proof of publication. The CLI removes separate `release-published.json` before release/planning and writes it only after successful actual publication, the version-persistence service commit and plan write. The report contains the source SHA before that commit, GitHub run ID/attempt and only released package/version pairs. The sender checks this provenance against the current workflow. Dry runs, no-release runs and publication/persistence failures send no success message. A rerun without newly released packages sends nothing either.
 
-Отдельный шаг `release:notify` находится после release, а не в per-package semantic-release hooks. Только этот шаг имеет `continue-on-error` и timeout 2 минуты; сбой Telegram не отменяет уже выпущенные npm-пакеты и не превращает публикацию в ошибку. Ошибка записи необязательного report даёт предупреждение; проблема удаления stale report обнаруживается до начала публикации. Сетевое exactly-once после неоднозначного timeout не гарантируется: отдельный persistent deduplication service не добавлен. Secrets Telegram передаются только notification step; planning job их не получает.
+The separate `release:notify` step follows release instead of running in per-package semantic-release hooks. Only this step has continue-on-error and a two-minute timeout: a Telegram failure neither undoes published npm packages nor turns publication into a notification error. Failure to write the optional report warns; inability to remove a stale report is detected before publication. Transport-level exactly-once delivery after an ambiguous timeout is not guaranteed; no persistent deduplication service is added. Telegram secrets are scoped to the notification step, not planning.
 
-**Проверено 18 ноября 2026:** [GitHub run 44336166347](https://github.com/morfira-dev/morfira-wysiwyg/actions/runs/44336166347) прошёл полный gate, выпустил восемь пакетов, сохранил версии и lockfile и получил подтверждение Telegram API об отправке общего сообщения. Это подтверждает использованные credentials и доступ к чату в этом запуске, но не прочтение сообщения человеком или отдельную проверку proxy. Локальные тесты и сборки для подключения/исправления CI не запускались по указанию пользователя. Сайт документации остаётся локальным.
+**Verified on November 18, 2026:** [GitHub run 44336166347](https://github.com/morfira-dev/morfira-wysiwyg/actions/runs/44336166347) passed the complete gate, published eight packages, persisted versions and the lockfile, and received Telegram API confirmation for the combined notification. This verifies the credentials and recipient access used in that run, not human readership or an independent proxy test. No local tests or builds were run for integration/CI correction, as requested by the user.

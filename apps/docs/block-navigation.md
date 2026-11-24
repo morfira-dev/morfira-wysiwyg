@@ -2,29 +2,29 @@
 import BlockNavigationExample from './.vitepress/theme/BlockNavigationExample.vue';
 </script>
 
-# Навигация вокруг нетекстовых блоков
+# Navigating around non-text blocks
 
-Отдельный плагин помогает перейти до/после изображения или разделителя и написать текст между соседними объектами. Он работает с прямыми дочерними блоками редактора: `hr`, `img`, обычной фигурой с изображением и необязательной подписью, а также зарегистрированной семантической фигурой с буквальным текстом — например, media-placeholder. Плагин не загружает изображения или видео самостоятельно.
+This separate plugin lets users move before/after an image or divider and type between adjacent objects. Supported objects are direct editor-root `hr`, `img`, an ordinary image figure with an optional caption, and a registered text-only semantic figure such as a media placeholder. The plugin does not load images or videos itself.
 
 <BlockNavigationExample />
 
-## Клавиатура
+## Keyboard
 
-| Действие | Результат |
+| Action | Result |
 | --- | --- |
-| `→` в конце обычного абзаца перед объектом | Выбрать соседний объект целиком |
-| `←` в начале абзаца после объекта | Выбрать соседний объект целиком |
-| `←` / `↑` на выбранном объекте | Поставить курсор непосредственно перед объектом |
-| `→` / `↓` на выбранном объекте | Поставить курсор непосредственно после объекта |
-| Стрелка в промежутке | Выбрать соседний объект либо войти в соседний абзац/заголовок |
-| `Enter` / `Shift+Enter` на объекте | Создать абзац после / до объекта |
-| Печать в промежутке | Создать обычный абзац с введённым текстом |
-| Печать поверх выбранного объекта | Заменить объект обычным абзацем с текстом |
-| `Backspace` / `Delete` у соседнего объекта | Сначала выбрать объект; повторная клавиша удалит его |
+| `→` at an ordinary paragraph end before an object | Select the adjacent object |
+| `←` at a paragraph start after an object | Select the adjacent object |
+| `←` / `↑` on a selected object | Place the caret immediately before it |
+| `→` / `↓` on a selected object | Place the caret immediately after it |
+| Arrow at a root gap | Select an adjacent object or enter an ordinary paragraph/heading |
+| `Enter` / `Shift+Enter` on an object | Insert a paragraph after / before it |
+| Typing at a gap | Create an ordinary paragraph containing the literal text |
+| Typing over an exact object selection | Replace the object with an ordinary text paragraph |
+| `Backspace` / `Delete` beside an object | Select it first; a subsequent deletion key removes it |
 
-Перемещение и выбор не создают историю. Вставка абзаца и удаление — отдельные Undo/Redo-операции. Удаление единственного объекта оставляет редактируемый пустой абзац. Подпись изображения не является атомом: курсор внутри неё продолжает принадлежать обычному редактированию подписи.
+Navigation does not create history. Paragraph insertion and removal are individual Undo/Redo operations. Removing the only object leaves an editable empty paragraph. Image captions remain editable text; a caption caret does not become an object selection.
 
-## Подключение и собственные кнопки
+## Installation and application controls
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -38,13 +38,13 @@ const navigation = blockNavigationCommands(editor);
 const divider = editor.surface.querySelector('hr');
 if (divider) navigation.select(divider);
 navigation.insertParagraph('after');
-// getSelected() — наблюдение за текущим реальным выделением, не сохранённая команда.
+// getSelected() observes the actual current selection; it is not saved authority.
 const selected = navigation.getSelected();
 editor.destroy();
 ```
 
-CSS и внешние зависимости не нужны. В пресеты плагин не подключается автоматически. `select()` и `insertParagraph()` возвращают `false` при неподдерживаемом или устаревшем объекте, read-only, composition и после уничтожения. Внутренние listeners и API принадлежат одному редактору и освобождаются при его уничтожении.
+No stylesheet or runtime dependency is required. Presets do not install the plugin automatically. `select()` and `insertParagraph()` return `false` for unsupported/stale targets, read-only, composition and disposal. Each editor owns its listeners and API, which are released on destruction.
 
-## Границы
+## Limits
 
-Таблицы, вложенные списки/цитаты, сложные фигуры, неизвестные семантические узлы и строчные атомы не перехватываются. Плагин не меняет формат HTML/JSON и не добавляет сохраняемые cursor-маркеры. Shift-выделения, системные сочетания, clipboard/drop и редактирование внутри объектов сохраняют существующих владельцев. Это не универсальный структурный курсор и не доказательство поддержки реальных устройств или OS IME. Фактические результаты целевых проверок фиксируются в [журнале](/testing).
+Tables, nested lists/quotes, complex figures, unknown semantic nodes and inline atoms keep their existing owners. No persisted cursor marker or HTML/JSON format change is introduced. Shift selections, OS shortcuts, clipboard/drop and editing inside objects retain existing behavior. This is not a universal structural cursor or evidence of real-device/OS IME support. Actual focused verification is recorded in the [testing guide](/testing).

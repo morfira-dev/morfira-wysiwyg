@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('Russian homepage file paste uses the explicit local callback and ignores accompanying markup', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByLabel('Пример документа', { exact: true }).selectOption('empty');
@@ -24,7 +24,7 @@ test('Russian homepage file paste uses the explicit local callback and ignores a
 });
 
 test('English playground rejects SVG file input while keeping the document unchanged', async ({ page }) => {
-  await page.goto('/en/playground');
+  await page.goto('/playground');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByLabel('Document sample', { exact: true }).selectOption('empty');

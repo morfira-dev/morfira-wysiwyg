@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`homepage table menus start localized and switch without document or history loss in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/' : '/');
+  await page.goto(english ? '/' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByLabel(t('Пример документа', 'Document sample'), { exact: true }).selectOption('tables');
@@ -39,7 +39,7 @@ for (const english of [false, true]) test(`homepage table menus start localized 
 
 for (const english of [false, true]) test(`localization guide documents dictionaries and live default-toolbar switching in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/localization' : '/localization');
+  await page.goto(english ? '/localization' : '/ru/localization');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(t('Локализация интерфейса', 'Interface localization'));
   await expect(page.getByRole('cell', { name: 'tables.clipboardError', exact: true })).toHaveCount(1);
   await expect(page.getByRole('cell', { name: 'suggestions.results', exact: true })).toHaveCount(1);

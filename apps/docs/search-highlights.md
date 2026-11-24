@@ -1,10 +1,10 @@
-# Подсветка всех результатов поиска
+# Highlighting every search result
 
-Необязательный `createSearchHighlights` показывает все совпадения текущего поиска и отдельно выделяет текущий результат. Он использует нативный [CSS Custom Highlight API](https://www.w3.org/TR/css-highlight-api-1/): Range регистрируется для рисования браузером, а `span`, `mark`, атрибуты или служебные стили в документ не вставляются.
+The optional `createSearchHighlights` paints every current search match and distinguishes the current result. It uses the native [CSS Custom Highlight API](https://www.w3.org/TR/css-highlight-api-1/): ranges are registered for browser painting without inserting `span`, `mark`, attributes or service styles into the document.
 
-Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing). Проверки регистрации диапазонов не заменяют визуальную проверку отрисовки. Актуальные сборки, размеры и ограничения фиксируются в дорожной карте отдельно от прежних результатов поиска.
+Current browser/example execution results and their limits are recorded under [testing](/testing). Range-registration checks do not replace visual paint verification. Current builds, sizes and limitations are tracked in the roadmap separately from historical search results.
 
-## Подключение
+## Setup
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -23,7 +23,7 @@ api.setQuery('Morfira');
 highlights.refresh();
 console.log(highlights.getState()); // { status, count, current }
 
-const snapshot = getSearchRanges(editor); // независимые Range и индекс current
+const snapshot = getSearchRanges(editor); // independent ranges and current index
 
 const dispose = () => {
   highlights.destroy();
@@ -31,37 +31,37 @@ const dispose = () => {
 };
 ```
 
-JavaScript не импортирует CSS автоматически. Модуль не подключён к пресетам, обычному `search()` или форме поиска по умолчанию. Его можно использовать с [готовой формой](/ui#поиск-и-замена) или собственной панелью; запрос, параметры, навигация и замена по-прежнему принадлежат поисковым командам. Новых runtime-зависимостей нет. Импорт безопасен без DOM, создание контроллера требует браузера и установленного `search()`.
+JavaScript does not import CSS automatically. Presets, ordinary `search()` and the search form do not install this module by default. Use it with the [ready form](/ui#find-and-replace) or an application panel; queries, options, navigation and replacement remain search commands. There are no new runtime dependencies. Import is safe without DOM; creating a controller requires a browser and an installed `search()` plugin.
 
-## Состояние и поведение
+## State and behavior
 
-`SearchHighlightsController` предоставляет `getState()`, `refresh()` и идемпотентный `destroy()`. `getState()` возвращает свежий снимок:
+`SearchHighlightsController` exposes `getState()`, `refresh()` and idempotent `destroy()`. `getState()` returns a fresh snapshot:
 
-| Поле | Значение |
+| Field | Value |
 | --- | --- |
-| `status` | `ready`, `unsupported` или `conflict` |
-| `count` | Число принадлежащих этому контроллеру зарегистрированных диапазонов |
-| `current` | Индекс текущего совпадения поиска, начиная с 0; `-1`, если его нет |
+| `status` | `ready`, `unsupported` or `conflict` |
+| `count` | Number of registered ranges owned by this controller |
+| `current` | Current search match index, starting at 0; `-1` when absent |
 
-`ready` означает готовность регистрации, а не подтверждённую видимость каждого пикселя. Без подключённого CSS цвета могут отсутствовать. Изменения запроса/документа собираются в один animation frame; явный `refresh()` синхронно обновляет диапазоны. Переход текущего результата не требует пересоздавать весь набор при неизменных документе и запросе.
+`ready` describes registration readiness, not verified visibility of every pixel. Without the stylesheet, colors may be absent. Query/document updates coalesce into one animation frame; explicit `refresh()` updates ranges synchronously. Current-only navigation need not recreate the complete set when the document/query is unchanged.
 
-Подсветка не меняет HTML, JSON, текст, фокус, направление выделения, Undo/Redo и события изменения документа. `api.setQuery()` тоже не перемещает выделение; `api.select()`, `next()` и `previous()` по своему обычному контракту выделяют активный результат. Браузер сам перерисовывает нативные подсветки при прокрутке; модуль не создаёт отдельные оверлеи на каждое совпадение и не опрашивает геометрию.
+Highlighting does not alter HTML, JSON, text, focus, selection direction, Undo/Redo or document-change events. `api.setQuery()` also preserves selection; `api.select()`, `next()` and `previous()` retain their ordinary behavior of selecting the active result. The browser handles repainting on scroll; this module has no per-match overlays or geometry polling.
 
-Все результаты ограничены существующим лимитом поиска 10 000. Пустой/очищенный запрос и переполнение убирают подсветку. Read-only разрешает поиск и отображение диапазонов, блокируя замену по обычным правилам. При IME-композиции подсветка временно снимается, затем обновляется. Замена документа, ввод, форматирование, Undo/Redo и перестроение DOM с тем же HTML не должны оставлять устаревшие Range.
+Results retain the existing 10,000-match search limit. Empty/cleared queries and overflow remove ranges. Read-only allows search and painting while replacement retains its existing guards. IME composition temporarily clears highlights and refreshes afterward. Replacement, input, formatting, Undo/Redo and rebuilding nodes with identical HTML must not retain stale ranges.
 
-Границы совпадают с [поиском](/search): поддержаны переходы через строчные стили и ссылки, ячейки с объединениями остаются неизменными. Между блоками/ячейками совпадения не склеиваются. Семантические поддеревья, включая [упоминания с ID](/persistent-mentions), исключены из поиска и подсветки.
+Boundaries follow [search](/search): matches can cross inline styles and links, and merged cells are preserved. Matches do not join across blocks/cells. Owning semantic subtrees, including [mention IDs](/persistent-mentions), are excluded from search and highlighting.
 
-## Нативная поддержка и владение
+## Native support and ownership
 
-Проверяются `Highlight` и `CSS.highlights` в документе редактора. При отсутствии API состояние `unsupported` имеет `count: 0`, `current: -1`; обычный поиск, переходы и замена продолжают работать. Подмена DOM-обёртками или тяжёлый fallback не добавлены. Поддержка конкретных версий браузеров и доступность отрисовки требуют отдельной проверки.
+The module detects `Highlight` and `CSS.highlights` in the editor document. Without them, `unsupported` has `count: 0`, `current: -1`; ordinary search, navigation and replacement remain usable. There is no DOM-wrapper or heavy fallback. Concrete browser versions and visible painting still require separate verification.
 
-В одном Document модуль резервирует `morfira-search-results` и `morfira-search-current`. Контроллеры разных редакторов делят нативные группы, но изменяют и удаляют только свои Range. Текущий результат имеет больший приоритет. Разрешён один контроллер на редактор. Не занимайте эти имена и не меняйте принадлежащие модулю объекты вручную: при конфликте/замене чужой записи возвращается `conflict` без перезаписи чужого объекта. Другие записи реестра сохраняются; `CSS.highlights.clear()` не вызывается.
+The module reserves `morfira-search-results` and `morfira-search-current` in each Document. Controllers for different editors share the native groups but change/remove only their own ranges. The current result has higher priority. Only one controller per editor is allowed. Do not occupy these names or modify the module's objects manually: a collision or replaced registry entry produces `conflict` without overwriting the external object. Other registry entries survive; the module never calls `CSS.highlights.clear()`.
 
-`destroy()` отменяет отложенный frame, снимает observer, обработчики и подписки, удаляет только принадлежащие контроллеру диапазоны. Последний владелец освобождает только свои имена. Уничтожение редактора также очищает подсветку; после уничтожения `refresh()` и `getState()` выбрасывают ошибку.
+`destroy()` cancels its pending frame, releases observer/listeners/subscriptions and removes only its owned ranges. The final owner releases only its own names. Editor destruction also cleans up highlights; `refresh()` and `getState()` throw after destruction.
 
-## Оформление
+## Styling
 
-Переменные задаются на редакторе или его родителе:
+Set variables on the editor or an ancestor:
 
 ```css
 .my-editor {
@@ -72,8 +72,8 @@ JavaScript не импортирует CSS автоматически. Моду�
 }
 ```
 
-CSS явный и внешний, без динамической вставки stylesheet. Запрос, текст документа и URL не подставляются в имена или CSS. Подсветка не переносится в сохранённый документ, буфер HTML/JSON или Markdown. Она не добавляет сетевых запросов и не заменяет валидацию содержимого приложения.
+Styles are explicit and external, without runtime stylesheet injection. Queries, document text and URLs never become highlight names or CSS. Decorations do not enter persisted content, HTML/JSON clipboard or Markdown. No network request is added; this presentation module does not replace application content validation.
 
-## Пример на сайте
+## Site example
 
-На [главной](/#editor) или [стенде](/playground) открой «Поиск и замена». Флажок «Подсветка всех результатов» включает только этот демонстрационный модуль. «Загрузить пример подсветки» заменяет документ; «Подсветить все Morfira» применяет запрос с целым словом без перемещения выделения. Сведения обновляются по отдельной кнопке и доступны read-only. Очистка поиска убирает диапазоны, а выключение флажка освобождает контроллер без изменения документа.
+On the [homepage](/#editor) or [laboratory](/playground), expand “Find and replace”. “Highlight all results” explicitly enables this demo module. “Load highlight sample” replaces the document; “Highlight every Morfira” applies a whole-word query without changing selection. Refresh the state snapshot explicitly, including in read-only mode. Clearing search removes ranges; disabling the checkbox disposes the controller without modifying the document.

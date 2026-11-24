@@ -1,8 +1,8 @@
-# Контекстные свойства изображения
+# Contextual image properties
 
-На [главной](/#editor) и в [playground](/playground) включён отдельный переключатель **«Контекстные свойства изображения»**. Загрузите пример, выделите само изображение кликом или кнопкой «Выделить изображение примера». Панель показывает alt, сохранённые размеры, **Свойства изображения** и **Удалить изображение**. Сам показ не меняет документ, историю или фокус.
+The [homepage](/#editor) and [playground](/playground) enable a separate **Contextual image properties** switch. Load its sample and select the image itself by clicking it or using **Select sample image**. The panel shows alt, stored dimensions, **Image properties** and **Remove image**. Automatic showing changes neither document/history nor focus.
 
-## Подключение
+## Installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -14,7 +14,7 @@ import '@morfira-dev/wysiwyg/ui/contextual-image.css';
 
 const editor = createEditor(editorHost, {
   plugins: [images()],
-  value: '<figure><img src="/logo.svg" alt="Morfira" width="120" height="80"><figcaption>Подпись</figcaption></figure>',
+  value: '<figure><img src="/logo.svg" alt="Morfira" width="120" height="80"><figcaption>Caption</figcaption></figure>',
 });
 const properties = createContextualImageUI(overlayHost, editor, { gap: 8 });
 const selectImage = () => {
@@ -27,46 +27,46 @@ const dispose = () => {
 };
 ```
 
-Плагин `images()` обязателен; без него создание UI завершается до монтирования. Пресеты и готовая панель не подключают этот модуль автоматически. Нет runtime-зависимостей, фреймворка, неявного CSS, нового формата документа или atom/node-view модели. Импорт безопасен при SSR; создание требует браузера.
+The `images()` plugin is required; missing it fails before UI mounts. Presets and ready UI do not install this module automatically. There are no runtime dependencies, frameworks, implicit CSS, new document format or atom/node-view model. Imports are SSR-safe; creation needs a browser.
 
-`overlayHost` — пустой подключённый HTML-элемент приложения в документе редактора, вне `editor.surface`. Фиксированное позиционирование требует подходящего слоя viewport: предки с transform/filter/perspective, paint containment или обрезкой не поддержаны. Глобальный overlay-сервис и перенос узлов приложения не создаются.
+`overlayHost` is an empty connected application-owned HTML element in the editor document, outside `editor.surface`. Fixed placement requires an appropriate viewport layer: transformed/filtered/perspective/paint-contained or clipping ancestors are unsupported. UI neither creates a global overlay service nor moves application nodes.
 
-Контроллер предоставляет `element`, `refresh()` и идемпотентный `destroy()`. После destroy обновление выбрасывает ошибку; редактор остаётся рабочим. Собственные формы, обработчики, subscriptions, observers и отложенная геометрия освобождаются, включая ошибку инициализации. Настройки: необязательные `label`, `onError` и конечный `gap` 0–32 CSS px, по умолчанию 8. Экспортируются `ContextualImageUIOptions`, `ContextualImageUIController`, `ContextualImageUIMessageKey` и RU/EN `contextualImageUIMessages`.
+The controller provides `element`, `refresh()` and idempotent `destroy()`. Refresh after destroy throws; the editor remains usable. Owned forms, listeners, subscriptions, observers and queued geometry are released, including setup failure. Options are optional `label`, `onError` and finite `gap` 0–32 CSS px, default 8. Exports include `ContextualImageUIOptions`, `ContextualImageUIController`, `ContextualImageUIMessageKey` and RU/EN `contextualImageUIMessages`.
 
-## Выделение и команды
+## Selection and commands
 
-Модуль принимает нативный Range узла IMG, Range всей простой figure или каретку в её обычной подписи. Для выбора IMG оба конца находятся в его непосредственном родителе и охватывают ровно одного ребёнка. Поддержаны обычное строчное изображение и изображение внутри простой figure с одним IMG. Плагин уже выделяет IMG при клике; `imageCommands(editor).select(image)` позволяет приложению сделать это явно, в том числе кнопкой для клавиатуры.
+The module accepts an IMG node Range, a whole simple figure Range or a caret in its ordinary caption. For an IMG node Range, both endpoints share its direct parent and span exactly one child. An ordinary inline image and an image in a simple single-image figure qualify. The images plugin already selects IMG on click; `imageCommands(editor).select(image)` lets an application do so explicitly, including through a keyboard-accessible button.
 
-Не принимаются развёрнутые диапазоны подписи, текст с изображением, несколько изображений, сложные figure, чужие или семантические узлы с собственным владельцем. Курсор внутри ссылки или кода в подписи остаётся у своего владельца. Эти диапазоны не переосмысливаются как новая модель выделения. Текстовая панель и действия ссылки обслуживают собственные виды выделений.
+Expanded caption ranges, mixed text/image or multiple-image ranges, complex figures, foreign nodes and owning semantic ancestors do not qualify. Caption carets inside links/code remain with their existing owner. These ranges are not reinterpreted as a new selection model. Text and link contextual tools handle their own selection shapes.
 
-**Свойства** восстанавливают точный сохранённый Range и открывают существующую [форму изображений](/ui#изображения-и-загрузка-приложения) с `mode: 'edit'`, переводя фокус в URL. Форма сохраняет src/alt, размеры и буквальную подпись. Enter обновляет выбранный объект; вставка и загрузка в этом режиме отсутствуют. Очистка ширины/высоты снимает размер при выключенном сохранении пропорций; явно заданные значения — целые числа 1–1000. Неизменённая подпись не переписывается: её rich-узлы сохраняются при изменении других метаданных. Изменение самой подписи использует существующий контракт обычного текста.
+**Image properties** restores the exact saved Range and opens the existing [image form](/ui#images-and-application-owned-upload) with `mode: 'edit'`, focusing its URL field. It edits src/alt, dimensions and literal caption text. Enter updates the selected object; insertion and upload are absent. Blank width/height remove a dimension with aspect-ratio locking off; explicit values are integers 1–1000. Unchanged caption text is not rewritten, preserving its rich nodes when other metadata changes. An explicitly changed caption follows the existing plain-text contract.
 
-В форме доступен переключатель **«Сохранять пропорции»**, по умолчанию выключенный. Включите его, измените одну сторону и нажмите «Обновить изображение» или Enter: вторая сторона пересчитается в черновике по сохранённой паре либо уже загруженным естественным размерам. Если пропорции неизвестны, переключатель недоступен. Неверный/пустой размер при блокировке не применяется; выключите её для независимых сторон и сброса размеров. Смена цели или src не переносит старые пропорции на другое изображение. [Подробности формы](/ui#сохранение-пропорций).
+The form includes a **Keep aspect ratio** checkbox, off by default. Enable it, edit one side and choose Update image or press Enter: the other side updates in the draft using the stored pair or already-loaded natural dimensions. Unknown proportions disable the checkbox. Invalid/blank locked dimensions are not applied; uncheck for independent sides and dimension reset. Changing the target or src does not transfer old proportions to another image. [Form details](/ui#preserving-proportions).
 
-Метаданные меняются существующей командой с одним Undo. Невалидный адрес/размер не меняет документ и сохраняет черновик для исправления. Добавление подписи к строчному изображению использует существующее преобразование в figure. **Удалить изображение** удаляет простую figure вместе с её подписью либо выбранный строчный IMG, сохраняя соседнее содержимое; Undo возвращает результат. Числовая форма не создаёт маркеры: для них независимо подключается [`createImageResizeUI`](/images#перетаскивание-маркеров), обрезка пока не поддерживается.
+Metadata uses an existing command and one Undo step. Invalid URLs/dimensions leave the document unchanged and retain drafts for correction. Adding a caption to an inline image uses existing promotion to figure. **Remove image** removes a simple figure with its caption, or the selected inline IMG, preserving surrounding content; Undo restores it. The numeric form does not create handles: import [`createImageResizeUI`](/images#drag-resize-handles) independently for them; cropping remains unsupported.
 
-В демо отдельный переключатель **«Маркеры размера изображения»** управляет drag-интерфейсом. Он не включает контекстную форму неявно. Перетаскивание выбранного IMG показывает только внешнюю рамку до отпускания; Escape отменяет, успешное завершение создаёт один Undo. Для клавиатуры на маркере доступны стрелки и Shift+стрелки. Маркеры требуют точного выделения IMG; контекстные свойства дополнительно поддерживают простую figure и каретку её обычной подписи. Установите каждый модуль в собственный пустой внешний host; host маркеров должен принадлежать обычному viewport-overlay слою.
+The demo's separate **Image resize handles** toggle controls dragging. It does not implicitly install the contextual form. Dragging a selected IMG shows only an external outline until release; Escape cancels, and successful completion adds one Undo step. Focused handles support arrows and Shift+arrows. Resize handles still require an exact IMG selection; contextual properties additionally accept simple figures and ordinary caption carets. Mount each module in its own empty external host; the handle host must belong to a normal viewport-overlay layer.
 
-## Фокус, read-only и очистка
+## Focus, read-only and disposal
 
-**Alt+F10** из редактируемого редактора с подходящим IMG открывает панель и переводит фокус в «Свойства изображения». Это вход в инструменты уже выделенного изображения, а не новый способ выбрать произвольный объект стрелками. **Escape** закрывает форму/панель и один раз восстанавливает точный node Range. Внешнее действие или уход фокуса закрывает без перехвата фокуса; queued-обновление того же диапазона не открывает панель снова. Новое действие выделения или Alt+F10 открывают её повторно.
+**Alt+F10** from this editable editor with an eligible IMG opens/focuses Image properties. This enters tools for an already selected image; it does not add arrow-key selection of arbitrary objects. **Escape** closes the form/panel and restores the exact node Range once. Outside interaction/focus departure dismisses without stealing focus; queued refresh of the same range does not immediately reopen. A new selection action or Alt+F10 reopens.
 
-Смена локали меняет подписи без сброса черновика. Выбор другого или заново созданного изображения закрывает старую форму, не переносит её черновик. Внешняя API-замена синхронно отменяет старую цель. Read-only может оставлять описание, блокирует изменения и закрывает форму; Alt+F10 в read-only не перехватывается, поскольку доступного изменяющего действия нет; IME composition скрывает инструменты. После восстановления фокуса заново проверяются фактический IMG, версия документа и ограничения; отсоединённые элементы не могут редактировать другой объект.
+Locale changes update labels without resetting drafts. Selecting another/recreated image closes the old form rather than retargeting its draft. External API replacement synchronously invalidates the old target. Read-only may retain summary while disabling mutation and closing forms; Alt+F10 is not intercepted read-only because there is no enabled mutating control; IME composition hides tools. Actions recheck the actual IMG, document revision and restrictions after focus restoration; detached controls cannot edit a different object.
 
-Панель учитывает видимую область, clipping, прокрутку, resize и VisualViewport. На узком экране controls переносятся/прокручиваются. Нет опроса таймером или обхода всего документа. Показ, положение и закрытие не записываются в историю.
+Geometry follows visible bounds, clipping, scroll, resize and VisualViewport. Narrow controls wrap/scroll. There is no timer polling or document-wide traversal. Showing, placement and dismissal create no history.
 
-## Безопасность и ресурсы
+## Security and resources
 
-Alt, размеры, локализованные подписи и ошибки выводятся обычным текстом. Панель **не создаёт второе IMG**, thumbnail или сетевое превью; геометрия читается с исходного узла. Допустимое изображение в документе уже может загружать свой src. Явное изменение src командой может загрузить новый ресурс; это не обещание отсутствия всех сетевых запросов.
+Alt, dimensions, localized labels and errors render as text. The panel **never creates a second IMG**, thumbnail or remote preview; it reads geometry from the actual node. A valid document image can already fetch its src. An explicit src update may fetch a new resource; this is not a claim of zero network requests.
 
-URL, размеры и длины строк валидируются существующим image codec/плагином. Доверенные callbacks приложения не являются sandbox. Серверная проверка, политика разрешённых ресурсов, авторизация загрузок и CSP остаются ответственностью приложения. Создание и закрытие edit-формы не запускают transport и не вызывают отмену загрузки другого владельца. Изменение документа, read-only и composition по-прежнему отменяют ожидающую загрузку по контракту image-плагина. Фронтенд-фильтрация не является серверной границей доверия или полной сертификацией безопасности/доступности/мобильных устройств.
+Existing image codec/plugin validation owns URLs, dimensions and text limits. Trusted application callbacks are not sandboxed. Server validation, resource-host policy, upload authorization and CSP remain application responsibilities. Creating or disposing edit mode starts no transport and does not cancel another owner's upload. Document mutations, read-only and composition still cancel a pending upload under the existing images-plugin contract. Frontend filtering is neither a server trust boundary nor complete security/accessibility/mobile certification.
 
-Фактические проверки и размеры публикуются в [дорожной карте](/roadmap#проверки-и-ограничения). JS и CSS измеряются отдельно; все необязательные модули вместе не считаются автоматически одним standard-профилем.
+Actual checks and sizes are recorded in the [roadmap](/roadmap#verification-and-limits). JS and CSS are measured separately; combining every optional module is not automatically a measured standard profile.
 
-## Вся фигура и каретка подписи
+## Whole figures and caption carets
 
-В демке доступны кнопки **«Выделить всю фигуру»** и **«Поставить курсор в подпись»**. Простая figure содержит один прямой IMG и не больше одной прямой figcaption. Свойства и удаление работают с тем же изображением; отдельная IMG-копия не создаётся. Геометрия панели следует изображению, а сохранённый Range остаётся исходным — в подписи или вокруг figure.
+The demo provides **Select whole figure** and **Place caret in caption** buttons. A simple figure has one direct IMG and at most one direct figcaption. Properties and removal target that same image without creating another IMG. Panel placement follows the image, while the retained Range stays at its original caption position or around the figure.
 
-Нажмите Alt+F10 для входа в инструменты. Escape до применения черновика возвращает точную каретку/диапазон без изменения документа. Изменение метаданных сохраняет rich-подпись, если её текст не менялся; удаление убирает всю простую figure с подписью и поддерживает Undo. Read-only оставляет просмотр и запрещает мутации. Изменение/удаление подписи может завершить старый контекст; черновик не перенаправляется на другую или восстановленную Undo картинку. Ссылка, code или semantic-узел на пути каретки подписи исключают этот контекст.
+Alt+F10 enters the tools. Escape before applying a draft returns the exact caret/range without changing the document. Metadata changes preserve an unchanged rich caption; removal deletes the simple figure with its caption and supports Undo. Read-only retains preview and blocks mutation. Changed/removed captions may end the old context; drafts never retarget another or Undo-recreated image. A link, code or semantic owner on the caption caret path excludes this image context.
 
-Эта возможность не расширяет контракт маркеров resize: для них по-прежнему нужно выделить сам IMG. Новые сценарии проверяются отдельно от исторических результатов; фактические проверки фиксируются в плане проекта.
+This does not expand resize-handle eligibility: select the IMG itself for handles. New scenarios have separate verification rather than inheriting historical results; actual checks are recorded in the project roadmap.

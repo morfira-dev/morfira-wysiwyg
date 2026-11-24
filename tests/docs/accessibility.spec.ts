@@ -10,7 +10,7 @@ for (const english of [false, true]) {
       const t = (russian: string, translated: string) => english ? translated : russian;
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
-      await page.goto(english ? '/en/accessibility' : '/accessibility');
+      await page.goto(english ? '/accessibility' : '/ru/accessibility');
       const demo = page.locator('.accessibility-example');
       const content = demo.locator('.mw-content');
       const width = demo.getByRole('combobox', { name: t('Ширина контейнера', 'Host width'), exact: true });

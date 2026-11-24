@@ -27,7 +27,7 @@ const selectExample = async (page: Page) => {
 for (const english of [false, true]) test(`optional contextual controls in ${english ? 'English dark desktop playground' : 'Russian narrow homepage'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   await page.setViewportSize({ width: english ? 1280 : 390, height: 900 });
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const toggle = page.getByRole('checkbox', { name: t('Контекстная панель', 'Contextual toolbar'), exact: true });

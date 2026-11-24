@@ -1,39 +1,39 @@
-# Безопасность и границы доверия
+# Security and trust boundaries
 
-Morfira заново строит разрешённое содержимое на границах HTML и JSON схемы v1. Это уменьшает риск исполняемой разметки, но не заменяет серверную валидацию и не изолирует код приложения. Результаты проверок и ограничения продукта приведены в [плане](/roadmap#проверки-и-ограничения).
+Morfira reconstructs allowed content at the HTML and schema-v1 JSON boundaries. This reduces executable-markup risk; it does not replace server validation or sandbox application code. Verification results and remaining product limits are listed in the [roadmap](/roadmap#verification-and-limits).
 
-## Входные документы
+## Document input
 
-Кодек сохраняет разрешённые HTML-элементы, проверенные атрибуты, стили и протоколы URL. Обработчики событий, исполняемые элементы, чужие SVG/MathML-поддеревья и произвольный CSS не становятся содержимым редактора. JSON также проходит валидацию: TypeScript-типы сами по себе не проверяют сетевой ввод. Расширения схемы используют ту же границу.
+The codec keeps allowed HTML elements and validated attributes, styles and URL protocols. Event handlers, executable elements, foreign SVG/MathML subtrees and arbitrary CSS do not become editor content. JSON is validated too: TypeScript types alone do not validate network input. Custom schema contributions use this same boundary.
 
-Для исходного HTML и нормализованного результата действует консервативная граница 5 000 000 кодовых единиц UTF-16: не более 100 000 посещённых узлов, глубины 100 и 20 000 единиц на сохраняемое значение атрибута. Экранирование и сохраняемые атрибуты учитываются в размере результата. Это ограничения ресурсов, а не обещание точного размера в байтах. Приложение должно устанавливать собственные, при необходимости меньшие лимиты запросов/документов и обрабатывать ошибки валидации.
+HTML input and normalized output have a conservative limit of 5,000,000 UTF-16 code units, with at most 100,000 visited nodes, depth 100 and retained attribute values of at most 20,000 code units. Escaping and retained attributes count toward the output limit. These are resource bounds, not a byte-size guarantee. Applications should impose smaller request/document limits appropriate to their workload and handle validation errors.
 
-Очистка и сериализация в строку используют промежуточный инертный DOM; намеренный рендеринг или вставка разрешённого изображения могут загрузить ресурс. Допускаются HTTP(S) и относительные URL изображений. Это не список разрешённых хостов и не защита от отслеживания: ограничивайте источники медиа отдельно. Запрещённые схемы `data:`, `blob:` и исполняемые URL нельзя использовать вместо механизма хранения загруженных файлов.
+String-only sanitization/serialization uses inert intermediate DOM; deliberately rendering or inserting an allowed image can load it. HTTP(S) and relative image URLs are allowed; this is not a host allowlist or tracking-prevention policy. Restrict media origins separately when needed. Disallowed `data:`, `blob:` or executable URL schemes are not upload-storage mechanisms.
 
-## Доверенный код приложения
+## Trusted application code
 
-Плагины, обработчики событий, провайдеры подсказок, upload-callbacks, callbacks транзакций и доступ к `editor.surface` работают с полномочиями приложения. Подключайте только доверенный код; не создавайте исполняемые плагины или callbacks из сохранённого документа. Типизированные события — уведомления, а не граница безопасности. Read-only блокирует поддерживаемые пользовательские изменения, но не произвольный JavaScript приложения и не заменяет авторизацию.
+Plugins, event listeners, suggestion providers, upload callbacks, transaction callbacks and access to `editor.surface` execute with the application's privileges. Install only trusted code; do not construct executable plugins or callbacks from a stored document. Typed events are notifications, not a security boundary. Read-only prevents supported user mutations; it cannot restrict arbitrary application JavaScript or replace authorization.
 
-Адаптеры передают контролируемые значения через валидацию редактора. Импорты адаптеров допустимы при SSR, но создание редактора и DOM-кодек требуют браузерного DOM. Клиентский sanitizer не следует считать серверной библиотекой.
+Adapters pass controlled values through editor validation. Framework imports can be used in SSR, but creating editors and using the DOM-based codec requires a browser DOM. Do not assume the client sanitizer is a server-side library.
 
-## Серверное хранение и вывод
+## Server storage and output
 
-Независимо проверяйте полученный HTML/JSON на сервере по явно поддерживаемой схеме документа и политике. Проверяйте аутентификацию, владельца документа, права, лимиты запросов и правила безопасного вывода на каждом пути чтения/записи. Клиент может отправить данные в обход редактора.
+Validate submitted HTML/JSON independently on the server using an explicitly supported document schema and policy. Enforce authentication, document ownership, authorization, request limits and safe output rules on every write/read path. A client can bypass the editor entirely.
 
-`getHTML()` возвращает HTML документа, а не значение, экранированное для любого контекста. Используйте привязки свойств фреймворка и экранирование для конкретного контекста. Для Web Component задавайте свойство `value`; при передаче через HTML-атрибут экранируйте всё значение в кавычках. Произвольные существующие light-DOM-потомки не являются автоматически очищаемым каналом ввода. Не подставляйте документы напрямую в script-блоки, JavaScript-строки или сырые SSR-шаблоны: используйте безопасную сериализацию фреймворка. Одного `JSON.stringify()` недостаточно для inline-скрипта, содержащего `</script>`.
+`getHTML()` produces document HTML, not a value escaped for every embedding context. Use framework property bindings and context-appropriate escaping. For the Web Component, assign its `value` property; if using an HTML attribute, escape the entire quoted attribute value. Arbitrary existing light-DOM children are not an automatically sanitized input channel. Do not interpolate documents into script blocks, JavaScript strings or raw SSR templates; use the framework's safe data serializer. `JSON.stringify()` alone is insufficient protection for an inline script containing `</script>`.
 
-## Загрузка файлов и сетевые запросы
+## Uploads and network access
 
-[Плагин изображений](/images) предварительно проверяет MIME/размер и валидирует возвращённое значение изображения. Сервер обязан самостоятельно проверить содержимое и размер файла, права хранения/доступа и применить свою политику обработки медиа. Используйте HTTPS для приложения и upload/media endpoints. Для загрузки с cookie-аутентификацией применяйте CSRF-защиту приложения; credentials, CORS и токены принадлежат реализации транспорта. Передавайте `AbortSignal` транспорту и выводите ошибки как текст.
+The [images plugin](/images) performs preliminary MIME/size checks and validates the returned image value. Your server must independently validate file content and size, authorize storage and media access, and apply its media processing policy. Use HTTPS for the application and upload/media endpoints. For cookie-authenticated uploads, apply the application's CSRF protection; credentials, CORS and tokens belong to the transport implementation. Pass `AbortSignal` through to transport, and render errors as text.
 
-Если backend загружает пользовательские URL, отдельно защитите этот сервис от SSRF, включая адреса приватных сетей и перенаправления. Браузерная проверка URL такой защиты не даёт. Ограничивайте источники изображений через CSP `img-src` и правила URL приложения.
+If a backend fetches user-supplied URLs, protect that separate service against SSRF, including private-network targets and redirects. Browser URL sanitization does not provide that protection. Use CSP `img-src` and application URL rules to limit permitted media origins.
 
-## Ограничения CSP и Trusted Types
+## CSP and Trusted Types limitations
 
-Универсального проверенного CSP-заголовка для всех интеграций нет. Кодек/редактор сейчас записывает проверенные строки в `innerHTML` и не предоставляет интеграцию TrustedHTML/policy. В поддерживающих браузерах `require-trusted-types-for 'script'` отклоняет строковые значения таких sinks; совместимость с этим enforcement **не реализована**. Не обходите границу default policy, безусловно разрешающей строки. См. [MDN: require-trusted-types-for](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/require-trusted-types-for).
+There is no tested universal CSP header for every integration. The codec/editor currently writes validated strings to `innerHTML` and does not expose a TrustedHTML/policy integration. Enforcing `require-trusted-types-for 'script'` rejects string sinks in supporting browsers; compatibility with that enforcement is **not implemented**. Do not bypass the boundary with a default policy that blindly approves strings. See [MDN: require-trusted-types-for](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/require-trusted-types-for).
 
-Форматирование использует проверенные inline-атрибуты style для цветов, выравнивания и размеров изображений. Запрет style-атрибутов может блокировать эти стили; nonce на таблице стилей не разрешает style-атрибуты элементов. При выборе профиля форматирования и политики учитывайте [MDN: style-src-attr](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/style-src-attr). Совместимость с политикой только на nonce не обещается.
+Document formatting uses validated inline style attributes for colors, alignment and image dimensions. A policy forbidding style attributes can block those styles; a nonce on a stylesheet does not authorize element style attributes. Review [MDN: style-src-attr](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/style-src-attr) when choosing the required formatting profile and policy. Nonce-only compatibility is not promised.
 
-Локальная документация — отдельное приложение VitePress: сгенерированные страницы содержат inline bootstrap-скрипты и style-атрибуты. Для хостинга под строгой CSP нужны отдельная настройка сборки/заголовков и браузерная проверка. Политика headless-потребителя не обязательно подходит сайту. Проверяйте фактическое приложение под его заголовками; при необходимости начинайте с report-only. CSP дополняет валидацию, а не заменяет её.
+The documentation site is a separate VitePress application: generated pages contain inline bootstrap scripts and style attributes. Hosting it under a strict CSP requires its own build/header work and browser verification; a policy suitable for a headless consumer is not automatically suitable for this site. Validate the actual deployed app under its headers, using report-only rollout where appropriate. CSP supplements input validation; it does not replace it.
 
-При обнаружении возможной уязвимости следуйте [политике сообщения об уязвимостях](https://github.com/morfira-dev/morfira-wysiwyg/blob/main/SECURITY.md). Независимый аудит безопасности и полная сертификация безопасности не заявляются.
+For suspected vulnerabilities, follow the repository's [security reporting policy](https://github.com/morfira-dev/morfira-wysiwyg/blob/main/SECURITY.md). No independent security audit or complete security certification is claimed.

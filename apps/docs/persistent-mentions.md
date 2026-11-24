@@ -1,10 +1,10 @@
-# Сохраняемые упоминания с ID
+# Persistent mentions with IDs
 
-`mentions({ persistent: true })` сохраняет выбранный ID в обычном семантическом `span` схемы v1. Это отдельная настройка существующего плагина: без неё упоминания и готовые пресеты продолжают вставлять обычный текст. Код написан на TypeScript, без новых runtime-зависимостей. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+`mentions({ persistent: true })` stores the chosen ID in an ordinary schema-v1 semantic `span`. This is a separate option of the existing plugin: without it, mentions and ready presets continue inserting plain text. The code uses TypeScript with no new runtime dependencies. Current browser/example execution results and their limits are recorded under [testing](/testing).
 
-Отдельный [атомарный режим](/atomic-mentions) включается через `atomic: true` вместе с `persistent: true`. Он добавляет навигацию/удаление целиком и более строгий контракт текстовой подписи. Описанный ниже редактируемый режим остаётся совместимым значением по умолчанию для сохраняемых ссылок.
+An explicit [atomic mode](/atomic-mentions) is also available with `atomic: true` alongside `persistent: true`. It adds whole-token navigation/deletion and a stricter text-only label contract. The editable behavior described below remains the compatible default for persistent references.
 
-## Подключение
+## Setup
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -19,13 +19,13 @@ const editor = createEditor(host, {
   plugins: [mentions({
     persistent: true,
     provide: ({ query }) => [
-      { id: 'user:42', label: 'Анна Смирнова' },
-    ].filter((person) => person.label.toLocaleLowerCase('ru').includes(query.toLocaleLowerCase('ru'))),
+      { id: 'user:42', label: 'Anna Smith' },
+    ].filter((person) => person.label.toLocaleLowerCase('en').includes(query.toLocaleLowerCase('en'))),
   })],
 });
 const stopMenu = createSuggestionMenu(editor, mentionCommands(editor));
 
-const references = getMentions(editor); // свежий массив { id, text }
+const references = getMentions(editor); // fresh { id, text } array
 const value = editor.getJSON();
 
 const dispose = () => {
@@ -34,30 +34,30 @@ const dispose = () => {
 };
 ```
 
-`persistent` должен быть boolean; настройки копируются при создании плагина. Provider, асинхронная отмена, меню и контроллер сохраняют [существующий контракт](/suggestions). При выборе результата вставляется `@Label` в отдельном span и пробел **за его пределами**. Выбор — одна пользовательская операция и один Undo; последующий обычный ввод начинается после упоминания. Redo не повторяет запрос провайдера.
+`persistent` must be boolean; configuration is copied when creating the plugin. Providers, asynchronous cancellation, menus and controllers retain their [existing contract](/suggestions). Choosing a result inserts `@Label` in a separate span and a space **outside** it. The choice is one user operation and one Undo; subsequent ordinary input starts after the mention. Redo does not refetch the provider.
 
-## Формат и получение ссылок
+## Format and reference inspection
 
 ```html
-<span data-mw-node="morfira:mention" data-mention-id="user:42">@Анна Смирнова</span>
+<span data-mw-node="morfira:mention" data-mention-id="user:42">@Anna Smith</span>
 ```
 
-`getMentions(editor)` возвращает независимые `{ id, text }` в порядке документа, включая повторные упоминания одного ID. `text` — текущее видимое содержимое span вместе с `@`, а не проверенное имя пользователя. Это явное чтение, доступное read-only и не изменяющее документ, выделение или историю; нужен живой установленный плагин mentions. Функция не запускает постоянное сканирование документа на каждый ввод.
+`getMentions(editor)` returns independent `{ id, text }` records in document order, including repeated references to the same ID. `text` is the span's current visible content including `@`, not a verified user name. It is an explicit read available read-only, without changing the document, selection or history; a live installed mentions plugin is required. It does not continually scan the document on every keystroke.
 
-ID — непрозрачная строка 1–256 UTF-16 единиц, без C0/DEL и Unicode-разделителей строк/абзацев. Он не становится HTML `id`, URL или CSS-селектором. Label провайдера остаётся буквальным текстом с прежними ограничениями 1–200 единиц. HTML-подобные символы не исполняются.
+An ID is an opaque string of 1–256 UTF-16 units without C0/DEL or Unicode line/paragraph separators. It does not become an HTML `id`, URL or CSS selector. Provider labels remain literal text under their existing 1–200-unit bound. Markup-looking characters never execute.
 
-Оформление чипа подключается только явным импортом `/plugins/suggestions.css`. Без него ID и текст сохраняются так же, но специального оформления нет. Все переменные ограничены редактором:
+Chip styling is enabled only by explicitly importing `/plugins/suggestions.css`. Without it, IDs and text persist identically, with no special appearance. Variables are scoped to the editor:
 
-| Переменная | Назначение |
+| Variable | Purpose |
 | --- | --- |
-| `--mw-mention-color` | Цвет текста упоминания |
-| `--mw-mention-background` | Фон |
-| `--mw-mention-radius` | Радиус скругления |
-| `--mw-mention-padding` | Внутренний отступ по строчной оси (`padding-inline`) |
+| `--mw-mention-color` | Mention text color |
+| `--mw-mention-background` | Background |
+| `--mw-mention-radius` | Border radius |
+| `--mw-mention-padding` | Inline-axis inset (`padding-inline`) |
 
-Оформление выбирает зарегистрированный span по `data-mw-node`, не добавляя сохраняемые class или contenteditable. Статистика считает видимый текст по обычным правилам; атрибут ID не добавляет скрытых символов.
+Styling targets the registered span through `data-mw-node`, without persisting class or contenteditable attributes. Statistics count visible text normally; the ID attribute adds no hidden characters.
 
-Схема регистрируется **до** загрузки начального значения. HTML/JSON, история и вставка HTML из буфера сохраняют зарегистрированный ID. Для валидации без провайдера можно получить новую независимую декларацию:
+The schema is registered **before** importing initial content. HTML/JSON, history and HTML clipboard paste retain registered IDs. A fresh independent definition supports validation without a provider:
 
 ```ts
 import { createDocumentSchema } from '@morfira-dev/wysiwyg';
@@ -67,20 +67,20 @@ const schema = createDocumentSchema([createMentionSchema()]);
 const checked = schema.validateDocument(storedDocument);
 ```
 
-`createMentionSchema()` не включает меню, провайдер, транспорт или атомарное поведение. Неправильный/пустой/отсутствующий ID зарегистрированного узла отклоняет импорт до изменения редактора. Читатель HTML без схемы сохраняет видимый текст, но удаляет identity metadata. Читатель JSON без схемы отклоняет незарегистрированный `data-mw-node`; для сохранения ID нужно подключить ту же декларацию. [Markdown-кодек](/markdown-codec) явно отклоняет такие семантические узлы, не теряя ID молча.
+`createMentionSchema()` installs no menu, provider, transport or atomic behavior. Invalid/empty/missing IDs on registered nodes reject import before editor mutation. An HTML reader without the schema retains visible text but removes identity metadata. A JSON reader without the schema rejects an unregistered `data-mw-node`; install the same definition to retain IDs. The [Markdown codec](/markdown-codec) explicitly rejects these semantic nodes instead of silently discarding IDs.
 
-## Редактирование и безопасность
+## Editing and security
 
-**Это редактируемая ссылка на сущность, не атомарный токен.** Посимвольное изменение подписи может сохранить прежний ID. Общие операции форматирования могут сохранять, разделять или дублировать inline-обёртку по своим правилам; идентификатор не доказывает неизменность текста. Не заявляются неделимое удаление, привязка курсора к краям, неизменяемая подпись или полноценная атомарная модель.
+**This is an editable entity reference, not an atomic token.** Character edits to its display text can retain the original ID. Generic formatting may retain, split or duplicate inline wrappers under its existing rules; identity metadata does not prove immutable display text. Indivisible deletion, caret snapping, immutable labels and a full atom model are not claimed.
 
-Подсказки не открываются внутри семантического span и не собирают query через его границу. Read-only, composition, замена документа, устаревший асинхронный ответ и уничтожение сохраняют существующие запреты на выбор. Поиск/замена и структурное редактирование сохраняют свои границы семантического содержимого.
+Suggestions do not open inside semantic spans or collect a query across their boundaries. Read-only, composition, external replacement, stale asynchronous responses and destruction retain the current choice guards. Search/replacement and structural editing keep their existing semantic-content boundaries.
 
-ID из провайдера, HTML, JSON или буфера — **недоверенное утверждение об идентичности**. Приложение должно проверить существование сущности, tenant, права доступа и разрешение на уведомления на сервере. Изменённая подпись не является основанием для смены адресата. Плагин не выполняет lookup, не отправляет уведомления и не разрешает действия с сущностью. Серверная валидация и CSP остаются ответственностью приложения.
+IDs from providers, HTML, JSON or clipboard are **untrusted identity claims**. Applications must verify entity existence, tenant, access rights and notification authorization on the server. Edited display text does not authorize a new recipient. The plugin performs no lookup, sends no notifications and grants no entity permissions. Backend validation and CSP remain application responsibilities.
 
-## Демо
+## Demo
 
-На [главной](/#editor) и в [playground](/playground) раскрой «Сохраняемые упоминания с ID». Нажми «Выбрать упоминание @an», выбери человека в настоящем меню и затем «Показать ID упоминаний». Кнопки HTML/JSON round-trip валидируют и повторно передают текущее значение редактору, показывая сохранённые ссылки. Нормализованное неизменное значение сохраняет историю и выделение. Загрузка примера заменяет документ и сбрасывает историю; обычный выбор из меню сохраняет одну операцию Undo.
+On the [homepage](/#editor) and [playground](/playground), expand “Persistent mentions with IDs”. Choose “Choose an @an mention”, select a person in the actual menu, then “Show mention IDs”. HTML/JSON round-trip controls validate and resubmit the current value, displaying retained references. An unchanged normalized value preserves history and selection. Loading a sample replaces the document and clears history; ordinary menu selection remains one Undo operation.
 
-Демка явно передаёт `persistent: true` и `atomic: true` в свою конфигурацию; описание редактируемого режима выше относится к конфигурации без `atomic`. Значения по умолчанию готовых пресетов не меняются. Просмотр снимка ID доступен и в read-only; сама вставка и перезагрузка заблокированы. Реальные браузерные результаты этого этапа ещё требуют запуска написанных регрессий.
+The demo explicitly passes `persistent: true` and `atomic: true`; the editable behavior above applies when `atomic` is omitted. Ready preset defaults do not change. ID snapshot inspection remains available read-only; insertion and reloading are blocked. Actual browser outcomes for this stage still require executing the authored regressions.
 
-Для явно включённого атомарного профиля [копирование, вырезание и вставка](/atomic-mention-clipboard) сохраняют ID в HTML в одном потоке, между обычными соседними абзацами/заголовками одного родителя и пунктами одного UL/OL; plain text содержит подписи с LF между блоками/пунктами. Допустимые полностью выбранные хвостовые ветки переносятся с иерархией и ID. Для концов на разных уровнях одного обычного дерева действует отдельный структурный профиль без выравнивания; несвязанные деревья/ячейки остаются границами. API буфера не обращается к ОС.
+For an explicitly enabled atomic profile, [copy, cut and paste](/atomic-mention-clipboard) retain IDs through HTML within one flow, across ordinary sibling paragraphs/headings under one parent and consecutive items of one UL/OL; plain text carries labels with LF between blocks/items. Supported fully selected trailing branches retain their hierarchy and IDs. Different-level own-body endpoints within one ordinary tree use a separate non-flattening structural profile; unrelated trees/cells remain boundaries. The clipboard API does not access the OS.

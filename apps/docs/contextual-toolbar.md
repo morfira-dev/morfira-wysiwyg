@@ -1,8 +1,8 @@
-# Контекстная панель выделения
+# Contextual selection toolbar
 
-На [главной](/#editor) и в [playground](/playground) включён отдельный переключатель **«Контекстная панель»**. Загрузи пример в одноимённом разделе и выдели текст редактора. Небольшая панель появляется рядом с видимым выделением, не забирая фокус. Это явное подключение полной демки: пресеты и готовая стандартная панель автоматически его не создают.
+The [homepage](/#editor) and [playground](/playground) enable a separate **Contextual toolbar** switch. Load its sample and select editor text. A small toolbar appears beside a visible selection without taking focus. This is explicit full-demo composition; presets and ready standard UI do not create it automatically.
 
-## Подключение и очистка
+## Installation and cleanup
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -20,34 +20,34 @@ const dispose = () => {
 };
 ```
 
-`overlayHost` — пустой подключённый к странице элемент приложения в документе редактора, **вне `editor.surface`**. Фабрика размещает только собственный UI, не переносит существующие узлы приложения и не создаёт глобальную службу всплывающих элементов. Положение фиксируется относительно viewport. Предки host с transform/filter/perspective, paint containment или обрезкой содержимого не поддержаны: выбери подходящий верхний слой без таких предков. Автоматического portal или пересчёта произвольных преобразованных координат нет.
+`overlayHost` is an empty connected application element in the editor's document, **outside `editor.surface`**. The factory mounts only owned UI; it neither moves application nodes nor creates a global overlay service. Positioning uses fixed viewport coordinates. Transformed/filtered/perspective/paint-contained or clipping host ancestors are unsupported: choose an appropriate top layer without such ancestors. Automatic portals and arbitrary transformed-coordinate mapping are not implemented.
 
-Контроллер предоставляет `element`, `refresh()` и идемпотентный `destroy()`. После destroy `refresh()` выбрасывает ошибку; уничтожение UI оставляет редактор рабочим. Editor destroy также освобождает панель. Убираются собственные подписки, observers и запланированные callbacks; отсоединённые controls не должны менять новый документ.
+The controller exposes `element`, `refresh()` and idempotent `destroy()`. Refresh after destruction throws; destroying UI leaves its editor working. Editor destruction also releases the toolbar. Owned subscriptions, observers and queued callbacks are removed; detached controls cannot edit a replacement document.
 
-Импорты безопасны при SSR, монтирование требует браузера. Нет сторонних runtime-зависимостей, фреймворка, неявного CSS, шрифтов или сетевых запросов. Все три CSS-импорта выше явные; оформление использует scoped `--mw-*` и не зависит от стилей документации.
+Imports are SSR-safe; mounting requires a browser. There are no runtime dependencies, frameworks, implicit CSS, fonts or network requests. The three CSS imports above are explicit; scoped `--mw-*` styling is independent of documentation styles.
 
-## Показ, клавиатура и история
+## Visibility, keyboard and history
 
-По умолчанию доступны bold/italic/underline/strike/code и очистка строчного форматирования. Используются существующие команды и элементы `createEditorUI`; это не отдельный механизм редактирования. `groups`, `density`, `label`, `onError` следуют контракту shell. `gap` — конечное число 0–32 CSS px, по умолчанию 8. Экспортируются `ContextualToolbarOptions`, `ContextualToolbarController`, `ContextualToolbarMessageKey` и RU/EN-каталог `contextualToolbarMessages`.
+Defaults provide bold/italic/underline/strike/code and clear inline formatting. They reuse `createEditorUI` controls and commands rather than a separate editing engine. `groups`, `density`, `label` and `onError` follow the shell contract. `gap` is finite 0–32 CSS px, default 8. Public exports include `ContextualToolbarOptions`, `ContextualToolbarController`, `ContextualToolbarMessageKey` and RU/EN `contextualToolbarMessages`.
 
-Панель появляется для одного непустого текстового диапазона внутри редактора с фокусом. Схлопнутый курсор, выделение только изображения/BR, внешние/скрытые диапазоны, семантические узлы с собственным владельцем и чужие пространства имён не подходят. Показ не расширяет правила форматирования и не превращает выделение таблицы в новую модель выбора ячеек.
+The toolbar shows for one nonempty text range within the focused editor. Carets, image/BR-only selections, outside/nonvisible ranges, owning semantic nodes and foreign namespaces are ineligible. Showing UI does not broaden formatting contracts or reinterpret table selections as a new cell-selection model.
 
-Автоматический показ не перемещает фокус и не меняет документ или выделение. **Alt+F10** из редактора переводит фокус на первый доступный элемент контекстной панели. Стрелки/Home/End используют обычную навигацию shell. **Escape** закрывает панель, возвращает фокус в редактор и восстанавливает сохранённый диапазон один раз. Закрытая панель не участвует в Tab-навигации.
+Automatic showing changes neither focus, content nor selection. **Alt+F10** from this editor focuses the first enabled contextual control. Arrows/Home/End reuse shell navigation. **Escape** dismisses and returns focus to the editor, restoring the remembered range once. Closed controls have no Tab-accessible subtree.
 
-Внешнее действие закрывает панель без перехвата фокуса. Повторный отложенный `selectionchange` того же диапазона не должен сразу открывать её снова; новое выделение или явный Alt+F10 открывают заново. Read-only, составной ввод IME, внешняя замена документа и уход фокуса скрывают панель. Их завершение само по себе не восстанавливает старую цель. Каждая команда использует обычную историю: показ, перемещение, закрытие и выключение переключателя не создают Undo-ревизий.
+Outside interaction dismisses without stealing focus. Queued `selectionchange` for the same range does not immediately reopen it; a fresh selection or explicit Alt+F10 can reopen. Read-only, IME composition, external document replacement and focus leaving dismiss the toolbar. Ending these conditions alone does not resurrect the old target. Actions retain ordinary history; showing, positioning, dismissal and toggling UI add no Undo revisions.
 
-Панель размещается над выделением, при нехватке места — под ним, с ограничением по видимой области. Прокрутка, изменение размера и уход якоря за границы обновляют положение или скрывают панель. Очень узкая область переносит/прокручивает элементы без переполнения страницы. Это ограниченная текстовая панель, без меню изображений/таблиц, ссылок при одном курсоре или атомарного выбора пользовательских узлов. Полная доступность для скринридеров и поддержка всех мобильных устройств не заявляются.
+Placement is above the selection where possible, below otherwise, clamped to the visible viewport. Scrolling, resizing or an anchor leaving view updates or hides the toolbar. Very narrow layouts wrap/scroll controls without overflowing the page. This slice adds no image/table menus, collapsed-caret link controls or custom atomic-node selection. Complete screen-reader accessibility and all-mobile-device support are not claimed.
 
-## Состояние пользовательских действий
+## Custom action state
 
-`editor.getFormats(range?)` позволяет прочитать форматирование сохранённого диапазона без перемещения фактического Selection или фокуса. Без аргумента сохраняется обычное чтение текущего выделения и стилей следующего ввода; явный Range читает сохранённые форматы текущего документа без этих ожидающих стилей. Чужой/отсоединённый Range даёт пустой снимок, неверный тип аргумента выбрасывает ошибку. Внешняя замена документа делает UI-закладки недействительными.
+`editor.getFormats(range?)` projects a remembered range without moving native Selection or focus. No argument retains current-selection/pending-typing behavior; an explicit Range reads current-document stored formats without pending typing overrides. Foreign/detached ranges yield an empty snapshot; malformed arguments throw. External replacement invalidates UI bookmarks.
 
-Пользовательские `label`, `enabled`, `pressed` получают вторым аргументом копию актуального диапазона UI. Используй её явно, если чтение зависит от выделения. Например, **вместо набора по умолчанию** можно настроить:
+Custom `label`, `enabled` and `pressed` readers receive a cloned valid UI range as their optional second argument. Use it explicitly for selection-dependent state. For example, **instead of the defaults**:
 
 ```ts
 const contextual = createContextualToolbar(overlayHost, editor, {
   groups: [[{
-    id: 'app:emphasize', label: 'Выделить полужирным', text: 'B+',
+    id: 'app:emphasize', label: 'Emphasize selection', text: 'B+',
     enabled: (_editor, range) => Boolean(range && !range.collapsed),
     pressed: (instance, range) => Boolean(instance.getFormats(range).bold),
     run: (instance) => instance.format('bold', true),
@@ -55,6 +55,6 @@ const contextual = createContextualToolbar(overlayHost, editor, {
 });
 ```
 
-Это доверенные синхронные callbacks без побочных эффектов. Другие API, читающие только нативное выделение, автоматически не проецируются. Снимок не разрешает выполнение команды: перед изменением UI восстанавливает допустимый диапазон, а команда проверяет фактическую цель. Метки и сообщения отображаются обычным текстом. Актуальные результаты проверок — в [дорожной карте](/roadmap#проверки-и-ограничения).
+These are trusted synchronous side-effect-free callbacks. Other native-selection-only APIs are not automatically projected. A snapshot does not authorize execution: UI restores a valid range and the command checks the actual target. Labels/errors render as plain text. Actual verification is recorded in the [roadmap](/roadmap#verification-and-limits).
 
-Для курсора или текстового диапазона целиком внутри одной ссылки есть отдельные [контекстные действия ссылки](/contextual-links): `/ui/contextual-link`, явные core/forms/contextual-link CSS, безопасное открытие и изменение/удаление всей ссылки с Undo. Обычный текст без ссылки, смешанные диапазоны и несколько ссылок не подходят; пресеты этот UI не подключают. При совместном подключении подходящий диапазон внутри одной ссылки обслуживает панель ссылки: текстовая панель скрывается и отдаёт ей Alt+F10. Без панели ссылки текстовое форматирование остаётся доступным как раньше.
+A caret or text range wholly inside one link can use separate [contextual link actions](/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open and whole-link editing/unlinking with Undo. Plain text without a link, mixed ranges and multiple anchors are excluded; presets do not install this UI. When both are mounted, an eligible range inside one link belongs to link actions: the text toolbar hides and yields Alt+F10. Without link actions, text formatting remains available as before.

@@ -4,7 +4,7 @@ for (const english of [false, true]) test(`inline node view demo paints and save
   const t = (ru: string, en: string) => english ? en : ru;
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(english ? '/en/inline-node-views' : '/inline-node-views');
+  await page.goto(english ? '/inline-node-views' : '/ru/inline-node-views');
   const demo = page.locator('.inline-node-views-example');
   const chip = demo.locator('.visual-record-chip');
   await expect(chip).toHaveText('◆ Item 42');

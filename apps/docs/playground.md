@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Стенд возможностей
+title: Feature laboratory
 ---
 
 <div class="lab-page">
 
-# Стенд возможностей
+# Feature laboratory
 
-Все доступные команды текущей версии — на одной странице. Выдели текст или кликни в таблицу, затем используй панель. Примеры заменяют документ; изменения остаются только в памяти вкладки.
+Every supported command in the current version, on one page. Select text or click a table cell, then use the controls. Loading a sample replaces the document. Changes remain in this browser tab only.
 
 <EditorDemo full />
 

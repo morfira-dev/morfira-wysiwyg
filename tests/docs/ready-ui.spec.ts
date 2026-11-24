@@ -30,7 +30,7 @@ for (const english of [false, true]) {
   test(`ready homepage toolbar composes link, table and search panels with history in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(english ? '/en/' : '/');
+    await page.goto(english ? '/' : '/ru/');
     const ui = page.locator('.mw-standard-editor-ui');
     const toolbar = ui.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true });
     const panel = ui.locator('.mw-ui-panel');
@@ -80,7 +80,7 @@ for (const english of [false, true]) {
   test(`ready playground wraps at narrow width with keyboard, themes and read-only in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto(english ? '/en/playground' : '/playground');
+    await page.goto(english ? '/playground' : '/ru/playground');
     const ui = page.locator('.mw-standard-editor-ui');
     const toolbar = ui.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true });
     const panel = ui.locator('.mw-ui-panel');

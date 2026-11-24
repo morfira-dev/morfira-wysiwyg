@@ -1,16 +1,16 @@
-# Упоминания и slash-подсказки
+# Mentions and slash suggestions
 
-Асинхронные подсказки с выбором через клавиатуру или меню и необязательными структурными командами. Это два необязательных модуля без новых runtime-зависимостей:
+Asynchronous suggestions support keyboard/menu selection and optional structural commands. These optional modules add no external runtime dependencies:
 
-- `/plugins/mentions` вставляет обычный редактируемый текст `@label `.
-- `/plugins/slash` заменяет `/query` текстовым шаблоном или выполняет зарегистрированную структурную команду.
-- `/plugins/suggestions` предоставляет необязательное меню и общие типы; его CSS подключается отдельно.
+- `/plugins/mentions` inserts ordinary editable `@label ` text.
+- `/plugins/slash` replaces `/query` with a text snippet or runs a registered structural command.
+- `/plugins/suggestions` exports shared types and an optional menu; its CSS is opt-in.
 
-**По умолчанию ID результата не сохраняется в документе.** Упоминание этого этапа можно редактировать и удалять посимвольно. Оно не отправляет уведомления и не является атомарным узлом. Slash-шаблон не выполняет форматирование: текст `# Heading` остаётся текстом, даже при подключённых Markdown shortcuts. Схема документа v1 не меняется.
+**By default, result IDs are not persisted in the document.** These mentions can be edited and deleted character by character. They are not atomic nodes and send no notifications. Slash snippets do not execute formatting: `# Heading` remains text even with Markdown shortcuts installed. Document schema v1 stays unchanged.
 
-Сохраняемые редактируемые ссылки включаются отдельно через `mentions({ persistent: true })`; их ID, HTML/JSON и ограничения описаны в [документации упоминаний с ID](/persistent-mentions). Готовые пресеты не меняют значение по умолчанию.
+Persistent editable references are enabled separately with `mentions({ persistent: true })`; see [mention ID storage and boundaries](/persistent-mentions) for IDs, HTML/JSON and limits. Ready presets keep their current default.
 
-## Подключение
+## Installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -28,87 +28,87 @@ const editor = createEditor(host, {
           `/api/people?q=${encodeURIComponent(query)}&limit=${limit}`,
           { signal },
         );
-        if (!response.ok) throw new Error('Не удалось получить подсказки');
+        if (!response.ok) throw new Error('Could not load suggestions');
         return response.json();
       },
     }),
     slash({
       provide: ({ query }) => [
-        { id: 'signature', label: 'Подпись', text: 'С уважением, команда' },
-      ].filter((item) => item.label.toLocaleLowerCase('ru').includes(query.toLocaleLowerCase('ru'))),
+        { id: 'signature', label: 'Signature', text: 'Best regards, the team' },
+      ].filter((item) => item.label.toLocaleLowerCase('en').includes(query.toLocaleLowerCase('en'))),
     }),
   ],
 });
 const people = mentionCommands(editor);
 const snippets = slashCommands(editor);
-const disposePeopleMenu = createSuggestionMenu(editor, people, { locale: 'ru' });
-const disposeSlashMenu = createSuggestionMenu(editor, snippets, { locale: 'ru' });
+const disposePeopleMenu = createSuggestionMenu(editor, people, { locale: 'en' });
+const disposeSlashMenu = createSuggestionMenu(editor, snippets, { locale: 'en' });
 ```
 
-Приложение отвечает за транспорт, авторизацию, разрешённые результаты и хранение. Редактор передаёт только `{ query, signal, limit }`, без DOM/Range. Provider может вернуть массив синхронно или Promise. Результаты проверяются до отображения; ошибки запроса становятся состоянием меню, а не изменением документа. Полифиллы, fetch-клиент и собственное хранилище в модули не входят.
+Applications own transport, authentication, allowed results and storage. Providers receive only `{ query, signal, limit }`, never DOM nodes or a Range. They can return arrays synchronously or through a Promise. Responses are validated before display; request failures become menu state rather than document edits. The modules contain no fetch client, storage backend or polyfills.
 
-Меню не обязательно: используйте headless-контроллеры со своей панелью. Готовое меню располагается внутри `editor.element`, вне редактируемого содержимого. Идентификатор результата используется для выбора, но не вставляется в HTML ID или CSS-селектор.
+The view is optional: use headless controllers with your own panel. The provided menu lives under editor.element, outside persisted content. Provider IDs select results but are never used as HTML IDs or CSS selectors.
 
-## Параметры и результаты
+## Options and results
 
-Общие `SuggestionOptions<T>`:
+Common `SuggestionOptions<T>`:
 
-| Параметр | По умолчанию | Ограничение |
+| Option | Default | Bound |
 | --- | --- | --- |
-| `provide` | обязательный callback | массив или Promise массива |
-| `minQueryLength` | mentions: 1, slash: 0 | целое 0–100 |
-| `maxItems` | 20 | целое 1–100 |
-| `debounceMs` | 120 | целое 0–1000 мс |
+| `provide` | required callback | array or Promise of an array |
+| `minQueryLength` | mentions: 1, slash: 0 | integer 0–100 |
+| `maxItems` | 20 | integer 1–100 |
+| `debounceMs` | 120 | integer 0–1000 ms |
 
-`MentionOption`: `id: string`, `label: string`, необязательный `description: string`. `SlashOption` дополнительно требует `text: string`.
+`MentionOption` contains id, label and optional description strings. `SlashOption` additionally requires a text string.
 
-ID — 1–256 UTF-16 единиц, label — 1–200, description — до 500, snippet — 1–20000. C0/DEL-управляющие символы отклоняются, переносы строк в label/snippet не разрешены. HTML-подобные символы — буквальный текст. Неизвестные поля отбрасываются. Дубликаты ID и некорректные строки отклоняют **весь** ответ. Проверяется не более 1000 результатов; более длинный ответ считается некорректным. Валидный ответ ограничивается `maxItems` в порядке провайдера. Скрытые после ограничения элементы тоже проходят проверку, включая проверку дубликатов.
+IDs accept 1–256 UTF-16 units, labels 1–200, descriptions up to 500, snippets 1–20000. C0/DEL control characters are rejected; labels/snippets cannot contain line breaks. Markup-looking characters remain literal. Unknown fields are discarded. Duplicate IDs or invalid fields reject the **entire** response. At most 1000 objects are inspected; a longer response is invalid. Valid results are displayed in provider order up to maxItems. Hidden results beyond that display limit are still validated, including duplicate IDs.
 
-## Где открываются подсказки
+## Trigger boundaries
 
-При обычном вводе или удалении текста mentions распознаёт `@query` в начале текстового потока, после пробельного символа или `(`, `[` и `{`. В email, внутри слова и после URL-разделителя такой `@` остаётся буквальным. Запрос допускает Unicode-буквы/числа/комбинируемые знаки/соединительную пунктуацию и `-`, максимум 100 UTF-16 единиц. Label результата может содержать пробелы, хотя первая версия query-грамматики их не включает.
+On ordinary typing/deletion, mentions recognizes @query at the start of an eligible text flow, after whitespace, or after `(`, `[` and `{`. An @ in a word/email or after a URL separator stays literal. Queries allow Unicode letters/numbers/marks/connector punctuation and `-`, up to 100 UTF-16 units. Labels may contain spaces even though this first query grammar does not.
 
-Slash работает в начале обычного абзаца, в том числе внутри ячейки таблицы. В заголовке, существующем пункте списка, цитате, ссылке, code/pre и подписи изображения он не открывается. Mentions допускается в заголовках, пунктах и цитатах; ссылки, code/pre и figure/figcaption исключены в обоих модулях. Граница блока, ячейки, br/img/hr не склеивается с соседним текстом.
+Slash opens at the start of a plain paragraph, including one in a table cell. It does not open in headings, existing list items, quotes, links, code/pre or image captions. Mentions supports headings/items/quotes; both modules exclude links, code/pre and figure/figcaption. Blocks, cells and br/img/hr split flows rather than joining adjacent text.
 
-Нужен свёрнутый курсор в конце query-токена. Выделение или курсор в середине `@an|na` не создаёт цель вставки. Открытие после загрузки, вставки или undo не происходит автоматически: для уже существующего допустимого токена можно явно вызвать `open()`.
+The caret must be collapsed and at the query token's end. A selection or a caret inside `@an|na` does not create a replacement target. Loading, pasting and undo do not automatically open suggestions; use open() explicitly for an existing eligible token.
 
-## Контроллер
+## Controller
 
 ```ts
 const state = people.getState();
 // { status, query, items, activeIndex, anchor?, error? }
 const stop = people.subscribe((next) => {
-  // Собственный интерфейс: loading, ready/empty, error или closed.
+  // Render loading, ready/empty, error or closed.
 });
-people.open();       // boolean: подходит ли текущий токен
-people.move(1);      // -1 или 1; индекс циклически меняется
-people.choose('id'); // boolean: выполнен ли актуальный выбор
+people.open();       // boolean: does the current caret have an eligible token?
+people.move(1);      // -1 or 1; wraps through results
+people.choose('id'); // boolean: was a current choice inserted?
 people.close();
 stop();
 ```
 
-Статусы: `closed`, `loading`, `ready`, `error`. При пустом валидном ответе статус ready, items пуст, activeIndex равен -1. Ошибка — `provider-error` или `invalid-results`; старые варианты при загрузке/ошибке не выбираются. Снимки независимы и не содержат DOM-узлов, Range, AbortController или ссылок на объекты приложения. Подписка не вызывается немедленно: начальное значение получите через getState.
+Statuses are closed/loading/ready/error. A valid empty response is ready with empty items and activeIndex -1. Error is provider-error or invalid-results; stale results cannot be chosen during loading/error. Snapshots are independent and contain no DOM, Range, AbortController or references to application objects. Subscribe does not invoke immediately; get initial state via getState.
 
-`open()` заново проверяет реальный курсор и не создаёт искусственную цель вставки. `choose()` ещё раз проверяет токен/курсор/сессию; устаревший или неизвестный ID возвращает false без изменения документа. Неверные типы аргументов вызывают исключение. Успешный выбор удаляет только trigger/query, наследует оформление начала токена, сохраняет соседний текст и геометрию таблицы. Это одна пользовательская ревизия и одна операция undo. Undo восстанавливает исходный токен и курсор, redo — выбранный текст; меню от истории не открывается повторно.
+open() rescans the real caret rather than inventing a target. choose() revalidates token, caret and session; a stale/unknown ID returns false without mutation. Invalid argument types throw. A successful choice replaces only trigger/query, inherits formatting at the trigger start and retains surrounding text and table geometry. It is one user revision and undo step. Undo restores the trigger and caret; redo restores inserted text. History does not reopen/refetch the menu.
 
-## Клавиатура и отмена
+## Keyboard and cancellation
 
-Стрелки вверх/вниз циклически выбирают вариант без переноса DOM-выделения. Enter принимает только актуальный ready-вариант и не выполняет дополнительно Enter списка/абзаца. Escape закрывает меню, оставляя исходный текст. Tab закрывает меню и передаётся обычному поведению редактора/браузера — включая Tab таблиц и вложенность списков. Влево/вправо/Home/End/Page и модифицированные клавиши закрывают меню и остаются нативными. При loading/error/пустом результате Enter выполняет обычное редактирование. Меню не удерживает фокус и не принимает результат через Tab.
+Up/Down wrap the active result without moving DOM selection. Enter accepts only a valid ready option and does not also insert a paragraph/list item. Escape dismisses without deleting the query. Tab dismisses and falls through to existing editor/browser behavior, including table navigation and list indentation. Left/Right/Home/End/Page and modified shortcuts dismiss and keep their normal behavior. Loading/error/empty-result Enter performs ordinary editing. The menu never traps focus or accepts with Tab.
 
-Новый query отменяет прежний запрос. Close, read-only, внешняя замена, уход курсора, compositionstart и destroy очищают таймеры и прерывают AbortSignal. Поздние ответы/ошибки обрабатываются и игнорируются. IME не запускает выбор; после compositionend нужен следующий допустимый ввод или явный open. Same-value controlled feedback без изменения DOM не отменяет и не повторяет запрос. Пересоздание идентичного DOM при форматировании может закрыть сессию; выбор никогда не должен использовать старые текстовые узлы.
+A new query aborts its predecessor. Close, read-only, external replacement, caret movement, compositionstart and destroy clear timers and abort the signal. Late responses/rejections are handled and ignored. IME suspends choice; compositionend does not automatically reopen. Same-value controlled feedback with unchanged DOM preserves the session without refetching. Identical-HTML DOM reconstruction by formatting may close a session; a choice must never use detached text nodes.
 
 ```ts
 const stopDisposal = people.onDispose(() => {
-  // Ресурсы собственного интерфейса.
+  // Release your custom view resources.
 });
-stopDisposal(); // убрать callback; повторный вызов безопасен
+stopDisposal(); // unregister; repeated calls are safe
 ```
 
-После destroy методы контроллера недоступны, старые unsubscribe безопасны. Готовое меню автоматически очищается через onDispose; его собственный disposer тоже идемпотентен. Все ресурсы принадлежат экземпляру, включая повторное использование объекта плагина в нескольких редакторах.
+Controller methods become unavailable after destroy; existing unsubscribe functions remain safe. The provided menu cleans up automatically through onDispose; its returned disposer is also idempotent. Every instance owns its resources even when one plugin object is reused across editors.
 
-## Оформление и границы UI
+## View and appearance
 
-`SuggestionMenuOptions` принимает `locale: 'ru' | 'en'` (по умолчанию en) и `labels` с полями `label`, `loading`, `empty`, `error`, `results`. В results один `{count}` заменяется числом. Подписи и описания создаются через textContent. Поддерживаются scoped-переменные:
+SuggestionMenuOptions accepts locale ru/en (default en) and labels with label/loading/empty/error/results strings. One {count} in results is replaced by the result count. Labels/descriptions use textContent. Scoped variables:
 
 ```css
 .my-editor {
@@ -124,15 +124,15 @@ stopDisposal(); // убрать callback; повторный вызов безо
 }
 ```
 
-Меню привязано к Range курсора без измерительных span внутри документа, ограничивается viewport и переворачивается вверх при недостатке места. Scroll/resize меняет позицию без повторного provider-вызова. Произвольные portals и transformed/clipping-контейнеры в первый этап не входят. Нельзя подключать меню к чужому редактору или повторно к тому же контроллеру.
+The menu anchors to the caret Range without inserting measurement spans, clamps to the viewport and flips above when needed. Scroll/resize repositions without repeating providers. Arbitrary portals and transformed/clipping ancestors are outside phase-1 support. A menu cannot use another editor's controller or attach twice to the same controller.
 
-Listbox/статусы и keyboard/browser-проверки не являются сертификацией доступности. Нужны отдельные проверки скринридеров, touch, zoom и реальных IME. На [главной](/#editor) и [стенде](/playground) локальные асинхронные провайдеры демонстрируют ready/loading/empty/error и отмену без отправки текста на сервер.
+Listbox/status semantics and keyboard/browser checks are not accessibility certification. Screen-reader, touch, zoom and real IME evidence still need separate testing. On the [homepage](/#editor) and [playground](/playground), local asynchronous providers demonstrate ready/loading/empty/error/cancellation without sending document text to a server.
 
-Структурные slash-actions описаны отдельным контрактом ниже; [сохраняемые редактируемые ссылки с ID](/persistent-mentions) включаются явно. Отдельный [атомарный режим упоминаний](/atomic-mentions) добавляет ограниченную навигацию и удаление целиком при `persistent: true, atomic: true`. Универсальный SDK атомов остаётся будущей работой.
+Structural slash actions have their separate contract below; [persistent editable ID references](/persistent-mentions) are explicitly enabled. The separate [atomic mention mode](/atomic-mentions) adds bounded whole-token navigation and deletion with `persistent: true, atomic: true`. A universal atom SDK remains future work.
 
-## Структурные slash-команды
+## Structural slash commands
 
-Готовый реестр `createSlashActions()` содержит `paragraph`, `heading1`–`heading6`, `bulletList`, `orderedList`, `blockquote` и `codeBlock`. Он подключается явно; текстовые шаблоны продолжают работать без него.
+The ready-made `createSlashActions()` registry includes `paragraph`, `heading1`–`heading6`, `bulletList`, `orderedList`, `blockquote` and `codeBlock`. It is explicitly installed; text snippets still work without it.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -148,18 +148,18 @@ const editor = createEditor(host, {
   plugins: [tables(), slash({
     actions,
     provide: ({ query }) => [
-      { id: 'heading', label: 'Заголовок 2', action: 'heading2' },
-      { id: 'table', label: 'Таблица', action: 'table' },
-      { id: 'signature', label: 'Подпись', text: 'С уважением, команда' },
+      { id: 'heading', label: 'Heading 2', action: 'heading2' },
+      { id: 'table', label: 'Table', action: 'table' },
+      { id: 'signature', label: 'Signature', text: 'Best regards, team' },
     ].filter((item) => item.id.includes(query)),
   })],
 });
 ```
 
-Полный пример использует также `createEditor` и `type Editor` из корневого пакета. Результат провайдера содержит **либо** `text`, **либо** `action: string`. Ключ action должен существовать в переданном реестре; неизвестные ключи, callback в ответе, одновременно text/action и некорректные результаты отклоняют весь ответ. Реестр копируется фабрикой: позднее изменение исходного объекта не меняет установленный плагин. Имена: `[A-Za-z][A-Za-z0-9_:.-]{0,127}`.
+The complete example also imports `createEditor` and `type Editor` from the root package. Provider results contain **either** `text` **or** `action: string`. Action keys must exist in the configured registry; unknown keys, response callbacks, simultaneous text/action or invalid results reject the entire response. The factory copies the registry: later changes to its source object cannot change the installed plugin. Names match `[A-Za-z][A-Za-z0-9_:.-]{0,127}`.
 
-Сначала повторно проверяется курсор и токен, затем `/query` удаляется и команда выполняется одной составной транзакцией. Один Undo возвращает исходный токен и курсор; нет промежуточного change. Суффикс и соседние блоки сохраняются. Списки/заголовки в ячейке не меняют её геометрию. Табличная команда требует установленного table-плагина и отклоняет вложенную таблицу с полным откатом.
+Choosing revalidates the caret/token, removes `/query` and executes the command in one composed transaction. One Undo restores the token and caret; there is no intermediate change. Suffixes and adjacent blocks remain intact. Lists/headings inside cells preserve grid geometry. The table command requires an installed table plugin and rejects nested tables with complete rollback.
 
-`SlashAction = (editor: Editor) => void` — доверенный **синхронный** код приложения, использующий публичные команды. Провайдер не передаёт исполняемый код. Можно вызвать API своего плагина через `getPlugin`; slash не импортирует его реализацию. Нет неявного диспетчера через события. Даже пустая команда потребляет токен; при ошибке команда и удаление токена откатываются. Async callbacks/thenable отклоняются; запрещено планировать мутации после возврата. Подробнее: [события и транзакции](/events).
+`SlashAction = (editor: Editor) => void` is trusted **synchronous** application code using public commands. Providers never deliver executable code. Actions may call a custom plugin API through `getPlugin`; slash does not import its implementation. Events are not an implicit dispatcher. Even a no-op action consumes the token; failures roll back both the action and token removal. Async callbacks/thenables are rejected; do not schedule mutations after returning. See [events and transactions](/events).
 
-На главной доступны `/h2`, `/bullet`, `/ordered`, `/quote`, `/code`, `/table` и полный список по `/`. Кнопки новых примеров заменяют документ; провайдер остаётся локальным, с демонстрацией задержки/ошибки/пустого ответа.
+The homepage offers `/h2`, `/bullet`, `/ordered`, `/quote`, `/code`, `/table` and the complete list after `/`. New-example buttons replace the document; the provider remains local with delay/error/empty response controls.

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`UI forms guide exposes standalone public integrations in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
-  await page.goto(english ? '/en/ui' : '/ui');
+  await page.goto(english ? '/ui' : '/ru/ui');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(english ? 'Reusable UI forms' : 'Переиспользуемые UI-формы');
   for (const [factory, entry] of [['createLinkForm', 'links'], ['createImageForm', 'images'], ['createSearchForm', 'search']]) {
     await expect(page.getByRole('cell', { name: factory, exact: true })).toHaveCount(1);

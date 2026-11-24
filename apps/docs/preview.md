@@ -1,10 +1,10 @@
-# Предпросмотр документа
+# Document preview
 
-`createPreviewUI` создаёт отдельный немодальный вид текущего документа. Поддержанные заголовки, текстовые стили, списки, таблицы и подписи показываются без включения режима редактирования. Документ, история и реальные DOM-узлы редактора остаются прежними. На главной и в [демо](/playground) откройте «Предпросмотр документа».
+`createPreviewUI` creates a separate nonmodal reading view of the current document. Supported headings, inline formatting, lists, tables and captions appear without an editing surface. The document, history and actual editor DOM nodes stay unchanged. Open “Document preview” on the homepage or in the [playground](/playground).
 
-Модуль подключается явно и не входит в core или пресеты. Это не печатный движок, новый документ, iframe или открытие отдельного окна. Совпадение с печатной страницей и произвольной внешней CSS-вёрсткой не обещается.
+The module is explicitly selected, outside core and preset defaults. It is not a print engine, a new document, an iframe or a popup window. It does not promise print pagination or fidelity to arbitrary external CSS layouts.
 
-## Подключение
+## Setup
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -13,8 +13,8 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/preview.css';
 
 const editor = createEditor(editorHost, {
-  locale: 'ru',
-  value: '<h2>Заголовок</h2><p>Текущий документ</p>',
+  locale: 'en',
+  value: '<h2>Heading</h2><p>The current document</p>',
 });
 const preview = createPreviewUI(previewHost, editor, {
   live: true,
@@ -24,26 +24,26 @@ const preview = createPreviewUI(previewHost, editor, {
 preview.open();
 ```
 
-`previewHost` — пустой подключённый HTML-контейнер того же документа, вне сохраняемого содержимого редактора. Разместите его там, где приложению нужен вид для чтения. CSS подключается отдельно, без загрузки шрифтов и без зависимости от оформления сайта документации.
+`previewHost` is an empty connected HTML container in the same document, outside persisted editor content. Place it where the application wants a reading view. Styles are explicit; no fonts are downloaded and the documentation site's CSS is not required.
 
 ## API
 
-| Опция | Поведение |
+| Option | Behavior |
 | --- | --- |
-| `label?: string` | Явное доступное имя панели/региона; встроенные подписи имеют RU/EN-переводы |
-| `live?: boolean` | По умолчанию `true`: открытый вид обновляется после изменений, с объединением обновлений в один animation frame |
-| `images?: 'omit' \| 'load'` | По умолчанию `'omit'`: вместо изображения показывается текстовая заглушка |
-| `onError?: (error: unknown) => void` | Диагностика приложения; интерфейс показывает общий локализованный текст ошибки |
+| `label?: string` | Explicit accessible panel/region name; built-in labels have RU/EN translations |
+| `live?: boolean` | Defaults to `true`: an open view follows document changes, coalesced into one animation frame |
+| `images?: 'omit' \| 'load'` | Defaults to `'omit'`: display text placeholders instead of images |
+| `onError?: (error: unknown) => void` | Application diagnostics; UI errors use a generic localized message |
 
-`PreviewUIController` предоставляет `element`, `open()`, `close()`, `toggle()`, `isOpen()`, `refresh()` и `destroy()`. `toggle()` возвращает итоговое состояние открытия. `destroy()` идемпотентен; остальные методы после уничтожения отклоняются. Экспортируются также `PreviewUIOptions`, `PreviewUIMessageKey` и `previewUIMessages`.
+`PreviewUIController` exposes `element`, `open()`, `close()`, `toggle()`, `isOpen()`, `refresh()` and `destroy()`. `toggle()` returns the resulting open state. Destruction is idempotent; other methods reject after disposal. `PreviewUIOptions`, `PreviewUIMessageKey` and `previewUIMessages` are also exported.
 
-При `live: false` документ снимается при открытии и по явному `refresh()` или кнопке «Обновить предпросмотр». Закрытая панель не хранит снимок и не перерисовывает документ при каждом вводе. Повторное открытие берёт актуальные данные. Read-only не отключает просмотр.
+With `live: false`, capture the document on opening and explicit `refresh()` or “Refresh preview”. A closed panel retains no document snapshot and performs no per-keystroke rendering. Reopening uses current data. Read-only does not disable viewing.
 
-## Изображения, ссылки и безопасность
+## Images, links and security
 
-По умолчанию предпросмотр **не создаёт изображения и не делает новых запросов к их URL**. Он показывает alt-текст или локализованную заглушку. Ресурсы убираются до создания живого DOM: фильтрация уже созданного `img` была бы слишком поздней.
+By default the preview **creates no images and makes no additional requests to their URLs**. It shows alt text or a localized placeholder. Resource policy is applied before live DOM creation: filtering an already-created `img` would be too late.
 
-Если приложение действительно хочет загрузить изображения в этом виде, это отдельное разрешение:
+Loading images in this view requires an explicit application decision:
 
 ```ts
 const preview = createPreviewUI(previewHost, editor, {
@@ -51,15 +51,15 @@ const preview = createPreviewUI(previewHost, editor, {
 });
 ```
 
-Такой режим использует уже проверенные URL документа, но разрешает обычные запросы браузера. Политика хостов, авторизация ресурсов и CSP остаются у приложения. Открытие предпросмотра не создаёт разрешение на доступ к файлу на сервере. Закрытие удаляет собственные ресурсы из вида; уже выполненный запрос браузера отменённым не считается.
+This uses the document's validated URLs and allows ordinary browser requests. Resource host policy, authorization and CSP remain application responsibilities. Opening preview never authorizes access to a server file. Closing removes owned view resources; it does not undo requests the browser already completed.
 
-Ссылки всегда неактивны: текст и оформление сохраняются, навигационные атрибуты не переносятся. Упоминания отображаются как текстовые ссылки на сущности без вызова провайдеров, а чек-листы не получают интерактивных обработчиков. Предпросмотр строится из проверенного JSON экземпляра через DOM API, без клонирования живого редактора и без вставки сырого HTML.
+Links are always inert: retain text and formatting without navigation attributes. Mention labels do not invoke providers or identity lookups, and checklists receive no interactive editing handlers. The preview is constructed from the instance's validated JSON through DOM APIs, without cloning the live editor or injecting raw HTML.
 
-## Клавиатура и жизненный цикл
+## Keyboard and lifecycle
 
-Управление — обычные кнопки, а содержимое — доступный для фокуса регион чтения. Необработанный Escape внутри предпросмотра закрывает его раньше внешнего полноэкранного режима. Внешний фокус не перехватывается; modal focus trap не устанавливается. Полная совместимость со всеми screen readers и мобильными устройствами отдельно не подтверждена.
+Controls are native buttons; content is a focusable reading region. Unhandled Escape inside the preview closes it before an outer fullscreen handler. Unrelated external focus is not stolen, and no modal focus trap is installed. Complete real-device and screen-reader compatibility is not claimed.
 
-Смена языка обновляет подписи и заглушки без изменения документа. Закрытие/уничтожение отменяет отложенный кадр, уничтожение редактора освобождает UI, а устаревшие сохранённые контролы не могут открыть его заново.
+Locale updates change captions and placeholders without document edits. Close/dispose cancel pending frames; editor destruction releases the UI, and retained stale controls cannot resurrect it.
 
 ```ts
 preview.close();
@@ -67,4 +67,4 @@ preview.destroy();
 editor.destroy();
 ```
 
-Измерения raw JS, gzip, Brotli и CSS и результаты целевых проверок фиксируются отдельно. Наличие примера не означает полный прогон всех функций редактора или поддержку произвольной печатной/Office-вёрстки.
+Raw JS, gzip, Brotli, CSS and actual focused verification are reported separately. A working example does not establish a complete editor-suite pass or arbitrary print/Office layout fidelity.

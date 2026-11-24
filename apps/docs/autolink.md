@@ -1,8 +1,8 @@
-# Автоматические ссылки
+# Automatic links
 
-`/plugins/autolink` — необязательный плагин, который превращает завершённый URL в ссылку после **одного нативного пробела Space**, поддержанного **контролируемого Enter** или настоящей **вставки одного URL из plain-text буфера**. Ядро не загружает плагин автоматически. CSS, UI, сторонние runtime-зависимости и сетевые запросы не нужны.
+`/plugins/autolink` is an optional plugin that converts a completed URL after **one native Space**, supported **controlled Enter**, or an actual **single-URL plain-text clipboard paste**. Core does not load it automatically. It needs no CSS, UI, third-party runtime dependencies or network requests.
 
-## Подключение
+## Installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -10,84 +10,84 @@ import { autolink, autolinkCommands } from '@morfira-dev/wysiwyg/plugins/autolin
 import '@morfira-dev/wysiwyg/style.css';
 
 const editor = createEditor(host, {
-  locale: 'ru',
-  value: '<p>Введите https://example.com и пробел.</p><p><br></p>',
+  locale: 'en',
+  value: '<p>Type https://example.com followed by a space.</p><p><br></p>',
   plugins: [autolink({ enabled: true })],
 });
 const commands = autolinkCommands(editor);
-const state = commands.getState(); // { enabled: true }, независимый snapshot
+const state = commands.getState(); // { enabled: true }, an independent snapshot
 commands.setEnabled(false);
 commands.setEnabled(true);
 
-// При удалении экрана:
+// When the screen unmounts:
 const dispose = () => editor.destroy();
 ```
 
-`host` — пустой браузерный `HTMLElement`. `enabled` по умолчанию равен `true`. Некорректные настройки отклоняются. Импорт модуля и вызов `autolink()` безопасны без DOM; создание редактора требует браузерного DOM.
+`host` is an empty browser `HTMLElement`. `enabled` defaults to `true`; invalid options fail. Module imports and `autolink()` factory calls are safe without DOM; editor creation requires browser DOM.
 
-| API | Поведение |
+| API | Behavior |
 | --- | --- |
-| `autolink({ enabled? })` | Создаёт определение плагина; состояние устанавливается отдельно в каждом редакторе |
-| `autolinkCommands(editor)` | Возвращает API установленного плагина; без плагина выбрасывает ошибку |
-| `commands.getState()` | Возвращает новый `{ enabled: boolean }` snapshot |
-| `commands.setEnabled(boolean)` | Меняет предпочтение без изменения документа, истории и `change` события |
+| `autolink({ enabled? })` | Creates a plugin definition; each editor installs its own state |
+| `autolinkCommands(editor)` | Returns the installed plugin API; throws when the plugin is missing |
+| `commands.getState()` | Returns a fresh `{ enabled: boolean }` snapshot |
+| `commands.setEnabled(boolean)` | Changes a preference without document/history mutation or a `change` event |
 
-Предпочтение разрешено менять и в read-only, но само преобразование там заблокировано. После уничтожения редактора команды отклоняются; listeners и plugin API очищаются. Один результат `autolink()` можно установить в разные редакторы без общего изменяемого состояния.
+Preferences may change in read-only, but conversion remains blocked. Commands fail after editor destruction; listeners and plugin API ownership are released. One `autolink()` result can be installed in different editors without shared mutable state.
 
-## Что преобразуется
+## Recognized input
 
-Введите URL обычным текстом и нажмите Space:
+Type a URL as ordinary text and press Space:
 
-| Введённый текст | Результирующий `href` |
+| Typed text | Resulting `href` |
 | --- | --- |
 | `https://example.com` + Space | `https://example.com` |
 | `http://example.com/path` + Space | `http://example.com/path` |
 | `www.example.com` + Space | `https://www.example.com` |
 
-Префиксы распознаются без учёта регистра. Подпись ссылки остаётся введённым текстом; для `www.` добавляется только протокол `href`. Завершающие знаки предложения и лишние закрывающие скобки остаются снаружи ссылки. Сбалансированные скобки внутри URL-пути сохраняются. Протоколы и адрес проверяются существующими безопасными правилами ссылок и браузерным URL parser; загрузки превью или проверки адреса по сети нет.
+Prefixes are case-insensitive. Link labels keep the typed text; `www.` receives a protocol in `href` only. Terminal sentence punctuation and unmatched closing delimiters stay outside the anchor. Balanced delimiters inside URL paths remain. The address/protocol uses existing safe link rules and the browser URL parser; no preview or network address check occurs.
 
-Плагин рассматривает только ограниченный суффикс текущего текстового потока: до 2050 UTF-16 единиц перед курсором, URL — до 2048. Требуется свёрнутый курсор. Поддерживаются обычные абзацы, заголовки, пункты списка, цитаты и ячейки таблицы. Соседнее inline-форматирование и метаданные семантического block-callout сохраняются.
+The plugin inspects only a bounded suffix of the current text flow: up to 2050 UTF-16 units before the caret, with a URL limit of 2048. A collapsed caret is required. Ordinary paragraphs, headings, list items, blockquotes and table cells are supported. Surrounding inline formatting and semantic block-callout metadata survive conversion.
 
-## Enter и plain-text вставка из буфера
+## Enter and plain-text clipboard paste
 
-При схлопнутом курсоре после завершённого URL обычный Enter создаёт ссылку только после успешного разделения блока редактором. Курсор остаётся в фактической позиции нового блока; дальнейший ввод идёт вне ссылки. Отменённый/заблокированный Enter и Enter, использованный Markdown или slash-командой, не вызывают предположительного преобразования. Shift+Enter и неконтролируемое разделение блока браузером исключены.
+At a collapsed caret after a completed URL, ordinary Enter links the URL only after the editor successfully splits the block. The caret stays at the actual new-block position; following typing stays outside the link. Canceled/blocked Enter and Enter consumed by Markdown or slash commands do not cause speculative linking. Shift+Enter and uncontrolled browser paragraph edits are excluded.
 
-Требуется настоящее clipboard-событие с пустым HTML-представлением и `text/plain`, содержащим ровно один поддержанный URL-токен до 2048 единиц UTF-16, без пробельных символов и переносов. Исходный курсор должен быть схлопнут в поддержанном потоке. Текст буфера сохраняется буквально; конечная пунктуация остаётся снаружи ссылки, соседний текст в неё не включается. HTML/rich буфер, многострочный текст, URL с пробелами по краям и замена выделения остаются буквальными. Программная вставка не является clipboard-дополнением.
+Paste must be an actual clipboard event whose HTML representation is empty and whose `text/plain` contains exactly one supported URL token, at most 2048 UTF-16 units, with no whitespace or line breaks. The source selection must be collapsed in a supported flow. Clipboard text stays verbatim; terminal punctuation remains outside the anchor, and neighboring text is not included. HTML/rich clipboard payloads, multiline text, whitespace-delimited URLs and selected replacement remain literal. Programmatic insertion is not clipboard completion.
 
-## Email — явная опция
+## Email — explicit opt-in
 
-По умолчанию `autolink()` и стандартный/расширенный пресеты обрабатывают только URL. Для email включите опцию при установке; это не отдельный плагин и не сетевой запрос:
+By default, `autolink()` and the standard/extended presets recognize only URLs. Enable email when installing the plugin; it adds neither a separate plugin nor a network request:
 
 ```ts
 plugins: [autolink({ email: true })]
-// либо createStandardPreset({ autolink: { email: true } })
+// or createStandardPreset({ autolink: { email: true } })
 ```
 
-`email` принимает только boolean; по умолчанию `false`. Состояние `enabled` и команды `setEnabled` управляют всем дополнением сразу. В полной демке email включён явно. Нажмите «Подготовить email для пробела» и самостоятельно введите Space или Enter после `Writer.Name+tag@Example.com`. Также поддержана настоящая plain-text вставка одного адреса с пустым HTML-представлением. Получится `href="mailto:Writer.Name+tag@Example.com"`; введённый текст и регистр сохраняются.
+`email` accepts only boolean and defaults to `false`. Existing `enabled` state and `setEnabled` commands control all completion together. The full demo explicitly enables email. Click Prepare email for Space and type Space or Enter yourself after `Writer.Name+tag@Example.com`. An actual single-address plain-text paste with an empty HTML representation is also supported. It produces `href="mailto:Writer.Name+tag@Example.com"`, retaining the literal display text and case.
 
-Это намеренно узкая ASCII-грамматика: адрес до 254 символов, локальная часть до 64, непустые атомы из букв/цифр, `_`, `+`, `-`, разделённые одиночными точками. Домен содержит как минимум две метки до 63 символов из букв/цифр и внутренних дефисов; последняя — 2–63 латинские буквы. Нет ведущих/замыкающих точек, двойных `@`, краевых дефисов, quoted local parts, IDN/Unicode, IP literals, display names, percent-encoding или параметров query/header. Невалидный токен не должен превращаться в ссылку частично. Это не полная проверка RFC, существования адреса или права доступа к учётной записи.
+The deliberately conservative ASCII grammar allows at most 254 address characters and 64 local-part characters: nonempty letter/digit/underscore/plus/hyphen atoms separated by single dots. The domain has at least two labels of at most 63 letters/digits/interior hyphens; its final label is 2–63 ASCII letters. Leading/trailing dots, double `@`, edge hyphens, quoted local parts, IDN/Unicode, IP literals, display names, percent-encoding and query/header parameters are unsupported. Malformed tokens must not be partially linked. This is not complete RFC validation, an address-existence check or account authorization.
 
-Остаются те же границы: свёрнутый курсор, Space/контролируемый Enter/один plain-text токен, ограничения IME/read-only/семантических узлов. HTML, многострочный буфер, API-импорт и замена выделения не получают email-дополнения. Первый Undo снимает автоссылку, сохраняя исходный пробел/Enter/вставку; второй отменяет сам ввод. Данные никуда не отправляются. Явное открытие сохранённой mailto-ссылки передаёт адрес почтовому приложению браузера/системы и само по себе не отправляет письмо.
+The same boundaries remain: collapsed caret, Space/controlled Enter/one plain-text token, IME/read-only and semantic-node guards. HTML, multiline clipboard, API import and selected replacement gain no email conversion. First Undo removes the automatic link while retaining the original space/Enter/paste; second Undo reverses that input. Nothing is sent anywhere. Explicitly opening the saved mailto link delegates to the browser/system mail application and does not itself send a message.
 
-## История и ограничения
+## History and limits
 
-Преобразование — отдельная атомарная операция **после** записи нативного ввода пробела. Один Undo снимает автоматическую ссылку и восстанавливает буквальный URL **вместе с уже введённым пробелом**. Redo возвращает ссылку и курсор после пробела; дальнейший текст вводится снаружи ссылки. Одно преобразование даёт одно дополнительное пользовательское `change` событие.
+Conversion is a separate atomic operation **after** native space input is recorded. One Undo removes automatic linking and restores the literal URL **including the space already typed**. Redo restores the anchor and post-space caret; following text stays outside the anchor. One conversion produces one additional user `change` event.
 
-Enter и поддержанная вставка тоже создают **две отдельные операции истории**: первый Undo снимает автоссылку, сохраняя разделение блока/буквально вставленный текст; второй Undo отменяет исходный ввод. Redo возвращает ввод, затем ссылку. Последующий набор — отдельная операция. Плагин не выделяет URL временно ради форматирования. Если обработчики приложения до преобразования меняют документ, выделение, pending-форматирование, read-only или уничтожают редактор, устаревшее дополнение пропускается.
+Enter and supported paste also create **two distinct history operations**: first Undo removes the automatic link but retains the split/pasted literal text; second Undo removes the original input. Redo restores the input and then the link. Any later typing is a subsequent operation. The plugin never temporarily selects the URL to format it. If application observers change the document, selection, pending formats, read-only state or editor lifetime before conversion, it skips the stale completion.
 
-Плагин не срабатывает:
+The plugin does not trigger:
 
-- На Shift+Enter и неконтролируемое нативное разделение блока; Enter-триггер — только успешная контролируемая операция.
-- На неподдержанный paste, drop, импорт HTML/JSON, внешнюю замену значения, undo/redo input или нативный ввод сразу нескольких символов. Сам импортированный URL остаётся буквальным; последующий обычный ввод Space может завершить URL.
-- Во время IME/composition, в read-only или при несвёрнутом выделении.
-- Внутри уже существующей ссылки, `pre`/`code`, `figure`/`figcaption` и inline-узла с семантическим marker `data-mw-node`.
-- Через границы блоков, line break, изображения, кода, существующей ссылки или семантического inline-узла.
-- Для других протоколов, невалидных адресов, URL с credentials или слишком длинного/обрезанного начала токена.
+- On Shift+Enter or uncontrolled native paragraph splitting; only successful controlled Enter is an Enter trigger.
+- On unsupported paste payloads, drop, HTML/JSON import, external value replacement, history input or multi-character native input. Imported URLs remain literal by that action; later ordinary Space input can complete the URL.
+- During IME/composition, in read-only or with a noncollapsed selection.
+- Inside existing links, `pre`/`code`, `figure`/`figcaption` or an inline semantic node marked with `data-mw-node`.
+- Across a block, line break, image, code, existing anchor or semantic inline-node boundary.
+- For other protocols, invalid addresses, credentials, overlong URLs or truncated token beginnings.
 
-Кавычки и угловые скобки не считаются частью распознаваемого токена. Это ограниченный сценарий дополнения URL при вводе, а не произвольный поиск ссылок во всём документе.
+Quotes and angle delimiters are not recognized token content. This is a bounded URL-completion behavior rather than automatic document-wide link detection.
 
-Для явного создания/редактирования ссылок используйте [команды ссылок](/styling) или [готовую UI-форму](/ui). Плагин независим от [SDK семантической схемы](/plugin-sdk): inline-reference не превращается в ссылку автоматически, а block-callout сохраняет свои зарегистрированные метаданные.
+For explicit link creation/editing, use [link commands](/styling) or the [ready UI form](/ui). The plugin is independent of the [semantic schema SDK](/plugin-sdk): inline references are not automatically linked, while registered block-callout metadata is preserved.
 
-## Проверить в демке
+## Try the live example
 
-Откройте «Автоматические ссылки» на [главной](/#editor) или в [playground](/playground). «Подготовить URL для Enter» загружает буквальный текст и ставит курсор в конец: нажмите Enter самостоятельно. «Подготовить plain-text вставку» создаёт пустой абзац: самостоятельно вставьте `https://example.com` как обычный текст. Кнопки только готовят документ, не имитируют ввод и не запрашивают адреса. Дважды нажмите Undo, чтобы увидеть отдельные операции.
+Open “Automatic links” on the [homepage](/#editor) or [playground](/playground). “Prepare URL for Enter” loads literal text and places the caret at its end: press Enter yourself. “Prepare plain-text paste” creates an empty paragraph: paste `https://example.com` as plain text yourself. The buttons only prepare the document; they do not simulate input or fetch addresses. Use Undo twice to inspect the two operations.

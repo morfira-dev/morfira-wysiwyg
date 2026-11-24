@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('Russian narrow homepage merges a spanning rectangle, preserves rich content and undoes in one step', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
-  await page.goto('/');
+  await page.goto('/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const toggle = page.getByRole('checkbox', { name: 'Контекстная панель таблиц', exact: true });
@@ -50,7 +50,7 @@ test('Russian narrow homepage merges a spanning rectangle, preserves rich conten
 
 test('English dark playground enters table tools by keyboard, edits rows/columns and cleans up read-only UI', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto('/en/playground');
+  await page.goto('/playground');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByRole('button', { name: 'Toggle theme', exact: true }).click();

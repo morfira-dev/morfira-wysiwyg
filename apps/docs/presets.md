@@ -1,20 +1,20 @@
-# Готовые пресеты
+# Ready presets
 
-Пресет — чистая фабрика `EditorOptions`: он выбирает готовое поведение, копирует свою конфигурацию и возвращает новые определения плагинов. Редактор создаёт `createEditor`, а панель подключается отдельно. Фабрики не создают DOM, не устанавливают глобальные обработчики, не загружают CSS, шрифты или данные с сервера.
+A preset is a pure `EditorOptions` factory: it selects ready behavior, copies its owned configuration and returns fresh plugin definitions. `createEditor` creates the editor; UI is a separate opt-in. Factories create no DOM, global handlers, CSS, fonts or server requests.
 
-| Импорт | Фабрика | Состав по умолчанию |
+| Import | Factory | Default capabilities |
 | --- | --- | --- |
-| `@morfira-dev/wysiwyg/presets/minimal` | `createMinimalPreset` | Только ядро и явно переданные плагины приложения |
-| `@morfira-dev/wysiwyg/presets/standard` | `createStandardPreset` | Таблицы, изображения, поиск, статистика, Markdown shortcuts, autolink, разделитель |
-| `@morfira-dev/wysiwyg/presets/extended` | `createExtendedPreset` | Standard плюс mentions и slash с вашими provider-функциями |
+| `@morfira-dev/wysiwyg/presets/minimal` | `createMinimalPreset` | Core and explicitly supplied application plugins only |
+| `@morfira-dev/wysiwyg/presets/standard` | `createStandardPreset` | Tables, images, search, statistics, Markdown shortcuts, autolink and horizontal rule |
+| `@morfira-dev/wysiwyg/presets/extended` | `createExtendedPreset` | Standard plus mentions/slash with your provider functions |
 
-Это композиции текущих возможностей: Markdown shortcuts не являются Markdown import/export, mentions сохраняют обычный редактируемый текст, autolink поддерживает нативный Space, контролируемый Enter и ограниченную plain-URL вставку из буфера — [точные условия](/autolink). Атомарные mentions, node views, decorations и будущие видео/формулы автоматически не добавляются.
+These compose current features: Markdown shortcuts are not Markdown import/export, mentions remain ordinary editable text, and autolink supports native Space, controlled Enter and bounded plain-URL clipboard completion — [exact conditions](/autolink). Atomic mentions, node views, decorations and future video/formula modules are not silently included.
 
-Необязательные [чек-листы](/checklists) пока не входят в эти наборы по умолчанию. Подключай `checklists()` через явный `plugins: [checklists()]` и импортируй его CSS отдельно; наличие кнопок в полной демке не означает автоматическую загрузку в пресете.
+Optional [checklists](/checklists) are not part of these default sets yet. Pass `checklists()` explicitly through `plugins: [checklists()]` and import its CSS separately; controls in the full demo do not imply automatic preset loading.
 
-Готовые контролы и живой пример — на странице [«Современная панель»](/editor-ui).
+Ready controls and a live example are described in [Modern editor UI](/editor-ui).
 
-## Minimal: небольшой редактор
+## Minimal: a small editor
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -24,8 +24,8 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/editor.css';
 
 const editor = createEditor(editorHost, createMinimalPreset({
-  value: '<p>Начните писать</p>',
-  locale: 'ru',
+  value: '<p>Start writing</p>',
+  locale: 'en',
 }));
 const ui = createEditorUI(toolbarHost, editor);
 
@@ -35,11 +35,11 @@ const dispose = () => {
 };
 ```
 
-`editorHost` и `toolbarHost` — разные пустые элементы приложения. Панель располагается вне редактируемой области. Minimal не импортирует необязательные плагины. Форматирование, обычные списки и ссылки уже являются возможностями текущего ядра; название Minimal не означает новую урезанную версию движка.
+`editorHost` and `toolbarHost` are distinct empty application elements. UI stays outside editable content. Minimal imports no optional behavior. Formatting, ordinary lists and links already belong to the current core; Minimal does not introduce another reduced editing engine.
 
-Панель можно не создавать: используйте API ядра и свои кнопки. Импорт behavior-пресета сам по себе не загружает UI.
+Omit the UI factory to use the core API and your own controls. Importing a behavior preset never loads UI by itself.
 
-## Standard: обычное редактирование
+## Standard: everyday editing
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -51,8 +51,8 @@ import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const options = createStandardPreset({
-  value: '<p>Документ</p>',
-  locale: 'ru',
+  value: '<p>Document</p>',
+  locale: 'en',
   markdown: { blocks: true, inline: true },
   autolink: { enabled: true },
 });
@@ -60,25 +60,25 @@ const editor = createEditor(editorHost, options);
 const ui = createStandardEditorUI(toolbarHost, editor);
 ```
 
-Standard устанавливает плагины в порядке `tables`, `images`, `search`, `statistics`, `markdown-shortcuts`, `autolink`, `horizontal-rule`, затем плагины приложения. Поля конфигурации пресета не попадают в `EditorOptions`: там остаются параметры ядра и готовый массив `plugins`.
+Standard installs `tables`, `images`, `search`, `statistics`, `markdown-shortcuts`, `autolink`, `horizontal-rule`, then application plugins. Preset-only fields do not leak into `EditorOptions`: the result contains core settings and the composed `plugins` array.
 
-Без `images.upload` вставка по URL доступна; реальная загрузка файлов требует callback приложения. Пресет не выбирает endpoint, не отправляет файл и не вставляет демо-изображение. Callback передаётся как `images: { upload: applicationUpload }` и следует [контракту изображений](/images).
+Without `images.upload`, URL insertion remains available; actual file upload needs an application callback. The preset chooses no endpoint, sends no file and inserts no demo placeholder. Pass it as `images: { upload: applicationUpload }` following the [image contract](/images).
 
-### Конфигурация и отключение возможностей
+### Configuration and disabling features
 
-| Опция | Значение | Поведение |
+| Option | Value | Behavior |
 | --- | --- | --- |
-| `tables` | `TableOptions` или `false` | Настройки диагностики таблиц; `false` не устанавливает плагин |
-| `images` | `ImageOptions` или `false` | Upload callback и `maxFileSize`; `false` не устанавливает плагин |
-| `search` | `boolean` | Поиск включён по умолчанию; `false` не устанавливает плагин |
-| `statistics` | `StatisticsOptions` или `false` | Locale сегментации текста или отключение плагина |
-| `markdown` | `MarkdownShortcutOptions` или `false` | `enabled`, `blocks`, `inline` или отключение плагина |
-| `autolink` | `AutolinkOptions` или `false` | `enabled` или отключение плагина |
-| `horizontalRule` | `boolean` | `false` исключает команду разделителя |
+| `tables` | `TableOptions` or `false` | Table diagnostics configuration; `false` omits the plugin |
+| `images` | `ImageOptions` or `false` | Upload callback and `maxFileSize`; `false` omits the plugin |
+| `search` | `boolean` | Enabled by default; `false` omits the plugin |
+| `statistics` | `StatisticsOptions` or `false` | Text-segmentation locale, or omission |
+| `markdown` | `MarkdownShortcutOptions` or `false` | `enabled`, `blocks`, `inline`, or omission |
+| `autolink` | `AutolinkOptions` or `false` | `enabled`, or omission |
+| `horizontalRule` | `boolean` | `false` omits the horizontal-rule command |
 
-Если опция отсутствует, соответствующий плагин включён с его обычными настройками. `autolink: { enabled: false }` устанавливает отключённый плагин с доступным API переключения; `autolink: false` не устанавливает его.
+An omitted option enables that plugin with its normal defaults. `autolink: { enabled: false }` installs a disabled plugin with a preference API; `autolink: false` omits the plugin entirely.
 
-У фабрики `search()` нет настроек начального запроса. После создания редактора задайте запрос через `searchCommands(editor).setQuery(...)` либо используйте [готовую форму](/ui).
+The `search()` factory has no initial-query options. After creating the editor, use `searchCommands(editor).setQuery(...)` or the [ready form](/ui).
 
 ```ts
 const options = createStandardPreset({
@@ -88,11 +88,11 @@ const options = createStandardPreset({
 });
 ```
 
-Готовая Standard-панель требует установленных таблиц, изображений и поиска и проверяет это до монтирования. Если эти возможности отключены, выберите `createEditorUI` с подходящими контролами или собственный интерфейс.
+The ready Standard UI requires installed tables, images and search, and checks them before mounting. If those features are disabled, use `createEditorUI` with appropriate controls or application-owned UI.
 
-**Отключение во время конфигурации не доказывает tree-shaking.** Standard статически импортирует свой набор реализаций. Если нужен меньший JS-набор, используйте Minimal и отдельные `/plugins/*` импорты. Замеряйте итоговую выбранную сборку.
+**A configuration flag does not establish tree-shaking.** Standard statically imports its behavior implementations. For a smaller JS selection, compose Minimal with separate `/plugins/*` imports and measure that resulting bundle.
 
-## Extended: ваши mentions и slash
+## Extended: application mentions and slash
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -105,7 +105,7 @@ import '@morfira-dev/wysiwyg/ui/editor.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const options = createExtendedPreset({
-  locale: 'ru',
+  locale: 'en',
   mentions: {
     provide: ({ query, signal }) => findPeople(query, signal),
     debounceMs: 120,
@@ -118,64 +118,64 @@ const editor = createEditor(editorHost, options);
 const ui = createExtendedEditorUI(toolbarHost, editor);
 ```
 
-`findPeople` и `findCommands` принадлежат приложению. Обе настройки и обе функции `provide` обязательны; можно явно вернуть `[]`, чтобы показать пустое состояние. Фабрика не вызывает providers и не выполняет сетевых запросов. Плагин вызывает их только при соответствующем взаимодействии после создания редактора.
+`findPeople` and `findCommands` belong to the application. Both configurations and both `provide` functions are required; returning `[]` explicitly supplies the empty state. Factories never call providers or issue requests. Plugins call them only after editor creation and the relevant interaction.
 
-Если `slash.actions` не передан, создаётся новый registry из `createSlashActions()` для обычного структурного форматирования: paragraph, heading1–heading6, bulletList, orderedList, blockquote, codeBlock. Если `actions` передан явно, он копируется и **заменяет** этот набор, без неявного объединения. Provider может вернуть action только из установленного registry. Таблицы/изображения в slash подключаются вашими явными callbacks. См. [подсказки и команды](/suggestions).
+When `slash.actions` is omitted, a fresh `createSlashActions()` registry provides ordinary structural formatting: paragraph, heading1–heading6, bulletList, orderedList, blockquote and codeBlock. An explicit `actions` record is copied and **replaces** those defaults without an implicit merge. A provider may return only an action in its installed registry. Table/image slash actions are explicit application callbacks. See [suggestions and actions](/suggestions).
 
-Порядок Extended: встроенные Standard-плагины, `mentions`, `slash`, затем плагины приложения. Behavior-пресет не импортирует menu view автоматически. `createExtendedEditorUI` из примера отдельно компонует Standard UI и оба меню подсказок; ему нужны установленные mentions/slash и явный `/plugins/suggestions.css`. Для собственного интерфейса отдельно подключите `createSuggestionMenu`, выбранный controller и `/plugins/suggestions.css`; клавиатурное поведение providers доступно и без menu view.
+Extended orders Standard built-ins, `mentions`, `slash`, then application plugins. The behavior preset does not import menu views automatically. The example’s `createExtendedEditorUI` separately composes Standard UI and both suggestion menus; it requires installed mentions/slash and explicit `/plugins/suggestions.css`. For custom UI, separately import `createSuggestionMenu`, the chosen controller and `/plugins/suggestions.css`; provider keyboard behavior also works without a menu view.
 
-## Параметры ядра и SDK
+## Core options and SDK
 
-Все пресеты принимают обычные `value`, `locale`, `translations`, `readOnly`, `placeholder`, `label`, `historyLimit`, `onChange`, а также `plugins` и `schema`. Типы опций экспортируются из соответствующих entrypoints: `MinimalPresetOptions`, `StandardPresetOptions`, `ExtendedPresetOptions`.
+All presets accept normal `value`, `locale`, `translations`, `readOnly`, `placeholder`, `label`, `historyLimit`, `onChange`, plus `plugins` and `schema`. Each entry exports its options type: `MinimalPresetOptions`, `StandardPresetOptions`, `ExtendedPresetOptions`.
 
 ```ts
 const options = createStandardPreset({
   plugins: [applicationPlugin],
   schema: applicationSchema,
-  translations: { 'ui.editor.bold': 'Сделать жирным' },
+  translations: { 'ui.editor.bold': 'Emphasize' },
   onChange: (change) => saveDraft(change.html),
 });
 ```
 
-Плагины и схема устанавливаются до импорта начального HTML. Семантические атрибуты и типизированные команды следуют [SDK](/plugin-sdk). Пресет не содержит второго resolver плагинов: повтор имени плагина или schema node по-прежнему отклоняет ядро до setup/монтирования. Неизвестные preset/feature-опции и неправильная структура конфигурации отклоняются фабрикой; полная проверка документа и схемы выполняется ядром.
+Plugins and schema are installed before initial HTML import. Semantic attributes and typed commands follow the [SDK](/plugin-sdk). Presets add no second plugin resolver: core still rejects duplicate plugin/schema names before setup/mount. Factories reject unknown preset/feature options and malformed configuration shape; core performs full document/schema validation.
 
-Каждый вызов создаёт новые массивы и определения встроенных плагинов. `translations`, переданные напрямую `schema` definitions, их атрибуты и enum-массивы копируются. Callback-функции и явно переданные объекты плагинов приложения сохраняют идентичность; их собственная per-instance безопасность остаётся обязанностью приложения. Изменение возвращённого пресета влияет только на этот результат, а не на последующие вызовы фабрики.
+Every call returns fresh arrays and built-in plugin definitions. `translations`, directly supplied `schema` definitions, their attribute rules and enum arrays are copied. Callback functions and explicitly provided application plugin objects retain identity; the application remains responsible for their own per-instance behavior. Changing one returned preset does not change later factory results.
 
-## SSR, фреймворки и cleanup
+## SSR, frameworks and cleanup
 
-Импорт и вызов фабрик допустимы без `document`, Custom Elements и framework runtime. `createEditor` и UI создавайте после browser mount. Providers и upload callbacks не вызываются во время конфигурации.
+Importing and calling factories is safe without `document`, Custom Elements or a framework runtime. Create the editor and UI after browser mount. Providers and upload callbacks are not invoked during configuration.
 
-Для обёрток передавайте поля готовых опций через поддерживаемый API адаптера; например, массив `createExtendedPreset(configuration).plugins` — обычный массив плагинов для Vue, React, Svelte, Angular и Web Component. Locale/value/read-only синхронизируются по контракту соответствующего [адаптера](/adapters).
+For wrappers, pass returned settings through the adapter's supported API. For example, `createExtendedPreset(configuration).plugins` is an ordinary plugin array accepted by Vue, React, Svelte, Angular and Web Component. Locale/value/read-only synchronization follows each [adapter contract](/adapters).
 
-Пресет не владеет lifetime редактора. Уничтожение UI оставляет редактор рабочим; уничтожение редактора освобождает его плагины и связанный готовый UI. В приложении допустимо явно вызвать `ui.destroy()` перед `editor.destroy()`; повторный destroy UI безопасен.
+Presets do not own editor lifetime. Destroying UI leaves its editor usable; destroying the editor releases plugins and associated ready UI. Calling `ui.destroy()` before `editor.destroy()` is also supported; repeated UI destroy is safe.
 
-## Размер и ограничения
+## Size and limits
 
-Измеряйте отдельно headless-пресет, UI и итоговый deduplicated closure с ядром, плагинами, формами и требуемыми CSS. Framework runtimes, карты исходников, декларации, дополнительные локали и шрифты не смешиваются с JS редактора.
+Measure headless presets, UI and the final deduplicated closure containing core, plugins, forms and required CSS separately. Keep framework runtimes, source maps, declarations, extra locale alternatives and fonts separate from editor JS.
 
-Сборка проверяет измеренные headless- и ready-профили: Standard — максимум 90000 gzip байт JS; Extended — 110000 gzip байт JS. По прямому решению пользователя от 2026-11-18 лимит Standard увеличен с 65000 до 80000: при последнем измеренном максимуме 64602 байта запас составляет 15398 вместо 398 байт. Это запас для полезных повседневных функций и поддерживаемого кода; отсутствие лишних runtime-зависимостей, выборочные импорты и tree-shaking остаются обязательными. Исходные лимиты ядра 200000 и optional-entry 150000 gzip байт, лимиты адаптеров и CSS не изменены; дублирующие raw JS guards профилей 200000/350000 по-прежнему сняты. Raw размер остаётся отдельным измерением. Каждый профиль ограничен 20000 байт minified CSS. Minimal измеряется отдельно без дополнительного preset-лимита. Фактические raw/gzip/Brotli/CSS сохраняются в `size-report.json`; framework runtime не входит в эти комплектации.
+The build enforces measured headless and ready profiles: Standard — at most 90000 gzip JS bytes; Extended — 110000 gzip JS bytes. On 2026-11-18 the user explicitly raised Standard from 65000 to 80000 bytes: the last measured largest selection of 64602 bytes has 15398 bytes of reserve instead of 398. This permits useful everyday features and maintainable code; avoiding unnecessary runtime dependencies, selective imports and tree-shaking remain mandatory. The original core 200000-byte and optional-entry 150000-byte gzip limits, adapter guards and CSS limits are unchanged; duplicate profile raw JS guards of 200000/350000 remain retired. Raw size remains a separately reported measurement. Each profile is limited to 20000 minified CSS bytes. Minimal is measured separately without an additional preset guard. Actual raw/gzip/Brotli/CSS sizes are saved in `size-report.json`; framework runtimes are excluded from these profiles.
 
-### Текущие измерения оптимизации
+### Current optimization measurements
 
-Ниже сохранён исторический замер от 2026-11-16 с действовавшим тогда лимитом 65000. Изменение бюджета 2026-11-18 не пересчитывает эти результаты; фактические новые размеры публикуются после сборки.
+The dated 2026-11-16 measurement below retains the 65000-byte guard used at that time. The 2026-11-18 policy change does not recalculate those results; new actual sizes are reported after building.
 
-Сборка 2026-11-16 сохраняет прежние фабрики, плагины, функции и тестовый набор. Самая насыщенная standard-комплектация сократилась с **64999 до 64482 байт gzip JS**: экономия **517 байт**, запас до 65000 — **518 байт**. Ориентир запаса 2000 байт пока **не достигнут**. Production-сборка и её параметры сжатия прежние; новые зависимости не добавлены. CSS не изменялся.
+The 2026-11-16 build preserves the existing factories, plugins, features and test set. The largest standard selection decreased from **64999 to 64482 gzip JS bytes**: **517 bytes saved**, leaving **518 bytes** below 65000. The 2000-byte reserve target is **not met yet**. Production build and compression settings are unchanged; no new dependency was retained. CSS is unchanged.
 
-| Комплектация | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
+| Selection | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Ядро | 89148 | 27637 | 24281 | 3293 | 1164 | 962 |
+| Core | 89148 | 27637 | 24281 | 3293 | 1164 | 962 |
 | Standard ready | 200151 | 59394 | 50946 | 11504 | 3747 | 3038 |
-| Standard + контекстная панель таблиц | 210933 | 62866 | 53729 | 12787 | 4322 | 3500 |
-| Standard + шрифты + свойства списков + LTR/RTL + текстовый contextual UI | 216326 | 64482 | 54754 | 11974 | 4019 | 3260 |
+| Standard + table context | 210933 | 62866 | 53729 | 12787 | 4322 | 3500 |
+| Standard + fonts + list properties + LTR/RTL + text-context UI | 216326 | 64482 | 54754 | 11974 | 4019 | 3260 |
 | Extended ready | 221339 | 65528 | 56052 | 12700 | 4239 | 3414 |
 
-Все значения — десятичные байты из генерируемого `size-report.json`; JS и CSS учитываются раздельно, общие чанки выбранной комплектации — один раз. Framework runtimes, source maps, декларации и шрифты исключены. Набор со шрифтами/свойствами списков/LTR/RTL/contextual UI — явно выбранная композиция, а не новые настройки Standard по умолчанию. Ядро пока превышает мягкую цель 80000 raw JS байт на **9148**. Эти измерения не являются результатом регрессионных тестов или замером скорости ввода; итог полного `check` и актуальная проверка примеров фиксируются в `specs/verification-backlog.md`.
+All values are decimal bytes from generated `size-report.json`; JS and CSS are separate, with shared chunks counted once per selected composition. Framework runtimes, source maps, declarations and fonts are excluded. The fonts/list-properties/LTR/RTL/contextual selection is explicit composition, not new Standard defaults. Core remains **9148 raw JS bytes** above its soft 80000-byte target. These measurements do not establish regression-test success or input performance; the complete `check` outcome and current example validation are recorded in `specs/verification-backlog.md`.
 
-По умолчанию UI использует перенос строк; явный `overflow: 'more'` включает проверенный приоритетный overflow целых групп. Текстовая [контекстная панель](/contextual-toolbar), [действия ссылок](/contextual-links), [свойства изображений](/contextual-images) и [панель таблиц](/contextual-tables) подключаются отдельными необязательными модулями, вне настроек пресетов по умолчанию. Реальные mobile/IME и скринридеры требуют отдельной проверки. Полные DOCX/PDF, совместное редактирование и офисный layout не входят в пресеты.
+UI wraps by default; explicit `overflow: 'more'` enables verified priority-based whole-group overflow. The text [contextual toolbar](/contextual-toolbar), [link actions](/contextual-links), [image properties](/contextual-images) and [table panel](/contextual-tables) are separate optional modules outside preset defaults. Real mobile/IME and screen-reader behavior still needs dedicated verification. Full DOCX/PDF conversion, collaboration and office-style layout are outside these presets.
 
-Команда [разделителя](/horizontal-rule) включена в standard/extended по умолчанию, с кнопкой в готовой панели. `horizontalRule: false` отключает её экземпляр; runtime-флаг не удаляет статические импорты. Для более узкого бандла используй выборочную композицию.
+The [horizontal-rule command](/horizontal-rule) is included in standard/extended by default, with a ready toolbar button. `horizontalRule: false` omits its instance; a runtime flag does not erase static imports. Use selective composition for a narrower bundle.
 
-Необязательные [шрифты и размер текста](/fonts) также подключаются явно через `plugins: [fonts()]`, без дополнительного CSS. Настроенные команды — ограниченный px/family-профиль, а не загрузчик шрифтов; штатные пресеты и ready toolbar не добавляют их автоматически.
+Optional [font-family/size commands](/fonts) are also installed explicitly through `plugins: [fonts()]`, with no additional CSS. Configured commands provide a bounded px/family profile rather than a font loader; preset defaults and ready toolbar do not add them automatically.
 
 
-Текущий лимит Standard по решению пользователя от 2026-11-23 — **90000 gzip байт JS**. Последний измеренный максимальный Standard-профиль — 79961 байт; запас — **10039 байт**. Extended и остальные лимиты не меняются. Исторические абзацы сохраняют прежние пороги.
+Current user-approved Standard allowance (2026-11-23): **90000 gzip JS bytes**. The last measured largest Standard composition is 79961 bytes, leaving **10039 bytes**. Extended and all other guards are unchanged. Historical paragraphs retain their former thresholds.

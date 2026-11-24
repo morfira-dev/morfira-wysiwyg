@@ -1,10 +1,10 @@
-# Поиск и замена
+# Find and replace
 
-Готовый интерфейс `createSearchForm` подключается отдельно через `@morfira-dev/wysiwyg/ui/search` и использует установленный `search()`. Поля, переходы, регистр/целое слово и текущая/массовая замена уже реализованы; основной JS плагина можно использовать без UI. [Пример и жизненный цикл формы](/ui#поиск-и-замена).
+The ready `createSearchForm` interface is imported separately from `@morfira-dev/wysiwyg/ui/search` and uses an installed `search()`. Query fields, navigation, case/whole-word and current/all replacement controls are included; the search plugin also works without UI. [Form example and lifecycle](/ui#find-and-replace).
 
-Необязательный модуль выполняет буквальный поиск по тексту документа. Он не меняет сохраняемый HTML для подсветки и не добавляет runtime-зависимостей. Активное совпадение выделяется через браузерный Selection/Range.
+This optional module performs literal text search without changing persisted HTML for highlighting or adding runtime dependencies. Native Selection/Range selects the active result.
 
-В готовой форме Enter в поле запроса находит первое совпадение, а Shift+Enter переходит к предыдущему по кругу. Для ещё не применённого запроса Shift+Enter сразу выбирает последнее совпадение. Попробуйте это в панели поиска на главной или стенде; сочетание работает и в read-only и не создаёт Undo.
+In the ready form, Enter in the query finds the first match, while Shift+Enter moves to the previous match with wrapping. For a query that has not been applied yet, Shift+Enter selects its last match immediately. Try it in the homepage or playground search panel; it also works read-only and creates no Undo entry.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -18,51 +18,51 @@ api.next();
 api.previous();
 ```
 
-`setQuery` проверяет запрос и обновляет результаты без перемещения фокуса/выделения. Параметры `caseSensitive` и `wholeWord` по умолчанию false при каждом новом запросе. Первая найденная позиция получает индекс 0; при отсутствии результатов current равен -1. `select(index)` фокусирует редактор и выделяет совпадение. Next/previous циклически переходят между результатами. Поиск и навигация не создают записей undo и работают в read-only.
+`setQuery` validates the query and updates results without moving focus/selection. `caseSensitive` and `wholeWord` default to false for each new query. The first result has index 0; current is -1 with no matches. `select(index)` focuses the editor and selects the result. Next/previous wrap around. Search/navigation create no undo history and work in read-only mode.
 
-Поиск пересекает строчные стили и ссылки: `Mor<strong>fira</strong>` находится по запросу Morfira. Он не склеивает абзацы, заголовки, пункты/вложенные списки, ячейки, подписи, блоки кода/цитат, `br`, изображения и `hr`. Подписи картинок входят в поиск, alt/title/URL — нет. Таблицы с rowspan/colspan сохраняют структуру.
+Search crosses inline styles and links: `Mor<strong>fira</strong>` matches Morfira. It never concatenates paragraphs, headings, items/nested lists, cells, captions, pre/blockquote blocks, br, images or hr. Image captions are searchable; alt/title/URL attributes are not. Merged table geometry stays intact.
 
-## Замена
+## Replacement
 
 ```ts
 const replaced = api.replaceCurrent('Morfira Studio'); // boolean
-const count = api.replaceAll('Morfira Studio'); // число замен
+const count = api.replaceAll('Morfira Studio'); // replacement count
 api.clear();
 ```
 
-Команды используют текущий индекс найденного совпадения, поэтому можно вводить замену в поле формы, не теряя найденный фрагмент. Текст замены буквальный: `<b>`, `$&` и другие символы не превращаются в HTML или шаблоны. Замена наследует строчное оформление и ссылку в начале совпадения; соседние фрагменты сохраняются. После удаления текста могут остаться пустые строчные обёртки без видимого содержимого.
+Commands operate on the current indexed match, so typing in a replacement form does not lose the target. Replacement text is literal: `<b>`, `$&` and other characters never become HTML or replacement templates. Replacement inherits the inline formatting/link at the match start; surrounding fragments remain intact. Empty inline wrappers may remain after text removal, with no visible content.
 
-Замена одного совпадения — одна транзакция. «Заменить все» использует снимок результатов и меняет их с конца документа за одну транзакцию; новые совпадения в вставленном тексте в тот же проход не обрабатываются. Undo/redo восстанавливает весь результат и выделение. После замены курсор стоит в конце нового текста; для replaceAll — в конце первой замены. После replaceCurrent текущим становится следующее совпадение после вставленного текста, при необходимости с переходом к началу.
+Replacing one result is one transaction. Replace all snapshots results and edits in reverse document order in ONE transaction; newly inserted matching text is not searched again in that invocation. Undo/redo restores the whole edit and selection. The caret ends after the inserted text, or after the first replacement for replaceAll. After replaceCurrent, the current match moves to the next result after the insertion, wrapping if necessary.
 
-Read-only и активная IME-композиция блокируют замену (false/0). Отсутствие совпадений и замена текста на такой же не создают историю. Ошибочные параметры отклоняются до изменения документа.
+Read-only and active IME composition block replacement (false/0). No matches and identical replacements create no history. Invalid options reject before document mutation.
 
-## Состояние и обновления
+## State and updates
 
 ```ts
 const state = api.getState();
 // { query, options, matches: [{ index, length, text }], current, error? }
 const unsubscribe = api.subscribe((next) => {
-  // Обновите счётчик и кнопки собственной панели.
+  // Update your panel's counter and controls.
 });
 unsubscribe();
 ```
 
-Состояние — независимая копия. `index`/`length` используют UTF-16 смещения по textContent, как API выделения ядра, а не по innerText с добавленными браузером переносами. Ввод, форматирование, undo/redo и внешняя замена автоматически пересчитывают результаты без перемещения выделения. Подписки не вызываются немедленно: начальное состояние получите через getState. Состояние и очистка принадлежат экземпляру редактора; после destroy команды недоступны.
+State is an independent snapshot. index/length are UTF-16 textContent offsets, matching core selection rather than innerText with synthetic line separators. Input, formatting, undo/redo and external replacement recompute results without moving selection. Subscriptions do not run immediately; read initial state via getState. State and disposal belong to the editor instance; commands become unavailable after destroy.
 
-## Границы первой версии
+## First-version boundaries
 
-- Только буквальный поиск, без regex и автоматического перехвата Ctrl/Cmd+F.
-- Регистр обрабатывается стандартным Unicode case folding JavaScript, без языковых правил и Unicode-нормализации. Целое слово проверяет внешние границы по буквам, цифрам, комбинируемым знакам и соединительной пунктуации (включая `_`). Эмодзи и обычная пунктуация разделяют слова.
-- Запрос — до 1000 UTF-16 единиц, замена — до 20000. CR/LF не принимаются: создание/удаление блоковых переносов не входит в контракт текстовой замены.
-- Не более 10000 совпадений. setQuery сверх лимита бросает исключение и сохраняет прежнее состояние. Если лимит превышен при обычном редактировании, запрос сохраняется, состояние получает `error: 'match-limit'`, matches становится пустым; ввод не откатывается. Уточните запрос или уменьшите документ. После снижения количества совпадений состояние восстанавливается автоматически. Замена при переполнении отклоняется, частичная скрытая замена не выполняется.
-- Базовый поиск выделяет активное совпадение; все результаты рисует отдельный [необязательный модуль](/search-highlights).
+- Literal search only: no regular expressions or Ctrl/Cmd+F interception.
+- Case matching uses standard JavaScript Unicode case folding, without locale-specific rules or Unicode normalization. Whole-word boundaries treat letters, numbers, combining marks and connector punctuation (including `_`) as word characters; emoji and ordinary punctuation are separators.
+- Queries accept up to 1000 UTF-16 units, replacement up to 20000. CR/LF are rejected: creating/removing block breaks is outside text replacement.
+- At most 10000 results. setQuery above the limit throws and retains previous state. If normal editing exceeds the limit, query is retained with `error: 'match-limit'` and empty matches; editing is not rolled back. Narrow the query or reduce the document. State recovers automatically under the limit. Replacement while overflowing rejects; no truncated partial replacement is performed.
+- Basic search selects the active result; an [independent optional module](/search-highlights) paints every match.
 
-На [главной](/#editor) и [стенде](/playground) есть пример «Поиск и замена». Откройте одноимённую панель справа. В нём восемь буквальных совпадений Morfira без учёта регистра; «Целое слово» исключает MorfiraPlus, оставляя семь. Поле замены и флаги — черновики до явного действия. Результаты обновляются при редактировании документа, а навигация остаётся доступной в режиме чтения.
+The [homepage](/#editor) and [playground](/playground) include a “Find and replace” sample and matching panel. The sample contains eight case-insensitive literal Morfira matches; Whole word excludes MorfiraPlus, leaving seven. Replacement fields and option flags remain drafts until an explicit action. Results update while the document changes, and navigation remains available in read-only mode.
 
-Пересоздание DOM при форматировании без изменения HTML также обновляет поисковые диапазоны. Наблюдатель принадлежит экземпляру и отключается при destroy. Размер текста после замены проверяется до выделения больших строк: действует общий предел документа 5000000 UTF-16 единиц.
+DOM reconstruction by identical-HTML formatting also refreshes search ranges. The observer belongs to the instance and disconnects on destroy. Projected replacement text is checked before large strings are allocated, using the shared 5000000 UTF-16 document limit.
 
-Семантические обёртки с `data-mw-node`, включая [сохраняемые упоминания](/persistent-mentions), исключены из поиска и замены целиком. Совпадение не проходит через их границу; позиции последующего обычного текста учитывают их видимую длину. Это сохраняет identity metadata и не даёт автоматической замене переписать подпись упоминания.
+Semantic wrappers with `data-mw-node`, including [persistent mentions](/persistent-mentions), are excluded from search and replacement entirely. Matches cannot cross their boundaries; offsets for later ordinary text still include their visible length. This preserves identity metadata and keeps automatic replacement from rewriting mention labels.
 
-## Подсветка всех совпадений
+## Highlighting every match
 
-Необязательный [модуль подсветки](/search-highlights) рисует все результаты через CSS Custom Highlight API, без DOM-обёрток, изменений HTML/JSON или истории. Обычный `search()` его не устанавливает. В поддерживаемом браузере подключите отдельные JS и CSS; без API поиск и навигация сохраняются. `getSearchRanges(editor)` возвращает независимые наблюдательные Range и текущий индекс, не перемещая выделение; после изменений документа снимок может устареть.
+The optional [highlight module](/search-highlights) paints all results through CSS Custom Highlight API, without DOM wrappers, HTML/JSON changes or history. Ordinary `search()` does not install it. Import its separate JS and CSS where native support is available; search/navigation remain usable without the API. `getSearchRanges(editor)` returns independent observational ranges and the current index without changing selection; snapshots can become stale after document edits.

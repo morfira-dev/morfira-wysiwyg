@@ -1,6 +1,6 @@
-# Изображения из буфера и drop
+# Image clipboard and drop input
 
-Необязательный `imageInput()` добавляет вставку и перетаскивание **одного растрового файла**. Это отдельный импорт без runtime-зависимостей, интерфейса и собственного транспорта. Пресеты автоматически его не устанавливают.
+Optional `imageInput()` adds paste and drop of **one raster file**. It is a separate import with no runtime dependencies, UI or transport. Presets do not install it automatically.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -15,8 +15,8 @@ const editor = createEditor(host, {
         const body = new FormData();
         body.append('image', file);
         const response = await fetch('/api/images', { method: 'POST', body, signal });
-        if (!response.ok) throw new Error('Не удалось загрузить изображение');
-        return response.json(); // проверяемое ImageValue, например { src: '/uploads/photo.png' }
+        if (!response.ok) throw new Error('Image upload failed');
+        return response.json(); // validated ImageValue, e.g. { src: '/uploads/photo.png' }
       },
     }),
     imageInput({ onError: (error) => console.error(error) }),
@@ -24,22 +24,22 @@ const editor = createEditor(host, {
 });
 ```
 
-`images({ upload })` должен быть установлен раньше `imageInput()`. Для standard/extended передайте callback в `images: { upload }`, а `imageInput()` — в `plugins`: прикладные плагины устанавливаются после встроенных. `ImageInputOptions` содержит только необязательный `onError(error: unknown)`. Ошибки транспорта и неверные файлы передаются ему; отмена не считается ошибкой.
+Install `images({ upload })` before `imageInput()`. For standard/extended, supply `images: { upload }` and add `imageInput()` to `plugins`: application plugins run after built-ins. `ImageInputOptions` contains only optional `onError(error: unknown)`. Invalid files and transport failures reach this callback; cancellation is not an error.
 
-## Где вставляется файл
+## Insertion target
 
-Вставка использует единственный текущий native Range этого редактора. Drop определяет курсор по координатам указателя средствами браузера; прежний курсор не используется как запасной. Нужна обычная позиция внутри одного абзаца/заголовка либо простого текстового пункта, ячейки, pre или blockquote. Выделение через блоки, чужой редактор, figure/подпись, защищённые и семантические узлы отклоняются до транспорта. Без browser caret-at-point API drop не вставляет файл. Перемещения существующих изображений этот модуль не реализует.
+Paste uses one current native range in this editor. Drop resolves a caret from pointer coordinates through the browser API and never falls back to the previous caret. Supported targets are ordinary positions within one paragraph/heading or simple inline list-item, cell, pre or blockquote. Cross-block selections, another editor, figures/captions, protected and semantic nodes are rejected before transport starts. A browser without a caret-at-point API cannot insert drops. Moving existing images is outside this module.
 
-Поддерживаются непустые PNG, JPEG, GIF, WebP и AVIF. Несколько файлов, SVG и неподдерживаемый тип отклоняются. Любая операция, объявляющая файлы, перехватывается: сопутствующие HTML, URL и текст не вставляются, даже при ошибке файла. Вставка без файлов остаётся на прежнем HTML/текстовом пути. Read-only и IME не изменяют документ.
+Accepted files are nonempty PNG, JPEG, GIF, WebP and AVIF. Multiple files, SVG and unsupported types are rejected. Every operation advertising files is consumed: accompanying HTML, URLs and text are ignored even when the file fails validation. Transfers without files retain ordinary HTML/text paste. Read-only and IME cannot mutate the document.
 
-Загрузка сохраняет позицию до ожидания callback; перемещение выделения не переносит результат. Успешная вставка — один Undo. Новое редактирование, замена документа, read-only, IME и уничтожение блокируют поздний результат. Модуль снимает слушатели и отменяет только собственный запрос; остальные гарантии описаны в [загрузке изображений](/images).
+Upload captures the target before awaiting the callback; moving the selection does not relocate insertion. A successful insert is one Undo step. Document edits/replacement, read-only, IME and destruction reject late results. The plugin removes its listeners and cancels only its own request; see the remaining [image upload guarantees](/images).
 
-## Попробовать локально
+## Local demo
 
-На [главной](/#editor) или в [playground](/playground) выберите пустой документ, нажмите «Загрузить пример», затем нажмите внутри абзаца и вставьте скопированный растровый файл либо перетащите один файл на текст. **Локальный callback через короткую задержку возвращает `/logo.svg` вместо содержимого файла. Файл не отправляется, не сохраняется и не декодируется.** Это демонстрация маршрута ввода и отмены, а не предпросмотр выбранного файла.
+On the [homepage](/#editor) or [playground](/playground), choose an empty document, click “Load sample”, then click inside its paragraph, then paste a copied raster file or drop one onto the text. **After a short delay, the local callback returns `/logo.svg` instead of the selected file contents. Files are not uploaded, stored or decoded.** This demonstrates input routing and cancellation rather than a file preview.
 
-Проверка MIME и размера на клиенте помогает интерфейсу, но не доказывает безопасность содержимого. Сервер обязан проверить реальные байты, ограничить ресурсы, авторизовать загрузку и выдачу файла; приложение отвечает за CSP и хранение. Плагин не загружает URL, не читает пути и не сохраняет data/blob URL. См. [границы безопасности](/security).
+Client MIME and size checks are usability gates, not content security guarantees. Your backend must validate actual bytes, bound resources and authorize upload/access. The application owns CSP and storage. The plugin never fetches URLs, reads file paths or persists data/blob URLs. See [security boundaries](/security).
 
-Допустимый drop устанавливает курсор до вызова upload. Если затем `images` отклонит размер файла или отсутствие callback, документ и история останутся прежними, но фокус/курсор могут измениться. `onError` может вернуть `void` или `Promise<void>`; его собственные ошибки обработаны.
+An accepted drop places its caret before calling upload. If `images` then rejects the file size or missing callback, document content and history stay unchanged, but focus/caret may move. `onError` may return `void` or `Promise<void>`; errors in the callback itself are contained.
 
-Курсор на границе контейнера единственного пустого обычного абзаца или заголовка нормализуется внутрь этого блока. Произвольные границы нескольких или непустых блоков не поддерживаются.
+A surface-boundary caret in a document containing exactly one empty ordinary paragraph or heading resolves inside that block. Arbitrary boundaries around multiple or nonempty blocks remain unsupported.

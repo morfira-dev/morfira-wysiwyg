@@ -1,26 +1,26 @@
-# Статистика текста
+# Text statistics
 
-Необязательный модуль `/plugins/statistics` считает слова и символы документа и текущего выделения. Он не меняет HTML, выделение, фокус и историю, не добавляет runtime-зависимостей.
+The optional `/plugins/statistics` module counts words and characters in the document and current selection. It does not change HTML, selection, focus or history, and adds no runtime dependencies.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
 import { statistics, statisticsCommands } from '@morfira-dev/wysiwyg/plugins/statistics';
 import type { StatisticsState } from '@morfira-dev/wysiwyg/plugins/statistics';
 
-const editor = createEditor(host, { plugins: [statistics({ locale: 'ru' })] });
+const editor = createEditor(host, { plugins: [statistics({ locale: 'en' })] });
 const api = statisticsCommands(editor);
 const updateCounter = (state: StatisticsState) => {
-  counter.textContent = `${state.document.words} слов, ${state.document.characters} символов`;
+  counter.textContent = `${state.document.words} words, ${state.document.characters} characters`;
 };
 updateCounter(api.getState());
 const unsubscribe = api.subscribe(updateCounter);
-// При удалении собственной панели:
+// When removing your own panel:
 unsubscribe();
 ```
 
-Плагин использует платформенный **Intl.Segmenter**. Его наличие обязательно; собственный полифилл и неточный fallback по UTF-16 не включаются. Импорт и создание `statistics()` безопасны без DOM при наличии Intl.Segmenter; сам редактор создаётся в браузере. `locale` — необязательная корректная языковая метка. По умолчанию используется локаль среды. Параметр проверяется при создании плагина; для изменения локали создайте новый экземпляр плагина/редактора.
+The module requires platform **Intl.Segmenter** support; it includes neither a polyfill nor an inaccurate UTF-16 fallback. Importing and creating `statistics()` is safe without DOM when Intl.Segmenter exists; editor creation requires a browser. `locale` is an optional valid language tag, defaulting to the runtime locale. It is validated when the plugin is created. Create a new plugin/editor instance to change locale.
 
-## Формат результата
+## Result shape
 
 ```ts
 interface TextStatistics {
@@ -34,34 +34,34 @@ interface StatisticsState {
 }
 ```
 
-- `characters` — число Unicode-графем. Буква с комбинируемым знаком, семейный emoji и флаг считаются одним символом, даже если части находятся в соседних строчных элементах.
-- `charactersWithoutWhitespace` исключает графемы, целиком состоящие из пробельных символов, включая NBSP. Если к пробелу прикреплён видимый комбинируемый знак, такая графема сохраняется.
-- `words` — сегменты, для которых Intl.Segmenter возвращает `isWordLike`. Пунктуация и emoji не становятся словами только из-за наличия символов. Языковая сегментация зависит от локали и Unicode-данных браузера.
+- `characters` counts Unicode grapheme clusters. A letter plus combining marks, a family emoji or a flag is one character, even when split across adjacent inline elements.
+- `charactersWithoutWhitespace` excludes clusters consisting entirely of whitespace, including NBSP. A whitespace character with a visible combining mark remains counted.
+- `words` counts segments whose Intl.Segmenter `isWordLike` value is true. Punctuation and emoji do not become words merely by containing characters. Linguistic segmentation depends on locale and browser Unicode data.
 
-Это отличается от `string.length`: JavaScript измеряет UTF-16 единицы, а графема может занимать несколько единиц. Статистика не является оценкой времени чтения и не обещает полного совпадения с Word или другими редакторами.
+This differs from `string.length`, which measures UTF-16 units: one grapheme can contain multiple units. Statistics do not estimate reading time or promise exact parity with Word or other editors.
 
-## Текст и границы
+## Text and boundaries
 
-Считаются реальные текстовые узлы и их пробелы. Строчные стили и ссылки не разбивают слово или графему. Абзацы, заголовки, пункты и вложенные списки, ячейки, подписи, pre/blockquote, `br`, картинки и `hr` разделяют текстовые последовательности. Искусственный перенос между блоками **не добавляет символ**. Например, соседние ячейки `one` и `two` дают два слова и шесть символов, а не одно слово `onetwo`.
+Real text nodes and their whitespace are counted. Inline styles and links do not split words or graphemes. Paragraphs, headings, items/nested lists, cells, captions, pre/blockquote, br, images and hr separate runs. A synthetic break between blocks **does not add a character**. For example, adjacent cells containing one and two yield two words and six characters rather than the single word onetwo.
 
-Подписи изображений включаются. Alt/title/URL картинок и другие HTML-атрибуты не считаются. Текст других редакторов, интерфейс панели и исполняемые/чужие DOM-узлы не входят в статистику документа. Rowspan/colspan не дублируют содержимое объединённых ячеек.
+Image captions are included. Image alt/title/URL and other HTML attributes are excluded. Other editor instances, panel UI and executable/foreign DOM nodes are outside document statistics. Rowspan/colspan never duplicate merged-cell content.
 
-`selection` относится к фактическому браузерному Range внутри этого редактора. Свёрнутый курсор, выделение с границей за пределами редактора и выбор одной картинки дают нули. Частичное выделение строк/блоков сохраняет их смысловые границы. Если пользователь выделил только часть графемы, считается именно выделенная строка; плагин не исправляет и не сдвигает Range. Переход фокуса в поле вне редактора может обнулить статистику выделения — это не сохранённая закладка формы.
+`selection` describes the actual native Range inside this editor. A collapsed caret, a selection with a boundary outside the editor, or selecting one image yields zero metrics. Partial rich/block selections preserve their semantic boundaries. If the user selects only part of a grapheme, the selected string is counted as-is; the plugin never snaps or changes the Range. Moving focus into an outside field can clear selection metrics: they are not the form's saved bookmark.
 
-## Обновления и очистка
+## Updates and cleanup
 
-`getState()` вычисляет актуальные значения и возвращает независимую копию. Изменение полученного объекта не меняет состояние плагина. `subscribe` не вызывает обработчик сразу; начальное состояние нужно получить отдельно. Подписка сообщает только об изменении численных показателей после ввода, форматирования, undo/redo, внешней замены или изменения выделения. Форматирование, не меняющее показателей, отдельного события статистики не создаёт.
+`getState()` calculates current values and returns an independent snapshot. Mutating it does not change plugin state. `subscribe` is not immediate; read initial values separately. Subscriptions notify only when numeric metrics change after input, formatting, undo/redo, external replacement or selection changes. Formatting that leaves metrics unchanged creates no statistics event.
 
-Статистика доступна в read-only. Один объект плагина можно установить в несколько редакторов: состояние и подписки не разделяются. После destroy команды недоступны, подписки редактора очищаются; возвращённый unsubscribe остаётся безопасным для повторного вызова.
+Statistics remain available in read-only mode. Reusing one plugin object in several editors does not share state/subscriptions. After destroy, commands are unavailable and editor subscriptions are disposed; returned unsubscribe functions remain safe to invoke repeatedly.
 
-На [главной](/#editor) и [стенде](/playground) статистику можно проверить на Unicode-тексте и выделении. Оформление собственной панели остаётся ответственностью приложения; для работы подсчёта готовый UI не требуется.
+The [homepage](/#editor) and [playground](/playground) let you try Unicode text and selection counts. Applications own the panel's appearance; counting does not require the provided UI.
 
-На главной и в стенде выберите «Unicode и статистика», затем откройте панель «Статистика». В примере есть комбинируемая буква, семейный эмодзи и флаг. Выделение показывает отдельные счётчики; строка состояния использует статистику всего документа.
+On the homepage/playground choose “Unicode and statistics”, then open Statistics. The sample includes a combining sequence, family emoji and flag. Selection has its own counters; the status bar uses document totals.
 
-В некоторых проверенных реализациях Intl.Segmenter слово с комбинируемым знаком получает ошибочный isWordLike: false рядом с другим текстом. Для таких сегментов с буквами/цифрами модуль повторно проверяет исходный сегмент отдельно через Intl.Segmenter. Текст и графемы не нормализуются; классификация слов остаётся платформенной: числовые keycap-последовательности могут считаться числовыми токенами, в отличие от семейных эмодзи и флагов. Это точечная совместимость, а не собственный лингвистический анализатор.
+Some tested Intl.Segmenter implementations return an incorrect isWordLike: false for a decomposed word in context. A false segment containing letters/numbers is rechecked independently through Intl.Segmenter, without normalizing text or graphemes. Classification remains platform WordLike: numeric keycap sequences may count as numeric tokens, unlike pictographic family and flag emoji. This is a targeted compatibility check rather than a custom linguistic tokenizer.
 
-## Повторное использование неизменившихся фрагментов
+## Reusing unchanged document runs
 
-Каждое чтение по-прежнему собирает актуальную последовательность смысловых текстовых фрагментов с границами блоков, ячеек, изображений и чужих узлов. Для точно совпавшего фрагмента на той же позиции плагин использует его приватные Unicode-счётчики. Поэтому обычное движение курсора/выделения и форматирование без изменения текста больше не запускают сегментацию всего неизменившегося документа. Показатели выделения рассчитываются независимо и актуально.
+Every read still collects the current ordered semantic text runs, including block/cell/image/foreign-node boundaries. For an exact unchanged run at the same position, the plugin reuses its private Unicode counts. Ordinary caret/selection movement and formatting-only edits therefore avoid segmenting the entire unchanged document again. Selection counts remain independently fresh.
 
-Кеш хранит только фрагменты/счётчики последнего документа отдельно для экземпляра, не содержит DOM-ссылок или растущей карты истории и очищается при dispose. Возвращаемые значения — независимые копии. Полный сбор/сравнение фрагментов остаётся зависимым от размера документа; постоянное время не обещается. Одинаковый склеенный текст с разными смысловыми границами проверяется корректно. См. [методику замеров](/performance).
+The cache retains only the last document's runs/counts per editor, has no DOM references or historical growing map, and is cleared on disposal. Returned values are independent copies. This does not replace validation or make traversal constant-time: reading/comparing runs still grows with document size. Equal concatenated text with different boundaries is re-evaluated correctly. See [measurement methodology](/performance).

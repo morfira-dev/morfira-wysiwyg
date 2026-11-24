@@ -1,10 +1,10 @@
-# Чек-листы
+# Checklists
 
-[Попробовать на главной](/#editor) или [в стенде возможностей](/playground): открой **«Чек-листы»**, нажми **«Загрузить чек-лист»** и поставь курсор в текст одного пункта. Пример заменяет документ и сбрасывает историю.
+[Try the homepage](/#editor) or [feature laboratory](/playground): open **Checklists**, click **Load checklist** and place the caret in one item. Loading replaces the document and resets history.
 
-Это отдельный необязательный плагин с нулём runtime-зависимостей. Он использует обычные `ul`/`ol` и `li`: пункты-задачи и обычные пункты могут находиться в одном списке. Готовые пресеты пока **не подключают его автоматически**.
+This optional plugin has zero runtime dependencies. It uses ordinary `ul`/`ol` and `li`: task and ordinary items may share the same list. Ready presets **do not install it automatically** yet.
 
-## Подключение
+## Installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -14,29 +14,29 @@ import '@morfira-dev/wysiwyg/plugins/checklists.css';
 
 const editor = createEditor(host, {
   plugins: [checklists()],
-  value: '<ul><li data-checklist-checked="false">Написать идею</li><li data-checklist-checked="true">Сохранить результат</li><li>Обычный пункт</li></ul>',
+  value: '<ul><li data-checklist-checked="false">Write an idea</li><li data-checklist-checked="true">Save the result</li><li>Ordinary item</li></ul>',
 });
 const tasks = checklistCommands(editor);
 ```
 
-Подключи плагин до разбора начального документа. Для пресета добавь его через существующий параметр `plugins`:
+Install the plugin before parsing the initial document. With a preset, use its existing `plugins` option:
 
 ```ts
 const options = createStandardPreset({ plugins: [checklists()] });
 const editor = createEditor(host, options);
 ```
 
-`createStandardPreset` импортируется из `@morfira-dev/wysiwyg/presets/standard`; это явная композиция, а не изменение набора плагинов пресета. CSS подключается отдельно и не загружает шрифты или библиотеку иконок.
+Import `createStandardPreset` from `@morfira-dev/wysiwyg/presets/standard`; this is explicit composition, not a change to the preset's built-in feature set. CSS is explicit and loads no fonts or icon library.
 
-## Мышь и клавиатура
+## Mouse and keyboard
 
-`checklists()` включает прямое взаимодействие по умолчанию. Заверши обычный клик левой кнопкой по квадратному CSS-маркеру: переключится именно этот пункт, включая вложенную задачу. Клик в тексте или отступе рядом не переключает выполнение; отменённое нажатие и перетаскивание с маркера не создают изменение. Для мыши нужен импорт `checklists.css` с видимым маркером.
+`checklists()` enables direct interaction by default. Complete an unmodified primary click on the square CSS marker to toggle that specific item, including a nested task. Text and nearby list padding are not toggle targets; canceled presses and dragging away create no change. Mouse interaction requires the explicit `checklists.css` import and a visible marker.
 
-Поставь курсор или выдели текст внутри одной задачи и нажми **Ctrl+Enter** либо **Cmd+Enter** на Mac. Используется ровно один Ctrl/Meta без Alt/Shift; автоповтор и IME не переключают состояние. Обычные пункты и диапазон между задачами сохраняют обычное поведение Enter. Внешние кнопки демо можно активировать через Tab и Enter/Space.
+Place the caret or a text range inside one task and press **Ctrl+Enter**, or **Cmd+Enter** on Mac. Exactly one Ctrl/Meta modifier is used, without Alt/Shift; key repeat and IME do not toggle state. Ordinary items and cross-task ranges retain their existing Enter behavior. The external demo buttons also support Tab and Enter/Space.
 
-Каждое переключение — один Undo и одно уведомление. Текст, вложенные задачи и существующее выделение внутри редактора, включая обратное, сохраняются. Read-only блокирует мышь и shortcut; внешняя синхронизация HTML/JSON остаётся доступной. После Undo/Redo или замены документа маркер выводится из актуальных метаданных.
+Each actual toggle creates one Undo step and change notification. Text, child tasks and an existing editor selection, including its backward direction, are preserved. Read-only blocks mouse and shortcut mutation while external HTML/JSON synchronization remains available. Undo/Redo and external replacement derive markers from the current stored metadata.
 
-Для собственного интерфейса отключи встроенные обработчики, оставив команды:
+For application-owned interaction, disable the built-in handlers and keep commands:
 
 ```ts
 import type { ChecklistOptions } from '@morfira-dev/wysiwyg/plugins/checklists';
@@ -45,36 +45,36 @@ const options: ChecklistOptions = { interactive: false };
 const editor = createEditor(host, { plugins: [checklists(options)] });
 ```
 
-В демо открой **«Загрузить переключение чек-листов»**. Есть родительская и вложенная задачи, многоабзацный пункт и RTL-пример. Кнопки выбора ставят курсор или создают обратное выделение; затем попробуй маркер, shortcut и Undo. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+Open **Load checklist interactions** in the demo: it includes parent/child tasks, a multi-paragraph item and an RTL example. Selection buttons place a caret or create a backward range; then try the marker, shortcut and Undo. Current browser/example execution results and their limits are recorded under [testing](/testing).
 
-## Команды и состояние
+## Commands and state
 
-Команды используют фактическое выделение браузера внутри редактора. Поддержаны курсор или диапазон целиком внутри **одного** обычного `li` в `ul`/`ol`. Для `insert()` также поддержан один обычный абзац или заголовок непосредственно в корне поверхности.
+Commands use the actual browser selection inside the editor. A caret or range wholly inside **one** ordinary `li` of a `ul`/`ol` is supported. `insert()` also accepts one ordinary paragraph or heading directly under the editor surface.
 
-| Метод | Результат |
+| Method | Result |
 | --- | --- |
-| `insert()` | Делает обычный пункт невыполненной задачей; корневой абзац/заголовок превращает в маркированный пункт-задачу. Состояние уже существующей задачи не сбрасывает |
-| `setChecked(true)` / `setChecked(false)` | Задаёт состояние выбранной задачи |
-| `toggle()` | Переключает состояние выбранной задачи |
-| `remove()` | Удаляет метаданные задачи, сохраняя обычный пункт, его содержимое и структуру списка |
-| `getState()` | Возвращает новый снимок `{ disabled, active, checked }` |
+| `insert()` | Marks an ordinary item incomplete; converts a root paragraph/heading into a bullet task item. Preserves an existing task's checked state |
+| `setChecked(true)` / `setChecked(false)` | Sets the selected task's state |
+| `toggle()` | Toggles the selected task's state |
+| `remove()` | Removes task metadata while keeping the ordinary item, its content and list structure |
+| `getState()` | Returns a fresh `{ disabled, active, checked }` snapshot |
 
-`disabled` отражает доступность `insert()`, включая read-only, composition и неподдержанное выделение. `active` показывает выбранную задачу, а `checked` — её состояние либо `undefined`. Активная задача может оставаться активной в read-only, но команды не меняют документ. Для `setChecked`/`toggle`/`remove` дополнительно нужна `active: true`. Недоступная команда ничего не делает; допустимый `setChecked` проверяет аргумент типа boolean. Сохранённые ссылки на команды после уничтожения редактора выбрасывают ошибку.
+`disabled` reflects `insert()` eligibility, including read-only, composition and unsupported selection. `active` identifies a selected task, while `checked` is its state or `undefined`. A task can remain active in read-only, but commands cannot mutate it. `setChecked`/`toggle`/`remove` also require `active: true`. Disabled commands are no-ops; an enabled `setChecked` validates a boolean argument. Retained command handles throw after editor destruction.
 
-Изменение — одна обычная транзакция, запись Undo и уведомление об изменении; no-op не создаёт историю. Используй существующие события редактора для обновления внешних кнопок, а не отдельную глобальную модель задач. Перевод редактора в read-only не мешает внешней синхронизации HTML/JSON.
+An actual change is one ordinary transaction, Undo step and change notification; a no-op adds no history. Refresh external controls through existing editor events rather than a separate global task model. Read-only does not block external HTML/JSON synchronization.
 
-## Ввод и формат документа
+## Input and persisted format
 
-Enter сохраняет состояние исходного пункта, а новый пункт-задачу делает невыполненным. Shift+Enter оставляет состояние прежним. При отступах и подъёме фактический `li` переносится вместе с метаданными. При соединении сохраняется состояние оставшегося первого пункта; выход в обычный абзац снимает метаданные `li`. Действуют существующие ограниченные правила списков, а не произвольное преобразование любых деревьев.
+Enter preserves the source item's state and makes the new task incomplete. Shift+Enter keeps the state. Indent/outdent moves the actual `li` with its metadata. Joins retain the surviving first item's state; exiting into an ordinary paragraph drops LI metadata. Existing bounded list-editing profiles apply rather than arbitrary tree transformation.
 
-Состояние хранится только в `data-checklist-checked="false"` или `"true"` на `li`, без маркера контейнера, `input` или UI-узлов в документе. При установленном плагине метаданные проходят HTML/JSON, вставку, внешнюю замену и Undo/Redo. Недопустимое зарегистрированное значение отклоняется до изменения документа.
+State is stored only as `data-checklist-checked="false"` or `"true"` on `li`, without a container marker, `input` or persisted UI nodes. With the plugin installed, metadata survives HTML/JSON, paste, external replacements and Undo/Redo. An invalid registered value is rejected before live mutation.
 
-**Без плагина или эквивалентной схемы метаданные задачи удаляются и из HTML, и из JSON.** Обычный текст и список остаются; сохранение семантики задачи через такого читателя не гарантируется. Это не owning-семантика `data-mw-node` и не обещание round-trip без плагина.
+**Without the plugin or equivalent schema, task metadata is removed from both HTML and JSON.** Ordinary text and list content remain; preserving task semantics through such a reader is not guaranteed. This is not owning `data-mw-node` identity or a promise of plugin-free round trips.
 
-## Интерфейс и ограничения
+## UI and limits
 
-Маркер рисует отдельный scoped CSS. Его размер, отступ и цвета настраиваются через `--mw-checklist-*`; направление и геометрия учитываются при проверке области клика. Скрытый или отсутствующий маркер не создаёт условную фиксированную зону переключения. Обработчики повторно проверяют фактический пункт после focus-callback, read-only/composition и перестройки DOM, чтобы не изменить заменённую задачу.
+Separate scoped CSS draws the marker. Size, gap and colors use `--mw-checklist-*` variables; hit testing follows the actual direction and geometry. A hidden or absent marker does not create an assumed fixed gutter hit box. Handlers revalidate the actual item after focus callbacks, read-only/composition and DOM reconstruction, preventing a stale action from toggling a replacement task.
 
-Маркер **не является нативным checkbox** и не объявляется отдельным фокусируемым контролом. Для клавиатуры доступны shortcut и обычные внешние кнопки. Полная доступность, поведение screen reader и реальные touch/IME-устройства пока не подтверждены. Внутрь сохраняемого документа не добавляются `input`, `button` или UI-узлы; в HTML/JSON остаётся только метаданный атрибут LI.
+The marker **is not a native checkbox** or a separately focusable control. Keyboard users have the shortcut and ordinary external buttons. Complete accessibility, screen-reader behavior and real touch/IME devices remain unverified. No `input`, `button` or UI node is added to persisted content; HTML/JSON retain only the LI metadata attribute.
 
-Пакет не поддерживает массовые команды через несколько пунктов, концы выделения внутри owning-узлов с `data-mw-node` (в том числе строчных), иностранные пространства имён и диапазоны между блоками. После уничтожения редактора обработчики освобождаются. Размер и результаты проверки нового плагина фиксируются отдельно от результатов предыдущего редакторского среза в [дорожной карте](/roadmap#проверки-и-ограничения).
+Bulk commands spanning multiple items, endpoints inside owning `data-mw-node` elements (including inline nodes), foreign namespaces and cross-block ranges are unsupported. Destroying the editor releases its handlers. New plugin sizes and executed checks are recorded separately from the preceding editor slice in the [roadmap](/roadmap#verification-and-limits).

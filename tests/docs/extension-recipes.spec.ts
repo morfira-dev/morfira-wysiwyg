@@ -6,7 +6,7 @@ for (const english of [false, true]) test(`application recipes expose ID nodes, 
   const writes: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('request', (request) => { if (request.method() === 'POST') writes.push(request.url()); });
-  await page.goto(english ? '/en/extension-recipes' : '/extension-recipes');
+  await page.goto(english ? '/extension-recipes' : '/ru/extension-recipes');
   const demo = page.locator('.recipes-example');
   const content = demo.locator('.mw-content');
   const button = (ru: string, en: string) => demo.getByRole('button', { name: t(ru, en), exact: true });

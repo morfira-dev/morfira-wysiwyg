@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('Russian homepage table quick picker previews without editing and inserts one undoable table', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByLabel('Пример документа', { exact: true }).selectOption('empty');
@@ -25,7 +25,7 @@ test('Russian homepage table quick picker previews without editing and inserts o
 });
 
 test('English playground picker exposes keyboard labels and numeric fallback beyond eight', async ({ page }) => {
-  await page.goto('/en/playground');
+  await page.goto('/playground');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByLabel('Document sample', { exact: true }).selectOption('empty');

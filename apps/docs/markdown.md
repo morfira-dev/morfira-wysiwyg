@@ -1,6 +1,6 @@
 # Markdown shortcuts
 
-Необязательный модуль `/plugins/markdown` преобразует **набранные с клавиатуры** маркеры в обычные семантические узлы редактора. Это сокращения ввода, а не Markdown-парсер: загрузка HTML/JSON, вставка HTML и paste не запускают преобразования. Сохраняется документ schema v1, без исходных маркеров и скрытых sentinel-символов.
+The optional `/plugins/markdown` module converts **keyboard-typed** markers into normal semantic editor nodes. These are typing shortcuts, not a Markdown parser: HTML/JSON loading, programmatic HTML insertion and paste do not trigger conversion. Documents retain schema v1, without source markers or invisible sentinel characters.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -10,60 +10,60 @@ const editor = createEditor(host, {
   plugins: [markdownShortcuts({ enabled: true, blocks: true, inline: true })],
 });
 const shortcuts = markdownCommands(editor);
-shortcuts.setEnabled(false); // обычный буквальный ввод
+shortcuts.setEnabled(false); // literal input
 shortcuts.setEnabled(true);
 const state = shortcuts.getState(); // { enabled, blocks, inline }
 ```
 
-Все флаги по умолчанию true; неверные значения отклоняются до установки. Объект настроек копируется. `blocks` и `inline` выбираются при создании, `enabled` меняется во время работы. Переключение — предпочтение конкретного экземпляра: оно не меняет документ и историю, допустимо и в режиме чтения. `getState` возвращает независимую копию. После destroy команды недоступны, обработчики удаляются.
+All flags default to true; invalid values reject before installation. Options are copied. Configure blocks/inline at creation, then toggle enabled at runtime. This is an instance preference: toggling changes no content/history and is allowed in read-only mode. getState returns an independent snapshot. Commands become unavailable and handlers are removed after destroy.
 
-## Блочные маркеры
+## Block markers
 
-В начале обычного абзаца наберите маркер, затем **пробел**:
+At the beginning of an ordinary paragraph, type a marker followed by **Space**:
 
-| Маркер | Результат |
+| Marker | Result |
 | --- | --- |
-| `#` … `######` | Заголовок H1 … H6 |
-| `>` | Цитата `blockquote` |
-| `-`, `*`, `+` | Маркированный список с одним пунктом |
-| `1.`, `1)` | Нумерованный список с одним пунктом |
-| Три обратных апострофа | Блок `pre` без языка подсветки |
-| `---`, `***`, `___` | Горизонтальная линия и следующий абзац для ввода |
+| `#` … `######` | H1 … H6 |
+| `>` | `blockquote` |
+| `-`, `*`, `+` | One-item bullet list |
+| `1.`, `1)` | One-item numbered list |
+| Three backticks | Plain `pre` block without a syntax language |
+| `---`, `***`, `___` | Horizontal rule and a following typing paragraph |
 
-Для трёх обратных апострофов и горизонтальной линии также работает **Enter**, если маркер занимает весь абзац. Enter после `#` и других маркеров остаётся обычным вводом. Space-преобразование сохраняет форматированный текст после курсора и ставит курсор в его начало. Например, в абзаце `##Tail` поставьте курсор после `##` и нажмите пробел: Tail станет содержимым H2.
+Three backticks and horizontal-rule markers also support **Enter** when the marker occupies the whole paragraph. Enter after `#` and other markers remains ordinary input. Space conversion retains rich suffix content after the caret and places the caret before it. For example, put the caret after `##` in `##Tail`, then press Space: Tail becomes H2 content.
 
-Правила работают в обычных `p`, в том числе внутри объединённой ячейки таблицы, не меняя её rowspan/colspan. Не переинтерпретируются существующие заголовки, пункты списков, цитаты, pre/code, ссылки и подписи/figure. Другие стартовые номера (`2.`, `10.`) и языковые fence-маркеры вроде трёх обратных апострофов с `ts` остаются текстом. Соседние списки могут остаться отдельными; их структурой управляют команды списков.
+Rules apply to ordinary p nodes, including paragraphs in merged table cells without altering rowspan/colspan. Existing headings, list items, quotes, pre/code, links and figure/captions are not reinterpreted as block shortcuts. Other starting numbers (2., 10.) and language fences such as three backticks followed by ts stay literal. Adjacent lists may remain separate; list structure belongs to existing list commands.
 
-## Строчные маркеры
+## Inline markers
 
-Преобразование происходит, когда набран **последний закрывающий символ**:
+Conversion happens when the **last closing character** is typed:
 
-| Ввод | Результат |
+| Input | Result |
 | --- | --- |
-| `**текст**`, `__текст__` | `strong` |
-| `*текст*`, `_текст_` | `em` |
-| `~~текст~~` | `s` |
-| Одна пара обратных апострофов | `code` |
+| `**text**`, `__text__` | `strong` |
+| `*text*`, `_text_` | `em` |
+| `~~text~~` | `s` |
+| A single pair of backticks | `code` |
 
-Содержимое должно быть непустым, без пробелов по краям, переводов строки и активного символа-разделителя; максимум 2000 UTF-16 единиц. Модуль сохраняет вложенное обычное оформление и соседние узлы. После преобразования курсор оказывается после нового фрагмента, последующий текст набирается вне созданного формата.
+Bodies must be nonempty, without leading/trailing whitespace, newlines or the active delimiter character; maximum 2000 UTF-16 units. Existing ordinary inline styles and neighboring nodes remain intact. The caret ends after the new fragment; subsequent input continues outside the newly created format.
 
-Правила ограничены одним текстовым потоком в абзаце, заголовке, пункте или цитате. Они не пересекают `br`, картинки, `hr`, ссылки, code/pre, figure/подписи и вложенные блоки. Например, маркеры вокруг текста по обе стороны картинки остаются буквальными. Уже существующий такой же формат не переоборачивается.
+Rules stay within one paragraph/heading/item/quote text flow. They never cross br, images, hr, links, code/pre, figures/captions or nested blocks. Markers spanning an image therefore remain literal. An existing wrapper of the same format is not wrapped again.
 
-Открывающий маркер должен находиться в начале потока или после символа, который не является буквой/цифрой/комбинируемым знаком/соединительной пунктуацией. Поэтому `name_word_` не превращает часть идентификатора в курсив. Для `_` проверяется также следующий символ после закрытия. Нечётное количество обратных слешей экранирует открытие, неоднозначные тройные маркеры остаются текстом. Вложенный Markdown-синтаксис не разбирается рекурсивно. Пока открывающий обратный апостроф не закрыт, внутренние строчные маркеры остаются буквальными: ввод обратных апострофов вокруг `**x**` создаёт code с текстом `**x**`, без strong. Экранированный апостроф не открывает такой диапазон.
+An opener must start the flow or follow a character other than a Unicode letter/number/combining mark/connector punctuation. Thus name_word_ does not turn part of an identifier into italic. For underscores, the character after the closing marker is checked too. An odd number of backslashes escapes the opener; ambiguous triple markers remain literal. Nested Markdown syntax is not parsed recursively. While a backtick opener is unmatched, inner inline markers remain literal: typing backticks around `**x**` creates code containing `**x**`, without strong. An escaped backtick does not open that protected range.
 
-## Undo и события
+## Undo and events
 
-Каждое преобразование — одна транзакция и одно пользовательское изменение. **Undo возвращает буквальный документ и курсор до клавиши-триггера**, а не полный завершённый Markdown:
+Each conversion is one transaction and one user change. **Undo restores the literal document and caret before the trigger key**, rather than the fully completed Markdown:
 
-- `##` + Space → H2; Undo → `##` без пробела.
-- `**bold*` + последняя `*` → strong; Undo → `**bold*` без последней звёздочки.
-- три обратных апострофа + Enter → pre; Undo → буквальный fence без Enter.
+- `##` + Space → H2; Undo → `##` without the space.
+- `**bold*` + the final `*` → strong; Undo → `**bold*` without the last asterisk.
+- Three backticks + Enter → pre; Undo → the literal fence without Enter.
 
-Redo восстанавливает результат. Набор текста после преобразования имеет обычную собственную историю. Параметры ожидающего строчного оформления могут измениться без отдельной ревизии, чтобы следующий текст не продолжал новый формат.
+Redo restores the converted result. Text typed afterwards follows normal history. Pending inline formatting may change without another document revision so subsequent input does not continue the newly applied mark.
 
-Read-only, IME-композиция, непустое выделение, многосимвольный insertText, paste/drop и программная замена пропускаются. Преобразования после compositionend задним числом нет. Необработанные события остаются нативными; правила списков и Tab в таблицах продолжают работать.
+Read-only, IME composition, noncollapsed selections, multi-character insertText, paste/drop and programmatic replacement are skipped. compositionend does not retroactively convert text. Unmatched events stay native; list keyboard behavior and table Tab navigation continue to work.
 
-На [главной](/#editor) и [стенде](/playground) выберите пример Markdown shortcuts и используйте переключатель. Пример загружается буквально: для проверки поставьте курсор после маркера и наберите пробел/последний разделитель. Полного импорта/экспорта Markdown, языка fenced code, regex-настроек, paste-конвертации и произвольных пользовательских правил в этой версии нет. Core не требует этот модуль, runtime-зависимостей он не добавляет.
+On the [homepage](/#editor) and [playground](/playground), choose Markdown shortcuts and use the enable switch. Sample loading remains literal: place the caret after a marker and type Space/the final delimiter to try conversion. Full Markdown import/export, language fences, regex settings, paste conversion and arbitrary custom rules are not implemented in this version. Core never requires this module; it adds no runtime dependencies.
 
 
-Для явного преобразования документа используй отдельный [Markdown-кодек](/markdown-codec). Он не меняет правила shortcuts и не устанавливается вместе с ними.
+For explicit document conversion, use the separate [Markdown codec](/markdown-codec). It does not change typing shortcuts or install alongside them.

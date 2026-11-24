@@ -1,3 +1,4 @@
+import { withBase } from 'vitepress';
 import { createMentionProvider } from './mentions.js';
 import { createSaveSession } from './save.js';
 import type { LocalRecipeServices } from './types.js';
@@ -39,7 +40,7 @@ export const createLocalRecipeServices = (onError?: (error: unknown) => void): L
         context.reportProgress({ loaded: 0, total: file.size });
         await delay(context.signal);
         context.reportProgress({ loaded: file.size, total: file.size });
-        return { src: '/logo.svg', alt: 'Simulated local upload', width: 72, height: 72 };
+        return { src: withBase('/logo.svg'), alt: 'Simulated local upload', width: 72, height: 72 };
       },
       onError,
     },

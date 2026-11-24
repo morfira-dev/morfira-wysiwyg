@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`atomic mention navigation and whole deletion through ${english ? 'English' : 'Russian'} demo controls`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-atomic-mentions');
@@ -33,6 +33,6 @@ for (const english of [false, true]) test(`atomic mention navigation and whole d
   await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
   await expect(panel.getByRole('button', { name: t('Загрузить атомарные упоминания', 'Load atomic mentions'), exact: true })).toBeDisabled();
   await panel.getByRole('link', { name: t('Навигация, удаление и миграция упоминаний', 'Mention navigation, deletion and migration'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/atomic-mentions$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/atomic-mentions$`));
   await expect(page.locator('.vp-doc')).toContainText('1–201 UTF-16');
 });

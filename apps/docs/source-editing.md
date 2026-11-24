@@ -2,13 +2,13 @@
 import SourceEditingExample from './.vitepress/theme/SourceEditingExample.vue'
 </script>
 
-# HTML-исходник
+# HTML source
 
-Отдельный модуль редактирует поддерживаемую HTML-разметку всего документа. Черновик и нормализованный предпросмотр — обычный текст: они не исполняют код и не загружают ресурсы.
+This optional module edits the supported HTML of the whole document. The draft and normalized preview are literal text: they execute no code and fetch no resources.
 
 <ClientOnly><SourceEditingExample /></ClientOnly>
 
-## Подключение
+## Installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -20,35 +20,35 @@ const editor = createEditor(editorHost, { value: '<p>Hello</p>' });
 const source = createSourceEditor(emptyExternalHost, editor);
 openButton.addEventListener('click', () => source.open());
 
-// При демонтаже приложения:
+// On application unmount:
 source.destroy();
 editor.destroy();
 ```
 
-Хост модалки должен оставаться подключённым, пустым при создании и находиться вне документа редактора. UI не входит в ядро или пресеты. Отдельный CSS использует native nesting: Chrome 112+, Firefox 117+, Safari 16.5+.
+The modal host must stay connected and outside the editor document, and be empty at creation. No preset or core import includes this UI. Its explicit stylesheet uses native nesting: Chrome 112+, Firefox 117+, Safari 16.5+.
 
 ## API
 
-`createSourceEditor(host, editor, { label?, onError? })` возвращает `SourceEditorController`:
+`createSourceEditor(host, editor, { label?, onError? })` returns `SourceEditorController`:
 
-| Метод | Результат |
+| Method | Result |
 | --- | --- |
-| `open()` | `boolean`: открыт ли новый черновик текущего документа |
-| `close()` / `isOpen()` | Отмена без изменения документа / состояние модалки |
-| `getValue()` / `setValue(html)` | Буквальный черновик; максимум 5 000 000 UTF-16 единиц |
-| `preview()` | `{ html, changed }` или `undefined` при отказе |
-| `destroy()` | Закрытие и очистка подписок, captures и только собственного UI |
+| `open()` | `boolean`: whether a new current-document draft opened |
+| `close()` / `isOpen()` | Cancel without a document edit / modal state |
+| `getValue()` / `setValue(html)` | Literal draft, bounded to 5,000,000 UTF-16 units |
+| `preview()` | `{ html, changed }`, or `undefined` on refusal |
+| `destroy()` | Close and release subscriptions, captures and only owned UI |
 
-`changed` означает изменение после разбора/сериализации. Это **не полный diff**: неподдерживаемые теги, атрибуты и стили могут удаляться, алиасы заменяться каноническими тегами, сериализация — меняться. Проверка явно запускается кнопкой, а не тяжёлым разбором на каждое нажатие клавиши.
+`changed` means parsing/serialization changed the source. This is **not a complete diff**: unsupported tags, attributes and styles can disappear, aliases can become canonical tags, and serialization can change. Validation is explicit rather than parsing a large draft on every keystroke.
 
-## Применение и история
+## Apply and history
 
-«Применить HTML» повторно проверяет свежий черновик через схему текущего экземпляра и заменяет весь документ одной пользовательской транзакцией. Курсор ставится в начало первого обычного P/H перед его дочерними узлами; для защищённого или неблочного первого узла — в корневой промежуток. Пустой документ получает обычный P/BR до установки курсора, без лишнего абзаца при последующей печати. Undo восстанавливает прежний документ и выделение, Redo — применённый исходник. Канонический no-op не создаёт запись истории. Ядро может добавить обычные редактируемые обёртки или завершающий абзац.
+Apply revalidates the latest draft with this editor instance's schema and replaces the whole document in one user transaction. The caret starts inside the first ordinary P/H before its children; protected or non-body first nodes use the root-start gap instead. An empty document receives the ordinary P/BR placeholder before caret placement, avoiding an extra paragraph on subsequent typing. Undo restores the old document and selection, and Redo restores the source edit. A canonical no-op adds no history entry. Core can additionally create its ordinary editable wrappers or trailing paragraph.
 
-Изменение документа извне закрывает устаревшую модалку. Буквальный черновик остаётся доступен через `getValue()`. Новое выделение редактора, смена цели при focus, read-only, composition и потеря внешнего хоста не могут перенаправить старое применение. Отмена не восстанавливает устаревшее выделение.
+An external document change closes the stale modal. Its literal draft remains available through `getValue()`. New editor selection intent, focus-time redirection, read-only, composition and lost external-host ownership cannot redirect the old operation. Cancel does not restore a stale selection.
 
-## Границы безопасности
+## Security boundaries
 
-Предпросмотр не рендерится через `innerHTML`. Apply принимает только реконструируемый документ текущей схемы с существующими лимитами ресурсов. Разрешённые изображения **после применения в документ** могут загружаться: CSP, политика URL и серверная проверка остаются ответственностью приложения. Зарегистрированные расширения нужны и в принимающем редакторе для сохранения их метаданных.
+The preview is never rendered through `innerHTML`. Apply accepts only reconstructed content validated by the current schema and existing resource limits. Allowed images **after application to the document** may fetch resources: CSP, URL policy and server validation remain application responsibilities. Receiving editors need registered extensions to retain their metadata.
 
-Модуль не обещает сохранение произвольного HTML, Office fidelity, универсальный structural mapping или встроенную IDE. Проверки физических устройств и скринридеров остаются недоступным ограничением доказательств, не заявленной сертификацией.
+This is not arbitrary HTML roundtrip, Office fidelity, universal structural mapping or a bundled IDE. Physical-device and screen-reader environments remain unavailable evidence limitations, not a certification claim.

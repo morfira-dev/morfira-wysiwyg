@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`image resize handles preview, commit and cancel on ${english ? 'English playground' : 'Russian homepage'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const enabled = page.getByRole('checkbox', { name: t('Маркеры размера изображения', 'Image resize handles'), exact: true });

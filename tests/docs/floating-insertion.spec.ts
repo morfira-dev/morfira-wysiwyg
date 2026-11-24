@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) test(`ready insertion presentation and nonmodal search in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   if (!english) await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByLabel(t('Пример документа', 'Document sample'), { exact: true }).selectOption('empty');

@@ -1,6 +1,6 @@
-# Видео и медиа
+# Video and media
 
-Опциональный плагин сохраняет ссылку на публичное видео YouTube или Vimeo как безопасный семантический блок. Ядро и готовые пресеты не подключают его автоматически. Плагин и UI не имеют внешних runtime-зависимостей.
+The optional plugin persists a public YouTube or Vimeo reference as a safe semantic block. Core and ready presets do not install it automatically. The plugin and UI have no external runtime dependencies.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -8,50 +8,50 @@ import { media, mediaCommands, parseMediaURL } from '@morfira-dev/wysiwyg/plugin
 import { createMediaForm, createMediaView } from '@morfira-dev/wysiwyg/ui/media';
 import '@morfira-dev/wysiwyg/ui/media.css';
 
-const editor = createEditor(editorHost, { plugins: [media()], locale: 'ru' });
+const editor = createEditor(editorHost, { plugins: [media()], locale: 'en' });
 const form = createMediaForm(formHost, editor);
 const view = createMediaView(previewHost, editor);
-// formHost и previewHost — отдельные элементы вне редактора.
+// formHost and previewHost are separate elements outside the editor.
 insertButton.addEventListener('click', () => form.open());
 
 const reference = parseMediaURL('https://youtu.be/dQw4w9WgXcQ');
-mediaCommands(editor).insert({ url: reference.url, title: 'Пример видео' });
+mediaCommands(editor).insert({ url: reference.url, title: 'Example video' });
 
-// При удалении интерфейса приложения:
+// When disposing the application interface:
 form.destroy();
 view.destroy();
 editor.destroy();
 ```
 
-[Живой пример медиа и формул](/media-formula) показывает отдельную форму и превью. Внешний плеер появляется только после кнопки загрузки.
+The [live media and formula example](/media-formula) provides a separate form and preview. An external player appears only after the load button is activated.
 
-## Формат и команды
+## Format and commands
 
-В HTML/JSON schema-v1 сохраняется `figure` с `data-mw-node="morfira:media"`, `data-provider`, `data-video-id` и буквальным текстовым заголовком. URL, iframe, обработчики событий и внешние атрибуты в документ не сохраняются. Подключайте `media()` при создании редактора **до** первоначального импорта документа: схема расширения компилируется заранее.
+Schema-v1 HTML/JSON persists a `figure` with `data-mw-node="morfira:media"`, `data-provider`, `data-video-id` and a literal text title. URLs, iframes, event handlers and foreign attributes are not persisted. Install `media()` when creating the editor **before** initial document import: extension schemas are compiled in advance.
 
-`parseMediaURL(url)` возвращает `{ provider, id, url }` с канонической ссылкой и выбрасывает `TypeError` для неподдерживаемого адреса. Поддерживаются обычные HTTPS-ссылки YouTube watch, youtu.be, embed/shorts/live, youtube-nocookie embed и публичные Vimeo. Произвольные iframe, HTTP, логины/пароли в URL, нестандартные порты, чужие домены, лишние сегменты пути, неоднозначные `v` и приватные Vimeo `h` не принимаются. Параметры времени и другие пользовательские настройки плеера не сохраняются.
+`parseMediaURL(url)` returns `{ provider, id, url }` with a canonical URL and throws `TypeError` for unsupported input. Supported forms are ordinary HTTPS YouTube watch, youtu.be, embed/shorts/live, youtube-nocookie embed and public Vimeo links. Arbitrary iframes, HTTP, URL credentials, nonstandard ports, unrelated hosts, extra path segments, ambiguous `v` parameters and private Vimeo `h` references are rejected. Time parameters and other user-supplied player configuration are not persisted.
 
-| API | Поведение |
+| API | Behavior |
 | --- | --- |
-| `mediaCommands(editor).insert({ url, title? })` | Вставляет блок в текущее выделение одной операцией истории. |
-| `.get(target)` | Возвращает `{ provider, id, url, title }` для фактического блока этого редактора или `undefined`. |
-| `.update(target, { url, title? })` | Обновляет фактический блок; отсоединённая, чужая или устаревшая цель отклоняется. |
-| `.remove(target)` | Удаляет блок с поддержкой undo/redo. |
+| `mediaCommands(editor).insert({ url, title? })` | Inserts a block at the current selection as one history operation. |
+| `.get(target)` | Returns `{ provider, id, url, title }` for an actual block owned by this editor, or `undefined`. |
+| `.update(target, { url, title? })` | Updates the actual block; detached, foreign and stale targets are refused. |
+| `.remove(target)` | Removes a block with undo/redo support. |
 
-Команды возвращают `boolean`; недопустимые значения вставки/обновления выбрасывают `TypeError`. Read-only блокирует изменение документа. Заголовок ограничен 256 символами одной строки, ID — форматом провайдера. Ошибки воспроизведения и доступность конкретного видео зависят от провайдера, региона и CSP приложения.
+Commands return `boolean`; invalid insertion/update values throw `TypeError`. Read-only blocks document changes. Titles are bounded to 256 single-line characters; IDs follow provider-specific formats. Playback failures and availability of individual videos depend on the provider, region and application CSP.
 
-## Форма и внешний плеер
+## Form and external player
 
-`createMediaForm(host, editor, { presentation: 'dialog', onError? })` создаёт компактную модальную форму. `open()` захватывает актуальное выделение; при курсоре в медиа-блоке доступны обновление и удаление. `setValues({ url?, title? })` и `getValues()` управляют черновиком. `close()`, `refresh()` и `destroy()` завершают или обновляют жизненный цикл. Режим `presentation: 'inline'` предназначен для интерфейса приложения, которому нужна постоянно видимая форма; захват позиции обновляется явно через `refresh()`.
+`createMediaForm(host, editor, { presentation: 'dialog', onError? })` creates a compact modal form. `open()` captures the current selection; a caret inside a media block enables updating and removal. `setValues({ url?, title? })` and `getValues()` manage the draft. `close()`, `refresh()` and `destroy()` close or refresh the lifecycle. Use `presentation: 'inline'` when an application needs a permanently visible form; explicitly refresh the captured position with `refresh()`.
 
-Захват выделения привязан к ревизии документа. Замена документа, композиционный ввод, смена цели и read-only не позволяют применить старый черновик. Форма не переносит позиции через редактирование. Некорректную ссылку можно исправить, не закрывая диалог.
+The selection capture is document-revision bound. Document replacement, composition, target changes and read-only prevent applying a stale draft. The form does not map positions through edits. An invalid URL can be corrected without closing the dialog.
 
-`createMediaView(host, editor)` показывает карточки во внешнем хосте. Импорт модуля, разбор документа и первоначальный рендер карточки не создают iframe и не обращаются к видео-провайдерам. Кнопка «Загрузить внешнее видео» создаёт плеер с фиксированным HTTPS URL, `autoplay=0`, `sandbox`, ограниченным `allow` и `referrerpolicy`. «Выгрузить внешнее видео», замена блока и `destroy()` удаляют iframe. Просмотр доступен и в read-only; документ при этом не меняется.
+`createMediaView(host, editor)` displays cards in an external host. Module import, document parsing and initial card rendering create no iframe and make no video-provider requests. “Load external video” creates a player with a fixed HTTPS URL, `autoplay=0`, `sandbox`, restricted `allow` and `referrerpolicy`. “Unload external video”, block replacement and `destroy()` remove the iframe. Playback remains available in read-only and never changes the document.
 
-Согласие на загрузку — граница сетевого запроса, а не обещание анонимности. YouTube использует домен youtube-nocookie; Vimeo получает `dnt=1`. После загрузки провайдер обрабатывает сетевые данные согласно своим условиям. [Параметры YouTube](https://developers.google.com/youtube/player_parameters), [параметры Vimeo и ограничения DNT](https://help.vimeo.com/hc/en-us/articles/12426260232977-About-Player-Parameters).
+Loading consent gates the network request; it is not an anonymity guarantee. YouTube uses youtube-nocookie; Vimeo receives `dnt=1`. After loading, the provider processes network data under its own terms. [YouTube parameters](https://developers.google.com/youtube/player_parameters), [Vimeo parameters and DNT limitations](https://help.vimeo.com/hc/en-us/articles/12426260232977-About-Player-Parameters).
 
-Приложение владеет внешним хостом, согласием пользователя и CSP `frame-src` для выбранных провайдеров. Оба контроллера удаляют только собственные узлы и подписки. В публикации за пределами редактора приложение должно самостоятельно отрисовать сохранённые семантические данные с такой же проверкой провайдера и согласия. Плагин не предоставляет произвольные embed-коды, приватные Vimeo-видео, загрузку файлов, транскодирование или гарантию воспроизведения.
+The application owns the external host, user consent and CSP `frame-src` for its chosen providers. Both controllers remove only their own nodes and subscriptions. When publishing outside the editor, the application must render persisted semantic data with equivalent provider validation and consent. The plugin does not provide arbitrary embed codes, private Vimeo videos, file uploads, transcoding or playback guarantees.
 
-## Оформление
+## Styling
 
-CSS подключается отдельно. Доступны `--mw-media-gap`, `--mw-media-padding`, `--mw-media-aspect-ratio`, общие `--mw-border`, `--mw-radius`, `--mw-surface` и `--mw-text`. Форма и карточки локализованы на русском и английском через locale редактора.
+Import CSS explicitly. Available variables include `--mw-media-gap`, `--mw-media-padding`, `--mw-media-aspect-ratio` and shared `--mw-border`, `--mw-radius`, `--mw-surface`, `--mw-text`. Form and cards use the editor locale, with Russian and English messages.

@@ -3,21 +3,21 @@ import PluginSDKExample from './.vitepress/theme/PluginSDKExample.vue';
 import SelectionHandleExample from './.vitepress/theme/SelectionHandleExample.vue';
 </script>
 
-# SDK плагинов и расширяемая схема
+# Plugin SDK and extensible schema
 
-Первый этап SDK добавляет типизированные команды и декларативные семантические расширения документа для конкретного экземпляра. Ядро не импортирует плагины и не требует UI. Все примеры используют публичный фасад `@morfira-dev/wysiwyg`; сторонние runtime-зависимости не нужны.
+SDK phase 1 adds typed commands and declarative semantic document extensions for one editor instance. Core imports no plugins and needs no UI. All examples use the public `@morfira-dev/wysiwyg` facade without third-party runtime dependencies.
 
-Это расширение существующего формата `EditorDocument` v1. Оно не заменяет движок редактирования и пока не предоставляет custom node views, атомарное выделение, decorations или произвольные новые HTML-теги.
+This extends the existing `EditorDocument` v1 format. It does not replace the editing engine or yet provide custom node views, atomic selection, decorations or arbitrary new HTML tags.
 
-## Живой пример
+## Live example
 
-В примере плагин объявляет block-callout на `blockquote` и inline-reference на `span`. Начальный документ уже содержит оба типа: схема собирается **до импорта HTML и вызова `setup`**. Кнопки намеренно вставляют в конец документа; выбранное в редакторе место не используется. Это логика примера, а не поведение SDK-команд.
+The plugin declares a block callout on `blockquote` and an inline reference on `span`. Both appear in the initial document: the schema is compiled **before HTML import and `setup`**. Buttons deliberately insert at the document end, ignoring the current editor selection. That placement belongs to this example rather than the command SDK.
 
 <PluginSDKExample />
 
-Reference сохраняет `data-id`, но его подпись остаётся обычным редактируемым текстом. Этот пример не реализует полноценный атомарный mention. Визуальные стили примера не входят в сохраняемый документ.
+The reference retains `data-id`, while its label stays ordinary editable text. This is not a complete atomic mention implementation. Example appearance styles are not persisted in the document.
 
-## Декларативная схема
+## Declarative schema
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -42,79 +42,79 @@ const plugin: EditorPlugin = {
   name: 'app:notes',
   schema: nodes,
   setup: (editor) => {
-    // Схема уже участвует в начальном импорте.
+    // The schema already participated in initial import.
     const stop = editor.subscribe((change) => console.log(change.html));
     return stop;
   },
 };
 const editor = createEditor(host, {
   plugins: [plugin],
-  value: '<blockquote data-mw-node="app:callout" data-tone="note">Заметка</blockquote>',
+  value: '<blockquote data-mw-node="app:callout" data-tone="note">Note</blockquote>',
 });
-// editor.destroy() освобождает плагин и его подписку.
+// editor.destroy() disposes the plugin and its subscription.
 ```
 
-`host` — пустой браузерный `HTMLElement`. Тот же массив можно передать через `EditorOptions.schema`, если расширение принадлежит приложению без отдельного плагина. Вклады `options.schema` и всех `plugins[].schema` компилируются вместе. Повтор имени отклоняется даже при одинаковых описаниях. Некорректная схема обнаруживается до монтирования и `setup`; определения копируются, поэтому последующие изменения исходного массива не перенастраивают экземпляр.
+`host` is an empty browser `HTMLElement`. Pass the same array through `EditorOptions.schema` when the extension belongs to the application without a separate plugin. Contributions from `options.schema` and every `plugins[].schema` compile together. Duplicate names fail even when definitions are identical. Invalid definitions fail before mounting and `setup`; definitions are copied, so later mutation of the input array does not reconfigure the instance.
 
-Имя — namespaced identifier из строчных букв, цифр и дефисов: например, `app:callout`. Сегмент начинается с буквы; нужны минимум два сегмента через `:`. Не более 128 символов и 128 определений на экземпляр.
+Names are namespaced identifiers using lowercase letters, digits and hyphens, such as `app:callout`. Each segment begins with a letter; at least two segments separated by `:` are required. Limits are 128 characters and 128 definitions per instance.
 
-| `kind` | Разрешённые HTML-обёртки первого этапа |
+| `kind` | Supported phase-1 HTML wrappers |
 | --- | --- |
 | `block` | `p`, `h1`–`h6`, `blockquote`, `pre`, `figure`, `figcaption` |
 | `inline` | `span`, `strong`, `em`, `u`, `s`, `sub`, `sup`, `code` |
 
-`data-mw-node` хранит имя семантического типа. Дополнительные атрибуты объявляются только как lowercase `data-*`; пространство `data-mw-*` зарезервировано. Нельзя разрешить `onclick`, `style`, произвольный URL-атрибут или foreign namespace через описание расширения. Обычная проверка HTML, URL и стилей продолжает действовать.
+`data-mw-node` persists the semantic type name. Additional rules accept lowercase `data-*` attributes only; `data-mw-*` is reserved. Definitions cannot allow `onclick`, `style`, arbitrary URL attributes or foreign namespaces. Ordinary HTML, URL and style validation still applies.
 
-## Правила атрибутов
+## Attribute rules
 
-Все сохраняемые значения атрибутов — строки. Максимум 64 дополнительных правила на определение.
+Every persisted attribute value is a string. A node definition may add at most 64 attribute rules.
 
-| Правило | Контракт |
+| Rule | Contract |
 | --- | --- |
-| `{ type: 'text', minLength?, maxLength?, singleLine?, required? }` | Строка: минимум 0 по умолчанию, максимум 256 по умолчанию (до 20000). `singleLine: true` запрещает C0/DEL и разделители строк Unicode |
-| `{ type: 'enum', values, required? }` | Одно из 1–64 заданных строковых значений |
-| `{ type: 'integer', min, max, required? }` | Строка целого числа в границах safe integers; нормализуется в каноническую запись |
-| `{ type: 'url', required? }` | Безопасный URL по правилам ссылок ядра: `http`, `https`, `mailto`, `tel` или допустимая относительная ссылка |
+| `{ type: 'text', minLength?, maxLength?, singleLine?, required? }` | String: minimum defaults to 0, maximum to 256 (up to 20000). `singleLine: true` rejects C0/DEL and Unicode line/paragraph separators |
+| `{ type: 'enum', values, required? }` | One of 1–64 declared string values |
+| `{ type: 'integer', min, max, required? }` | An integer string within safe-integer bounds, normalized to its canonical representation |
+| `{ type: 'url', required? }` | A safe URL using core link rules: `http`, `https`, `mailto`, `tel` or a permitted relative reference |
 
-`required` проверяет присутствие атрибута. Для непустой строки укажите `minLength: 1`; минимум должен быть целым числом от 0 до `maxLength`. Прикладные команды могут дополнительно проверять формат и разрешения. Необъявленные дополнительные атрибуты не сохраняются. Любая строка ограничена 20000 символами. Описания с неизвестными полями, неподходящим tag/kind и небезопасными именами отклоняются.
+`required` checks attribute presence. Use `minLength: 1` for nonempty strings; the minimum must be an integer from 0 through `maxLength`. Application commands may additionally validate formats and permissions. Undeclared extra attributes are not retained. Every string is bounded to 20000 characters. Definitions with unknown fields, incompatible tag/kind or unsafe names fail.
 
-## HTML, JSON и отдельный codec
+## HTML, JSON and a standalone codec
 
-Семантический `SchemaNodeSpec` может ограничить содержимое через
+A semantic `SchemaNodeSpec` may constrain content with
 `content: { type: 'text', minLength: 1, maxLength: 201, singleLine: true }`.
-Тогда после безопасной нормализации разрешены только текстовые дочерние узлы;
-суммарная длина проверяется до объединения строк. Вложенные элементы и нарушенные
-границы отклоняют HTML/JSON до рендеринга. Тип правила — `SchemaTextContentSpec`,
-без поля `required`; по умолчанию ограничения дочернего содержимого нет.
-Это проверка данных, а не автоматическое включение атомарного поведения или
-разрешение произвольного `contenteditable`.
+Only text children survive this rule after safe normalization; aggregate length
+is checked before concatenation. Element children and invalid bounds reject
+HTML/JSON before rendering. The rule type is `SchemaTextContentSpec`, without a
+`required` field; default definitions do not constrain child content.
+This validates data rather than automatically enabling atomic behavior or
+accepting arbitrary `contenteditable` markup.
 
 ```ts
 import { createDocumentSchema, sanitizeHTML } from '@morfira-dev/wysiwyg';
 
 const schema = createDocumentSchema(nodes);
 const document = schema.parseHTML(
-  '<span data-mw-node="app:reference" data-id="TASK-42">Задача</span>',
+  '<span data-mw-node="app:reference" data-id="TASK-42">Task</span>',
 );
 const html = schema.documentHTML(document);
 const checked = schema.validateDocument(document);
 const fragment = schema.renderDocument(checked);
 const clean = schema.sanitizeHTML(html);
 
-// Обычный sanitizer не подключает приложение/плагины и удаляет marker metadata.
+// The plain sanitizer loads no application/plugin schema and drops marker metadata.
 const fallback = sanitizeHTML(html);
 ```
 
-У редактора доступен неизменяемый `editor.schema` с теми же пятью методами. Схема действует на initial HTML, `setHTML`, `setJSON`, `getHTML`, `getJSON`, вставку, транзакции, native input и историю. Последующая правка не должна стирать зарегистрированные метаданные.
+An editor exposes readonly `editor.schema` with the same five methods. Its schema applies to initial HTML, `setHTML`, `setJSON`, `getHTML`, `getJSON`, insertion, transactions, native input and history. Later edits must not erase registered metadata.
 
-- Неизвестный marker в HTML удаляется вместе с его расширенными метаданными; безопасная обычная HTML-обёртка и содержимое сохраняются по базовым правилам.
-- Неизвестный marker при явном JSON-импорте отклоняется, чтобы отсутствие расширения не скрывало потерю данных.
-- Известный marker с неверным tag, отсутствующим required-атрибутом или некорректным значением отклоняется на обеих границах.
-- Текущий формат остаётся v1. Старый читатель без поддержки расширения может потерять метаданные: передавайте одинаковые определения в редактор, импорт и отображение.
+- HTML import removes an unknown marker and its extension metadata; the ordinary safe HTML wrapper/content follow default rules.
+- Explicit JSON import rejects an unknown marker so a missing extension cannot silently lose data.
+- A known marker with a mismatched tag, missing required attribute or invalid value fails at both boundaries.
+- The persisted format stays v1. An older reader without extension support may lose metadata: use the same definitions for editing, importing and rendering.
 
-Импорт модулей и компиляция описаний безопасны без DOM. HTML parse/render и создание редактора требуют браузерного DOM. Codec не регистрирует глобальные плагины и не загружает UI.
+Module imports and definition compilation are safe without DOM. HTML parse/render and editor creation require browser DOM. The codec registers no global plugins and loads no UI.
 
-## Типизированные команды
+## Typed commands
 
 ```ts
 import { createEditorCommand } from '@morfira-dev/wysiwyg';
@@ -143,48 +143,48 @@ const unregister = editor.commands.register(insertReference, {
 });
 
 const state = editor.commands.getState(insertReference);
-const accepted = editor.commands.execute(insertReference, { id: 'TASK-42', label: 'Задача' });
+const accepted = editor.commands.execute(insertReference, { id: 'TASK-42', label: 'Task' });
 unregister();
-unregister(); // Идемпотентно.
+unregister(); // Idempotent.
 ```
 
-Токен неизменяем и выбирается по **идентичности объекта**, а имя используется для диагностики. Два отдельно созданных токена с одинаковым именем — разные команды. Сохраните токен и экспортируйте его из модуля плагина. Payload типизирован при регистрации и вызове; вход из сети/формы всё равно требует runtime-валидации.
+Tokens are immutable and selected by **object identity**; names are diagnostic. Two separately created tokens with the same name are different commands. Keep the token and export it from the owning plugin module. Payloads are typed at registration and invocation; network/form input still requires runtime validation.
 
-| Метод | Поведение |
+| Method | Behavior |
 | --- | --- |
-| `register(token, definition)` | Одна регистрация токена на экземпляр; возвращает idempotent unregister |
-| `getState(token)` | Новый snapshot `{ enabled, active, mixed }`; `enabled` учитывает read-only/composition |
-| `execute(token, payload)` | Возвращает `false`, если команда заблокирована; иначе выполняет синхронно в транзакции и возвращает `true` |
+| `register(token, definition)` | One registration per token/instance; returns idempotent unregister |
+| `getState(token)` | A fresh `{ enabled, active, mixed }` snapshot; enabled includes read-only/composition guards |
+| `execute(token, payload)` | Returns `false` when blocked; otherwise executes synchronously inside a transaction and returns `true` |
 
-Неизвестная регистрация вызывает исключение. Принятая команда без изменения документа может вернуть `true` без новой истории. Вложенные команды объединяются в одну транзакцию/undo; ошибка валидации или выполнения откатывает документ и историю. Состояния и validator должны быть синхронными и без побочных эффектов; async/thenable callbacks не поддерживаются. `execute` может вызывать существующие команды редактора внутри общей транзакции.
+Missing registrations throw. An accepted no-op command may return `true` without adding history. Nested commands share one transaction/undo step; validation/execution failure rolls back content and history. Validators and state readers must be synchronous and side-effect-free; async/thenable callbacks are unsupported. Execution may call existing editor commands within the shared transaction.
 
-Команды — доверенный код приложения, а не sandbox. Внешние запросы завершайте до транзакции; не планируйте асинхронную мутацию DOM после возврата callback. События остаются уведомлениями, а не заменой команд. UI обновляет состояние через существующие change/selection/read-only события.
+Commands are trusted application code, not a sandbox. Complete external requests before opening a transaction; do not schedule DOM mutation after the callback returns. Events remain notifications rather than command substitutes. UI refreshes state using existing change/selection/read-only events.
 
-При уничтожении редактора регистрации очищаются. Плагин возвращает cleanup, который вызывает свои unregister и отписки; повторный unregister безопасен и не удаляет более позднюю регистрацию. Остальные вызовы после уничтожения редактора отклоняются.
+Destroying the editor clears registrations. A plugin returns cleanup that calls its unregister functions and subscriptions; repeated unregister is safe and cannot remove a later registration. Other calls after editor destruction fail.
 
-## Границы первого этапа и вес
+## Phase-1 limits and size
 
-Семантический wrapper ещё не отдельный renderer и не атом: дети редактируются нативно. Схема фиксируется при создании экземпляра; live-перерегистрация не предоставляется. Перенос позиций через правки, decorations и node views — следующие этапы SDK. Сохранение выделения одной неизменённой ревизии описано ниже.
+A semantic wrapper is not yet a separate renderer or atom: its children remain natively editable. The schema is fixed at instance creation; live re-registration is not provided. Mapped structural selection, decorations and node views belong to later SDK phases.
 
-Основной импорт не подключает optional plugins/UI или framework runtime. Стили импортируются явно. Размер ядра и выбранных плагинов измеряется в minified/gzip/Brotli, CSS отдельно, общие чанки считаются один раз. Смотрите [архитектуру и вес](/architecture), [события](/events), [планы и ограничения](/roadmap).
+The core import loads no optional plugins/UI or framework runtime. CSS imports stay explicit. Measure selected core/plugin closures as minified/gzip/Brotli, with CSS separate and shared chunks counted once. See [architecture and size](/architecture), [events](/events) and [roadmap/limits](/roadmap).
 
-Первый этап проверяет идентичность узла и его атрибуты; произвольные правила дочернего содержимого пока не регистрируются.
+Phase 1 validates node identity and attributes; arbitrary per-node child/content rules cannot yet be registered.
 
-Для расширений, наблюдающих завершённый ввод, см. [подтверждения контролируемого ввода](/events#подтверждения-контролируемого-ввода): `EditorInputCommit` охватывает только проверенные контролируемые пути Enter/clipboard, а не любой ввод или отменяемое преобразование. Последующая команда остаётся отдельной операцией истории.
+For post-input extension observers, see [controlled input commit receipts](/events#controlled-input-commit-receipts): `EditorInputCommit` covers only validated controlled Enter/clipboard paths, not arbitrary input or a cancellable transform. Follow-up commands remain separate history operations.
 
-## Сохранённое выделение для внешнего UI
+## Remembered selections for external UI
 
-`editor.selection` добавляет непрозрачные `EditorSelectionHandle` для одной неизменённой ревизии документа. Это полезно форме, которая временно переводит фокус из редактора. В отличие от текстовых смещений, handle сохраняет фактические DOM-границы и направление, включая пустой блок и позицию рядом с `br`.
+`editor.selection` provides opaque `EditorSelectionHandle` values for one unchanged document revision. They are useful when a form temporarily moves focus away from the editor. Unlike text offsets, a handle remembers actual DOM boundaries and direction, including an empty block and positions next to a `br`.
 
 <SelectionHandleExample />
 
-| Метод | Результат |
+| Method | Result |
 | --- | --- |
-| `capture()` | Новый handle текущего выделения или `undefined`, если захват сейчас недопустим |
-| `isCurrent(handle)` | Действительна ли цель для этого редактора и текущего документа |
-| `getRange(handle)` | Новая наблюдательная копия `Range` или `undefined`; изменение копии не перенаправляет handle |
-| `restore(handle)` | Восстанавливает точные границы и направление; возвращает `false` при отказе |
-| `release(handle)` | Освобождает цель; повторный вызов безопасен |
+| `capture()` | A new handle for the current selection, or `undefined` when capture is unavailable |
+| `isCurrent(handle)` | Whether the target belongs to this editor and remains current |
+| `getRange(handle)` | A new observational `Range` clone, or `undefined`; changing the clone cannot redirect the handle |
+| `restore(handle)` | Restores exact boundaries and direction; returns `false` on refusal |
+| `release(handle)` | Releases the target; repeated calls are safe |
 
 ```ts
 import type { Editor, EditorSelectionHandle } from '@morfira-dev/wysiwyg';
@@ -197,20 +197,20 @@ const cancelTarget = (editor: Editor, target: EditorSelectionHandle) => {
 };
 ```
 
-Для отложенного действия приложение хранит handle до закрытия формы и освобождает его в `finally` или cleanup. Перед выполнением оно проверяет **и актуальность документа, и намерение пользователя**. Простое перемещение выделения не делает handle устаревшим: это позволяет работать во внешней форме, но не даёт права возвращать пользователя к старому диапазону после выбора новой цели. Демо отдельно сравнивает DOM-границы активного выделения; более сложное приложение может использовать свой номер запроса или поколение открытой формы.
+For a deferred action, keep the handle until the form closes and release it in `finally` or cleanup. Before execution, validate **both document freshness and user intent**. Moving the selection alone does not expire a handle: this permits external-form interaction, but does not authorize returning users to an old range after they select a new target. The demo separately compares active selection DOM boundaries; a larger application may use its own request number or form generation.
 
-Для действия из внешнего поля демо сначала восстанавливает сохранённые границы, затем отдельно вызывает `editor.focus()` и повторно проверяет handle и точное выделение. Так браузер не подменяет сохранённый диапазон своим курсором по умолчанию при фокусировке. Focus-listener приложения всё ещё может заменить документ, выбрать другое место или включить read-only; новая цель не перезаписывается повторным восстановлением. Обычная типизированная команда вызывается только после успешного восстановления и этих проверок. Сам `restore` **не вызывает `focus()` явно**, однако браузер может сфокусировать contenteditable при установке native Selection; SDK повторно проверяет цель после этой операции. Наблюдательное восстановление допускается в read-only и не обходит запрет команд на изменение.
+For an action from an external field, the demo first restores the remembered boundaries, then separately calls `editor.focus()` and rechecks the handle and exact selection. This avoids a browser-created default caret replacing the intended range during focus. An application focus listener can still replace content, choose another target, or enable read-only; a newer target is not overwritten by another restoration. Execute an ordinary typed command only after successful restoration and those checks. `restore` **does not explicitly call `focus()`**, although the browser may focus contenteditable while assigning native Selection; the SDK rechecks the target after that operation. Observational restoration is allowed in read-only and does not bypass command mutation guards.
 
-### Актуальность и безопасность
+### Freshness and security
 
-- Изменение документа, внешняя замена, undo/redo, откат с перестройкой DOM и начало composition делают прежнюю цель недействительной. Подтверждение того же controlled value сохраняет её только при фактическом сохранении DOM.
-- Незавершённая native-мутация обнаруживается синхронно, в том числе до callback `MutationObserver`. Замена узлов идентичным HTML не считается сохранением цели. Захват во время незавершённого изменения, транзакции или composition отклоняется.
-- Чужие, поддельные, освобождённые и устаревшие handles отказывают без перенаправления на похожий узел. `getRange` возвращает `undefined`, проверки/восстановление — `false`; cleanup остаётся безопасным после уничтожения редактора.
-- Handle временно удерживает DOM-границы. Освобождайте его при закрытии формы; инвалидирование и уничтожение редактора освобождают внутренние ссылки. Не храните handles как постоянные ID, не сериализуйте и не передавайте между редакторами.
-- Прямые мутации DOM — доверенный код приложения, а не защищённая среда выполнения. Для изменений используйте транзакции и проверенные HTML/JSON API. Handle не авторизует backend-запросы и не подтверждает безопасность входных данных.
+- Content edits, external replacement, undo/redo, rollback that rebuilds DOM, and composition start expire previous targets. Same-value controlled feedback preserves a handle only when the DOM is actually retained.
+- Pending native mutation is detected synchronously, including before a `MutationObserver` callback. Replacing nodes with identical HTML does not preserve a target. Capture during pending change, a transaction, or composition is refused.
+- Foreign, fabricated, released, and stale handles refuse without targeting a similar node. `getRange` returns `undefined`, checks/restoration return `false`; cleanup remains safe after editor destruction.
+- A handle temporarily retains DOM boundaries. Release it when the form closes; invalidation and editor destruction clear internal references. Do not use handles as persistent IDs, serialize them, or pass them between editors.
+- Direct DOM mutation is trusted application code, not a sandbox. Use transactions and validated HTML/JSON APIs for changes. A handle does not authorize backend requests or establish input safety.
 
-Этот этап **не переносит позиции через правки**, не вводит общий atom/node-view/decorations SDK и не расширяет разрешённые структурные операции. Сохранённый `Range` — наблюдение, а не право обойти валидацию команды. Текущие выполненные проверки смотрите в [журнале тестирования](/testing); примеры API сами по себе не являются результатом браузерной проверки.
+This slice **does not map positions through edits**, add a general atom/node-view/decorations SDK, or broaden supported structural operations. A remembered `Range` is an observation, not permission to bypass command validation. Actual executed checks are recorded in [testing](/testing); API examples alone are not browser verification evidence.
 
-## Дополнительные слои SDK
+## Additional SDK layers
 
-[Узлы, атомы, внешние представления и decorations](/plugin-extensions) доступны через необязательный `/sdk`. Явный UTF-16 mapping использует `editor.positions` и планы транзакций. Эти отдельные контракты не превращают revision-bound selection handles в автоматически переносимые DOM-цели и не заявляют editable contentDOM.
+[Nodes, atoms, external views and decorations](/plugin-extensions) are available through optional `/sdk`. Explicit UTF-16 mapping uses `editor.positions` and transaction plans. These independent contracts do not turn revision-bound selection handles into automatically mapped DOM targets or promise editable contentDOM.

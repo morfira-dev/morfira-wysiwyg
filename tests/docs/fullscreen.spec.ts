@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) test(`fullscreen workspace preserves the document and readonly view in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   if (!english) await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const workspace = page.locator('.demo-workspace');
@@ -36,7 +36,7 @@ for (const english of [false, true]) test(`fullscreen workspace preserves the do
   await expect(enter).toHaveAttribute('aria-pressed', 'false');
   expect(await content.innerHTML()).toBe(before);
   await workspace.getByRole('link', { name: t('Подключение полноэкранного режима', 'Fullscreen setup'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/fullscreen$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/fullscreen$`));
   await expect(page.locator('.vp-doc')).toContainText('FullscreenUIController');
   await expect(page.locator('.vp-doc')).toContainText('Fullscreen API');
 });

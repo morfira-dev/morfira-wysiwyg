@@ -5,7 +5,7 @@ for (const english of [false, true]) {
   test(`extension guide maps positions, keeps views external and persists atom identity (${english ? 'EN' : 'RU'})`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(english ? '/en/plugin-extensions' : '/plugin-extensions');
+    await page.goto(english ? '/plugin-extensions' : '/ru/plugin-extensions');
     const demo = page.locator('.plugin-extensions-example');
     await expect(demo.getByRole('button', { name: t('Сбросить пример', 'Reset example'), exact: true })).toBeEnabled();
     const output = demo.getByRole('textbox', { name: t('HTML расширений SDK', 'SDK extensions HTML'), exact: true });

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) test(`save-state demo keeps newer edits dirty and retries current content in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   if (!english) await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-save-state');
@@ -39,6 +39,6 @@ for (const english of [false, true]) test(`save-state demo keeps newer edits dir
   await expect(status).toHaveText(t('Сохранено', 'Saved'));
   expect(await content.innerHTML()).toBe(readonlyHTML);
   await panel.getByRole('link', { name: t('Контракт сохранения и ответственность сервера', 'Save contract and server responsibilities'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/save-state$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/save-state$`));
   await expect(page.locator('.vp-doc')).toContainText('SaveStateSnapshot');
 });

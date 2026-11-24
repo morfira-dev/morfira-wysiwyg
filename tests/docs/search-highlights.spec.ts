@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`all-result search highlight controls are observational in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const search = page.locator('.lab-search');
@@ -39,7 +39,7 @@ for (const english of [false, true]) test(`all-result search highlight controls 
   expect(await content.innerHTML()).toBe(original);
   await expect(undo).toBeDisabled();
   await panel.getByRole('link', { name: t('Подключение и ограничения подсветки', 'Highlight setup and limitations'), exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`${english ? '/en' : ''}/search-highlights$`));
+  await expect(page).toHaveURL(new RegExp(`${english ? '' : '/ru'}/search-highlights$`));
   await expect(page.locator('.vp-doc')).toContainText('morfira-search-results');
   await expect(page.locator('.vp-doc')).toContainText(t('не вставляются', 'without inserting'));
 });

@@ -1,8 +1,8 @@
-# События и расширение редактора
+# Events and editor extensions
 
-Morfira — небольшой модульный редактор с готовыми основными плагинами. Приложение выбирает нужные импорты; ядро не загружает таблицы, изображения или фреймворк автоматически. Своим расширениям доступны те же публичные команды, транзакции и события.
+Morfira is a small modular editor with ready-made essential plugins. Applications select imports; core never loads tables, images or a framework automatically. Custom extensions use the same public commands, transactions and events.
 
-## События ядра
+## Core events
 
 ```ts
 const stopChange = editor.events.on('change', ({ html, source }) => {
@@ -18,26 +18,26 @@ const stopLocale = editor.events.on('localechange', ({ locale, translations }) =
   console.log(locale, translations);
 });
 const stopDestroy = editor.events.on('destroy', () => {
-  // Финальная очистка. Команды редактора уже недоступны.
+  // Final cleanup. Editor commands are already unavailable.
 });
 ```
 
-`change` возникает после пользовательской операции, undo/redo или изменившей значение внешней замены (`source: 'user' | 'api'`). `selectionchange` передаёт снимок `TextSelection | undefined`; это уведомление, а не обещание изменения значения при каждом вызове. `readonlychange` возникает только при реальном переходе. Каждый слушатель получает собственный небольшой снимок события ядра.
+`change` follows a user operation, undo/redo or an external replacement that actually changes the value (`source: 'user' | 'api'`). `selectionchange` provides a `TextSelection | undefined` snapshot; a notification does not promise the value changed on every call. `readonlychange` only reports actual transitions. Each core listener receives an independent small snapshot.
 
-`localechange` передаёт независимый `EditorLocale` snapshot `{ locale, translations }` только при изменении языковой настройки. Он не является документным `change`, не меняет содержимое, выделение или историю. Подписка очищается так же, как остальные события ядра. Каталог ключей, fallback и локализация своего UI — в [руководстве](/localization).
+`localechange` supplies an independent `EditorLocale` snapshot `{ locale, translations }` only when language configuration changes. It is not a document `change` and changes no content, selection or history. Its subscription has the same cleanup rules as other core events. See [localization](/localization) for keys, fallback and localizing custom UI.
 
-Существующие `subscribe` и `onSelectionChange` сохраняются как совместимые фасады. Подписка не вызывает слушателя немедленно. Каждый `stop` идемпотентен, в том числе после destroy. Все подписки принадлежат экземпляру и автоматически очищаются при уничтожении.
+Existing `subscribe` and `onSelectionChange` remain compatible facades. Subscriptions are not immediate. Every returned disposer is idempotent, including after destroy. Subscriptions belong to the instance and are automatically cleared on teardown.
 
-## Подтверждения контролируемого ввода
+## Controlled input commit receipts
 
-`EditorInputCommit` — принадлежащее ядру readonly-уведомление об уже завершённой операции ввода. Подписка: `editor.events.on('inputcommit', listener)`; плагины не могут отправить его. Это не командная шина, RPC-результат или отменяемое преобразование до commit.
+`EditorInputCommit` is a core-owned, readonly notification of a completed input operation. Subscribe with `editor.events.on('inputcommit', listener)`; plugins cannot emit it. It is not a command bus, an RPC result or a cancellable/precommit transform.
 
-| Поле | Контракт |
+| Field | Contract |
 | --- | --- |
-| `inputType` | `'insertParagraph'` или `'insertFromPaste'` |
-| `sourceEvent` | Точный причинный DOM `Event`, только для сопоставления по идентичности |
-| `selection` | `SelectionBookmark` после ввода либо `undefined`; каждый слушатель получает независимые объекты bookmark и массивы путей |
-| `isCurrent()` | Совпадают ли committed-содержимое, фактическое структурное выделение и pending-форматы курсора, пока редактор активен, доступен для записи и вне композиции |
+| `inputType` | `'insertParagraph'` or `'insertFromPaste'` |
+| `sourceEvent` | The exact causal DOM `Event`, for identity correlation only |
+| `selection` | Post-input `SelectionBookmark` or `undefined`; each listener gets independent bookmark objects and path arrays |
+| `isCurrent()` | Whether the committed content, actual structural selection and pending caret formats still match, with the editor active, writable and outside composition |
 
 ```ts
 import type { EditorInputCommit } from '@morfira-dev/wysiwyg';
@@ -45,24 +45,24 @@ import type { EditorInputCommit } from '@morfira-dev/wysiwyg';
 const stopInput = editor.events.on('inputcommit', (receipt: EditorInputCommit) => {
   if (!receipt.isCurrent()) return;
   console.log(receipt.inputType, receipt.sourceEvent.type, receipt.selection);
-  // Перед командой повторно проверьте свой ограниченный кандидат и его контекст.
+  // Revalidate your own bounded candidate/context before any follow-up command.
 });
 
-// При уничтожении владельца этой подписки:
+// When this observer's owner is disposed:
 stopInput();
 ```
 
-Этот срез охватывает только изменившую документ, проверенную **контролируемую ядром** вставку абзаца и настоящую clipboard-вставку из отменяемого причинного события. Причиной может быть beforeinput, прямой keydown простого списка или clipboard paste; при нормализации клавиатуры списка причиной является созданный beforeinput. `sourceEvent` не предоставляет полномочий: изменение/отмена старого события не отменяет завершённый ввод. Clipboard-payload не добавляется в receipt. Подготовка плагина может сопоставлять точный объект события через собственный WeakMap; общее `change` не идентифицирует ввод.
+This slice covers only changed, validated **core-controlled** paragraph insertion and actual clipboard paste from a cancelable cause. The cause can be a beforeinput event, a direct plain-list keydown or clipboard paste; when list keyboard normalization dispatches beforeinput, that normalized event is the cause. `sourceEvent` carries no authority: modifying/canceling it cannot undo the committed input. It exposes no clipboard payload in the receipt. Plugin-local preparation may correlate the exact event identity with a WeakMap; generic `change` is not input identity.
 
-Чисто нативный ввод, Shift+Enter, заблокированные/отменённые/отклонённые/no-op операции, композиция, API insertHTML/setHTML/setJSON, обычные команды плагинов и история не создают receipt. Это не универсальный input middleware.
+Native-only input, Shift+Enter, blocked/canceled/rejected/no-op operations, composition, API insertHTML/setHTML/setJSON, ordinary plugin commands and history do not produce this receipt. It is not universal input middleware.
 
-Уведомления операции `change` и `selectionchange` идут перед `inputcommit`. Рассылка сохраняет синхронный FIFO и независимые bookmarks слушателей. Вложенная правка, смена выделения/форматов могут сделать receipt устаревшим до вызова слушателя; destroy, read-only и начало композиции тоже инвалидируют его. `isCurrent()` не перемещает фокус/выделение, не авторизует действие и не обнаруживает произвольную несогласованную мутацию DOM. Уход выделения и возврат могут оставить то же актуальное состояние.
+The operation's `change` and `selectionchange` notifications precede `inputcommit`. Delivery remains synchronous FIFO, with independent bookmarks per listener. Reentrant edits or selection/format changes may make a receipt stale before your listener runs; disposal, read-only or composition activation also invalidate it. `isCurrent()` does not focus or select anything and is not authorization or detection of arbitrary untracked DOM mutation. Moving selection away and back can leave the same current state.
 
-Ошибки уведомлений возникают после commit, вне rollback. Применимые слушатели и receipt пытаются доставить даже после ошибки прежнего change/selection-слушателя; агрегированные ошибки сообщаются затем. Destroy сохраняет правила остановки рассылки. Последующая проверенная команда — отдельная транзакция/операция истории: receipt не может задним числом присоединить её к вводу. [Autolink](/autolink) намеренно сохраняет Enter/paste и преобразование как две операции Undo.
+Notification failures occur after commit, outside rollback. All applicable listeners/receipt delivery are attempted even after an earlier change/selection listener throws; aggregated errors are reported afterward. Destroy follows the existing delivery-stop rules. A follow-up validated command creates a separate transaction/history operation: a receipt cannot retroactively join the original input. [Autolink](/autolink) deliberately keeps Enter/paste and conversion as two Undo operations.
 
-## Взаимодействие плагинов
+## Plugin cooperation
 
-Общий модуль контракта определяет типизированный токен:
+A shared contract module defines a typed token:
 
 ```ts
 // types.ts
@@ -79,7 +79,7 @@ import type { AssetInserted } from './types';
 export const assetInserted = createPluginEvent<AssetInserted>('assets:inserted');
 ```
 
-Один плагин сообщает о завершённой операции, другой реагирует:
+One plugin reports a completed operation; another observes it:
 
 ```ts
 import type { EditorPlugin } from '@morfira-dev/wysiwyg';
@@ -89,26 +89,26 @@ import { assetInserted } from './contracts/events';
 export const assetStatus = (): EditorPlugin => ({
   name: 'asset-status',
   setup: (editor) => editor.events.on(assetInserted, ({ src }) => {
-    console.log('Вставлено', src);
+    console.log('Inserted', src);
   }),
 });
 
-// В контроллере приложения, после получения URL от своего хранилища:
-imageCommands(editor).insert({ src: '/uploads/photo.png', alt: 'Фото' });
+// In the application controller, after resolving your storage URL:
+imageCommands(editor).insert({ src: '/uploads/photo.png', alt: 'Photo' });
 editor.events.emit(assetInserted, { src: '/uploads/photo.png' });
 ```
 
-Плагины импортируют **один и тот же токен**. Два вызова фабрики с одинаковым именем создают разные события. `emit` не принимает строковые имена событий ядра. Импорт токена безопасен при SSR; глобального канала редакторов нет.
+Plugins import **the same token**. Two factory calls with the same name create different events. Public `emit` cannot accept core event strings. Creating/importing tokens is SSR-safe; there is no global channel linking editors.
 
-Пользовательский payload принадлежит приложению: он не копируется глубоко и не является границей безопасности. Слушатели должны считать его неизменяемым. События — уведомления; они не заменяют прямой вызов команды и не возвращают результат редактирования. `false`, Promise или `preventDefault` не отменяют изменение.
+Custom payloads belong to the application: no deep copy or security boundary is implied. Treat them as immutable. Events are notifications, not a replacement for direct commands or a way to return editing results. `false`, a Promise or `preventDefault` cannot cancel an edit.
 
-## Порядок и ошибки
+## Ordering and errors
 
-Рассылка синхронна. Вложенные события попадают в FIFO-очередь: все слушатели текущего события видят его до следующего. Добавленные при рассылке слушатели ждут следующего события; удалённые до своей очереди пропускаются. Destroy прекращает обычную очередь и очищает подписки.
+Delivery is synchronous. Nested events enter a FIFO queue: all listeners see the current event before the next one. Newly added listeners wait for the next event; listeners removed before their turn are skipped. Destroy stops ordinary queued delivery and clears subscriptions.
 
-Ошибка слушателя не блокирует остальных: после рассылки выбрасывается `AggregateError`. Уже завершённое редактирование и его история при этом **не откатываются**. Обрабатывайте ошибки своих слушателей; при вызове `emit` или команд из контроллера можно перехватить ошибку уведомления. Асинхронные слушатели не ожидаются и не являются частью транзакции; обработка их Promise — ответственность приложения.
+A throwing listener does not block the others: an `AggregateError` is thrown after delivery. A completed document/history edit **is not rolled back**. Handle your listener errors; controllers can catch notification errors from `emit` or editor commands. Async listeners are not awaited and do not join a transaction; handling their Promises is application-owned.
 
-## Составные команды
+## Composable commands
 
 ```ts
 editor.transact(() => {
@@ -117,10 +117,10 @@ editor.transact(() => {
 });
 ```
 
-Вложенные `transact`, обычное форматирование и `insertHTML` присоединяются к внешней операции: одна запись истории и одно финальное `change`. Промежуточные уведомления выделения откладываются. Ошибка вложенной мутации откатывает всю операцию, даже если внутренний callback её поймал.
+Nested `transact`, ordinary formatting and `insertHTML` join the outer operation: one history entry and one final `change`. Intermediate selection notifications are deferred. A nested mutation failure rolls back the entire operation even if an inner callback catches it.
 
-Внутри транзакции запрещены `setHTML`, `setJSON`, undo/redo, destroy, `setLocale` и изменение read-only. В read-only внешняя транзакция не выполняется. Callback доверенный и **синхронный**: сначала дождитесь загрузки данных, затем вызовите transact. Async-функции/возвращаемые thenable отклоняются; редактор не способен отменить произвольную запланированную работу приложения. DOM нельзя менять после возврата callback.
+`setHTML`, `setJSON`, undo/redo, destroy, `setLocale` and read-only changes are forbidden inside a transaction. A read-only outer transaction is a no-op. Callbacks are trusted and **synchronous**: await data first, then call transact. Async functions/returned thenables are rejected; the editor cannot cancel arbitrary application-scheduled work. Do not mutate DOM after the callback returns.
 
-Транзакции не добавляют collaboration, командную RPC-шину или фоновые тяжёлые операции. Пример структурных команд — [slash](/suggestions#структурные-slash-команды).
+Transactions introduce no collaboration engine, command RPC bus or heavy background operations. See [structural slash commands](/suggestions#structural-slash-commands) for a concrete example.
 
-Вызов `editor.events.emit` внутри транзакции также запрещён и вызывает её полный откат, даже при перехвате ошибки. Отправляйте уведомление после успешной операции.
+Calling `editor.events.emit` inside a transaction is also forbidden and causes complete rollback even if caught. Emit notifications after a successful operation.

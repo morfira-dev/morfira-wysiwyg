@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) {
   const t = (russian: string, translated: string) => english ? translated : russian;
   test(`Office provenance corpus and inert capture workflow (${english ? 'EN' : 'RU'})`, async ({ page }) => {
-    await page.goto(english ? '/en/office-paste' : '/office-paste');
+    await page.goto(english ? '/office-paste' : '/ru/office-paste');
     const demo = page.locator('.office-corpus-example');
     await expect(demo.getByRole('button', { name: t('Воспроизвести образец', 'Replay sample'), exact: true })).toBeEnabled();
     await demo.getByLabel(t('Исходный образец', 'Source sample'), { exact: true }).selectOption('excel');

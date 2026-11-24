@@ -4,7 +4,7 @@ for (const english of [false, true]) {
   for (const scenario of ['join', 'root', 'nested']) {
     test(`first-body Backspace demo ${scenario} retains bodies and restores its original caret in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
       const t = (ru: string, en: string) => english ? en : ru;
-      await page.goto(english ? '/en/playground' : '/');
+      await page.goto(english ? '/playground' : '/ru/');
       const content = page.locator('.mw-content');
       await expect(content).toBeVisible();
       const panel = page.locator('.lab-list-selection');

@@ -1,55 +1,55 @@
-# Производительность и история
+# Performance and history
 
-Бенчмарк — отдельный инструмент разработки. Он не добавляет код, зависимости или фоновую обработку в редактор и не запускается при каждом обычном тесте.
+The benchmark is explicit development tooling. It adds no editor code, dependencies or background processing and does not run with every normal test.
 
 ```sh
 pnpm run build
 pnpm run benchmark -- --browser=chromium,firefox,webkit
 ```
 
-По умолчанию выполняются один прогрев и пять измерений каждого сценария. Можно выбрать профиль/размер, сохранив минимум пять повторений:
+Defaults are one warmup and five samples per scenario. Select profiles/sizes while retaining at least five repetitions:
 
 ```sh
 pnpm run benchmark -- --browser=chromium --profiles=core --sizes=100,1000 --repeats=5 --heap=false
 ```
 
-Результат записывается в `artifacts/performance-baseline.json`. В отчёте есть версия исходников и признак незакоммиченных изменений, версии библиотек/браузеров/Node, характеристики среды, размер документов, сырые выборки, median/p95/max. Это локальные наблюдения на конкретной машине; начальный baseline не задаёт шумный CI-порог по миллисекундам.
+Results go to `artifacts/performance-baseline.json`. Reports include source revision/dirty state, library/browser/Node versions, environment, document sizes, raw samples and median/p95/max. These are observations on a specific machine; the initial baseline has no noisy millisecond CI gate.
 
-## Документы и проверки результата
+## Documents and correctness
 
-Детерминированные наборы содержат 100, 1000 или 5000 основных абзацев с форматированием и Unicode. Каждые 50 абзацев добавляются заголовок, вложенный список и таблица с объединённой ячейкой. В конце есть пустой абзац для продолжения ввода. Абзацы внутри ячеек и завершающий пустой абзац учитываются отдельно от основных.
+Deterministic datasets contain 100, 1000 or 5000 main paragraphs with formatting and Unicode. Every 50 paragraphs add a heading, nested list and merged-cell table. A trailing empty paragraph supports further typing. Cell paragraphs and that empty paragraph are counted separately from the main paragraph count.
 
-До измерений проверяются HTML/JSON-импорт, текст, число узлов/абзацев/таблиц/ячеек и rowspan. Форматирование меняет известную цель, undo/redo должны восстановить документ, после нативного ввода undo возвращает исходное содержимое. Ошибки корректности завершают benchmark с ошибкой независимо от скорости.
+Before measurement, the runner validates HTML/JSON import, text, node/paragraph/table/cell counts and rowspan. Formatting edits a known target; undo/redo must restore content, and undo after native input must return the baseline. Correctness failures fail the benchmark regardless of speed.
 
-Отдельно измеряются создание, импорт/экспорт HTML, выделение начала/конца документа, форматирование, undo/redo и destroy. Профили `core`, `search`, `statistics` показываются раздельно: стоимость включённого плагина нельзя приписывать ядру. Для поиска используется известная фраза с числом совпадений ниже лимита.
+Creation, HTML import/export, start/end selection, formatting, undo/redo and destroy have separate timings. The `core`, `search` and `statistics` profiles are separate: enabled-plugin costs must not be presented as core costs. Search uses a known phrase with a count below the match limit.
 
-## Что означает время ввода
+## Input timing definitions
 
-| Метрика | Значение |
+| Metric | Meaning |
 | --- | --- |
-| `nativeDispatch` | От capture `beforeinput` до bubble `input` после обработчиков ядра: включает нативное редактирование браузера и синхронную работу подключённых модулей |
-| `nativeFrameOpportunity` | От того же начала до первого requestAnimationFrame после input — возможность кадра, без доказательства фактической отрисовки пикселей |
-| `nativeAutomationWall` | Время вокруг Playwright keyboard.type: включает IPC и автоматизацию |
+| `nativeDispatch` | Capture beforeinput to bubble input after core handlers: includes browser native editing and synchronous enabled-module work |
+| `nativeFrameOpportunity` | Same start to the first requestAnimationFrame after input: a frame opportunity, not proof of painted pixels |
+| `nativeAutomationWall` | Playwright keyboard.type wall time, including IPC and automation |
 
-Время команды измеряется внутри страницы через performance.now. Подготовка выделения не спрятана внутри таймера форматирования; layout-зависимое `innerText` не используется для сравнения текста JSON.
+Command duration uses in-page performance.now. Selection setup is not hidden inside the formatting timer; layout-dependent innerText is not used to compare JSON text.
 
-## Память истории
+## History memory
 
-Публичный API не раскрывает внутренние байты истории. Размер HTML/JSON и его UTF-8/UTF-16 представления **не равен** JS heap. Benchmark не читает приватные стеки и не выдаёт оценку по размеру строки за измерение памяти.
+The public API exposes no history-byte count. HTML/JSON representation size in UTF-8/UTF-16 **is not** JS heap. The benchmark never reaches into private stacks or presents string-size estimates as measured memory.
 
-Только Chromium дополнительно снимает CDP Performance.getMetrics после явного GC: до 20 отдельных транзакций, после них, после внешней замены со сбросом истории и после destroy. Проверяются historyLimit 5 и 20, число доступных Undo и корректное Redo. Firefox/WebKit помечают эти heap-метрики как неподдерживаемые.
+Chromium additionally observes CDP Performance.getMetrics after explicit GC: before 20 distinct transactions, after edits, after an external replacement clearing history, and after destroy. Limits 5 and 20 are exercised, with exact available Undo counts and valid Redo. Firefox/WebKit mark these heap metrics unsupported.
 
-Это наблюдения renderer, а не точное владение памятью редактора. Колебание после destroy не доказывает ни утечку, ни её отсутствие. Синтетический документ не заменяет реальные IME/mobile/touch, скринридеры и сложные документы из Word/Excel.
+These are renderer observations, not precise editor-owned memory. A post-destroy difference proves neither a leak nor leak freedom. Synthetic documents do not replace real IME/mobile/touch, screen-reader or complex Word/Excel checks.
 
-По умолчанию измеряется core; `--profiles=core,search,statistics` явно включает дополнительные профили. Runner использует собранные публичные артефакты без workspace source aliases. Каждому прогреву/повторению дан операционный лимит 120 секунд (`--timeout=120000`), завершённые сценарии сохраняются постепенно. Timeout помечает отчёт незавершённым; это защита инструмента от зависания, а не CI-порог скорости.
+Core is the default profile; `--profiles=core,search,statistics` explicitly enables additional profiles. The runner uses built public artifacts without workspace source aliases. Each warmup/sample has a 120-second operational timeout (`--timeout=120000`), and completed cases are persisted incrementally. A timeout marks the report incomplete; it bounds the tool, not a CI speed threshold.
 
-Нативный ввод в этом профиле вставляет `x` в начало документа; ввод в других позициях и через адаптеры требует отдельных замеров. Выделение конца документа измеряется отдельно. После замера проверяются точный текст, курсор и только ожидаемое форматирование, чтобы пропущенная операция не выглядела быстрой.
+This profile inserts native `x` at the start of the document; other caret positions and adapter input need separate measurements. End-of-document selection is measured separately. Exact text, caret and formatting are checked after timing so a dropped operation cannot look fast.
 
-## Локальный baseline ядра
+## Local core baseline
 
-Apple M1, macOS arm64, Node 22.22.2; один прогрев и пять выборок, headless, 1280×720. Снимок сравнивает синхронную обработку нативного ввода в начале документа до/после повторного использования проверенных HTML-строк.
+Apple M1, macOS arm64, Node 22.22.2; one warmup and five samples, headless, 1280×720. This snapshot compares synchronous native input at the document start before/after reuse of validated HTML strings.
 
-| Браузер | Абзацы | До, median мс | После, median мс | После p95, мс |
+| Browser | Paragraphs | Before, median ms | After, median ms | After p95, ms |
 | --- | ---: | ---: | ---: | ---: |
 | chromium | 1000 | 21.9 | 10.8 | 11.1 |
 | chromium | 5000 | 116.7 | 48.8 | 54.6 |
@@ -58,17 +58,17 @@ Apple M1, macOS arm64, Node 22.22.2; один прогрев и пять выб�
 | webkit | 1000 | 61.0 | 13.0 | 23.0 |
 | webkit | 5000 | 192.0 | 70.0 | 109.0 |
 
-Браузеры: chromium 158.0.8127.18, firefox 159.0, webkit 27.2. Замер 14.11.2026, 00:27:58 Europe/Moscow.
+Browsers: chromium 158.0.8127.18, firefox 159.0, webkit 27.2. Measured 14/11/2026, 00:27:58 Europe/Moscow.
 
-Кеш повторно использует только неизменяемую проверенную HTML-строку при точном совпадении текущего innerHTML. Изменившийся ввод проходит прежнюю валидацию; JSON, bookmarks и объекты snapshots независимы. Сериализация DOM остаётся затратной, поэтому большие документы требуют дальнейшей работы. Эти числа не означают 60 fps или гарантированную ёмкость для произвольных документов.
+The cache reuses only immutable validated HTML for an exact current innerHTML match. Changed input still passes the same validator; JSON, bookmarks and snapshot objects remain independent. DOM serialization remains a cost, so large documents still require further work. No 60-fps or arbitrary-document capacity claim follows from these figures.
 
-Исходные отчёты: artifacts/performance-before-html-cache.json, artifacts/performance-after-html-cache.json и artifacts/performance-comparison.json (локальные игнорируемые файлы).
+Raw reports: artifacts/performance-before-html-cache.json, artifacts/performance-after-html-cache.json and artifacts/performance-comparison.json (local ignored files).
 
-## Локальное форматирование и повторное использование статистики
+## Local inline formatting and statistics reuse
 
-Следующий замер на той же машине использует один прогрев и пять выборок. Начальная версия уже включает повторное использование HTML snapshots. Применение логического inline-формата внутри подходящего абзаца или заголовка теперь преобразует этот блок, сохраняя остальные DOM-узлы. Выделения между блоками и неподдерживаемые структуры используют обработку полного документа. Создание снимков истории и валидация по-прежнему входят во время команды.
+A subsequent measurement on the same machine uses the same one-warmup/five-sample protocol. The starting point already includes HTML snapshot reuse. Applying a boolean inline mark inside one eligible paragraph or heading now transforms that block while preserving unrelated DOM nodes. Cross-block selections and unsupported structures retain the full-document path. History snapshots and validation still contribute to command time.
 
-| Браузер | Абзацы | Форматирование до, median мс | Форматирование после, median мс |
+| Browser | Paragraphs | Format before, median ms | Format after, median ms |
 | --- | ---: | ---: | ---: |
 | chromium | 1000 | 40.0 | 9.4 |
 | chromium | 5000 | 198.9 | 45.6 |
@@ -77,12 +77,12 @@ Apple M1, macOS arm64, Node 22.22.2; один прогрев и пять выб�
 | webkit | 1000 | 50.0 | 12.0 |
 | webkit | 5000 | 246.0 | 62.0 |
 
-Статистика сохраняет подсчёты только для неизменившихся смысловых текстовых фрагментов текущего документа. Чтение актуальных фрагментов и выделенного текста остаётся необходимым; кеша прежних документов и фонового worker нет. С подключённым плагином статистики выделение конца документа из 1000 абзацев показало:
+Statistics retain counts only for unchanged semantic text runs in the current document. Reading current runs and selected text remains necessary; there is no historical document cache or background worker. With the statistics plugin enabled, end-of-document selection in the 1000-paragraph fixture measured:
 
-| Браузер | До, median мс | После, median мс |
+| Browser | Before, median ms | After, median ms |
 | --- | ---: | ---: |
 | chromium | 14.5 | 3.2 |
 | firefox | 16.0 | 2.0 |
 | webkit | 10.0 | 2.0 |
 
-Это отдельные наблюдения форматирования ядра и профиля статистики, а не взаимозаменяемые затраты или гарантированная задержка. Исходные отчёты: `artifacts/performance-before-local-formatting.json`, `artifacts/performance-after-local-formatting.json`, `artifacts/performance-before-statistics-reuse.json` и `artifacts/performance-after-statistics-reuse.json` (локальные игнорируемые файлы).
+These are separate core-formatting and statistics-profile observations, not interchangeable costs or guaranteed latency. Raw reports: `artifacts/performance-before-local-formatting.json`, `artifacts/performance-after-local-formatting.json`, `artifacts/performance-before-statistics-reuse.json` and `artifacts/performance-after-statistics-reuse.json` (local ignored files).

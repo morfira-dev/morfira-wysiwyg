@@ -2,13 +2,13 @@
 import AdvancedMarkdownExample from './.vitepress/theme/AdvancedMarkdownExample.vue';
 </script>
 
-# Markdown: импорт и экспорт
+# Markdown import and export
 
-Отдельный кодек преобразует Markdown в `EditorDocument` схемы v1 и обратно. Он не входит в ядро или пресеты и не подключает [Markdown shortcuts](/markdown). Кодек написан на TypeScript без сторонних runtime-зависимостей, работает без DOM и не выполняет сетевые запросы.
+The separate codec converts Markdown to schema-v1 `EditorDocument` and back. It is outside core and presets and does not install [Markdown typing shortcuts](/markdown). It uses TypeScript with no third-party runtime dependencies, works without DOM, and makes no network requests.
 
-Это ограниченный синтаксис для обычного редактирования, без заявления полной совместимости CommonMark/GFM. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+This is a bounded everyday-authoring dialect, without a claim of full CommonMark/GFM conformance. Current browser/example execution results and their limits are recorded under [testing](/testing).
 
-## API и подключение
+## API and composition
 
 ```ts
 import { parseMarkdown, serializeMarkdown } from '@morfira-dev/wysiwyg/codecs/markdown';
@@ -16,58 +16,58 @@ import { parseMarkdown, serializeMarkdown } from '@morfira-dev/wysiwyg/codecs/ma
 const value = parseMarkdown('# Heading\n\nA **bold** word.');
 const source = serializeMarkdown(value);
 
-// Внешняя замена сбрасывает Undo/Redo.
+// External replacement clears Undo/Redo.
 editor.setJSON(value);
 
-// Вставка использует текущие правила выделения, read-only и истории редактора.
+// Insertion uses the editor's existing selection, read-only and history rules.
 editor.insertHTML(editor.schema.documentHTML(parseMarkdown('**Inserted**')));
 
-// Экспорт не изменяет документ или историю; доступен в read-only.
+// Export changes neither the document nor its history and works read-only.
 const exported = serializeMarkdown(editor.getJSON());
 ```
 
-`parseMarkdown(source: string, options?: MarkdownCodecOptions): EditorDocument` не меняет редактор. `serializeMarkdown(document: EditorDocument, options?: MarkdownCodecOptions): string` сначала проверяет документ и не изменяет входной объект. Нет автоматического Markdown-paste или глобальной регистрации. Модуль можно загрузить через динамический `import()` только при необходимости; его JS не добавляется в стандартный профиль редактора автоматически. Дополнительного CSS нет.
+`parseMarkdown(source: string, options?: MarkdownCodecOptions): EditorDocument` does not edit an editor. `serializeMarkdown(document: EditorDocument, options?: MarkdownCodecOptions): string` validates first and does not mutate its input. There is no automatic Markdown paste or global registration. Load the module with dynamic `import()` when needed; its JS is not added to standard editor profiles automatically. No additional CSS is required.
 
-Внешняя синхронизация через `setJSON` остаётся возможной даже для read-only редактора. В демке пользовательские кнопки импорта/вставки отключены в этом режиме; экспорт остаётся доступным.
+External synchronization through `setJSON` remains possible in a read-only editor. The demo disables user import/insert buttons in that mode and keeps export available.
 
-## Поддержанный синтаксис
+## Supported syntax
 
-| Возможность | Вход и результат |
+| Feature | Input and result |
 | --- | --- |
-| Абзацы и заголовки | Пустая строка разделяет абзацы; `#`–`######` с пробелом создают заголовок. Обычный перенос внутри абзаца становится пробелом. CRLF/CR нормализуются. |
-| Перенос строки | Два пробела или обратная косая черта перед концом строки создают `br`. |
-| Списки | `-`, `*`, `+` и десятичные `1.` / `1)` с пробелом; начальное число сохраняется. Вложенные пункты используют два пробела на уровень; экспорт использует такой же отступ. |
-| Цитаты и разделители | Явный `>` и вложенные цитаты; строки из минимум трёх `-`, `*` или `_` создают `hr`. |
-| Код | Backtick-run для inline-кода; минимум три обратные кавычки или `~` для fence. Закрывающий fence использует тот же символ и не короче открывающего. Язык после fence не сохраняется. |
-| Оформление | `**strong**`, `*emphasis*`, `~~strike~~` и поддержанные варианты подчёркиваний. Экранирование ASCII-пунктуации обратной косой чертой. |
-| Ссылки и изображения | `[label](destination "title")`, `![alt](destination "title")`; адрес можно заключить в `<…>`. Опасные адреса становятся видимым label/alt без URL. |
-| Простые таблицы | Pipe-таблица с строкой заголовка и delimiter-строкой того же числа столбцов. Экранированный `\|` остаётся текстом ячейки. |
+| Paragraphs and headings | Blank lines separate paragraphs; `#`–`######` followed by a space create headings. Ordinary soft paragraph line breaks become spaces. CRLF/CR are normalized. |
+| Hard breaks | Two spaces or a backslash at end of line create `br`. |
+| Lists | `-`, `*`, `+` and decimal `1.` / `1)` followed by a space; ordered starts survive. Nested items use two spaces per level; export uses the same indentation. |
+| Quotes and rules | Explicit `>` and nested quotes; lines of at least three `-`, `*` or `_` create `hr`. |
+| Code | Backtick runs for inline code; at least three backticks or `~` for fences. A closing fence uses the same character and is at least as long as its opener. Language information is not stored. |
+| Marks | `**strong**`, `*emphasis*`, `~~strike~~` and supported underscore variants. Backslash escaping for ASCII punctuation. |
+| Links and images | `[label](destination "title")`, `![alt](destination "title")`; destinations may be enclosed in `<…>`. Unsafe URLs degrade to visible label/alt text without a URL. |
+| Simple tables | Pipe tables with a header and matching-column delimiter row. Escaped `\|` stays literal cell text. |
 
-Inline-код сохраняет буквальное содержимое; одна пара ASCII-пробелов по краям непустого code span служит разделителем и снимается при разборе. Кодек добавляет такую пару при конфликте обратных кавычек на границе; строка только из пробелов остаётся буквальной. Экспорт выбирает длину backtick-run/fence больше любой конфликтующей последовательности в содержимом. Табличный экспорт использует первую строку как заголовок; произвольное расположение `th` не сохраняется.
+Inline code retains literal contents; exactly one pair of edge ASCII spaces around a nonblank code span is treated as separation and removed on import. The exporter adds this pair when backticks would collide at the boundary; all-space contents remain literal. Export chooses backtick/fence runs longer than conflicting runs in the contents. Table export treats the first row as the header; arbitrary `th` placement is not retained.
 
-## Что теряется или отклоняется
+## Losses and refusals
 
-Кодек не вычисляет HTML, CSS, формулы или внешние ресурсы. Raw HTML остаётся буквальным текстом. Entities декодируются только в данные; сноски, математика и расширенные директивы не интерпретируются. При экспорте буквальные Markdown-маркеры и HTML-пунктуация экранируются.
+The codec evaluates no HTML, CSS, formulas or external resources. Raw HTML remains literal text. Entities decode into data only; footnotes, math and extended directives are not interpreted. Export escapes literal Markdown markers and HTML punctuation.
 
-Цвета, шрифты, обычное выравнивание текста, направление текста, стили/обратная нумерация списков, размеры изображений и оформление таблиц теряются. `u`, `sub`, `sup` и обычные `span` экспортируются своим текстом; подпись figure становится отдельным абзацем. Вывод не использует HTML fallback. Произвольные пустые абзацы и пустые inline-code обёртки не сохраняются как отдельная структура. Пробелы в title/alt нормализуются; символы `<`, `>`, `|` и обратная косая черта в экспортируемом URL percent-encode-ятся. Отрицательные и десятизначные начальные номера списков отклоняются, как и многострочный inline-код или заголовок с переносом строки.
+Colors, fonts, ordinary text alignment, text direction, list marker/reversed settings, image dimensions and table presentation are lost. `u`, `sub`, `sup` and ordinary `span` export their contents; figure captions become separate paragraphs. Output never uses an HTML fallback. Arbitrary empty paragraphs and empty inline-code wrappers are not retained as distinct structure. Title/alt whitespace is normalized; `<`, `>`, `|` and backslash characters in exported URLs are percent-encoded. Negative and ten-digit ordered-list starts reject, as do multiline inline code and headings containing line breaks.
 
-**Объединённые, вложенные и неподдержанные сложные таблицы отклоняются**, а не превращаются молча в плоский текст. Ячейки с несколькими блоками или переносами строк не экспортируются этим срезом. Незарегистрированные семантические узлы также вызывают ошибку: идентификаторы упоминаний и метаданные плагинов нельзя считать сохранёнными Markdown-экспортом. Для точного хранения используйте JSON редактора.
+**Merged, nested and unsupported complex tables reject**, rather than silently flattening. Cells with several blocks or line breaks cannot be exported by this slice. Unregistered semantic nodes also cause an error: mention identity and plugin metadata cannot be assumed to survive Markdown export. Use editor JSON for exact storage.
 
-## Безопасность и лимиты
+## Security and limits
 
-Вход и выход ограничены 1 000 000 UTF-16 code units, дерево кодека — 10 000 узлов и глубиной 32. Превышение ограничений отклоняется; окончательный документ дополнительно проходит обычный валидатор схемы. Импорт не разбирает raw HTML как DOM. Проверка адресов не означает доверие к домену; при последующем отображении разрешённое изображение может загрузить свой URL.
+Input and output are capped at 1,000,000 UTF-16 code units, codec trees at 10,000 nodes and nesting at 32. Exceeding a limit rejects; final documents also pass ordinary schema validation. Import never parses raw HTML as DOM. A safe URL scheme does not imply a trusted destination; subsequently rendering an allowed image can load its URL.
 
-Приложение должно обрабатывать исключения и самостоятельно валидировать данные на сервере. Кодек не заменяет CSP, авторизацию загрузки или серверную политику URL. Его функции не изменяют документ редактора при ошибке; изменение происходит только после явного вызова API редактора.
+Applications must handle exceptions and validate server-side. The codec does not replace CSP, upload authorization or server URL policy. Its functions do not alter an editor on error; changes happen only through explicit editor API calls.
 
-## Расширенный профиль
+## Extended profile
 
-Поддерживаются Setext-заголовки (`===` и `---` после текста), блоки кода с четырьмя пробелами/табом, ссылки и изображения через определения `[guide]: /guide "Title"`, полные `[label][guide]`, сокращённые `[guide][]` и `[guide]` ссылки. Определения собираются до разбора inline-текста, поэтому могут стоять после ссылки. Первое определение побеждает; регистр и повторные пробелы в метках нормализуются. Метка ограничена 999 символами, определения — 10 000; многострочные определения не поддерживаются. Определения внутри кода остаются кодом.
+Setext headings (`===` and `---` after text), four-space/tab-indented code, link/image definitions `[guide]: /guide "Title"`, full `[label][guide]`, collapsed `[guide][]` and shortcut `[guide]` references are supported. Definitions are collected before inline parsing, so forward references work. The first definition wins; label case and repeated whitespace normalize. Labels are limited to 999 characters and definitions to 10,000; multiline definitions are unsupported. Definitions inside code remain code.
 
-`<https://example.com>` и `<reader@example.com>` создают безопасные ссылки; обычные URL без угловых скобок автоматически не распознаются. Числовые HTML references и ограниченный набор именованных entities декодируются в текст/адреса до проверки URL. Поэтому `java&#115;cript:` также отклоняется. Декодированные `<script>` остаются текстом; код не декодируется. Неизвестные entities сохраняются буквально. Набор с обязательной точкой с запятой и чувствительным регистром:
+`<https://example.com>` and `<reader@example.com>` create safe links; bare URLs without angle brackets are not automatically linked. Numeric HTML references and a bounded named set decode into text/destinations before URL checks, so `java&#115;cript:` also rejects. Decoded `<script>` remains text; code contents never decode. Unknown entities stay literal. The case-sensitive named set requires semicolons:
 
 `amp AMP lt LT gt GT quot QUOT apos nbsp copy reg trade euro pound yen cent ndash mdash hellip middot bull laquo raquo lsquo rsquo ldquo rdquo times divide plusmn deg micro para sect shy ensp emsp thinsp eacute Eacute aacute Aacute agrave Agrave ouml Ouml uuml Uuml auml Auml szlig`.
 
-Поддерживаются `***strong + emphasis***`, вложенные разные оформления и Unicode-правила пробелов/пунктуации на границах. Внутрисловное `snake_case_name` остаётся текстом. Полный CommonMark delimiter-stack и все неоднозначные сочетания не реализованы.
+`***strong + emphasis***`, nested distinct marks and Unicode whitespace/punctuation flanking are supported. Intraword `snake_case_name` stays text. The complete CommonMark delimiter stack and every ambiguous combination are not implemented.
 
 ```ts
 import type { MarkdownCodecOptions } from '@morfira-dev/wysiwyg/codecs/markdown';
@@ -76,12 +76,12 @@ const value = parseMarkdown('- [x] Done', options);
 const source = serializeMarkdown(value, options);
 ```
 
-Оба флага по умолчанию `false`. `taskLists` сохраняет `data-checklist-checked` на `li`; редактор-получатель должен подключить плагин `checklists()`. Без флага `[x]` — обычный текст, а task-метаданные при экспорте не сохраняются. `tableAlignment` сохраняет безопасное `text-align` у ячеек; экспорт требует одинакового выравнивания во всех ячейках одного столбца и отклоняет неоднозначность. При `false` подсказки выравнивания теряются, как раньше. Неизвестные опции и значения не boolean отклоняются.
+Both flags default to `false`. `taskLists` preserves `data-checklist-checked` on `li`; the receiving editor must install `checklists()`. Without the option, `[x]` is ordinary text and task metadata is not retained on export. `tableAlignment` preserves safe cell `text-align`; export requires consistent alignment throughout each column and rejects ambiguity. When `false`, alignment hints are lost as before. Unknown options and nonboolean values reject.
 
-Профиль спроектирован по первичным спецификациям [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/) и [GFM](https://github.github.com/gfm/); это не заявление о полной совместимости. Регрессионные примеры написаны для проекта самостоятельно. Прежние лимиты, DOM-free исполнение и отдельный бюджет 15 000 gzip JS bytes сохраняются; актуальный вес сообщается по измеренной сборке.
+This profile follows the primary [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/) and [GFM](https://github.github.com/gfm/) specifications without claiming complete conformance. Regression fixtures are independently authored for this project. Existing limits, DOM-free execution and the separate 15,000 gzip JS byte guard remain; actual size comes from a measured build.
 
 <AdvancedMarkdownExample />
 
-## Демо
+## Demo
 
-На [главной](/#editor) и в [playground](/playground) раскрой **«Markdown: импорт и экспорт»**. Отредактируй исходник и выбери импорт, вставку или экспорт. Импорт заменяет содержимое и сбрасывает прежнюю историю; вставку можно отменить одной операцией Undo. Экспорт записывает текст обратно в поле Markdown. Переключатель shortcuts продолжает управлять только преобразованиями при наборе.
+On the [homepage](/#editor) and [playground](/playground), expand **“Markdown: import and export”**. Edit the source and choose import, insert or export. Import replaces content and clears previous history; insertion can be undone once. Export writes back to the Markdown field. The shortcuts toggle continues to control typing conversions only.

@@ -1,10 +1,10 @@
-# Состояние сохранения
+# Save state
 
-`saveState()` связывает редактор с сохранением, которым владеет приложение. Плагин отслеживает локальные версии, несохранённые изменения, выполняющийся запрос и ошибку; отдельный `createSaveStateUI` показывает статус и кнопки «Сохранить» / «Повторить». Ни сетевого клиента, ни хранилища, ни автоматического сохранения по умолчанию здесь нет.
+`saveState()` connects the editor to application-owned persistence. It tracks local revisions, unsaved changes, an in-flight callback and failure; separate `createSaveStateUI` displays status and native Save / Retry controls. It supplies no network client, storage or default automatic saving.
 
-На главной и в [демо](/playground) откройте «Сохранение документа». Кнопки готовят несохранённый пример, имитируют задержку 700 мс, одну ошибку и новую правку во время ожидания. **Демо ничего не отправляет и не сохраняет.**
+Open “Document saving” on the homepage or in the [playground](/playground). The demo prepares unsaved content, simulates 700 ms latency, one recoverable failure and an edit while saving. **It sends and stores nothing.**
 
-## Подключение
+## Setup
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -14,10 +14,10 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/ui/save-state.css';
 
 const editor = createEditor(editorHost, {
-  locale: 'ru',
+  locale: 'en',
   plugins: [saveState({
     save: async (document, { signal }) => {
-      // Пример транспорта приложения: замените endpoint и серверный контракт.
+      // Illustrative application transport: replace endpoint and server contract.
       const response = await fetch('/api/documents/current', {
         method: 'PUT', signal,
         headers: { 'Content-Type': 'application/json' },
@@ -36,42 +36,42 @@ const unsubscribe = saving.subscribe((state) => {
 });
 ```
 
-`saveHost` должен быть пустым подключённым HTML-контейнером того же документа, вне содержимого редактора. UI требует установленный плагин. JS/CSS выбираются независимо, core и пресеты автоматически их не подключают. Подписка сразу получает начальный снимок, затем обновления своего экземпляра.
+`saveHost` must be an empty connected same-document HTML element outside editor content. The UI requires the plugin. JS/CSS are explicitly selected, outside core/preset defaults. Subscriptions receive the initial snapshot immediately and then instance-owned updates.
 
-## Состояния и команды
+## State and commands
 
-`SaveStateSnapshot` — неизменяемый снимок `{ status, dirty, revision, savedRevision }`.
+`SaveStateSnapshot` is an immutable `{ status, dirty, revision, savedRevision }` snapshot.
 
-| `status` | Значение |
+| `status` | Meaning |
 | --- | --- |
-| `saved` | Текущая локальная версия подтверждена приложением |
-| `dirty` | Есть изменения после последнего подтверждения |
-| `saving` | Вызван callback сохранения; новые правки могут уже существовать |
-| `error` | Callback завершился ошибкой; документ остаётся несохранённым |
+| `saved` | The current local revision has application acknowledgement |
+| `dirty` | Content changed after the last acknowledgement |
+| `saving` | A persistence callback is pending; newer edits may already exist |
+| `error` | The callback failed and the document remains unsaved |
 
-`SaveStateCommands` предоставляет:
+`SaveStateCommands` exposes:
 
-- `getState()` — свежий снимок состояния.
-- `save(): Promise<boolean>` — сохранить текущую зафиксированную версию; `true` означает успешное завершение принадлежащего этому запросу callback.
-- `retry(): Promise<boolean>` — повторить сохранение **текущей версии**, а не старого неудачного снимка.
-- `markSaved()` — приложение явно подтверждает текущую версию и отменяет принадлежащее плагину ожидание.
-- `subscribe(listener)` — начальное состояние и последующие уведомления; возвращает идемпотентную отписку.
+- `getState()` — a fresh state snapshot.
+- `save(): Promise<boolean>` — save the current committed revision; `true` means the owned callback completed successfully.
+- `retry(): Promise<boolean>` — save the **current revision**, not stale failed data.
+- `markSaved()` — explicit application acknowledgement of the current revision, canceling owned pending work.
+- `subscribe(listener)` — initial and subsequent snapshots; returns an idempotent unsubscribe.
 
-Параллельные `save()` / `retry()` во время одного запроса используют тот же Promise и не отправляют второй callback. Методы уничтоженного экземпляра отклоняются; отменённая ожидающая операция завершается `false`.
+Concurrent `save()` / `retry()` share the in-flight Promise without submitting twice. Commands reject after disposal; canceled pending work settles `false`.
 
-Контроллер UI предоставляет `element`, `refresh()` и идемпотентный `destroy()`. Опции — `label?` и `onError?`; экспортируются `SaveStateUIController`, `SaveStateUIOptions`, `SaveStateUIMessageKey`, `saveStateUIMessages`. Ошибка в UI общая и локализованная: текст ответа сервера автоматически не показывается.
+The UI controller has `element`, `refresh()` and idempotent `destroy()`. Options are `label?` and `onError?`; `SaveStateUIController`, `SaveStateUIOptions`, `SaveStateUIMessageKey` and `saveStateUIMessages` are exported. Visible errors are generic and localized; backend response text is not automatically displayed.
 
-## Версии, новые правки и внешний value
+## Revisions, newer edits and external values
 
-Версии начинаются с `revision = savedRevision = 0`. Каждое смысловое пользовательское изменение, включая Undo/Redo, увеличивает локальную версию. Возврат к прежнему тексту через Undo сам по себе не является подтверждением записи на сервер.
+Start with `revision = savedRevision = 0`. Every semantic user change, including Undo/Redo, advances the local revision. Undo returning to old content does not acknowledge server persistence.
 
-Если запрос сохранял версию 4, а пользователь успел получить версию 5, успешный ответ подтверждает только 4: новая версия остаётся `dirty`. Снимок JSON отделён от живого редактора: изменение объекта callback'ом не меняет исходный документ. История, выделение и содержимое от сохранения не меняются.
+If a request captured revision 4 while the user advanced to 5, a successful reply acknowledges only 4: revision 5 remains `dirty`. JSON snapshots are detached from the editor; a callback mutating its argument cannot edit the source. Saving leaves document, history and selection unchanged.
 
-Настоящая API-замена документа создаёт новую сохранённую базу и отменяет устаревшее ожидание. Идентичный controlled feedback адаптера не создаёт ещё одну версию. Это важно при переключении загруженного документа: старый ответ не должен сделать новый документ сохранённым. Если приложение получило подтверждение другим путём, используйте `markSaved()`.
+A real API document replacement establishes a new saved baseline and cancels stale owned work. Identical controlled feedback does not create another revision. This prevents an old reply from acknowledging a newly loaded document. Use `markSaved()` when the application receives acknowledgement by another route.
 
-`revision` — **локальный счётчик экземпляра**, а не серверная версия, ID документа, токен авторизации или гарантия отсутствия конфликтов.
+`revision` is an **instance-local counter**, not a server version, document ID, authorization token or conflict-resolution guarantee.
 
-## Опциональное автосохранение
+## Opt-in autosave
 
 ```ts
 saveState({
@@ -81,15 +81,15 @@ saveState({
 });
 ```
 
-В этом фрагменте `persistInApplication` — ваш обработчик. `autoSave` по умолчанию `false`; `debounceMs` — целое число 0–60000, по умолчанию 500. JSON снимается при фактическом вызове сохранения, а не на каждой клавише. Одновременно удерживается не больше одного выполняющегося снимка и намерения сохранить более новые правки. После завершения старого запроса автосохранение может запланировать новую версию.
+`persistInApplication` is your handler in this fragment. `autoSave` defaults to `false`; `debounceMs` is an integer 0–60000, default 500. Capture JSON only when invoking persistence, not on each keystroke. Retain at most one in-flight snapshot and a later dirty intent. After an older request settles, autosave may schedule the newer revision.
 
-Пропущенный `compositionend` после API-замены или readonly-переключения не оставляет плагин навсегда заблокированным. Промежуточный IME-текст не снимается на сохранение. Read-only сам по себе не запрещает сохранить уже зафиксированные изменения: решение об авторизации остаётся у приложения.
+API replacement or readonly cancellation can recover composition tracking without a native `compositionend`. Provisional IME text is never captured for saving. Read-only does not itself prohibit persisting already committed unsaved content; the application owns authorization.
 
-## Отмена и серверная ответственность
+## Cancellation and server responsibilities
 
-Контекст callback содержит `signal: AbortSignal` и захваченную `revision`. Передайте signal своему транспорту. API-замена, `markSaved()` и уничтожение отменяют принадлежащее плагину ожидание; даже если callback игнорирует сигнал, поздний результат не меняет новый статус. Отмена не откатывает уже совершённую запись на сервере.
+Callback context contains `signal: AbortSignal` and captured `revision`. Pass the signal to your transport. API replacement, `markSaved()` and disposal cancel owned waiting work; late settlement cannot update a newer baseline even if the callback ignores abort. Cancellation does not undo a server write that already completed.
 
-Сервер должен самостоятельно проверять документ, права пользователя, ID ресурса, ограничения загрузок и конкурентные изменения. Для повторов и нескольких вкладок нужны соответствующие вашему API idempotency/version/ETag-механизмы. Плагин не ставит `beforeunload`-обработчик, не обещает офлайн-сохранение, доставку при закрытии страницы или синхронизацию устройств.
+Your server must validate documents, user permissions, resource IDs, upload limits and concurrent writes. Retries and multiple tabs require your API's idempotency/version/ETag policy. This plugin installs no `beforeunload` handler and promises neither offline persistence, delivery on page close nor cross-device synchronization.
 
 ```ts
 unsubscribe();
@@ -97,4 +97,4 @@ view.destroy();
 editor.destroy();
 ```
 
-Таймеры, подписки и AbortController очищаются по экземпляру. Реальные результаты проверок и измерения raw/gzip/Brotli/CSS фиксируются отдельно; пример не означает полный прогон всех функций.
+Timers, subscriptions and AbortControllers are cleaned per instance. Actual focused verification and raw/gzip/Brotli/CSS measurements are reported separately; this example is not a complete-suite claim.

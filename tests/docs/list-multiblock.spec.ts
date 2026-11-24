@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) {
   test(`multi-body list demo preserves following bodies across item replacement in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     const t = (ru: string, en: string) => english ? en : ru;
-    await page.goto(english ? '/en/' : '/');
+    await page.goto(english ? '/' : '/ru/');
     const content = page.locator('.mw-content');
     await expect(content).toBeVisible();
     const panel = page.locator('.lab-list-selection');
@@ -35,7 +35,7 @@ for (const english of [false, true]) {
 
   test(`multi-body list demo selects two bodies in one item without removing neighbors in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     const t = (ru: string, en: string) => english ? en : ru;
-    await page.goto(english ? '/en/playground' : '/playground');
+    await page.goto(english ? '/playground' : '/ru/playground');
     const content = page.locator('.mw-content');
     await expect(content).toBeVisible();
     const panel = page.locator('.lab-list-selection');
@@ -63,7 +63,7 @@ for (const english of [false, true]) {
 
   test(`multi-body list demo exposes internal Delete and item splitting in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     const t = (ru: string, en: string) => english ? en : ru;
-    await page.goto(english ? '/en/' : '/');
+    await page.goto(english ? '/' : '/ru/');
     const content = page.locator('.mw-content');
     await expect(content).toBeVisible();
     const panel = page.locator('.lab-list-selection');

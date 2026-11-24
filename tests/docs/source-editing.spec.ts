@@ -4,7 +4,7 @@ for (const english of [false, true]) test(`HTML source uses localized modal, nor
   const t = (russian: string, translated: string) => english ? translated : russian;
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(english ? '/en/source-editing' : '/source-editing');
+  await page.goto(english ? '/source-editing' : '/ru/source-editing');
   const demo = page.locator('.source-editing-example');
   const open = demo.getByRole('button', { name: t('Открыть HTML-исходник', 'Open HTML source'), exact: true });
   await expect(open).toBeEnabled();

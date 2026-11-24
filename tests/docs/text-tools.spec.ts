@@ -4,7 +4,7 @@ for (const english of [false, true]) test(`text tools use localized public layou
   const t = (russian: string, translated: string) => english ? translated : russian;
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(english ? '/en/text-tools' : '/text-tools');
+  await page.goto(english ? '/text-tools' : '/ru/text-tools');
   const demo = page.locator('.text-tools-example');
   const content = demo.locator('.mw-content');
   await expect(content).toBeVisible();

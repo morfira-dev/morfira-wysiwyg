@@ -4,7 +4,7 @@ for (const english of [false, true]) {
   test(`code blocks demonstrate a localized modal and external highlighting (${english ? 'EN' : 'RU'})`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(english ? '/en/code-blocks' : '/code-blocks');
+    await page.goto(english ? '/code-blocks' : '/ru/code-blocks');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(t('Блоки кода', 'Code blocks'));
     const demo = page.locator('.code-blocks-example');
     const edit = demo.getByRole('button', { name: t('Изменить блок кода', 'Edit code block'), exact: true });

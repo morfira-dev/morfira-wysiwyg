@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('Russian narrow homepage edits selected image metadata with Enter, preserves rich caption and undoes removal', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
-  await page.goto('/');
+  await page.goto('/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const toggle = page.getByRole('checkbox', { name: 'Контекстные свойства изображения', exact: true });
@@ -59,7 +59,7 @@ test('Russian narrow homepage edits selected image metadata with Enter, preserve
 
 test('English dark playground selects the native image range, cancels a draft with Escape and guards read-only properties', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto('/en/playground');
+  await page.goto('/playground');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   await page.getByRole('button', { name: 'Toggle theme', exact: true }).click();

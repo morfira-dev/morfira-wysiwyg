@@ -1,12 +1,12 @@
-# Свойства таблиц и ячеек
+# Table and cell properties
 
-Необязательный `tableProperties()` добавляет ширину и расположение таблицы, заголовки первой строки/столбца, подпись, минимальную высоту строк, цвет фона/границ, единые отступы, толщину/стиль границ вертикальное/горизонтальное выравнивание и направление текста выбранных ячеек. Отдельная `createTablePropertiesForm()` предоставляет готовую форму. Ядро, стандартная панель, контекстная панель и пресеты автоматически эти модули не устанавливают.
+Optional `tableProperties()` adds table width/placement, first-row/column headers, a caption, minimum row height and selected-cell background, border color, uniform padding, border width/style and vertical alignment. Independent `createTablePropertiesForm()` supplies ready controls. Core, the standard/contextual toolbar and presets do not install these modules automatically.
 
-На [главной](/#editor) и в [playground](/playground) форма находится в разделе «Таблицы». Кликните в ячейку или выделите логический прямоугольник, измените поля и нажмите «Применить свойства». Для примера с rowspan откройте «Контекстная таблица», нажмите «Загрузить пример контекстной таблицы», затем «Выделить область 2 × 2». Стили сохраняют фактические ячейки, заголовки меняют только оболочки TD/TH, сохраняя содержимое и spans; одна отправка формы — один Undo.
+On the [homepage](/#editor) and [playground](/playground), find the form in the Tables section. Click a cell or select a logical rectangle, edit fields and choose Apply properties. For a rowspan example, open Contextual table, choose Load contextual table sample and Select 2 × 2 region. Styling retains actual cells; header conversion changes only TD/TH wrappers, preserving content and spans. One form submission is one Undo.
 
-## Подключение
+## Installation
 
-Host формы должен быть пустым подключённым HTML-элементом в том же документе, вне содержимого редактора. Поведение таблиц устанавливается раньше свойств. CSS подключается явно; форма использует существующий `/ui/forms.css`, отдельного CSS для неё нет.
+The form host must be an empty connected HTML element in the editor’s document, outside persisted content. Install table behavior before properties. Import CSS explicitly; this form uses existing `/ui/forms.css` without an additional stylesheet.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -18,7 +18,7 @@ import '@morfira-dev/wysiwyg/plugins/tables.css';
 import '@morfira-dev/wysiwyg/ui/forms.css';
 
 const editor = createEditor(editorHost, {
-  locale: 'ru',
+  locale: 'en',
   value: '<table><tbody><tr><td><p>Alpha</p></td><td><p>Beta</p></td></tr><tr><td><p>Gamma</p></td><td><p>Delta</p></td></tr></tbody></table>',
   plugins: [tables(), tableProperties()],
 });
@@ -26,94 +26,94 @@ const form = createTablePropertiesForm(propertiesHost, editor, {
   onError: (error) => console.error(error),
 });
 
-// После выбора фактической таблицы/ячеек пользователем:
+// After the user chooses the actual table/cells:
 tableCommands(editor).select({ row: 0, column: 0 }, { row: 0, column: 1 });
 const properties = tablePropertyCommands(editor);
 properties.update({ width: '75%', alignment: 'center', cellVerticalAlign: 'middle' });
 const state = properties.getState();
-// При размонтировании: сначала form.destroy(), затем editor.destroy().
+// On unmount: form.destroy() first, then editor.destroy().
 ```
 
-Для standard/extended передайте `plugins: [tableProperties()]` фабрике пресета: прикладные плагины устанавливаются после встроенного `tables`. Форму монтируйте отдельно. Runtime-флаг не удаляет уже импортированный модуль из бандла. UI не обязателен для использования команд.
+With standard/extended, pass `plugins: [tableProperties()]` to the preset factory: application plugins install after built-in tables. Mount the form independently. A runtime flag cannot tree-shake a module already imported. Commands do not require UI.
 
-## Значения команды и состояние
+## Command values and state
 
-| Поле patch | Принятые значения | Область действия |
+| Patch field | Accepted values | Scope |
 | --- | --- | --- |
-| `width` | Строка с целым `40–4000px` или `1–100%`; `false` для сброса | Вся текущая таблица |
-| `alignment` | `left`, `center`, `right`, `false` | Физическое расположение таблицы через margin-left/right |
-| `cellBackground` | Ограниченный безопасный цвет или `false` | Выбранные фактические ячейки |
-| `cellBorder` | Ограниченный безопасный цвет или `false` | Цвет границ выбранных ячеек, без изменения толщины/стиля |
-| `cellVerticalAlign` | `top`, `middle`, `bottom`, `false` | Выбранные фактические ячейки |
-| `cellPadding` | Каноническая строка с целым `0–48px`; `false` сбрасывает | Единый отступ с четырёх сторон выбранных ячеек |
-| `cellBorderWidth` | Каноническая строка с целым `0–12px`; `false` сбрасывает | Толщина границ выбранных ячеек |
-| `cellBorderStyle` | `solid`, `dashed`, `dotted`, `double`, `none`, `false` | Стиль границ выбранных ячеек |
-| `headerRow` | `true` / `false` | Первая логическая строка всей таблицы |
-| `headerColumn` | `true` / `false` | Первый логический столбец всей таблицы |
-| `caption` | Буквальный текст до 5000 символов; пустая строка / `false` удаляет | Нативная подпись всей таблицы |
-| `rowMinHeight` | Каноническая строка с целым `1–1000px`; `false` сбрасывает | Все логические строки, затронутые выделенным прямоугольником |
+| `width` | Integer `40–4000px` or `1–100%` string; `false` resets | Whole current table |
+| `alignment` | `left`, `center`, `right`, `false` | Physical table placement through margin-left/right |
+| `cellBackground` | A bounded safe color or `false` | Selected actual cells |
+| `cellBorder` | A bounded safe color or `false` | Selected cells’ border color; width/style are unchanged |
+| `cellVerticalAlign` | `top`, `middle`, `bottom`, `false` | Selected actual cells |
+| `cellPadding` | Canonical integer `0–48px` string; `false` resets | Uniform padding on all four sides of selected cells |
+| `cellBorderWidth` | Canonical integer `0–12px` string; `false` resets | Selected cells’ border width |
+| `cellBorderStyle` | `solid`, `dashed`, `dotted`, `double`, `none`, `false` | Selected cells’ border style |
+| `headerRow` | `true` / `false` | First logical row of the whole table |
+| `headerColumn` | `true` / `false` | First logical column of the whole table |
+| `caption` | Literal text up to 5000 characters; empty string / `false` removes | Native caption of the whole table |
+| `rowMinHeight` | Canonical integer `1–1000px` string; `false` resets | Every logical row touched by the selected cell rectangle |
 
-Расположение таблицы не является выравниванием её текста. При ширине 100% разница между left/center/right может быть незаметна. Сброс ширины убирает собственный CSS width и устаревший TABLE width-атрибут; запись новой ширины тоже удаляет этот атрибут. Сброс расположения убирает обе margin-декларации. Сброс цвета/вертикального выравнивания удаляет только соответствующее собственное свойство, не вычисленное оформление темы.
+Table placement is not text alignment. Left/center/right may look identical at 100% width. Resetting width removes owned CSS width and the legacy TABLE width attribute; any width write also removes that attribute. Resetting placement removes both margins. Color/vertical reset removes only the corresponding own declaration, without clearing computed theme styles.
 
-Цвет ограничен 100 символами: hex, допустимое имя, числовые rgb/rgba/hsl/hsla с дополнительной проверкой браузером. URL, var(), произвольные функции, экранирование, дополнительные декларации и `!important` запрещены. Значения возвращаются в браузерном каноническом виде. Полный patch проверяется до изменения: неизвестные ключи, явный `undefined`, массивы и неподходящие значения вызывают ошибку, не оставляя частичного результата. Пустой patch и повторная запись тех же значений не создают историю и не стирают redo.
+Colors are limited to 100 characters: hex, supported names, numeric rgb/rgba/hsl/hsla and browser parsing. URLs, var(), arbitrary functions, escapes, extra declarations and `!important` are rejected. Returned colors use browser-canonical explicit values. The entire patch is validated before mutation: unknown keys, explicit `undefined`, arrays and unsupported values throw without a partial result. Empty/idempotent patches do not add history or clear redo.
 
-`getState()` возвращает `disabled`, `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn`, `caption`, `rowMinHeight`, `cellPadding`, `cellBorderWidth`, `cellBorderStyle`, `cellTextAlign`, `cellDirection`. Отсутствующее явное значение — `false`; различия стилей между выбранными ячейками или высот строк — `mixed`. Заголовочные оси возвращаются как boolean, подпись — как строка или `false`. Это сохранённые значения, а не computed CSS темы. Безопасная импортированная ширина или высота строки может использовать единицы вне более узкого командного диапазона: состояние показывает исходную строку, изменение других свойств её не переписывает. CSS имеет приоритет над старым числовым width-атрибутом.
+`getState()` returns `disabled`, `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn`, `caption`, `rowMinHeight`, `cellPadding`, `cellBorderWidth` and `cellBorderStyle`. Missing explicit values are `false`; differing selected-cell styles or row heights are `mixed`. Header axes are booleans, caption is a string or `false`. These are persisted values, not computed theme CSS. Safe imported width/row-height units may lie outside the narrower command choices: state reports the stored string and unrelated updates leave it untouched. CSS width takes precedence over a legacy numeric width attribute.
 
-## Отступы и границы ячеек
+## Cell padding and borders
 
 ```ts
 import type { TableCellBorderStyle } from '@morfira-dev/wysiwyg/plugins/table-properties';
 
 const style: TableCellBorderStyle = 'dashed';
 properties.update({ cellPadding: '8px', cellBorderWidth: '2px', cellBorderStyle: style });
-properties.update({ cellPadding: false }); // вернуть только отступы ячейки из темы
+properties.update({ cellPadding: false }); // restore only the theme's cell padding
 ```
 
-Три свойства относятся к выбранным фактическим TD/TH, включая целиком выбранные объединённые ячейки, без смены оболочек и замены содержимого. Общий patch — один Undo. `getState()` показывает inline-значение, `false` при отсутствии и `mixed` при различии выбранных ячеек; computed-геометрия темы не читается. В форме есть **Отступы ячеек (0–48px)**, **Толщина границ (0–12px)** и **Стиль границ**; пустое значение/вариант по умолчанию сбрасывает свойство.
+These three properties apply to the selected actual TD/TH cells, including complete merged cells, without retagging cells or replacing their children. A combined patch is one Undo. `getState()` reports inline values, `false` when absent and `mixed` when selected cells differ. It does not read computed theme geometry. The form exposes **Cell padding (0–48px)**, **Border width (0–12px)** and **Border style**, with an empty/default choice to reset.
 
-Padding задаёт одно физическое значение для четырёх сторон; толщина и стиль границ тоже единые. Цвет, толщина и стиль независимы: изменение или сброс одного не меняет другие. Сброс убирает inline shorthand вместе с его сторонами, возвращая оформление таблицы из CSS. `none` или `0px` могут скрыть границу; её вид зависит от разрешения конфликтов collapsed borders, темы и содержимого. Настройка отдельных сторон, границ всей таблицы и точная геометрия не входят в этот этап.
+Padding is one physical value for all four sides; border width/style are also uniform. Color, width and style are independent: changing or resetting one leaves the others intact. A reset removes that inline shorthand and its sides, allowing the stylesheet defaults to apply. `none` or `0px` may hide a border; collapsed-border conflict resolution, theme CSS and content affect what is rendered. Per-edge controls, table-wide border formatting and exact geometry are outside this slice.
 
-Размеры — только канонические целые px-строки: без ведущих нулей, пробелов, дробей, процентов, отрицательных/выходящих за диапазон значений, CSS-wide ключевых слов, `!important`, нескольких значений, var/calc/url и дополнительных деклараций. Стиль границы принимает только пять перечисленных вариантов. Кодеки HTML/JSON сохраняют лишь ограниченные декларации на TD/TH; на других тегах, в longhand и произвольных border/padding они отбрасываются. Браузерный CSSOM может сериализовать полную границу одним shorthand `border`. Кодек принимает только каноническую форму из ограниченной толщины, разрешённого стиля и уже допустимого безопасного цвета на TD/TH и сохраняет её одной атомарной декларацией: нераспознанный CSS-цвет не должен частично применять толщину или стиль; произвольный border shorthand не проходит. Старый читатель может потерять добавленные стили; версия схемы остаётся 1, произвольный CSS не разрешается.
+Lengths require canonical integer px strings: no leading zero, whitespace, decimals, percentages, negative/out-of-range values, CSS-wide keywords, `!important`, extra values, var/calc/url or declaration injection. Border style accepts only the five named choices. HTML/JSON codecs preserve only these bounded declarations on TD/TH; other tags and longhand or arbitrary border/padding declarations are discarded. Browser CSSOM may serialize a complete border as one `border` shorthand. The codec accepts only the canonical bounded width + allowed style + existing safe color form on TD/TH and retains it as one atomic declaration: an unrecognized CSS color must not partially apply width or style; arbitrary border shorthand still does not pass. Older readers may lose the additive styles, without changing schema version 1 or permitting general CSS passthrough.
 
-На главной/playground загрузите контекстную таблицу и нажмите **Выделить область 2 × 2**. Задайте `8px`, `2px` и **Штриховая**, затем Apply: общий patch получат объединённая и две остальные выбранные ячейки; внешние ячейки останутся прежними. Очистите только поле отступов и примените снова: толщина, стиль и цвет границ сохранятся. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+On the homepage/playground, load the contextual table and choose **Select 2 × 2 region**. Enter `8px`, `2px` and **Dashed**, then Apply: the merged cell and the two other selected cells receive the same patch; outside cells stay unchanged. Clear only the padding field and Apply to restore padding while retaining border width/style/color. New browser definitions are authored but have not been executed locally in the current work mode.
 
-## Минимальная высота строк
+## Minimum row height
 
 ```ts
 properties.update({ rowMinHeight: '80px' });
 const minimum = properties.getState().rowMinHeight; // string | false | 'mixed'
-properties.update({ rowMinHeight: false }); // убрать только inline height у TR
+properties.update({ rowMinHeight: false }); // remove only TR inline height
 ```
 
-Свойство записывает нативный `TR.style.height`, который в табличной CSS-раскладке работает как **минимум**. Содержимое не обрезается, дополнительные отступы-тексты не вставляются, высота отдельных ячеек не меняется. Контент, padding, объединения и оформление таблицы/host могут сделать фактическую строку выше; точная высота в пикселях не гарантируется. Сброс не меняет высоту ячеек, их стили и высоту самой таблицы.
+The property writes native `TR.style.height`, which acts as a **minimum** in CSS table layout. It does not clip content, insert spacer text or set per-cell heights. Content, cell padding, spanning cells and host/table layout may make the rendered row taller; this is not a promise of an exact pixel height. Resetting leaves cell heights/styles and the table height unchanged.
 
-Значение получают все фактические строки в выбранном логическом прямоугольнике, независимо от выбранных столбцов. Курсор в ячейке с `rowspan="2"` затрагивает обе строки. Другие строки, подпись, секции, заголовки и фактические узлы содержимого сохраняются. Весь patch остаётся одним Undo, в том числе вместе со свойствами ячеек и таблицы. Разрешены только канонические строки от `1px` до `1000px`: без пробелов, дробей, ведущих нулей, других единиц, CSS-ключевых слов, дополнительных деклараций и `!important`.
+All actual rows in the selected logical rectangle receive the value, regardless of selected columns. A caret in a cell with `rowspan="2"` affects both covered rows. Other rows, caption, sections, headers and actual content nodes stay unchanged. The whole patch remains one Undo, including when combined with cell/table properties. Only canonical strings from `1px` to `1000px` are accepted: no whitespace, decimals, leading zero, other units, CSS keywords, declaration injection or `!important`.
 
-На главной или в playground загрузите пример «Таблицы», кликните в первую ячейку основной части, объединяющую две строки, и задайте `80px` в поле «Минимальная высота строк (1–1000px)». Apply изменит обе строки данных, не затрагивая строку заголовков. Пустое поле сбрасывает собственную высоту; разные значения строк показываются с подсказкой «Разные значения». Безопасные импортированные значения вроде `2em` видны в состоянии и сохраняются при изменении других свойств, но новая явная высота должна использовать более узкий px-формат. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+On the homepage or playground, load **Tables**, click the first body cell spanning two rows and enter `80px` in **Minimum row height (1–1000px)**. Apply changes both body rows; the header row is unaffected. An empty field resets the owned height, while differing row values use the Mixed values placeholder. Imported safe values such as `2em` remain visible and survive unrelated edits, but an explicit height write must use the narrower px syntax. New runtime definitions are authored and have not been executed locally in the current work mode.
 
-## Заголовки и подпись
+## Headers and caption
 
-После выбора ячейки можно одним patch включить заголовки и изменить подпись:
+After selecting a cell, enable headers and update the caption in one patch:
 
 ```ts
 properties.update({
   headerRow: true,
   headerColumn: true,
-  caption: 'План выпуска <буквальный текст>',
+  caption: 'Release plan <literal text>',
 });
-properties.update({ headerRow: false }); // сохранить заголовочный столбец
-properties.update({ caption: false }); // удалить только подпись
+properties.update({ headerRow: false }); // retain the header column
+properties.update({ caption: false }); // remove only the caption
 ```
 
-Команды относятся к первой **логической** строке/колонке всей текущей таблицы, независимо от выбранного прямоугольника. Заголовки становятся `th` с `scope="col"` для строки и `scope="row"` для столбца; на пересечении используется `col`. Для включения строки нужна хотя бы одна следующая строка данных, для столбца — следующий столбец. Выключение одной полной оси сохраняет другую на пересечении. Частично импортированная ось возвращает `false` и нормализуется только при явной записи. Строки не переносятся между THEAD/TBODY/TFOOT.
+Commands affect the first **logical** row/column of the whole current table, regardless of the selected rectangle. Headers become `th` with `scope="col"` for the row and `scope="row"` for the column; the intersection uses `col`. Enabling a header row requires at least one following body row; a header column requires a following body column. Disabling one complete axis retains the other at the corner. Partial imported axes report `false` and are normalized only when explicitly written. Rows never move between THEAD/TBODY/TFOOT.
 
-Если запись строки затрагивает `rowspan > 1` из первой строки либо запись столбца — `colspan > 1` из первого столбца, **весь patch отклоняется**: нельзя назначить единую роль ячейке, пересекающей границу заголовка и данных. Объединения целиком внутри оси сохраняются, автоматического split нет. Таблица, строки и неизменённые ячейки сохраняют identity. При смене `td`/`th` меняется только оболочка ячейки; фактические дочерние узлы, форматирование, стили и spans переносятся, выделение и Undo сохраняются.
+If a row write includes a first-row `rowspan > 1`, or a column write includes a first-column `colspan > 1`, **the entire patch rejects**: that cell crosses the header/body boundary. Merges entirely within an axis remain intact, without automatic splitting. Table, row and unaffected-cell identities survive. A `td`/`th` conversion changes only the cell wrapper; actual child nodes, rich formatting, styles and spans are moved, while selection and Undo are retained.
 
-Подпись — настоящий прямой `caption` перед остальными детьми таблицы. Текст до 5000 UTF-16 единиц вставляется через `textContent`, поэтому HTML-подобная строка остаётся текстом; пробелы не обрезаются. Многострочное поле формы сохраняет переносы, Enter добавляет новую строку и не отправляет форму; для применения используйте кнопку. Прежний богатый текст подписи сохраняется, если новое текстовое значение совпадает. Пустая строка или `false` удаляет подпись. Дублирующиеся прямые подписи не поддерживаются. Положение курсора только в подписи не является выделением ячейки: для команды выберите ячейку или сохранённую цель формы. Это базовая нативная семантика, без универсальных связей сложных многоуровневых заголовков и без обещания полной доступности.
+The caption is a real direct `caption` before the table’s other children. Its text is limited to 5000 UTF-16 units and assigned through `textContent`, so HTML-like input stays literal; whitespace is not trimmed. The multiline form control preserves line breaks; Enter adds a line instead of submitting, so use Apply for changes. Existing rich caption children survive when the requested text matches. Empty string or `false` removes it. Duplicate direct captions are unsupported. A caret only in the caption is not a cell selection: select a cell or use the form’s retained target. These are basic native semantics, without universal complex multi-level header associations or a claim of complete accessibility.
 
-На главной и в playground загрузите пример «Таблицы»: он содержит строку заголовков, подпись и rowspan в первом столбце. В разделе «Таблицы» включите «Столбец заголовков», измените «Подпись таблицы» и примените свойства; один Undo вернёт весь patch. Актуальные результаты браузерных проверок и примеров с их ограничениями приведены в разделе [тестирования](/testing).
+On the homepage or playground, load the Tables sample: it contains a header row, caption and first-column rowspan. In Tables, enable Header column, edit Table caption and apply; one Undo restores the whole patch. Current browser/example execution results and their limits are recorded under [testing](/testing).
 
-Оформление подписи задаётся в контейнере редактора; стили ограничены `.mw-content table > caption`:
+Customize the caption on the editor container; styles are scoped to `.mw-content table > caption`:
 
 ```css
 .my-editor {
@@ -124,37 +124,37 @@ properties.update({ caption: false }); // удалить только подпи
 }
 ```
 
-## Выравнивание и направление текста ячеек
+## Cell text alignment and direction
 
-`cellTextAlign` принимает `left | center | right | justify | false`, а `cellDirection` — `ltr | rtl | false`. Соответствующие публичные типы — `TableCellTextAlign` и `TableCellDirection`. Они экспортируются из `/plugins/table-properties`. Свойства относятся ко всем фактическим TD/TH логического прямоугольника, включая целые объединённые ячейки:
+`cellTextAlign` accepts `left | center | right | justify | false`; `cellDirection` accepts `ltr | rtl | false`. Their public types, `TableCellTextAlign` and `TableCellDirection`, are exported from `/plugins/table-properties`. The properties affect every actual TD/TH in the logical rectangle, including complete merged cells:
 
 ```ts
 properties.update({ cellTextAlign: 'right', cellDirection: 'rtl' });
-properties.update({ cellTextAlign: false }); // только сброс text-align ячейки
+properties.update({ cellTextAlign: false }); // remove only the cell text-align
 const { cellTextAlign, cellDirection } = properties.getState();
-// собственное значение | false | 'mixed'
+// own value | false | 'mixed'
 ```
 
-Форма добавляет нативные select «Выравнивание текста ячеек» и «Направление текста ячеек». «По умолчанию» удаляет собственный стиль/атрибут, а не принудительно включает left/LTR. В Apply входят только изменённые поля: один patch с обоими свойствами — один Undo. Смешанные значения показываются как разнородное состояние и сохраняются, пока соответствующее поле не изменено. Значения `undefined`, `start/end`, `auto`, произвольный CSS и дополнительные декларации отклоняются целиком.
+The form adds native Cell text alignment and Cell text direction selects. Default removes the own style/attribute rather than forcing left/LTR. Apply sends only dirty fields: a patch containing both properties is one Undo step. Mixed values remain untouched until their corresponding field is edited. Explicit `undefined`, `start/end`, `auto`, arbitrary CSS and extra declarations reject the entire patch.
 
-Это оформление **контейнера ячейки**, без рекурсивного переписывания её содержимого. Явные `text-align` или `dir` у вложенного абзаца могут перекрывать наследование. Физические left/right независимы от RTL; направление не переставляет символы в документе и не распознаёт язык автоматически. Сохраняются содержимое, фактические ячейки, spans, заголовки, подпись, выделение и остальные свойства. HTML/JSON и поддержанный прямоугольный буфер уже сохраняют разрешённые `text-align` и `dir` без нового формата схемы. Reset/повтор идентичного значения не добавляет пустой шаг истории.
+These properties format the **cell container** without recursively rewriting its contents. An explicit `text-align` or `dir` on an inner paragraph can override inheritance. Physical left/right are independent of RTL; direction does not reorder stored characters or automatically detect a language. Contents, actual cells, spans, headers, caption, selection and unrelated properties survive. HTML/JSON and supported rectangle clipboard already retain allowed `text-align` and `dir` without a schema format change. Reset-absent and identical updates add no empty history step.
 
-На главной и в playground в разделе «Таблицы» нажмите **«Загрузить пример текста в ячейках»**. Он выбирает область 2 × 2 с rowspan и смешанными значениями. Примените right/RTL, затем Undo. Абзац Beta сохраняет собственные left/LTR; ячейки Outside остаются прежними. Выбор «По умолчанию» снимает только оформление ячейки.
+On the homepage or playground, open Tables and click **Load cell text sample**. It selects a 2 × 2 region with a rowspan and mixed values. Apply right/RTL, then Undo. The Beta paragraph retains its own left/LTR; Outside cells remain unchanged. Default removes only the cell formatting.
 
-## Черновик и локализация формы
+## Form drafts and localization
 
-У формы есть `element`, `refresh()`, `getValues()`, `setValues(partial)` и идемпотентный `destroy()`. Поля значений — строки `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn`, `caption`, `rowMinHeight`, `cellPadding`, `cellBorderWidth`, `cellBorderStyle`, `cellTextAlign`, `cellDirection`. Select заголовков использует `"true"` для включения и пустую строку для выключения; пустая подпись удаляет её, пустая высота строки сбрасывает значение. Значение подписи сохраняет пробелы. `getValues()` включает новые поля; обновите собственные точные сравнения снимков. `setValues` только меняет черновик и отмечает переданные поля как изменённые, не редактируя документ.
+The controller exposes `element`, `refresh()`, `getValues()`, `setValues(partial)`, and idempotent `destroy()`. Value fields are strings: `width`, `alignment`, `cellBackground`, `cellBorder`, `cellVerticalAlign`, `headerRow`, `headerColumn`, `caption`, `rowMinHeight`, `cellPadding`, `cellBorderWidth`, `cellBorderStyle`, `cellTextAlign`, `cellDirection`. Header selects use `"true"` for on and an empty string for off; an empty caption removes it and an empty row height resets it. Caption whitespace is retained. `getValues()` includes the new fields; update application-owned exact snapshot comparisons. setValues changes only the draft and marks supplied fields dirty, without editing the document.
 
-В Apply попадают **только изменённые поля**. При смешанном цвете форма показывает пустое поле с подсказкой «Разные значения»; изменение одной ширины сохраняет отличающиеся цвета ячеек. После успешного Apply черновик перечитывается из документа. Изменение языка/read-only сохраняет черновик того же target; переход к другой таблице или внешняя замена документа сбрасывает устаревшие значения и право на изменение.
+Apply sends **only dirty fields**. Mixed colors show an empty control with the Mixed values placeholder; editing width alone preserves differing cell colors. A successful Apply reloads authoritative values. Locale/read-only refresh preserves a draft for the same target; switching tables or replacing the document discards stale drafts and authority.
 
-Нативные подписи, select-варианты, статусы и смешанные значения локализованы RU/EN через язык редактора и экспортируемый `tablePropertiesFormMessages`. Переопределения `ui.tableProperties.*` выводятся как текст; `options.label` задаёт собственное текстовое имя формы. `onError` может вернуть `void` или `Promise<void>`; его ошибки не создают необработанных rejection. Enter в текстовых полях применяет черновик, IME/229 Enter — нет. Без подходящей таблицы, в read-only или composition форма отключена. При уничтожении редактора она очищается автоматически; явный destroy допустим и раньше.
+Native labels, select options, statuses and mixed state use the editor’s RU/EN locale and exported `tablePropertiesFormMessages`. Overrides under `ui.tableProperties.*` render as text; `options.label` supplies an application-owned text label. onError may return `void` or `Promise<void>`; its own failures do not leak rejections. Enter in text inputs applies; IME/229 Enter does not. Missing eligible targets, read-only and composition disable controls. Editor destruction cleans up automatically; explicit earlier disposal is also supported.
 
-## Выделение, сохранение и ограничения
+## Selection, persistence and limits
 
-Поддерживается нативный Range в одной ячейке либо реальное логическое прямоугольное выделение таблицы, включая rowspan/colspan. Вложенные, foreign, семантические, защищённые и неполные/перекрывающиеся сетки, неоднозначные межъячеечные Range не получают права на изменение. Поддельный `data-mw-selected` не заменяет выделение. Форма сохраняет target при переходе фокуса в свои контролы и повторно проверяет его после восстановления фокуса; смена документа, фактических узлов, read-only/IME или disposal не позволяют применить старый черновик к другой таблице.
+Targets are one native cell Range or an actual complete logical rectangle, including rowspan/colspan. Nested, foreign, semantic, protected, incomplete/overlapping grids and ambiguous cross-cell native ranges cannot authorize edits. Spoofed data-mw-selected attributes are not selection authority. The form retains its target while its controls own focus, then revalidates after focus restoration; replacement, changed node identities, read-only/IME or disposal cannot redirect an old draft to another table.
 
-Версия схемы остаётся 1 с узким добавлением кодека: только TABLE сохраняет margin-left/right `0px | auto`, только TD/TH — vertical-align `top | middle | bottom` и ограниченные единые padding/border-width/border-style по контракту cell-box. Full-document HTML/JSON roundtrip сохраняет эти стили и без установленного плагина. Старые читатели могут их отбросить; версия 1 не гарантирует обратную передачу без потерь.
+Schema version stays 1 with a narrow additive codec extension: only TABLE keeps margin-left/right `0px | auto`, and only TD/TH keeps vertical-align `top | middle | bottom` and the bounded uniform padding/border-width/border-style declarations described above. Full-document HTML/JSON roundtrips retain these properties without the optional plugin installed. Older readers can discard the additions; version 1 does not promise lossless older-reader compatibility.
 
-Прямоугольный clipboard создаёт новую TABLE: семантика копируемых `th` и их scope, цвета/vertical-align и допустимые padding/толщина/стиль границ ячеек сохраняются, но подпись, ширина/расположение таблицы и высота TR не копируются, даже при выборе всех ячеек. Full-document HTML/JSON уже сохраняет `caption`, `th scope` и ограниченные стили высоты TR без плагина свойств; версия схемы и allowlist высоты не меняются. Структурные команды сетки пересоздают оболочки TR, но сохраняют их собственную высоту по логическим строкам. Изменение столбцов и merge/split сохраняют последовательность высот; вставка добавляет строку без заданной высоты и сдвигает уцелевшие значения, удаление убирает только значение удалённой строки. Вставка диапазона и cut сохраняют высоты целевых строк; новые строки не наследуют высоту, а высоты TR из clipboard не заменяют целевые. Безопасные импортированные единицы вроде `em` тоже сохраняются. Идентичность оболочек строк и сохранение секций таблицы этим не гарантируются. При структурных командах сохраняются стили уцелевших ячеек; новые/разделённые ячейки получают прежние значения по умолчанию, merge сохраняет стиль начальной ячейки. Маркеры перетаскивания строк, настройка отдельных сторон отступов/границ и Office fidelity не входят в этот этап.
+Rectangle clipboard creates a fresh TABLE: copied cells retain their `th`/scope semantics, colors, vertical alignment and allowed padding/border width/style, but the caption, table width/placement and TR height are not copied, even for an all-cell rectangle. Full-document HTML/JSON already retains `caption`, `th scope` and bounded TR height styles without the properties plugin; schema version and the height allowlist are unchanged. Structural grid commands rebuild TR wrappers but preserve their inline height by logical row. Column edits and merge/split keep the height sequence; row insertion adds an unset row and shifts surviving values, while deletion removes only the deleted row's value. Target-table paste/cut keeps target heights; newly grown rows have no explicit height and source clipboard TR heights never overwrite the target. Safely imported units such as `em` are retained. This does not guarantee row-wrapper identity or preserve row sections. They retain surviving cells’ styles; inserted/split cells keep their existing defaults, and merge retains the origin cell’s style. Row-resize handles, per-edge padding/borders and Office fidelity are outside this slice.
 
-Модули имеют отдельные selective imports и измеряемые JS-closures; CSS учитывается отдельно, общие части выбранного профиля — один раз. Актуальные raw/gzip/Brotli находятся в `size-report.json`, результаты запуска — в записи проверки проекта. Нет runtime-зависимостей, загрузки внешних ресурсов или изменения серверной границы доверия; см. [безопасность](/security).
+Modules have independent selective imports and measured JS closures; CSS is separate and shared profile code is counted once. Current raw/gzip/Brotli values are in size-report.json and actual runs in the project verification record. No runtime dependencies, remote resources or new backend trust boundary are added; see [security](/security).

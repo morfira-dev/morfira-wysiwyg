@@ -2,50 +2,50 @@
 import ListQuoteInputExample from './.vitepress/theme/ListQuoteInputExample.vue';
 </script>
 
-# Удаление на границах цитат в списке
+# Deletion at list quote boundaries
 
-В одном пункте списка Backspace в начале правого абзаца/заголовка и Delete в конце левого соединяют соседние обычные текстовые блоки. Поддерживаются два блока внутри одной цитаты, цитата → прямой блок пункта, прямой блок → цитата и соседние цитаты. Это поведение ядра; отдельный плагин не требуется. Enter и вставка продолжают следовать своим существующим контрактам.
+Within one list item, Backspace at the start of the right paragraph/heading and Delete at the end of the left join neighboring ordinary text blocks. Supported pairs are two blocks inside one quote, quote → direct item body, direct body → quote, and neighboring quotes. This is core behavior; no separate plugin is required. Enter and paste retain their existing contracts.
 
 <ListQuoteInputExample />
 
-## Как проверить
+## Try the boundaries
 
-Выберите сценарий. Кнопка **«Начало правого блока — Backspace»** ставит настоящий нативный курсор в начало правого блока и переводит фокус в редактор; затем нажмите Backspace. Для симметричного действия выберите **«Конец левого блока — Delete»** и нажмите Delete. Кнопки не подменяют ввод синтетическим событием и не вызывают отдельную команду удаления.
+Choose a scenario. **“Right block start — Backspace”** places a real native caret at the beginning of the right block and focuses the editor; then press Backspace. For the symmetric action, choose **“Left block end — Delete”** and press Delete. Buttons do not synthesize input events or call a separate deletion command.
 
-Левый блок сохраняет свой тег и атрибуты, к его содержимому добавляется правый текст со строчным оформлением. Например, `p: Alpha one` + `h3: Beta tail` становятся одним исходным `p` с текстом `Alpha oneBeta tail`; пробел между блоками автоматически не добавляется. Курсор находится на месте соединения. Остальные блоки и непустые части цитат сохраняют порядок и оформление; опустевшая оболочка цитаты удаляется. Внешний список, другие пункты и вложенная ветка не уплощаются.
+The left block retains its tag and attributes, receiving the right contents with inline marks. For example, `p: Alpha one` + `h3: Beta tail` become the original `p` containing `Alpha oneBeta tail`; no space is automatically inserted. The caret stays at the join. Remaining blocks and nonempty quote fragments preserve their order and formatting; an emptied quote wrapper is removed. The outer list, other items and nested branches are never flattened.
 
-**«Отменить»** восстанавливает предыдущее содержимое и выделение одной операцией; **«Повторить»** возвращает результат. Переключатель read-only оставляет навигацию к границе доступной и блокирует изменение документа клавишей. Восстановление/смена примера — внешняя замена через `setHTML()`, она сбрасывает историю.
+**“Undo”** restores previous contents and selection in one operation; **“Redo”** restores the result. Read-only keeps boundary navigation available while blocking keyboard mutation. Resetting/changing a sample uses external `setHTML()` replacement, which clears history.
 
-## Поддерживаемые границы
+## Supported boundaries
 
-| Граница | Результат |
+| Boundary | Result |
 | --- | --- |
-| `blockquote > p` → `blockquote > h3` в одной цитате | Левый `p` остаётся в цитате, правый `h3` удаляется после переноса содержимого |
-| Последний блок цитаты → прямой `p/h1–h6` этого пункта | Соединение в левом блоке цитаты |
-| Прямой `p/h1–h6` пункта → первый блок цитаты | Соединение в прямом левом блоке; оставшиеся блоки цитаты сохраняются |
-| Последний блок первой цитаты → первый блок соседней | Левая цитата и её блок сохраняются; непустой остаток правой цитаты остаётся отдельной цитатой |
-| Между текстовыми блоками стоит вложенный `ul/ol` | Барьер: через ветку соединение не выполняется |
+| `blockquote > p` → `blockquote > h3` within one quote | The left `p` stays in its quote; the right `h3` is removed after moving its contents |
+| Last quote block → direct `p/h1–h6` in the item | Join in the left block inside the quote |
+| Direct item `p/h1–h6` → first quote block | Join in the direct left block; remaining quote blocks survive |
+| Last block of the first quote → first block of its neighbor | The left quote/block survive; a nonempty remainder of the right quote stays separate |
+| A nested `ul/ol` lies between the text blocks | Barrier: deletion does not join across that branch |
 
-Цитаты только со строчным содержимым также могут быть листовыми блоками. Поддерживаются и обычные соседние абзацы/заголовки в пункте, который содержит прямую цитату; остальные барьеры сохраняются.
+Inline-only quotes can also be leaf blocks. Ordinary neighboring paragraphs/headings in an item containing a direct quote are supported too; all other barriers remain.
 
-Этот срез рассчитан на collapsed-курсор у реальной границы обычных абзацев/заголовков внутри одного владельца `li`. Он не расширяет редактирование на произвольные семантические узлы, атомы, таблицы или пересечение разных пунктов/уровней списка. Read-only, composition и защищённые владельцы сохраняют прежние ограничения. Наличие демо не является доказательством прохождения браузерных сценариев: текущий результат проверок фиксируется в [журнале](/testing).
+This slice requires a collapsed caret at an actual boundary of ordinary paragraphs/headings owned by one `li`. It does not extend editing to arbitrary semantic nodes, atoms, tables or crossing list items/levels. Read-only, composition and protected-owner guards retain their existing rules. A live example is not proof of passing browser scenarios: actual execution results belong in the [verification record](/testing).
 
-## Подключение
+## Composition
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
 import '@morfira-dev/wysiwyg/style.css';
 
 const editor = createEditor(host, {
-  locale: 'ru',
+  locale: 'en',
   value: '<ul><li><blockquote><p>Left</p><h3>Right</h3></blockquote></li></ul>',
 });
-// Ввод обрабатывается ядром; history и read-only используют обычный API.
+// Core handles input; history and read-only use the ordinary API.
 editor.undo();
 editor.redo();
 editor.setReadOnly(true);
-// При размонтировании:
+// On unmount:
 editor.destroy();
 ```
 
-Пример использует только публичный API и Selection/Range для постановки курсора. UI и инструкции не записываются в документ. Валидация HTML/JSON, запрет опасной разметки и лимиты документа остаются общими [границами безопасности](/security).
+The example uses only public APIs and Selection/Range to place the caret. Controls/instructions never enter persisted content. HTML/JSON validation, forbidden executable markup and document limits retain the ordinary [security boundaries](/security).

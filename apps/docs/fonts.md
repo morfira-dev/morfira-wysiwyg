@@ -1,8 +1,8 @@
-# Шрифты и размер текста
+# Font family and text size
 
-На [главной](/#editor) и в [playground](/playground) открой **«Шрифты и размер текста»** и нажми **«Загрузить пример шрифтов»**. Загрузка заменяет документ, сбрасывает историю и выбирает полужирное слово. Семейство и размер применяются и сбрасываются независимо; Undo/Redo сохраняют содержимое и выделение.
+On the [homepage](/#editor) or [playground](/playground), open **Font family and size** and click **Load font sample**. Loading replaces the document, resets history and selects the bold word. Apply/reset family and size independently; Undo/Redo preserve content and selection.
 
-## Явное подключение
+## Explicit installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -12,49 +12,49 @@ import '@morfira-dev/wysiwyg/style.css';
 const editor = createEditor(host, {
   plugins: [fonts({
     families: [
-      { id: 'system', label: 'Системный', family: 'system-ui, sans-serif' },
-      { id: 'serif', label: 'С засечками', family: 'Georgia, serif' },
+      { id: 'system', label: 'System', family: 'system-ui, sans-serif' },
+      { id: 'serif', label: 'Serif', family: 'Georgia, serif' },
     ],
     sizes: [14, 16, 24, 32],
   })],
-  value: '<p>Выберите текст.</p>',
+  value: '<p>Select some text.</p>',
 });
 const text = fontCommands(editor);
-editor.setSelection(0, 8);
+editor.setSelection(0, 6);
 text.setFamily('serif');
 text.setSize(24);
 ```
 
-`fonts()` — необязательный плагин без runtime-зависимостей и собственного обязательного CSS. Импорт безопасен при SSR; редактор создаётся в браузере. Ядро и готовые пресеты не подключают плагин автоматически. Для пресета добавь `fonts()` через `plugins: [fonts()]`. Полная демка делает именно явную композицию; встроенная ready toolbar в этом срезе новых кнопок шрифтов не получает.
+`fonts()` is an optional zero-runtime-dependency plugin with no mandatory stylesheet of its own. Imports are SSR-safe; create the editor in a browser. Core and ready presets do not install the plugin automatically. Add `fonts()` through a preset's `plugins: [fonts()]` option. The full demo explicitly composes it this way; ready toolbar built-ins gain no font controls in this slice.
 
-Публичный вход также экспортирует типы `FontsOptions`, `FontFamilyOption`, `FontCommands` и `FontState`.
+The public entry also exports `FontsOptions`, `FontFamilyOption`, `FontCommands` and `FontState`.
 
-## Настройки и команды
+## Options and commands
 
-Без настроек доступны семейства `system` → `system-ui, sans-serif`, `serif` → `Georgia, serif`, `monospace` → `monospace`; размеры — `[12, 14, 16, 18, 24, 32, 48]` px. Каждая явно переданная коллекция заменяет соответствующий набор по умолчанию.
+Defaults are `system` → `system-ui, sans-serif`, `serif` → `Georgia, serif`, `monospace` → `monospace`; sizes are `[12, 14, 16, 18, 24, 32, 48]` px. Each explicitly supplied collection replaces its corresponding defaults.
 
-`families` и `sizes` содержат от 1 до 32 разных вариантов. ID — уникальная строчная ASCII-строка длиной 1–64, начинается с буквы, далее буквы/цифры/дефис. `label` — непустой текст до 100 символов; `family` — безопасное CSS-значение из описанного ниже подмножества. Размеры — уникальные целые **8–96 px**. Неизвестные настройки, дубли и неверные значения отклоняются; настройки проверяются и копируются при вызове фабрики `fonts(options)`, до установки в редактор.
+`families` and `sizes` each contain 1–32 distinct choices. IDs are unique lowercase ASCII strings of 1–64 characters, starting with a letter and continuing with letters/digits/hyphens. A `label` is nonempty text up to 100 characters; `family` is a safe CSS value from the subset below. Sizes are distinct integers **8–96 px**. Unknown options, duplicates and malformed values reject; configuration is validated and copied at the `fonts(options)` factory call, before editor setup.
 
-| Метод | Результат |
+| Method | Result |
 | --- | --- |
-| `setFamily(id: string \| false)` | Применяет настроенное семейство по ID; `false` снимает только inline font-family |
-| `setSize(size: number \| false)` | Применяет настроенный размер в px; `false` снимает только inline font-size |
-| `getState()` | Новый снимок `{ disabled, family, size, familyMixed, sizeMixed }` |
+| `setFamily(id: string \| false)` | Applies a configured family by ID; `false` removes only inline font-family |
+| `setSize(size: number \| false)` | Applies a configured px size; `false` removes only inline font-size |
+| `getState()` | Fresh `{ disabled, family, size, familyMixed, sizeMixed }` snapshot |
 
-`family` и `size` — **фактические явные CSS-значения**, не ID варианта и не вычисленные значения темы. Отсутствующее свойство — `false`; смешанное выделение отражается отдельными `familyMixed`/`sizeMixed`. Импортированный безопасный шрифт или размер может отсутствовать в настройках, например `Arial, sans-serif` и `1.25em` в демке. Не подменяй такой снимок первым пунктом dropdown. Локальные поля выбора — черновик команды; они не выдают себя за текущее форматирование.
+`family` and `size` are **actual explicit CSS values**, not choice IDs or computed theme values. Missing properties report `false`; mixed selections have separate `familyMixed`/`sizeMixed` flags. A safe imported family/size may be absent from configured choices, such as `Arial, sans-serif` and `1.25em` in the demo. Do not replace that state with the first dropdown option. Local choice fields are command drafts, not a claim about the current formatting.
 
-Команды используют текущее нативное выделение. Внешние controls должны сохранить и восстановить актуальный диапазон; демка использует общий механизм редакторского стенда. Read-only/composition блокируют изменения. Недопустимый аргумент отклоняется атомарно; недоступная команда не меняет выделение, документ или redo. Получение API без плагина и сохранённые ссылки после уничтожения выбрасывают ошибку.
+Commands use the current native selection. External controls must preserve and restore a valid range; the demo reuses its shared selection mechanism. Read-only/composition block mutations. Invalid arguments reject atomically; disabled commands leave selection, content and redo unchanged. Resolving the API without installation or retaining handles after destruction throws.
 
-## Формат, история и импорт
+## Format, history and import
 
-Ядро поддерживает inline-форматы `fontFamily` и `fontSize`. Изменение выбранного текста сохраняет marks, ссылки, другие стили и структуру блоков; каждое применение или сброс — отдельная операция истории. В позиции курсора задаётся стиль следующего ввода без отдельной истории до печати. Сброс не удаляет второй шрифтовой параметр; блочные стили и тема продолжают наследоваться.
+Core supports inline `fontFamily` and `fontSize` formats. Selected formatting retains marks, links, other styles and block structure; each application or reset is a separate history operation. At a caret it sets pending typing styles without a history entry until typing. Resetting one property retains the other; block styles and theme values remain inherited.
 
-Безопасный `font-family` сохраняется через HTML/JSON/API/paste и без плагина, независимо от настроенных вариантов. Дополнение схемы v1 не меняет номер формата; старый читатель может удалить новый стиль, поэтому lossless-совместимость с ним не обещается. Существующие допустимые единицы и диапазон импортируемого `font-size` не сужаются до командных px: настройка команды ограничивает выбор, а не переопределяет codec импорта.
+Safe `font-family` survives HTML/JSON/API/paste without the plugin and independently of configured choices. This additive schema-v1 support keeps the document version; older readers may strip the new style, so lossless older-reader compatibility is not promised. Existing allowed imported `font-size` units/range are not narrowed to command px: command choices do not redefine the import codec.
 
-## Безопасность и загрузка
+## Security and font loading
 
-`font-family` ограничен **256 символами и восемью именами** через запятую. Разрешены простые ASCII CSS-имена, многословные имена и простые строки в одинарных/двойных кавычках, включая generic families. Регистр обычного имени сохраняется; generic-имена без кавычек приводятся к нижнему регистру. Незначимые пробелы/кавычки нормализуются. Это ограниченное подмножество CSS, не полный парсер шрифтов. Например, `Times New Roman, serif` нормализуется в `"Times New Roman", serif`; явно заключённое в кавычки `"serif"` остаётся именем семейства, а не generic keyword.
+`font-family` is bounded to **256 characters and eight comma-separated names**. Simple ASCII CSS names, multiword names and simple single/double-quoted names, including generic families, are supported. Non-generic name case is retained; unquoted generic names normalize to lowercase. Insignificant whitespace/quotes normalize consistently. This is a bounded CSS subset, not a full font parser. For example, `Times New Roman, serif` normalizes to `"Times New Roman", serif`; explicitly quoted `"serif"` remains a family name rather than a generic keyword.
 
-Пустые части, управляющие символы, escapes, комментарии, функции/скобки, разделители деклараций и CSS-wide keywords не принимаются. URL, `var()` и произвольные декларации не разрешены. Неверные импортированные объявления фильтруются существующим style-контрактом; неверные настройки и аргументы команды отклоняются до изменения документа. Серверная валидация сохраняемых данных остаётся обязанностью приложения.
+Empty parts, controls, escapes, comments, functions/parentheses, declaration delimiters and CSS-wide keywords are rejected. URLs, `var()` and arbitrary declarations are unsupported. Invalid imported declarations are filtered under the existing style contract; invalid configuration and command arguments reject before editing. Applications still own server-side validation of persisted content.
 
-Плагин не создаёт `style`, `link`, `@font-face`, `FontFace` или загрузчик шрифтов. Он использует системные шрифты и уже предоставленные приложением семейства. **Браузер может загрузить шрифт, заранее объявленный CSS приложения**, когда текст начинает его использовать; файлы, CSP и лицензии принадлежат приложению. Файлы шрифтов не входят в вес плагина. Проверки и размеры фиксируются отдельно в [дорожной карте](/roadmap#проверки-и-ограничения).
+The plugin creates no `style`, `link`, `@font-face`, `FontFace` or font loader. It uses installed/system fonts or families already provided by the application. **The browser may fetch a font previously declared by application CSS** when text begins using it; applications own assets, CSP and licensing. Font assets are excluded from the plugin's measured size. Actual checks and sizes are recorded separately in the [roadmap](/roadmap#verification-and-limits).

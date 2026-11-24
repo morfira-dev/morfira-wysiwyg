@@ -6,7 +6,7 @@ for (const english of [false, true]) {
   test(`advanced Markdown guide exposes explicit options and working localized import/export (${english ? 'EN' : 'RU'})`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(english ? '/en/markdown-codec' : '/markdown-codec');
+    await page.goto(english ? '/markdown-codec' : '/ru/markdown-codec');
     const demo = page.locator('.advanced-markdown-example');
     const content = demo.locator('.mw-content');
     const source = demo.getByRole('textbox', { name: t('Исходный Markdown', 'Markdown source'), exact: true });
@@ -52,7 +52,7 @@ for (const english of [false, true]) {
   test(`homepage advanced Markdown editor mounts only while its optional section is open (${english ? 'EN' : 'RU'})`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(english ? '/en/' : '/');
+    await page.goto(english ? '/' : '/ru/');
     const optional = page.locator('.home-optional-examples');
     const summary = optional.locator('summary').filter({ hasText: t('Расширенный Markdown: импорт и экспорт', 'Extended Markdown import and export') });
     const example = optional.locator('.advanced-markdown-example');

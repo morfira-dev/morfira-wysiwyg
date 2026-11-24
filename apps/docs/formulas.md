@@ -1,6 +1,6 @@
-# Формулы
+# Formulas
 
-Формулы подключаются отдельно от ядра и пресетов. Модуль хранит исходник как семантический атом, а необязательный UI строит нативный MathML в отдельном контейнере. Зависимостей исполнения, шрифтов и сетевых запросов нет. Браузер отвечает за визуальное представление MathML.
+Formulas are separate from core and presets. The plugin stores literal source in a semantic atom; optional UI renders native MathML in an external container. It has no runtime dependencies, fonts or network requests. The browser owns MathML presentation.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -8,7 +8,7 @@ import { formulas, formulaCommands, parseFormula } from '@morfira-dev/wysiwyg/pl
 import { createFormulaForm, createFormulaView } from '@morfira-dev/wysiwyg/ui/formula';
 import '@morfira-dev/wysiwyg/ui/formula.css';
 
-const editor = createEditor(editorHost, { plugins: [formulas()], locale: 'ru' });
+const editor = createEditor(editorHost, { plugins: [formulas()], locale: 'en' });
 const commands = formulaCommands(editor);
 const form = createFormulaForm(formHost, editor);
 const views = createFormulaView(previewHost, editor);
@@ -16,33 +16,33 @@ const views = createFormulaView(previewHost, editor);
 editor.setSelection(0);
 commands.insert(String.raw`x_1^2 + \frac{1}{\sqrt{y}}`);
 
-// Вызывайте из явного действия пользователя, сохраняя выделение редактора.
+// Call from an explicit user action, preserving the editor selection.
 form.open();
-// Редактирование конкретного, актуального DOM-узла:
+// Edit a specific current DOM node:
 const formula = editor.surface.querySelector<HTMLElement>('[data-mw-node="morfira:formula"]');
 if (formula) form.open(formula);
 ```
 
-`formHost` и `previewHost` должны находиться вне поверхности редактора и в том же документе. `createFormulaView()` создаёт по одному представлению на актуальный узел; удалённые узлы, замена документа и уничтожение редактора очищают принадлежащие ему представления. Соседние узлы приложения в контейнере сохраняются. `destroy()` у формы и представлений освобождает ресурсы; уничтожение редактора выполняет очистку автоматически.
+`formHost` and `previewHost` must be outside the editor surface in the same document. `createFormulaView()` owns one view per actual node; removing nodes, replacing the document and destroying the editor cleans those views. Unrelated application nodes in the host remain. Both controllers expose `destroy()`; editor destruction also cleans their resources.
 
-## Поддерживаемый синтаксис
+## Supported syntax
 
-Это небольшой TeX-подобный язык, а не полный LaTeX. Поддерживаются латинские/греческие идентификаторы, десятичные числа, обычные знаки `+ - = * / ( ) [ ] | : ; . ! < > %`, группировка `{...}`, индексы `_` и степени `^`, `\frac{a}{b}`, `\sqrt{x}`. Аргумент индекса/степени — один токен либо группа: `x^12` считает число `12` одним токеном.
+This is a small TeX-like language, not full LaTeX. It supports Latin/Greek identifiers, decimal numbers, ordinary operators `+ - = * / ( ) [ ] | : ; . ! < > %`, grouping `{...}`, subscripts `_`, superscripts `^`, `\frac{a}{b}`, and `\sqrt{x}`. A script argument is one token or a group: `x^12` treats the number `12` as one token.
 
-Команды символов: `\alpha`, `\beta`, `\gamma`, `\delta`, `\epsilon`, `\theta`, `\lambda`, `\mu`, `\pi`, `\rho`, `\sigma`, `\phi`, `\omega`; прописные `\Gamma`, `\Delta`, `\Theta`, `\Lambda`, `\Pi`, `\Sigma`, `\Phi`, `\Omega`. Операторы: `\times`, `\cdot`, `\pm`, `\le`, `\leq`, `\ge`, `\geq`, `\ne`, `\neq`, `\infty`, `\sum`, `\prod`, `\int`, `\partial`, `\nabla`, `\approx`, `\to`. Имена функций: `\sin`, `\cos`, `\tan`, `\log`, `\ln`, `\lim`. Экранированные `\{`, `\}`, `\_`, `\%` выводят знаки.
+Symbol commands: `\alpha`, `\beta`, `\gamma`, `\delta`, `\epsilon`, `\theta`, `\lambda`, `\mu`, `\pi`, `\rho`, `\sigma`, `\phi`, `\omega`; uppercase `\Gamma`, `\Delta`, `\Theta`, `\Lambda`, `\Pi`, `\Sigma`, `\Phi`, `\Omega`. Operators: `\times`, `\cdot`, `\pm`, `\le`, `\leq`, `\ge`, `\geq`, `\ne`, `\neq`, `\infty`, `\sum`, `\prod`, `\int`, `\partial`, `\nabla`, `\approx`, `\to`. Function names: `\sin`, `\cos`, `\tan`, `\log`, `\ln`, `\lim`. Escapes `\{`, `\}`, `\_`, `\%` produce literal symbols.
 
-Неизвестные команды, макросы, URL, HTML-команды, массивы, окружения и пользовательские стили не поддерживаются. Неизвестная команда отклоняет всю операцию, не вставляет её частично. `parseFormula(source)` возвращает неизменяемое типизированное AST или выбрасывает исключение. Ограничения: одна непустая строка до 1024 кодовых единиц UTF-16; до 512 токенов и 512 узлов AST; глубина групп/аргументов до 24. Управляющие символы и переносы строк запрещены.
+Unknown commands, macros, URLs, HTML commands, arrays, environments and arbitrary styles are unsupported. Unknown commands reject the whole operation rather than inserting a partial result. `parseFormula(source)` returns a frozen typed AST or throws. Limits: one nonempty line of up to 1024 UTF-16 code units, up to 512 tokens and 512 AST nodes, grouping/argument depth up to 24. Control characters and line separators are rejected.
 
-## Документ и API
+## Document and API
 
-Сохраняется обычный разрешённый HTML: `<span data-mw-node="morfira:formula">x^2</span>`. JSON использует ту же версионированную схему документа. Служебный `contenteditable` атома и MathML не сохраняются. `createFormulaSchema()` возвращает декларативную схему для независимого чтения документа без установки поведения атомов.
+Persisted HTML is an ordinary allowed span: `<span data-mw-node="morfira:formula">x^2</span>`. JSON uses the same versioned document schema. Runtime `contenteditable` and MathML are never persisted. `createFormulaSchema()` returns the declarative schema for independent document reading without atom behavior.
 
-`formulaCommands(editor)` предоставляет `insert(source)`, `update(actualNode, source)`, `remove(actualNode)`: возвращают `boolean`, проверяют текущий редактор, узел, read-only и композицию, входят в undo/redo. Некорректный исходник выбрасывает исключение до изменения документа. Узел чужого редактора или устаревшая ссылка не разрешают изменение.
+`formulaCommands(editor)` exposes `insert(source)`, `update(actualNode, source)`, and `remove(actualNode)`. These return `boolean`, validate current editor/node ownership, block read-only and composition edits, and participate in undo/redo. Invalid source throws before any document change. A foreign editor node or stale reference cannot authorize an edit.
 
-`renderFormula(document, source, { display: 'inline' | 'block' })` возвращает новый MathML-элемент; по умолчанию `inline`. Он использует только фиксированный набор MathML-тегов, `createElementNS` и `textContent`. Контейнер представлений по умолчанию использует `block`. Модуль не принимает HTML/MathML как исходник и не загружает ресурсы.
+`renderFormula(document, source, { display: 'inline' | 'block' })` creates a new MathML element, defaulting to `inline`. It uses a fixed MathML vocabulary, `createElementNS` and `textContent`. External views default to `block`. The module does not accept HTML/MathML source or load resources.
 
-При HTML/JSON-импорте схема проверяет ограниченный буквальный исходник; неподдерживаемый синтаксис остаётся инертным текстом, а представление показывает локализованную ошибку. Это позволяет безопасно открыть документ с более новым синтаксисом без исполнения содержимого. Команды создания/изменения такой синтаксис отклоняют.
+On HTML/JSON import the schema validates bounded literal source; unsupported syntax remains inert source and its view shows a localized error. This lets a document with newer syntax open safely without executing its contents. Creation/update commands reject that syntax.
 
-Форма предоставляет `open(target?)`, `close()`, `isOpen()`, `getSource()`, `setSource(source)`, `destroy()` и `element`. Опции: `label`, `onError`. Черновик может быть невалидным; предпросмотр и применение сообщат об ошибке. Захват выделения действует до изменения документа; read-only, IME, внешняя замена и устаревшая цель блокируют применение. Внутренняя логика не перепривязывает черновик к новой позиции автоматически.
+The form exposes `open(target?)`, `close()`, `isOpen()`, `getSource()`, `setSource(source)`, `destroy()`, and `element`. Options are `label` and `onError`. Drafts may be invalid; preview and apply report the error. A captured selection expires on document changes; read-only, IME, external replacement and stale targets prevent applying the draft. The form never silently retargets a draft to a new position.
 
-**Ограничение первой версии:** визуальные формулы находятся во внешнем контейнере, исходник-атом остаётся в документе. Это не встроенный редактор формул и не редактируемый `contentDOM`. Нативный MathML основан на [стандарте MathML Core](https://www.w3.org/TR/mathml-core/); доступность и шрифтовое представление зависят от браузера и ОС, полной совместимости с LaTeX не заявляется.
+**First-version limitation:** rendered formulas live in an external container while the source atom remains in the editor document. This is not an inline formula editor or editable `contentDOM`. Native MathML follows [MathML Core](https://www.w3.org/TR/mathml-core/); accessibility and font presentation depend on the browser and OS. Full LaTeX compatibility is not claimed.

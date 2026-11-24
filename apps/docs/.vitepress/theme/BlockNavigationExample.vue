@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { useData } from 'vitepress';
+import { useData, withBase } from 'vitepress';
 import type { Editor } from '@morfira-dev/wysiwyg';
 import type { BlockNavigationCommands } from '@morfira-dev/wysiwyg/plugins/block-navigation';
 import '@morfira-dev/wysiwyg/style.css';
@@ -17,7 +17,7 @@ let editor: Editor | undefined;
 let commands: BlockNavigationCommands | undefined;
 let disposed = false;
 const stops: (() => void)[] = [];
-const sample = '<p>Before: move to the end and press →.</p><hr><figure><img src="/logo.svg" alt="Morfira logo" width="64" height="64"><figcaption>Editable image caption</figcaption></figure><hr><p>After: move to the beginning and press Backspace.</p>';
+const sample = `<p>Before: move to the end and press →.</p><hr><figure><img src="${withBase('/logo.svg')}" alt="Morfira logo" width="64" height="64"><figcaption>Editable image caption</figcaption></figure><hr><p>After: move to the beginning and press Backspace.</p>`;
 const refresh = () => {
   if (!editor) return;
   html.value = editor.getHTML();

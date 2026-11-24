@@ -1,12 +1,12 @@
-# Полноэкранный режим
+# Fullscreen workspace
 
-`createFullscreenUI` разворачивает существующую рабочую область редактора на окно. Редактор, панель инструментов и обёртки адаптеров остаются теми же DOM-узлами: документ, текущий курсор, выделение и Undo не пересоздаются. На главной и в [демо](/playground) кнопка «Во весь экран» находится над рабочей областью.
+`createFullscreenUI` expands the existing editor workspace to the viewport. The editor, toolbar and adapter wrappers keep their actual DOM nodes: the document, current caret, selection and Undo are not recreated. On the homepage and in the [playground](/playground), “Enter fullscreen” sits above the workspace.
 
-Это необязательный CSS-режим, а не браузерный Fullscreen API. Адресная строка и другие элементы браузера остаются видимыми. Модуль не входит в core или пресеты автоматически, не добавляет типы узлов в документ и не требует framework/runtime-зависимостей.
+This optional CSS mode does not call the browser Fullscreen API. The address bar and browser chrome stay visible. The module is not implicitly installed by core or presets, adds no persisted node type, and has no framework/runtime dependency.
 
-## Подключение
+## Setup
 
-Контейнер `workspace` должен уже содержать настоящий редактор, панель инструментов и пустой host кнопки. Он принадлежит приложению; модуль не переносит редактор в отдельный overlay и не монтирует адаптер повторно.
+The application-owned `workspace` must already contain the real editor, toolbar and empty button host. The module does not move the editor into another overlay or remount its adapter.
 
 ```html
 <section id="workspace" class="editor-workspace">
@@ -32,8 +32,8 @@ const fullscreenHost = document.getElementById('fullscreen-controls')!;
 const toolbarHost = document.getElementById('toolbar')!;
 const editorHost = document.getElementById('editor')!;
 const editor = createEditor(editorHost, createStandardPreset({
-  locale: 'ru',
-  value: '<p>Тот же документ в большой рабочей области.</p>',
+  locale: 'en',
+  value: '<p>The same document in a larger workspace.</p>',
 }));
 const toolbar = createStandardEditorUI(toolbarHost, editor);
 const fullscreen = createFullscreenUI(fullscreenHost, editor, {
@@ -42,8 +42,8 @@ const fullscreen = createFullscreenUI(fullscreenHost, editor, {
   onError: (error) => console.error(error),
 });
 
-// workspace содержит fullscreenHost, toolbarHost и editorHost.
-// При удалении обёртки адаптера освобождайте принадлежащие ей UI-модули.
+// workspace contains fullscreenHost, toolbarHost and editorHost.
+// Dispose the UI owned by an adapter wrapper when that wrapper unmounts.
 const dispose = () => {
   fullscreen.destroy();
   toolbar.destroy();
@@ -51,7 +51,7 @@ const dispose = () => {
 };
 ```
 
-`fullscreenHost` — подключённый пустой HTML-элемент того же документа, за пределами редактируемого содержимого. `target` и host должны находиться в light DOM этого документа: ShadowRoot и slotted-обёртки не поддерживаются первым срезом. Существующий light-DOM Web Component можно разворачивать в обычной внешней обёртке. `workspace` — подключённый HTML-предок `editor.element` и host кнопки. `target` не должен находиться внутри редактируемого содержимого или быть его частью. Некорректная конфигурация отклоняется без частично добавленных контролов или изменений стилей.
+`fullscreenHost` is an empty connected HTML element in the same document, outside persisted editor content. Both target and host must belong to that document’s light DOM: ShadowRoot and slotted wrappers are outside this first slice. The existing light-DOM Web Component can use an ordinary external workspace wrapper. `workspace` is a connected HTML ancestor of `editor.element` and the button host. Do not use persisted editor content or a wrapper nested inside editor content as `target`. Invalid configuration rejects without partially mounted controls or style changes.
 
 ## API
 
@@ -64,48 +64,48 @@ import type {
 import { fullscreenUIMessages } from '@morfira-dev/wysiwyg/ui/fullscreen';
 ```
 
-| API | Поведение |
+| API | Behavior |
 | --- | --- |
-| `createFullscreenUI(host, editor, options)` | Создаёт независимую кнопку для `options.target`. |
-| `options.target` | Обязательная рабочая область, содержащая редактор и host кнопки. |
-| `options.label?` | Собственное доступное имя кнопки; видимая подпись входа/выхода остаётся локализованной. |
-| `options.onChange?` | Уведомление `(active: boolean) => void` после изменения режима, без команды изменения документа. |
-| `options.onError?` | Необязательная диагностика доверенного кода приложения. |
-| `controller.element` | Существующая нативная кнопка с локализованной подписью и `aria-pressed`. |
-| `enter(): boolean` | Возвращает `true`, если эта рабочая область активна; отказывает при конфликте владельца или неподходящем состоянии. |
-| `exit(): void` | Возвращает обычную раскладку, освобождает принадлежавшие модулю стили и наблюдение. |
-| `toggle(): boolean` | Переключает режим и возвращает итоговое активное состояние. |
-| `isActive(): boolean` | Сообщает состояние этого контроллера. |
-| `refresh(): void` | Обновляет состояние и локализованную подпись существующего контрола. |
-| `destroy(): void` | Идемпотентно освобождает режим, кнопку и подписки. Остальные методы после уничтожения недоступны. |
+| `createFullscreenUI(host, editor, options)` | Creates an independent button for `options.target`. |
+| `options.target` | Required workspace containing the editor and button host. |
+| `options.label?` | Custom accessible button name; its visible Enter/Exit caption remains localized. |
+| `options.onChange?` | `(active: boolean) => void` notification after a mode transition, not a document command. |
+| `options.onError?` | Optional diagnostics supplied by trusted application code. |
+| `controller.element` | The same native button, with localized text and `aria-pressed`. |
+| `enter(): boolean` | Returns `true` when this workspace is active; declines owner conflicts or unsuitable state. |
+| `exit(): void` | Restores normal layout and releases owned styles and observation. |
+| `toggle(): boolean` | Toggles mode and returns the resulting active state. |
+| `isActive(): boolean` | Reports this controller’s state. |
+| `refresh(): void` | Updates state and localization on the existing control. |
+| `destroy(): void` | Idempotently releases the mode, button and subscriptions. Other methods are unavailable after disposal. |
 
-В одном документе активна только одна рабочая область этого модуля. Вход второго экземпляра не закрывает первый и не меняет его стили. Поиск, форматирование и редактирование продолжают использовать существующие операции редактора. Вход/выход сами по себе не добавляют шаг истории; после работы в развёрнутой области сохраняется текущая позиция, а не старое выделение на момент входа.
+Only one module-owned workspace can be active per document. Entering a second controller does not close the first or change its styles. Search, formatting and editing continue through the existing editor operations. Mode transitions do not add history steps; leaving an edited fullscreen workspace retains the current position rather than the selection captured at entry.
 
-## Клавиатура и состояния
+## Keyboard and state
 
-Нативная кнопка работает с клавиатуры и показывает «Во весь экран» либо «Выйти из полноэкранного режима». Необработанный `Escape` внутри активной рабочей области закрывает режим. Вложенная форма или меню сначала получает свой `Escape`: модуль не перехватывает уже обработанное действие. `F11` остаётся браузеру.
+The native button works with the keyboard and displays “Enter fullscreen” or “Exit fullscreen”. An unhandled `Escape` inside the active workspace exits. A nested menu or form gets its own Escape first: the module does not consume an already handled action. `F11` remains browser-owned.
 
-Read-only не запрещает разворачивать область для чтения. Во время IME-композиции вход отклоняется, чтобы не мешать вводу; после её отмены через API или readonly не нужен дополнительный искусственный `compositionend`. Замена документа приложением в активной области сохраняет режим, но не возвращает устаревшее выделение. Смена локали обновляет ту же кнопку без её пересоздания.
+Read-only still allows expanding the workspace for reading. Entry declines during IME composition; cancellation through API replacement or readonly does not require a later artificial `compositionend`. Application document synchronization while active preserves the mode without restoring a stale selection. Locale updates change the same button instead of replacing it.
 
-Режим не является модальным диалогом: он не меняет `inert` у остальной страницы и не создаёт глобальную ловушку фокуса. Политика модальных окон и внешних элементов приложения остаётся у приложения. Полное соответствие требованиям доступности, реальные экранные дикторы, мобильные браузеры и ОС IME этим описанием не подтверждаются.
+This is not a modal dialog: it does not set `inert` on the rest of the page or install a global focus trap. Application modal and external-control policies remain application-owned. This description does not establish complete accessibility, real screen-reader, mobile-browser or OS IME verification.
 
-## CSS и внешние overlay
+## CSS and external overlays
 
-Подключайте `/ui/fullscreen.css` явно. Модуль добавляет рабочей области только принадлежащий ему класс `mw-fullscreen`. Стили страницы не копируются в документ, а содержимое не клонируется.
+Import `/ui/fullscreen.css` explicitly. The module adds only its owned `mw-fullscreen` class to the workspace. It does not copy page styles into persisted content or clone the document.
 
-Рабочая область должна находиться в цепочке предков без transform/filter/perspective и paint/layout containment, меняющих геометрию fixed-элементов; неподдерживаемое окружение отклоняется. Модуль не переносит контейнер к `body` для обхода ограничений и не управляет чужими overlay.
+The ancestor chain must not use transform/filter/perspective or paint/layout containment that changes fixed-element geometry; unsupported environments decline. The module does not move the workspace to `body` to bypass these limits or manage unrelated overlays.
 
-Контекстные панели и маркеры изменения размера могут иметь внешние host-элементы. Их слой должен оставаться выше развёрнутой области, а позиционирование — соответствовать окну. В демо host-элементы контекстных инструментов остаются внешними. Приложение самостоятельно согласует z-index, модальные слои и CSS containment.
+Contextual panels and image resize handles may use external hosts. Their layer must remain above the expanded workspace and their positioning must match the viewport. The demo keeps contextual tool hosts outside the workspace. Applications coordinate z-index, modal layers and CSS containment themselves.
 
-На время режима блокируется фоновая прокрутка через отдельные inline overflow-x/y у `body`. При выходе каждый параметр возвращается только если значение и приоритет ещё принадлежат модулю: параллельное изменение приложения не должно затираться. Позиция прокрутки страницы при входе также запоминается: она возвращается при выходе только если приложение или пользователь не изменили принадлежащую окну позицию после блокировки; такое внешнее изменение не перезаписывается. При уничтожении редактора, удалении рабочей области, её переносе в другой документ или потере владения режим освобождает свои ресурсы. Перемещение внутри документа требует повторной проверки цепочки предков.
+While active, separate body overflow-x/y inline properties suppress background scrolling. Each property is restored only while its value and priority are still module-owned; concurrent application changes survive. The page scroll position at entry is also recorded and restored on exit only while the window has kept the module-recorded locked position; intervening application/user window scrolling is preserved. Editor destruction, workspace detachment/adoption or loss of ownership releases the module’s resources.
 
-## Проверки и вес
+## Validation and size
 
-Вставка, HTML/JSON и формат документа здесь не меняются. Целевые регрессии должны проверять геометрию окна, идентичность DOM, историю/текущее выделение, Escape, readonly/IME, два владельца и очистку стилей. Наличие демо не означает полного браузерного или мобильного покрытия; выполненные проверки фиксируются отдельно в журнале проекта.
+This mode does not change insertion, HTML/JSON or the document format. Focused regressions should exercise viewport geometry, DOM identity, history/current selection, Escape, readonly/IME, competing owners and style cleanup. The demo does not establish complete browser/device coverage; the project verification record reports actual executed checks separately.
 
-JS, gzip, Brotli и CSS измеряются отдельно. Отдельный UI имеет guard 8000 gzip-байт JS и 2000 несжатых CSS-байт; выбранный `standard-fullscreen-ready` сохраняет бюджет standard 80000 gzip-байт JS / 20000 несжатых CSS-байт. Это бюджеты, а не заявленные текущие измерения. Framework runtime, шрифты, source maps и декларации в размер редактора не включаются. Предпросмотр и печать остаются отдельными задачами.
+Measure minified JS, gzip, Brotli and CSS separately. The standalone UI has an 8000-byte gzip JS guard and a 2000-byte raw CSS guard; `standard-fullscreen-ready` keeps standard’s 80000-byte gzip JS / 20000-byte raw CSS budget. These are budgets, not claimed current measurements. Framework runtimes, fonts, source maps and declarations are excluded. Preview and printing remain separate tasks.
 
-Настройка не требует изменения стилей ядра:
+Customization does not require editing core styles:
 
 ```css
 .editor-workspace {
@@ -116,4 +116,4 @@ JS, gzip, Brotli и CSS измеряются отдельно. Отдельны�
 }
 ```
 
-Также доступны `--mw-fullscreen-button-color`, `--mw-fullscreen-button-background`, `--mw-fullscreen-button-border` и общий `--mw-focus`. Согласуйте слой с внешними контекстными контролами приложения.
+Additional variables are `--mw-fullscreen-button-color`, `--mw-fullscreen-button-background`, `--mw-fullscreen-button-border` and shared `--mw-focus`. Coordinate the layer with application-owned external contextual controls.

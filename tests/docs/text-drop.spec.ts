@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`text drag demo moves a rich selection with one history step in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-text-drop');
@@ -56,5 +56,5 @@ for (const english of [false, true]) test(`text drag demo moves a rich selection
   await expect(panel.locator('[data-text-drop-limits]')).toContainText('OS drag/drop');
   await page.getByRole('button', { name: t('Только чтение', 'Read only'), exact: true }).click();
   await expect(load).toBeDisabled();
-  await expect(panel.getByRole('link', { name: t('Подключение перетаскивания текста', 'Text drag and drop setup'), exact: true })).toHaveAttribute('href', english ? '/en/text-drop' : '/text-drop');
+  await expect(panel.getByRole('link', { name: t('Подключение перетаскивания текста', 'Text drag and drop setup'), exact: true })).toHaveAttribute('href', english ? '/text-drop' : '/ru/text-drop');
 });

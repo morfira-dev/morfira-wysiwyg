@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) {
   const t = (russian: string, translated: string) => english ? translated : russian;
   test(`remembered-selection guide controls preserve target and refuse replacement (${english ? 'EN' : 'RU'})`, async ({ page }) => {
-    await page.goto(english ? '/en/plugin-sdk' : '/plugin-sdk');
+    await page.goto(english ? '/plugin-sdk' : '/ru/plugin-sdk');
     const demo = page.locator('.selection-sdk-example');
     const select = demo.getByRole('button', { name: t('Выделить пример', 'Select sample'), exact: true });
     await expect(select).toBeEnabled();

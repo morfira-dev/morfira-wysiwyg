@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`outline demo navigates the actual nested heading read-only in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-reading');
@@ -29,5 +29,5 @@ for (const english of [false, true]) test(`outline demo navigates the actual nes
   const toolbar = page.getByRole('toolbar', { name: t('Форматирование', 'Formatting'), exact: true });
   await expect(toolbar.locator('[data-mw-ui-action="undo"]')).toBeDisabled();
   await expect(panel.locator('[data-outline-hint]')).toContainText('read-only');
-  await expect(panel.getByRole('link', { name: t('Подключение оглавления', 'Outline setup'), exact: true })).toHaveAttribute('href', english ? '/en/outline' : '/outline');
+  await expect(panel.getByRole('link', { name: t('Подключение оглавления', 'Outline setup'), exact: true })).toHaveAttribute('href', english ? '/outline' : '/ru/outline');
 });

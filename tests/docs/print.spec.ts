@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 for (const english of [false, true]) test(`print demo requests only a validated reading snapshot in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const panel = page.locator('.lab-reading');
@@ -40,5 +40,5 @@ for (const english of [false, true]) test(`print demo requests only a validated 
   await expect(page.locator('[data-mw-print-surface]')).toHaveCount(0);
   await expect(page.locator('body')).not.toHaveAttribute('data-mw-print-active');
   await expect(panel.locator('[data-print-hint]')).toContainText(t('настоящий диалог', 'actual browser dialog'));
-  await expect(panel.getByRole('link', { name: t('Подключение печати', 'Print setup'), exact: true })).toHaveAttribute('href', english ? '/en/print' : '/print');
+  await expect(panel.getByRole('link', { name: t('Подключение печати', 'Print setup'), exact: true })).toHaveAttribute('href', english ? '/print' : '/ru/print');
 });

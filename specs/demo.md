@@ -1,6 +1,8 @@
 # Local feature laboratory
 
-Status: implementation milestone. The `/playground` and `/en/playground` pages expose the supported current editor API; the Russian and English homepages expose the same complete laboratory immediately after the hero, before feature cards.
+Status: implementation milestone. English is the default documentation language. `/` and `/playground` open the English homepage and editor, and `/ru/` and `/ru/playground` open the Russian equivalents. Both homepages expose the same complete laboratory immediately after the hero, before feature cards. The language switcher opens the equivalent page in the other language. The repository uses `README.md` in English and `README.ru.md` in Russian, with links between them and to the corresponding published documentation.
+
+Documentation serves the same localized routes at the local root and below the GitHub Pages project prefix. The homepage, deep page links, playground links and demo images work under that prefix.
 
 - Provide an editable showcase document plus article/table/empty samples. Sample replacement is explicit and resets history through the external-value API.
 - Expose all supported inline marks, heading levels 1–6/paragraph, ordered/bullet lists, blockquote, code block, alignment and undo/redo. Preserve the editor selection while interacting with controls.

@@ -1,17 +1,14 @@
 # Morfira WYSIWYG
 
-Самостоятельный модульный редактор на строгом TypeScript, MIT. Ядро и плагины не имеют сторонних runtime-зависимостей. Адаптеры Vue / React / Svelte / Angular подключают фреймворки через peers; Web Component работает без фреймворка. Редактор развивается; границы и планы описаны в документации.
+[Русский](README.ru.md) · [Documentation](https://morfira-dev.github.io/morfira-wysiwyg/) · [Interactive playground](https://morfira-dev.github.io/morfira-wysiwyg/playground)
 
-## Локальный запуск
+Morfira is an MIT-licensed rich text editor with an independently implemented TypeScript core and table engine. The core and plugins have zero runtime dependencies. The Vue, React, Svelte, and Angular adapters use their frameworks as peer dependencies. The Web Component runs without a framework.
 
-Node.js 22.14+ и pnpm 11.0.7.
+## Getting started
 
 ```sh
-pnpm install
-pnpm run docs:dev
+pnpm add @morfira-dev/wysiwyg
 ```
-
-Документация на русском и английском, поиск и интерактивный редактор находятся в `apps/docs`. Публикация не выполняется.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -20,67 +17,44 @@ import '@morfira-dev/wysiwyg/style.css';
 import '@morfira-dev/wysiwyg/plugins/tables.css';
 
 const editor = createEditor(document.querySelector<HTMLElement>('#editor')!, {
-  value: '<p>Привет, Morfira!</p>',
+  value: '<p>Hello, Morfira!</p>',
   plugins: [tables()],
 });
+
 tableCommands(editor).insert(3, 3);
 editor.setLocale('en', { 'tables.resizeColumn': 'Column width' });
 ```
 
-Публичные входы: `@morfira-dev/wysiwyg`, `/vue`, `/react`, `/svelte`, `/angular`, `/web-component` и выборочные `/plugins/tables`, `/plugins/images`, `/plugins/search`, `/plugins/statistics`, `/plugins/markdown`, `/plugins/mentions`, `/plugins/slash`, `/plugins/suggestions`. Внутри репозитория пакеты связаны через workspaces; доступность новых входов в npm зависит от выпущенной версии. Импорт ядра безопасен без DOM; создание редактора требует браузерного элемента.
+The core import is safe without a DOM. Creating an editor requires a browser element. Use `editor.destroy()` when removing its host. See the [getting started guide](apps/docs/guide.md).
 
-## Локализация и новые обёртки
+## Adapters and optional features
 
-Готовые формы подключаются отдельно: `/ui/links`, `/ui/images`, `/ui/search` и общий `/ui/forms.css`. Они не требуют фреймворка или CSS документации и не входят в граф ядра. `/ui/images` использует плагин изображений, `/ui/search` — поиска; ссылки работают с командами ядра.
+- Framework adapters use the `/vue`, `/react`, `/svelte`, and `/angular` subpaths. Angular 21 and 22 support standalone `MorfiraEditor`, two-way value binding, Reactive Forms, and `ngModel` via ControlValueAccessor. Use one value binding per instance. See the [adapter guide](apps/docs/adapters.md).
+- The `/web-component` entry exports `defineMorfiraEditor()` for explicit browser registration. The light-DOM element has `value`, `readOnly`, `locale`, `translations`, and `plugins` properties and emits `value-change`, `change`, and `ready`. See the [Web Component setup](apps/docs/adapters.md#framework-free-web-component).
+- Plugins use selective imports such as `/plugins/tables`, `/plugins/images`, `/plugins/search`, `/plugins/statistics`, `/plugins/markdown`, `/plugins/mentions`, `/plugins/slash`, and `/plugins/suggestions`. Image storage and suggestion providers are application-owned. Standalone Markdown import and export use `/codecs/markdown`. See [plugins](apps/docs/plugins.md) and the [Markdown codec](apps/docs/markdown-codec.md).
+- Optional UI forms use `/ui/links`, `/ui/images`, `/ui/search`, and `/ui/forms.css`. Forms follow the editor's language and read-only state and keep drafts. Contextual controls for links, images, and tables use their own imports and an application-owned host. See [UI forms](apps/docs/ui.md), [links](apps/docs/contextual-links.md), [images](apps/docs/contextual-images.md), and [tables](apps/docs/contextual-tables.md).
+- English and Russian editor labels are built in. Each editor accepts a locale and custom translations. Use `setLocale()` to update labels without altering the document or history and scoped `--mw-*` CSS variables to theme the editor. See [localization](apps/docs/localization.md) and [theming](apps/docs/theming.md).
 
-```ts
-import { createLinkForm } from '@morfira-dev/wysiwyg/ui/links';
-import '@morfira-dev/wysiwyg/ui/forms.css';
+New subpaths become available in npm as their packages are released. The repository uses workspace links during development.
 
-const form = createLinkForm(document.querySelector<HTMLElement>('#link-controls')!, editor);
-// При удалении экрана: form.destroy(); затем editor.destroy().
+## Local development
+
+Use Node.js 22.20+ and pnpm 11.0.7.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm run docs:dev
 ```
 
-Контроллеры предоставляют `element`, `refresh`, `getValues`, `setValues`, `destroy`, наследуют locale/read-only и сохраняют drafts. Примеры всех трёх форм: [RU](apps/docs/ui.md) / [EN](apps/docs/en/ui.md).
+The documentation site in `apps/docs` uses English at the root and Russian under `/ru/`. Both versions include live examples, a playground, and search. GitHub Actions deploys the site to GitHub Pages after the checks for `main` pass.
 
-`locale` и `translations` принадлежат экземпляру. Встроены RU/EN, неизвестные языки используют английский fallback; отдельные строки или свой язык задаются record переводов. `setLocale()` меняет встроенные подписи без изменения документа/истории; явные пользовательские labels остаются приоритетными. Полный каталог: [RU](apps/docs/localization.md) / [EN](apps/docs/en/localization.md).
+- `packages/core` contains the typed document, HTML and JSON validation, selection, transactions, history, and the plugin API.
+- `packages/plugins` contains optional features, including the logical table grid and image commands.
+- `packages/vue`, `packages/react`, `packages/svelte`, `packages/angular`, and `packages/web-component` contain the adapters.
+- `packages/wysiwyg` provides the public package and subpath exports.
+- `playground` contains browser fixtures. `specs` defines editing contracts and acceptance criteria.
 
-Angular 21/22: импортируйте standalone `MorfiraEditor` из `@morfira-dev/wysiwyg/angular` в `imports` компонента. Поддерживаются `[(value)]`, Reactive Forms и `ngModel` через CVA; не совмещайте form binding и `[value]` на одном экземпляре. Angular остаётся peer dependency. Примеры: [RU](apps/docs/adapters.md#angular-21--22) / [EN](apps/docs/en/adapters.md#angular-21--22).
-
-Для Web Component регистрация в браузере явная, CSS подключается отдельно:
-
-```ts
-import { defineMorfiraEditor } from '@morfira-dev/wysiwyg/web-component';
-import type { MorfiraEditorElement } from '@morfira-dev/wysiwyg/web-component';
-import '@morfira-dev/wysiwyg/style.css';
-
-defineMorfiraEditor();
-const field = document.createElement('morfira-wysiwyg') as MorfiraEditorElement;
-field.locale = 'en';
-field.value = '<p>Hello</p>';
-field.addEventListener('value-change', (event) => {
-  console.log((event as CustomEvent<string>).detail);
-});
-document.querySelector('#editor-host')!.append(field);
-```
-
-Light DOM, свойства `value/readOnly/locale/translations/plugins`, события `value-change/change/ready`; автоматической связи с HTML forms пока нет. [Контракт и примеры](apps/docs/adapters.md#web-component-без-фреймворка).
-
-Контекстные действия со ссылкой подключаются отдельно через `/ui/contextual-link` и `/ui/contextual-link.css` вместе с `/ui/forms.css`. `createContextualLinkUI(host, editor)` показывает предпросмотр и Open/Edit/Remove при курсоре внутри текстовой ссылки; редактирование использует существующую форму, форматирование и историю. Пустой overlay-host размещается вне содержимого редактора. Пресеты модуль автоматически не подключают. Контракт, безопасность URL и примеры: [RU](apps/docs/contextual-links.md) / [EN](apps/docs/en/contextual-links.md).
-
-Контекстные свойства изображения доступны отдельно через `/ui/contextual-image` и `/ui/contextual-image.css`. `createContextualImageUI(host, editor)` использует настоящее выделение одного IMG и открывает существующую форму в режиме `mode: 'edit'`: Enter обновляет, вставка и загрузка исключены. Default-режим самостоятельной формы остаётся `all`. Примеры и границы: [RU](apps/docs/contextual-images.md) / [EN](apps/docs/en/contextual-images.md).
-
-## Структура
-
-- `packages/core`: типизированное дерево документа, HTML/JSON-валидация, Selection/Range, история, транзакции, API плагинов и необязательная панель.
-- `packages/plugins`: собственная логическая сетка таблиц, UI и необязательные команды изображений с upload callback.
-- `packages/vue`, `packages/react`, `packages/svelte`, `packages/angular`: компоненты и синхронизация значения.
-- `packages/web-component`: явно регистрируемый light-DOM custom element.
-- `packages/wysiwyg`: единый публичный пакет с subpath exports.
-- `apps/docs`: двуязычный сайт; `playground`: браузерный стенд.
-- `AGENTS.md`, `skills/morfira-sdd/SKILL.md`, `specs/`: требования, SDD-процесс и критерии поведения.
-
-## Проверки
+## Verification
 
 ```sh
 pnpm exec playwright install chromium firefox webkit
@@ -89,37 +63,18 @@ pnpm run docs:build
 pnpm run test:docs
 ```
 
-Проверяются стрелочные const-реализации, MIT, runtime-границы, типы, декларации, сборка, размер и браузерное поведение. `size-report.json` содержит minified JS, gzip, Brotli и CSS отдельно. По уточнению пользователя исходные бюджеты считаются в gzip: core JS 200000 байт, optional/table JS 150000. Готовые Standard/Extended сохраняют более строгие лимиты 65000/110000 gzip байт JS и 20000 minified байт CSS; raw JS измеряется без прежних preset-ограничений. Каждый адаптер ограничен отдельно 10000 minified байт JS, без runtime фреймворков.
+`check:static` builds the packages and verifies project rules, declarations, types, package boundaries, tree shaking, and bundle budgets. `check` adds the editor and adapter browser suite. `docs:build:site` builds the site from existing package outputs. The CI matrix covers Chromium, Firefox, and WebKit, with separate documentation and installed-consumer jobs. See the [CI specification](specs/continuous-integration.md).
 
-GitHub CI автоматически проверяет PR и `main` через Release; для ветки без PR доступен ручной Check. Дублирующий non-main push trigger убран, устаревшие проверки PR отменяются без отмены публикации `main`. CI выполняет одну сборку и статические проверки, затем запускает полную браузерную матрицу в 12 задачах (Chromium/Firefox/WebKit × 4 shards), а документацию и оба профиля установленных пакетов — параллельно. Релиз ждёт общий успешный `check`. Локальная `pnpm run check` остаётся полной проверкой; `check:static` — её часть до браузеров, `docs:build:site` собирает сайт из уже проверенных библиотек. Цель обратной связи — около 5–10 минут; фактическое время нового графа ещё требуется измерить в GitHub. Методика и исходные замеры: [continuous integration](specs/continuous-integration.md).
+`size-report.json` tracks minified JavaScript, gzip, Brotli, and CSS separately. The core JavaScript limit is 200,000 gzip bytes and the optional entry and table JavaScript limit is 150,000 gzip bytes. The Standard and Extended profiles have separate limits of 90,000 and 110,000 gzip JavaScript bytes and 20,000 minified CSS bytes each. Each adapter has a 10,000 minified JavaScript byte limit, excluding framework runtimes.
 
-## Контракты
+Use `pnpm run consumers:check` and `pnpm run consumers:angular22` to check installed tarballs outside the workspace. Use `pnpm run benchmark -- --browser=chromium,firefox,webkit` for observational measurements. See [testing](apps/docs/testing.md) and [performance](apps/docs/performance.md).
 
-Документ хранится как `EditorDocument` версии 1. HTML и JSON проходят схему, allowlist элементов/атрибутов/URL/стилей и ограничения ресурсов. Прежний формат прототипа автоматически не мигрируется; HTML можно импортировать в поддерживаемую схему. Плагины используют `transact`, `providePlugin`, `getPlugin`; прямого внешнего движка нет.
+## Document and extension contracts
 
-Тема задаётся `--mw-*` переменными на обёртке. Реализации используют const-стрелки; только обязательные platform prototype callbacks Web Component делегируют стрелочной lifecycle-логике. Версии пакетов ведутся независимо через semantic-release по Conventional Commits; внутренние зависимости обновляет multi-semantic-release. Настройка OIDC и запуск релизов описаны в [инструкции](./specs/releases.md) и двуязычной документации (`apps/docs/testing.md`). Коммиты, ветки, публикации и деплой требуют отдельного запроса.
+The editor stores a versioned `EditorDocument` and validates HTML and JSON against its schema. Undo and redo cover input, formatting, paste, and plugin changes. Plugins use per-editor state with validated commands and transactions. See the [core API](apps/docs/api.md), [plugin SDK](apps/docs/plugin-sdk.md), and [security guide](apps/docs/security.md).
 
-## Ограничения
+See the [roadmap](apps/docs/roadmap.md) for the supported scope and limitations. Physical-device and assistive-technology testing is pending.
 
-Ввод опирается на браузерный contenteditable и имеет браузерные особенности. Реальные Word/Excel-сценарии, большие документы, полная IME/mobile-проверка, доступность, resize изображений мышью и совместное редактирование требуют дальнейшей работы. Прошедшие тесты не означают полного функционального паритета или сертификации безопасности.
+## License
 
-## Лицензия
-
-[MIT](./LICENSE). У фреймворков и инструментов сохраняются собственные лицензии — см. [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
-
-Изображения: [контракт](specs/images.md), [документация](apps/docs/images.md), [English](apps/docs/en/images.md). Необязательный `/plugins/images` предоставляет команды и отменяемый upload callback; реальное хранилище подключает приложение.
-
-Поиск и замена: необязательный `/plugins/search` (локальная разработка), [RU](apps/docs/search.md) / [EN](apps/docs/en/search.md), [контракт](specs/search.md). Буквальный поиск, регистр, целое слово, текущая/массовая замена с историей.
-
-Статистика: `/plugins/statistics` (локальная разработка), [RU](apps/docs/statistics.md) / [EN](apps/docs/en/statistics.md). Unicode-графемы и слова документа/выделения через платформенный Intl.Segmenter.
-
-Markdown shortcuts: необязательный `/plugins/markdown` (локальная разработка), [RU](apps/docs/markdown.md) / [EN](apps/docs/en/markdown.md), [контракт](specs/markdown-shortcuts.md). Преобразования при вводе с историей, без Markdown-парсера и конвертации вставки.
-
-Mentions/slash: локальные `/plugins/mentions`, `/plugins/slash` и необязательное меню `/plugins/suggestions` + `/plugins/suggestions.css`; [RU](apps/docs/suggestions.md) / [EN](apps/docs/en/suggestions.md). Асинхронные провайдеры приложения, отмена, клавиатура, редактируемые упоминания без постоянных ID, текстовые шаблоны и готовые структурные команды через расширяемый реестр.
-
-Архитектура расширений: [события и составные транзакции RU](apps/docs/events.md) / [EN](apps/docs/en/events.md). Готовые основные плагины подключаются выборочно; tree-shaking проверяется командой `pnpm run check:tree-shaking`. Правила владения кодом: [spec](specs/code-organization.md). Тяжёлый офисный паритет не является целью проекта.
-
-Проверка пакетов вне workspace: после `pnpm run build` запустите `pnpm run consumers:check` (восемь tarball, offline cache, Vue/React/Svelte/Angular 21/Web Component и пятнадцать сценариев в трёх браузерах). Отдельный `pnpm run consumers:angular22` проверяет Angular 22 и его TypeScript toolchain ещё тремя сценариями; нужен совместимый Node 22.22.3+ или 24.15+, возможно получение dev toolchain из сети. Эти числа описывают покрытие инструмента, а не результат последнего запуска. Бенчмарк ядра: `pnpm run benchmark -- --browser=chromium,firefox,webkit`; результаты в `artifacts/performance-baseline.json` наблюдательные, без timing-порогов в CI. Методика: [RU](apps/docs/performance.md) / [EN](apps/docs/en/performance.md).
-
-
-Контекстная панель таблиц подключается отдельно через `/ui/contextual-table` и `/ui/contextual-table.css`: `createContextualTableUI(host, editor)` даёт операции над строками/столбцами, объединение и разделение с учётом rowspan/colspan и истории. Наблюдение за областью — выборочный `getTableSelection(editor, range?)` из `/plugins/tables`; панель не включается в пресеты автоматически. Подключение, клавиатура и ограничения: [RU](apps/docs/contextual-tables.md) / [EN](apps/docs/en/contextual-tables.md).
+[MIT](LICENSE). See [third-party notices](THIRD_PARTY_NOTICES.md) for framework and tooling licenses.

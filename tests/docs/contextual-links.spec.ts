@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) test(`link selection actions edit and unlink rich text in ${english ? 'English dark playground' : 'Russian narrow homepage'}`, async ({ page }) => {
   const t = (ru: string, en: string) => english ? en : ru;
   await page.setViewportSize({ width: english ? 1280 : 390, height: 900 });
-  await page.goto(english ? '/en/playground' : '/');
+  await page.goto(english ? '/playground' : '/ru/');
   const content = page.locator('.mw-content');
   await expect(content).toBeVisible();
   const toggle = page.getByRole('checkbox', { name: t('Действия со ссылкой', 'Link actions'), exact: true });

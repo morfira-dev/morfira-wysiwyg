@@ -1,8 +1,8 @@
-# Локализация интерфейса
+# Interface localization
 
-Язык — состояние конкретного редактора. Встроены русские и английские подписи; глобального реестра и зависимости от i18n-библиотеки нет. Язык документа, его содержимое и настройки Unicode-статистики не меняются вместе с языком интерфейса.
+Language belongs to each editor instance. Russian and English strings are included without a global registry or an i18n-library dependency. Interface language does not translate the document or change Unicode-statistics configuration.
 
-## Создание и переключение
+## Creation and live switching
 
 ```ts
 import { createEditor, createToolbar } from '@morfira-dev/wysiwyg';
@@ -20,19 +20,19 @@ const stop = editor.events.on('localechange', ({ locale }) => {
 });
 editor.setLocale('ru');
 
-// При удалении представления:
+// When removing the view:
 stop();
 disposeToolbar();
 editor.destroy();
 ```
 
-По умолчанию используется `ru`, чтобы сохранить прежнее поведение. При поиске строки приоритет такой: `translations[key]` → точный язык → базовый язык → английский. Поэтому `en-GB` использует английский словарь, а неизвестный встроенным словарям `de-CH` получает английские строки, пока приложение не передаст перевод. Языковые теги проверяются и приводятся к каноническому виду через `Intl.getCanonicalLocales`.
+The default is `ru` to preserve previous behavior. String resolution follows `translations[key]` → exact language → base language → English. Therefore `en-GB` uses the English dictionary, while `de-CH`, which has no built-in dictionary, receives English strings until the application supplies translations. Language tags are validated and canonicalized with `Intl.getCanonicalLocales`.
 
-`setLocale(locale, translations?)` **заменяет** overrides: без второго аргумента прежние overrides очищаются. Невалидный тег или значения переводов отклоняются до изменения состояния. `getLocale()` и событие `localechange` возвращают независимые snapshots. Эквивалентная настройка не создаёт повторное событие.
+`setLocale(locale, translations?)` **replaces** overrides: omitting its second argument clears previous overrides. Invalid tags or translation values are rejected before changing state. `getLocale()` and `localechange` provide independent snapshots. An equivalent configuration emits no duplicate event.
 
-Смена языка не заменяет DOM документа, не создаёт `change`, не сбрасывает выделение или undo/redo. Она доступна в read-only и во время composition, но запрещена внутри document transaction. Меню обновляют свои элементы, сохраняя активный вариант и выполняющийся запрос.
+Changing language does not replace document DOM, emit document `change`, or reset selection or undo/redo. It works in read-only mode and during composition, but is rejected inside a document transaction. Menus update their existing elements while retaining active options and in-flight requests.
 
-## Свой язык и отдельные строки
+## Custom language and individual strings
 
 ```ts
 import type { EditorTranslations } from '@morfira-dev/wysiwyg';
@@ -48,15 +48,15 @@ const spanish: EditorTranslations = {
 editor.setLocale('es-MX', spanish);
 ```
 
-Остальные строки этого частичного перевода будут английскими. Переданные записи копируются; изменение объекта приложения не изменяет установленный перевод. Строки выводятся через текстовые DOM-свойства: `<strong>` в переводе останется буквальным текстом.
+Unspecified strings in this partial translation fall back to English. Supplied records are copied; mutating the application's object does not change installed translations. Strings use text DOM properties: `<strong>` in a translation remains literal text.
 
-Явные `label`/`placeholder` редактора, пользовательские `ToolbarAction.label`, `ToolbarOptions.label` и `SuggestionMenuOptions.labels` имеют приоритет над встроенными переводами. Они принадлежат приложению и не переписываются автоматически. `SuggestionMenuOptions.locale: 'ru' | 'en'` фиксирует язык конкретного меню; без него меню наследует язык редактора. Раньше меню подсказок без locale всегда было английским — теперь оно наследует настройку экземпляра.
+Explicit editor `label`/`placeholder`, custom `ToolbarAction.label`, `ToolbarOptions.label` and `SuggestionMenuOptions.labels` take precedence over built-in translations. These strings belong to the application and are not rewritten automatically. `SuggestionMenuOptions.locale: 'ru' | 'en'` pins an individual menu's language; otherwise the menu inherits the editor language. Previously a menu without locale always used English; it now inherits its instance configuration.
 
-Подписи результатов mention/slash, descriptions и ошибки application provider остаются данными приложения. `createSlashActions()` содержит функции, а не встроенные названия пунктов. Для переименования таких результатов локализуйте свой provider. Clipboard status таблиц локализуется, а `onClipboardError` по-прежнему получает первоначальный диагностический `Error`.
+Mention/slash result labels, descriptions and application-provider errors remain application data. `createSlashActions()` contains callbacks rather than built-in option names. Localize your provider to rename these results. Table clipboard status is localized, while `onClipboardError` continues receiving the original diagnostic `Error`.
 
-## Каталог встроенных ключей
+## Built-in key catalog
 
-Словари можно импортировать для просмотра ключей или типизации собственного перевода. Это не подключает другие плагины:
+Import dictionaries to inspect keys or type a custom translation without loading other plugins:
 
 ```ts
 import { editorMessages, toolbarMessages } from '@morfira-dev/wysiwyg';
@@ -66,7 +66,7 @@ import { suggestionMessages } from '@morfira-dev/wysiwyg/plugins/suggestions';
 const tableKeys = Object.keys(tablesMessages.en);
 ```
 
-| Ключ | Русский | English |
+| Key | Русский | English |
 | --- | --- | --- |
 | `editor.label` | Текстовый редактор | Text editor |
 | `editor.placeholder` | Начните писать… | Start writing… |
@@ -102,9 +102,9 @@ const tableKeys = Object.keys(tablesMessages.en);
 | `suggestions.error` | Не удалось загрузить подсказки | Unable to load suggestions |
 | `suggestions.results` | Подсказок: {count} | {count} suggestions |
 
-Типы ключей: `EditorTranslationKey`, `ToolbarTranslationKey`, `TablesMessageKey`, `SuggestionMessageKey` из соответствующих входов. `{count}` подставляет только меню подсказок; общего ICU/pluralization-шаблонизатора в ядре нет.
+Key types are `EditorTranslationKey`, `ToolbarTranslationKey`, `TablesMessageKey` and `SuggestionMessageKey` from their respective entries. Only the suggestion menu substitutes `{count}`; core has no general ICU/pluralization template engine.
 
-## Локализация своего плагина
+## Localizing your plugin
 
 ```ts
 import { localize } from '@morfira-dev/wysiwyg';
@@ -118,14 +118,14 @@ const update = () => {
 };
 const stopLocale = editor.events.on('localechange', update);
 update();
-// При удалении UI:
+// When removing the UI:
 stopLocale();
 ```
 
-Плагин владеет словарём и подпиской. Ключи пространства `myPlugin.*` избегают пересечения со встроенными строками. Английский fallback обязателен для используемого ключа; helper сообщает об отсутствующей строке. Ядро не импортирует словари необязательных модулей.
+The plugin owns its dictionary and subscription. The `myPlugin.*` namespace avoids collisions with built-in strings. An English fallback is required for each used key; the helper reports a missing string. Core does not import optional-module dictionaries.
 
-## Попробовать без замены документа
+## Try without replacing the document
 
-Переключите «Язык интерфейса редактора»: стандартная панель ниже изменит доступные подписи. Текст статьи и история останутся прежними. На главной расширенные формы и пользовательские подписи стенда остаются на языке страницы — они переданы явно.
+Change “Editor interface language”: the default toolbar below changes its accessible labels. Article text and history stay unchanged. On the homepage, extended forms and custom laboratory labels remain in the page language because they are explicitly supplied.
 
 <EditorDemo />

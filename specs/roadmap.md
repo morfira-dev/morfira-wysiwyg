@@ -230,7 +230,7 @@ P4 guards are active in `scripts/size.ts` for the measured standard/extended clo
 
 ## Delivery limits
 
-Current tests do not certify arbitrary Office documents, every mobile/IME input path, accessibility conformance, memory-leak freedom or production readiness. New public API/document changes require explicit compatibility notes and migration decisions. Publication, deployment and Git writes remain separate user-authorized actions; the documentation site remains local-only.
+Current tests do not certify arbitrary Office documents, every mobile/IME input path, accessibility conformance, memory-leak freedom or production readiness. New public API/document changes require explicit compatibility notes and migration decisions. The documentation site is deployed to GitHub Pages by the checked main workflow. Package publication and Git writes remain user-authorized actions.
 
 
 The independently imported caret-link UI slice is specified in [contextual-links.md](contextual-links.md). It reuses the existing link form for whole-anchor metadata edits/unlink and adds explicit safe Open, without introducing a node-selection model. Image/table contexts now have their separate U3d/U3e specifications below; the local expanded-range extension accepts text wholly within one existing anchor, with whole-anchor edits/unlink, exact range/direction restoration and explicit anchor-scoped form reuse. Bounded ordinary mixed contexts now follow the 2026-11-20 addendum. New runtime tests are authored but unexecuted at the local test pause; historical caret-only results do not validate this extension. Implementation and actual validation results must be reported separately.

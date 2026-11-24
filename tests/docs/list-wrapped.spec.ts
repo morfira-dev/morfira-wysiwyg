@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const english of [false, true]) {
   test(`mixed paragraph/heading list demo replaces content and restores backward selection in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     const t = (ru: string, en: string) => english ? en : ru;
-    await page.goto(english ? '/en/' : '/');
+    await page.goto(english ? '/' : '/ru/');
     const content = page.locator('.mw-content');
     await expect(content).toBeVisible();
     const panel = page.locator('.lab-list-selection');
@@ -33,7 +33,7 @@ for (const english of [false, true]) {
 
   test(`heading list demo keeps wrapper boundaries for Delete, Enter and Shift+Enter in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
     const t = (ru: string, en: string) => english ? en : ru;
-    await page.goto(english ? '/en/playground' : '/playground');
+    await page.goto(english ? '/playground' : '/ru/playground');
     const content = page.locator('.mw-content');
     await expect(content).toBeVisible();
     const panel = page.locator('.lab-list-selection');

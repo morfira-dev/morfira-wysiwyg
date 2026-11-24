@@ -12,6 +12,6 @@ Include the affected package/version, browser/version, minimal non-sensitive inp
 
 ## Integration responsibilities
 
-Read the [English security guide](apps/docs/en/security.md) or [Russian guide](apps/docs/security.md) for server validation, contextual output escaping, media/network controls, uploads and CSP limitations. Current implementation contracts and regression requirements are recorded in [specs/security.md](specs/security.md); actual verification evidence is recorded separately in [specs/verification-backlog.md](specs/verification-backlog.md).
+Read the [English security guide](apps/docs/security.md) or [Russian guide](apps/docs/ru/security.md) for server validation, contextual output escaping, media/network controls, uploads and CSP limitations. Current implementation contracts and regression requirements are recorded in [specs/security.md](specs/security.md); actual verification evidence is recorded separately in [specs/verification-backlog.md](specs/verification-backlog.md).
 
 Security tests cover specific threats and limits. They do not constitute an independent security audit or a guarantee that arbitrary deployment policies, browser extensions or application plugins are safe.

@@ -2,30 +2,30 @@
 import OfficeCorpusExample from './.vitepress/theme/OfficeCorpusExample.vue';
 </script>
 
-# Вставка из Word, Excel и Google Docs
+# Pasting from Word, Excel and Google Docs
 
-Вставка использует общий безопасный HTML-импорт. Этот срез добавляет ограниченную нормализацию распространённой офисной разметки; он не обещает точного воспроизведения документа из любого приложения или его версии. Фактические результаты запусков записываются в журнале проверок проекта. Внешний корпус ниже теперь содержит документированные исторические захваты Word/Excel, свежий native-захват Google Docs и отдельные upstream-образцы Docs; свежая матрица версий приложений остаётся отдельной проверкой.
+Paste uses the shared safe HTML importer. This slice adds bounded normalization of common Office markup; it does not promise an exact reproduction of every application document or version. Actual executed checks are recorded in the project verification log. The external corpus below now includes documented historical Word/Excel captures, a fresh native Google Docs capture and separate upstream Docs samples; a current application/version matrix remains separate.
 
-## Что сохраняется
+## What survives
 
-| Источник | Поддержанный вход | Результат и ограничения |
+| Source | Supported input | Result and limitations |
 | --- | --- | --- |
-| Word | Соседние `p` с явным inline `mso-list:lN level1…9 lfoN` и дочерним `span` с `mso-list:Ignore` | Распознанные десятичные `1.` / `1)` и маркеры `· • ○ ▪ ■ o` превращаются в обычные `ol` / `ul`. Первая запись должна иметь уровень 1, вложенность растёт не более чем на один уровень за пункт. Начальное число сохраняется; разрыв нумерации начинает новый список. Неизвестная метка или скачок уровня остаются абзацем. |
-| Google Docs | `b` с `id="docs-internal-guid-…"` и явным inline `font-weight:normal` или `400` | Служебная обёртка снимается без превращения всего текста в жирный. Собственные стили служебной обёртки отбрасываются. Настоящие вложенные `b` / `strong`, заголовки, списки и допустимые ссылки проходят обычный импорт. Произвольные `b` не считаются служебными. |
-| Excel | HTML-таблица с допустимыми `rowspan` / `colspan` | Сохраняются содержимое ячеек, поддержанное форматирование и объединения. Классы, формулы, вычисления и правила из элементов `<style>` не импортируются. Геометрия и печатный вид не воспроизводятся. |
-| Excel / другой табличный источник | Текст с табами в выбранной ячейке при подключённом `tables()` | Существующий табличный импорт TSV понимает поля в кавычках, табы/переносы внутри них и удвоенные кавычки. Это вставка значений, без формул; вне табличного контекста TSV не создаёт таблицу автоматически. |
+| Word | Adjacent `p` elements with explicit inline `mso-list:lN level1…9 lfoN` and a descendant `span` with `mso-list:Ignore` | Recognized decimal `1.` / `1)` labels and `· • ○ ▪ ■ o` bullets become ordinary `ol` / `ul`. The first entry must start at level 1; depth grows by at most one level per item. The initial number survives; numbering discontinuity starts a new list. Unknown labels and depth jumps remain paragraphs. |
+| Google Docs | A `b` with `id="docs-internal-guid-…"` and explicit inline `font-weight:normal` or `400` | The service wrapper is removed without turning the whole text bold. The service wrapper's own styles are discarded. Real nested `b` / `strong`, headings, lists and permitted links use ordinary import. Arbitrary `b` elements are not considered service wrappers. |
+| Excel | An HTML table with permitted `rowspan` / `colspan` | Cell content, supported formatting and merged cells survive. Classes, formulas, calculations and stylesheet rules are not imported. Geometry and print layout are not reproduced. |
+| Excel / another tabular source | Tab-separated text in a selected table cell with `tables()` installed | Existing TSV import understands quoted fields, embedded tabs/line breaks and escaped double quotes. This imports values, without formulas; outside a table context TSV does not automatically create a table. |
 
-Это правила распознавания разметки, а не определение установленного приложения. Одинаковая разметка обрабатывается одинаково независимо от источника. Стили из классов, CSS-таблиц и настроек приложения не вычисляются. Существующие разрешённые inline-стили сохраняются в пределах схемы. Явный inline `font-size` в пунктах переводится в CSS-пиксели по правилу `1pt = 4/3px`: `12pt` → `16px`, `11pt` → `14.667px`. Принимаются беззнаковые десятичные значения до четырёх цифр целой и трёх дробной части, если округлённый результат попадает в `0…9999.999px`. Значения со знаком, экспонентой, функциями или `!important` не преобразуются. Порядок деклараций и существующие поддержанные единицы сохраняются. Семантические поддеревья SDK этим правилом не нормализуются. Прямые JSON-значения в `pt` по-прежнему не поддержаны; результат HTML-импорта хранится в `px`. Шрифты не загружаются, а импорт не ограничивается вариантами панели плагина шрифтов.
+These are markup recognition rules, not installed-application detection. Identical markup is handled identically regardless of its source. Classes, stylesheets and application preferences are not evaluated. Existing permitted inline styles survive within the schema's limits. Explicit inline `font-size` in points is converted to CSS pixels using `1pt = 4/3px`: `12pt` → `16px`, `11pt` → `14.667px`. Unsigned decimal values with up to four integer and three fractional digits are accepted only when the rounded result fits `0…9999.999px`. Values with signs, exponents, functions or `!important` are not converted. Declaration order and existing supported units remain unchanged. Semantic SDK subtrees are not normalized by this rule. Direct JSON `pt` values remain unsupported; HTML import stores canonical `px`. This does not load fonts or restrict imports to the font plugin’s configured toolbar choices.
 
-## Попробовать
+## Try it
 
-На [главной](/#editor) и в [лаборатории](/playground) раскрой «Вставка из офисных приложений». Три кнопки заменяют документ пустым абзацем и отправляют демонстрационное событие `paste`; один Undo отменяет вставку. Образцы написаны вручную и явно помечены как синтетические. Они не требуют разрешения на системный буфер, внешних приложений или сетевых запросов. В примере Word есть `12pt` → `16px`, в ячейке Excel — `11pt` → `14.667px`.
+On the [homepage](/#editor) and in the [laboratory](/playground), expand “Office application paste”. Three buttons replace the document with an empty paragraph and dispatch a demonstration `paste` event; one Undo reverts the paste. Samples are hand-authored and explicitly identified as synthetic. No system clipboard permission, external application or network request is required. The Word sample includes `12pt` → `16px`; an Excel cell includes `11pt` → `14.667px`.
 
-Для настоящего буфера скопируйте фрагмент в приложении, поставьте курсор в редакторе и нажмите Ctrl/Cmd+V. Результат зависит от HTML, который приложение и браузер предоставят редактору. Для вставки TSV выберите ячейку таблицы. Предварительно сохраните нужное содержимое демки: загрузка примера заменяет документ.
+For a real clipboard, copy a fragment in the source application, place the caret in the editor and press Ctrl/Cmd+V. The result depends on the HTML supplied by the application and browser. Select a table cell for TSV paste. Save any demo content you need first: loading a sample replaces the document.
 
-## Подключение и API
+## Setup and API
 
-Нормализация входит в HTML-кодек ядра, без дополнительных runtime-зависимостей и отдельного плагина. Её используют `schema.parseHTML`, `sanitizeHTML`, `setHTML`, `insertHTML` и обычная HTML-вставка. JSON-контракт не расширяется: результат хранится как существующие безопасные узлы схемы v1. Для редактирования таблиц и вставки диапазона внутрь таблицы подключается обычный [плагин таблиц](/plugins).
+Normalization belongs to the core HTML codec, without additional runtime dependencies or a separate plugin. It is shared by `schema.parseHTML`, `sanitizeHTML`, `setHTML`, `insertHTML` and ordinary HTML paste. The JSON contract is unchanged: output uses existing safe schema-v1 nodes. Install the ordinary [table plugin](/plugins) for table editing and range paste into tables.
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -38,38 +38,38 @@ editor.insertHTML(
 );
 ```
 
-Используйте `insertHTML` для изменения с историей. `setHTML` — внешняя замена документа, которая сбрасывает историю согласно обычному API. Вставка сохраняет ограничения поддержанных целей/выделений, read-only и composition; офисная нормализация не разрешает ранее неподдержанные структурные замены.
+Use `insertHTML` for a change covered by history. `setHTML` is an external document replacement and clears history under the ordinary API contract. Paste retains existing target/selection, read-only and composition restrictions; Office normalization does not enable previously unsupported structural replacements.
 
-## Безопасность и границы
+## Security and boundaries
 
-Разметка разбирается инертно и затем проходит обычное восстановление разрешённых узлов/атрибутов. Служебные Office CSS-декларации не становятся сохранёнными стилями. Скрипты, обработчики событий, чужие пространства имён, опасные URL и произвольный CSS отбрасываются; действуют общие лимиты ресурсов документа. Допустимые изображения при настоящем отображении всё ещё могут загрузить свой URL — ограничения хостов, CSP и серверная валидация остаются ответственностью приложения. Подробности — [безопасность](/security).
+Markup is parsed inertly and then passes ordinary reconstruction of allowed nodes/attributes. Office-specific CSS declarations do not become persisted styles. Scripts, event handlers, foreign namespaces, unsafe URLs and arbitrary CSS are discarded; shared document resource limits apply. Permitted images may still load their URL when actually rendered — host restrictions, CSP and backend validation remain application responsibilities. See [security](/security).
 
-Срез не читает файлы `.docx` / `.xlsx`, Office XML, RTF, специальные MIME, числовые смещения CF_HTML и CSS `@list`. Не заявляются импорт формул, комментариев, исправлений, сносок, разрывов страниц, точная типографика или полная совместимость LibreOffice. Неопознанные списки сохраняют текст вместо угадывания структуры. Проверка реальных версий Word/Excel/Google Docs и дополнительных форматов должна пополнять отдельную матрицу доказанных сценариев.
+This slice does not read `.docx` / `.xlsx` files, Office XML, RTF, special MIME types, numeric CF_HTML offsets or CSS `@list` rules. Formula, comment, tracked-change, footnote, page-break, exact typography and full LibreOffice compatibility are not claimed. Unrecognized lists retain their text instead of guessing structure. Real Word/Excel/Google Docs versions and further formats must populate a separate matrix of evidenced scenarios.
 
-## Внешний корпус: происхождение и потери
+## External corpus: provenance and measured losses
 
 <OfficeCorpusExample />
 
-| Образец | Происхождение | Что сохраняется / теряется |
+| Sample | Provenance | Preserved / deliberately lost |
 | --- | --- | --- |
-| Word Windows / Edge, Word Mac / Safari | [Реальные clipboard-тесты Jodit](https://github.com/xdan/jodit/blob/39c0ac9943124205e4e7c3551eb16754ef5ed2a5/src/plugins/paste-from-word/paste-from-word.test.js), MIT, сокращены авторами upstream; комментарий указывает Word 16.113, версии ОС/браузеров и дата неизвестны | Вложенные обычные списки включают `§` только с явно указанным Wingdings. Буквенные/римские метки остаются текстом; классовые таблицы стилей и вёрстка страниц отбрасываются. |
-| Excel 365 16.0.20430.20092 | [Протокол захвата gridclip](https://github.com/fillddak/gridclip/blob/e6e315c6c46e3c7ff37ebf390dcc344643dcb4a6/test/fixtures/REAL-CAPTURES.md), MIT; Windows 11 / корейская локаль / Chromium 141 с интерфейсом, 01.10.2026; upstream заменил имя пользователя в путях временных файлов | Сохраняются настоящие горизонтальные/вертикальные объединения, корейский текст, отображаемые значения, emoji и экранированный HTML как текст. Переполнение `mso-ignore:colspan` превращается в отдельную пустую ячейку вместо ложного объединения. Скрытых строк в исходном буфере уже не было; формулы, числовые форматы и классовая геометрия не восстанавливаются. |
-| Google Docs — собственный native-захват | 23.11.2026, 08:03:38.605 UTC, Google Chrome / macOS; версии браузера и ОС неизвестны, веб-версия Docs не фиксируется. Собственный несекретный MIT-текст, настоящее Cmd+C; приватный URL документа и внутренний slice MIME не сохранялись | Сохраняются три абзаца, настоящий bullet-list и намеренный bold. `11pt` → `14.667px`; точные отступы/межстрочный интервал и служебные атрибуты теряются. Текстовое извлечение редактора не обязано повторять все разделяющие переводы строк исходного `text/plain`. |
-| Таблица / BIU-форматирование Google Docs | [Clipboard-образцы Lexical](https://github.com/facebook/lexical/tree/dc8cfac3c08f7d4bd4eff86a63089b4a88fae0e5/packages/lexical-playground/src/__tests__/browser), MIT; способ и дата исходного захвата, ОС/браузер не документированы | Снимается нейтральная обёртка, сохраняются безопасные таблица, текст и inline-типографика. Ограниченные числовые ширины colgroup сохраняются; отдельные границы, padding в pt и точный межстрочный интервал не воспроизводятся. Это upstream-образец приложения, а не независимо подтверждённый свежий захват Docs. |
+| Word Windows / Edge, Word Mac / Safari | [Jodit real clipboard tests](https://github.com/xdan/jodit/blob/39c0ac9943124205e4e7c3551eb16754ef5ed2a5/src/plugins/paste-from-word/paste-from-word.test.js), MIT, upstream-trimmed; Word 16.113 is identified in its comment, OS/browser versions and capture date unknown | Nested ordinary bullets include explicitly font-qualified Wingdings `§`. Alphabetic/Roman labels remain literal text; class stylesheets and page layout are discarded. |
+| Excel 365 16.0.20430.20092 | [gridclip capture protocol](https://github.com/fillddak/gridclip/blob/e6e315c6c46e3c7ff37ebf390dcc344643dcb4a6/test/fixtures/REAL-CAPTURES.md), MIT; Windows 11 / Korean locale / headed Chromium 141, 2026-10-01; upstream anonymized temporary-path username | Real horizontal/vertical merges, Korean text, displayed values, emoji and literal escaped HTML survive. `mso-ignore:colspan` overflow becomes a separate empty cell rather than a false merge. Hidden rows were absent from the original clipboard; formulas, number-format rules and stylesheet layout are not recovered. |
+| Google Docs — project native capture | 2026-11-23, 08:03:38.605 UTC, Google Chrome / macOS; browser and OS versions unknown, Docs uses an unpinned rolling web version. Project-authored non-sensitive MIT text, actual Cmd+C; private document URL and internal-slice MIME excluded | Three paragraphs, a semantic bullet list and intentional bold survive. `11pt` → `14.667px`; exact spacing/indentation and service attributes are discarded. Editor text extraction need not reproduce every block-separator newline in the original `text/plain`. |
+| Google Docs table / BIU formatting | [Lexical clipboard samples](https://github.com/facebook/lexical/tree/dc8cfac3c08f7d4bd4eff86a63089b4a88fae0e5/packages/lexical-playground/src/__tests__/browser), MIT; original capture method/date/OS/browser not documented | Neutral wrapper is removed, safe table/text/inline typography survives. Bounded numeric colgroup widths survive; per-edge borders, pt padding and exact line spacing are not reproduced. This is an upstream application sample, not independently verified fresh Docs capture. |
 
-Оригинальные payload, SHA-256, преобразования и MIT notices хранятся вместе в
-`tests/fixtures/office`. Word-фрагменты извлечены как значения строк без запуска
-чужих тестов; байты Excel, включая CRLF, сохранены как опубликованы upstream.
-Код внешних редакторов не используется.
+Original payloads, SHA-256 hashes, transformations and MIT notices are kept together
+in `tests/fixtures/office`. The Word payloads are cooked string literals extracted
+without executing upstream tests; Excel bytes (including CRLF) are preserved exactly
+as published. No external editor implementation is used.
 
-Восстановление пустых ячеек Excel допускает только обычный TD в TR с явным
-десятичным colspan 2–1000, rowspan не более 1 и без семантического владельца SDK.
-Действуют лимиты исходных узлов и итогового документа/сетки. `§` без явно
-указанного Wingdings остаётся текстом; произвольный CSS не вычисляется.
+Only an ordinary TD under TR with explicit decimal colspan 2–1000, no rowspan
+beyond 1 and no semantic SDK ownership qualifies for Excel overflow expansion.
+Source-node and final document/grid budgets still apply. A `§` without explicit
+Wingdings ancestry remains text. These rules do not enable arbitrary CSS evaluation.
 
-Форма захвата читает настоящие MIME-данные paste и скачивает локальный JSON с
-датой, браузером и введёнными пользователем приложением/версией/ОС. HTML виден
-только как текст, не исполняется и не отправляется на сервер. Каждый MIME-текст
-ограничен 5 000 000 кодовых единиц. Метаданные не доказывают источник автоматически.
-Просмотрите захват перед добавлением в общий корпус: воспроизведение этих
-образцов в трёх движках не означает полной сертификации Office-совместимости.
+The capture form reads actual paste MIME data and downloads local JSON with a
+timestamp, browser string and self-reported application/version/OS. HTML is shown
+only as text and never executed or uploaded. Each MIME string is bounded to
+5,000,000 code units. Saving metadata does not independently prove app origin.
+Review a capture before adding it to a shared corpus; no broad Office certification
+is implied by replaying these samples in three browser engines.

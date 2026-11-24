@@ -2,13 +2,13 @@
 import CodeBlocksExample from './.vitepress/theme/CodeBlocksExample.vue';
 </script>
 
-# Блоки кода
+# Code blocks
 
-Необязательный плагин сохраняет буквальный исходник, язык, пробелы, табуляции и переносы строк. Отдельная модалка позволяет вставить или изменить код, выбрать язык и скопировать исходник. Подсветка подключается приложением отдельно и не меняет сохраняемый документ.
+An optional plugin persists literal source, language, spaces, tabs and line breaks. A separate modal inserts or edits code, selects its language and copies the source. Application-owned highlighting is independent and never changes the persisted document.
 
 <CodeBlocksExample />
 
-## Подключение
+## Installation
 
 ```ts
 import { createEditor } from '@morfira-dev/wysiwyg';
@@ -19,29 +19,29 @@ import '@morfira-dev/wysiwyg/ui/code-blocks.css';
 const editor = createEditor(host, { plugins: [codeBlocks()] });
 const commands = codeBlockCommands(editor);
 const form = createCodeBlockForm(formHost, editor);
-const view = createCodeBlockView(viewHost, editor); // Без провайдера — буквальный текст.
+const view = createCodeBlockView(viewHost, editor); // Literal text without a provider.
 editor.setSelection(0);
 commands.insert({ source: 'const sum = (a, b) => a + b;\n', language: 'javascript' });
-// Контейнеры formHost/viewHost — вне editor.surface в том же document.
+// formHost/viewHost are outside editor.surface in the same document.
 ```
 
-## API и клавиатура
+## API and keyboard
 
-`codeBlocks({ languages? })` принимает 1–32 уникальных ID языка `[a-z][a-z0-9-]{0,31}`; `plaintext` всегда доступен и входит в лимит. По умолчанию доступны plaintext, typescript, javascript, html, css, json и bash. Никакая грамматика автоматически не загружается.
+`codeBlocks({ languages? })` accepts 1–32 unique language IDs matching `[a-z][a-z0-9-]{0,31}`; `plaintext` is always available and counts towards the limit. Defaults are plaintext, typescript, javascript, html, css, json and bash. No grammar is automatically loaded.
 
-`commands.languages` — неизменяемый список. `insert({source, language?})` вставляет PRE в курсор внутри обычного корневого абзаца/заголовка, сохраняя части до и после. Выделение нескольких блоков, списки и таблицы не поддерживаются этой командой. `update(actualPRE, value)`, `remove(actualPRE)`, `get(actualPRE)` и `exit(actualPRE)` работают только с актуальным корневым PRE данного редактора; изменения участвуют в Undo/Redo.
+`commands.languages` is immutable. `insert({source, language?})` splits an ordinary root paragraph/heading at a collapsed caret and preserves both sides around PRE. Cross-block selections, lists and tables are outside this insertion command. `update(actualPRE, value)`, `remove(actualPRE)`, `get(actualPRE)` and `exit(actualPRE)` accept only current owned root PRE nodes; edits participate in Undo/Redo.
 
-Внутри PRE Enter и Shift+Enter вставляют LF, Tab — буквальную табуляцию, Ctrl/⌘+Enter создаёт обычный абзац после блока. Backspace в начале и Delete в конце не сливают код с соседями. Внутренний обычный ввод/удаление и IME остаются нативными; во время composition команды не вмешиваются. Вставка принимает только plain text, без интерпретации HTML или файлов. Shift+Tab сохраняет стандартное перемещение фокуса.
+Inside PRE, Enter/Shift+Enter insert LF, Tab inserts a literal tab and Ctrl/⌘+Enter creates an ordinary following paragraph. Backspace at the start and Delete at the end do not merge code with neighboring blocks. Ordinary interior typing/deletion and IME remain native; commands do not interfere during composition. Paste accepts plain text only, without interpreting HTML or files. Shift+Tab retains standard focus navigation.
 
-`form.open()` запоминает актуальную позицию вставки; `form.open(actualPRE)` открывает редактирование. `getValue()`/`setValue({source,language?})` читают/меняют черновик, `close()` отменяет его, `destroy()` очищает форму. Обычный Enter внутри textarea сохраняет перенос; Ctrl/⌘+Enter применяет. Копирование использует Clipboard API по нажатию, отказ не меняет документ. При размонтировании вызовите `form.destroy()`, `view.destroy()` и `editor.destroy()`.
+`form.open()` captures the current insertion position; `form.open(actualPRE)` edits a target. `getValue()`/`setValue({source,language?})` read/change the draft, `close()` cancels and `destroy()` cleans up. Ordinary Enter in the textarea preserves LF; Ctrl/⌘+Enter applies. Copy uses Clipboard API on an explicit click; denial does not change the document. Call `form.destroy()`, `view.destroy()` and `editor.destroy()` on unmount.
 
-## Необязательная подсветка
+## Optional highlighting
 
 ```ts
 const view = createCodeBlockView(viewHost, editor, {
   highlight: async ({ source, language, signal }) => {
-    // Приложение само выбирает и при необходимости лениво загружает провайдер.
-    // Верните UTF-16 интервалы, а не HTML.
+    // The application chooses and optionally lazy-loads its own provider.
+    // Return UTF-16 ranges, never HTML.
     return source.startsWith('const')
       ? [{ from: 0, to: 5, kind: 'keyword' as const }]
       : [];
@@ -49,12 +49,12 @@ const view = createCodeBlockView(viewHost, editor, {
 });
 ```
 
-Разрешены `keyword`, `string`, `number`, `comment`, `operator`, `punctuation`, `type`; до 4096 непересекающихся упорядоченных интервалов внутри исходника. Результат строится через text nodes и span с фиксированными CSS-классами. Ошибка/невалидный ответ оставляют буквальный текст. Новые версии исходника и destroy отменяют запрос через `AbortSignal` и игнорируют опоздавшие ответы. UI и CSS подключаются отдельно; `--mw-code-*`, `--mw-*` позволяют настроить вид.
+Allowed kinds are `keyword`, `string`, `number`, `comment`, `operator`, `punctuation`, `type`; at most 4096 ordered nonoverlapping ranges within the source. Rendering uses text nodes and spans with fixed CSS classes. Invalid responses/errors retain literal text. Source updates and destroy abort requests through `AbortSignal` and ignore late results. UI/CSS are explicit; customize through `--mw-code-*` and `--mw-*` variables.
 
-## Границы и безопасность
+## Limits and security
 
-Сохраняется schema-v1 PRE с `data-mw-node="morfira:code-block"`, разрешённым `data-language` и текстом до 20000 UTF-16 единиц. CRLF/CR нормализуются в LF, остальные пробелы и trailing LF сохраняются. HTML/JSON проходят общую валидацию; принимающему редактору нужен тот же плагин для сохранения метаданных языка. Старый читатель может сохранить PRE-текст, потеряв метаданные.
+Persistence uses a schema-v1 PRE with `data-mw-node="morfira:code-block"`, an allowed `data-language` and text bounded to 20000 UTF-16 units. CRLF/CR normalize to LF; other spaces and trailing LF survive. HTML/JSON retain the shared validation boundary; receiving editors need this plugin to preserve language metadata. Older readers may retain PRE text and lose metadata.
 
-Исходник не выполняется. Готового редактора кода, компилятора, сетевого загрузчика грамматик и arbitrary HTML подсветки нет. Гарантии реальных IME/устройств отдельно не заявляются. Провайдер — доверенный код приложения; CSP и серверная валидация сохраняют свои границы.
+Source is never executed. No bundled code IDE, compiler, network grammar loader or arbitrary-HTML highlighting exists. Real-device/IME behavior is not separately certified. Providers are trusted application code; CSP and server validation retain their own responsibilities.
 
-Дополнительный CSS форм и предпросмотра использует native CSS nesting: Chrome 112+, Firefox 117+, Safari 16.5+. Это требование отдельного UI-стиля; команды и сохраняемый формат не зависят от него.
+The optional form/preview stylesheet uses native CSS nesting: Chrome 112+, Firefox 117+, Safari 16.5+. This is a requirement of that separate UI stylesheet; behavior commands and the persisted format do not depend on it.

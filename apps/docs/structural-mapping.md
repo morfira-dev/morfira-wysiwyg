@@ -2,14 +2,14 @@
 import StructuralMappingExample from './.vitepress/theme/StructuralMappingExample.vue';
 </script>
 
-# Структурные позиции и операции
+# Structural positions and operations
 
 <ClientOnly><StructuralMappingExample /></ClientOnly>
 
-Текстовое смещение не различает два пустых абзаца и не выражает перенос целого
-вложенного пункта. Дополнительные node-позиции используют путь к текстовому
-блоку и UTF-16-смещение. Каждый индекс пути считает **элементы**, а не пробельные
-Text-узлы или комментарии. Позиции наблюдательные и не разрешают изменение документа.
+A text offset cannot distinguish empty paragraphs or represent a moved nested
+list branch. Additional node positions use a text-leaf path and UTF-16 offset.
+Each path ordinal counts **element children**, not whitespace Text nodes or
+comments. Positions are observations, never permission to mutate a document.
 
 ```ts
 import { structuralCommands } from '@morfira-dev/wysiwyg/sdk';
@@ -23,36 +23,36 @@ if (current && !current.deleted) console.log(current.path, current.offset);
 if (point) editor.positions.releaseNode(point);
 ```
 
-Перед командой нужно нативное выделение, принадлежащее редактору. Helper повторно
-проверяет его после фокуса и выполняет реальные операции над DOM, сохраняя
-незатронутые узлы и перемещаемые ветки. Undo/Redo восстанавливают пути через карты
-конкретной записи истории; уже удалённая логическая позиция остаётся `deleted`.
+The command requires a native selection owned by the editor. The helper rechecks
+it after focus and performs actual DOM operations, retaining unaffected nodes and
+moved branches. Undo/Redo map through the actual history entry; a deleted logical
+position remains `deleted` rather than silently reviving.
 
-| Шаг | Контракт |
+| Step | Contract |
 | --- | --- |
-| `split` | Обычный текстовый P/H1–H6, смещение 0…длина; правый блок сохраняет атрибуты |
-| `join` | Два непосредственно соседних текстовых P/H1–H6; сохраняется левый тег и атрибуты |
-| `insert` | Валидированные целые блоки или LI в поддерживаемого родителя |
-| `remove` | Удаление целого поддерживаемого блока/пункта с сохранением соседей |
-| `move` | Перенос целого блока/LI со всей веткой; `parent` и `index` читаются **после удаления источника** |
+| `split` | Ordinary text-only P/H1–H6 at offset 0…length; the right leaf retains attributes |
+| `join` | Two immediately adjacent text-only P/H1–H6; retain the left tag and attributes |
+| `insert` | Validated whole blocks/list items under a supported parent |
+| `remove` | Remove one supported whole block/item while retaining neighbours |
+| `move` | Move a whole block/LI with its branch; read `parent` and `index` **after removing the source** |
 
-Корень принимает P/H и UL/OL; UL/OL — LI; LI — P/H и вложенные списки; обычная
-цитата — P/H. Отслеживаются текстовые P/H и LI без вложенных элементов. Пустой
-блок с единственным BR поддерживает смещение 0; смешанные BR, inline-разметка,
-semantic leaf и внутренние BR-позиции не поддерживаются этим профилем.
+Root accepts P/H and UL/OL; UL/OL accept LI; LI accepts P/H and nested lists;
+ordinary blockquotes accept P/H. Tracking accepts text-only P/H and LI leaves.
+An empty leaf with one BR placeholder supports offset 0; mixed BR/inline markup,
+semantic leaves and internal BR coordinates are outside this profile.
 
-Для собственного guarded DOM-command можно передать `structuralMapping` в
-`editor.transact`. План ограничен 32 шагами, путём глубиной 64 и общими лимитами
-документа. Ядро проигрывает план на валидированной модели до callback и сравнивает
-точный нормализованный результат после него. Несовпадение откатывает операцию.
+A custom guarded DOM command can pass `structuralMapping` to `editor.transact`.
+Plans are bounded to 32 steps, 64-deep paths and existing document resource limits.
+Core replays the plan against validated model data before the callback, then checks
+the exact normalized result. A mismatch rolls back atomically.
 
-Автоматического mapping нативного ввода нет. Необъявленные изменения инвалидируют
-позиции. Текстовый план не сохраняет node-позиции, структурный — старые глобальные
-текстовые позиции; при необходимости оба корректных плана можно передать вместе.
-Это расширение SDK без OT/CRDT, универсальных structural selections и нового движка.
+There is no automatic mapping for native input. Unknown edits expire positions.
+Text-only plans expire node positions; structural-only plans expire global text
+positions. Both valid plans can be supplied together. This is an SDK extension,
+not OT/CRDT, universal structural selection or a replacement editing engine.
 
 
-План с неизменным нормализованным HTML не создаёт историю. Физическая перестановка
-неразличимых одинаковых узлов может инвалидировать наблюдения: API не придумывает
-постоянные ID для модели. Изменение структуры при прежнем тексте, например split
-абзаца или перенос разных пустых P/H, поддерживается.
+A plan with unchanged canonical HTML creates no history entry. Physically swapping
+indistinguishable nodes may expire observations; this API does not invent persistent
+model IDs. Structure changes with unchanged text, including paragraph splits and
+moving distinct empty P/H leaves, remain supported.
