@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useData } from 'vitepress';
+import { useData, withBase } from 'vitepress';
 import { createEditor } from '@morfira-dev/wysiwyg';
 import type { Editor } from '@morfira-dev/wysiwyg';
 import { imageCommands } from '@morfira-dev/wysiwyg/plugins/images';
@@ -39,7 +39,7 @@ const report = (failure: unknown) => {
     ? t('Конфликт версий: загрузите серверную версию явно.', 'Version conflict: explicitly reload the server version.')
     : t('Операция отклонена или отменена.', 'The operation was rejected or cancelled.');
 };
-const services = createLocalRecipeServices(report);
+const services = createLocalRecipeServices(report, withBase('/logo.svg'));
 const bundle = createRecipeBundle(services.options);
 const refresh = () => {
   if (!editor || disposed) return;

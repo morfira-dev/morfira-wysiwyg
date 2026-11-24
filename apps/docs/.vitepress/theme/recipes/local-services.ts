@@ -1,4 +1,3 @@
-import { withBase } from 'vitepress';
 import { createMentionProvider } from './mentions.js';
 import { createSaveSession } from './save.js';
 import type { LocalRecipeServices } from './types.js';
@@ -16,7 +15,7 @@ const delay = (signal: AbortSignal, milliseconds = 30): Promise<void> => new Pro
 });
 
 /** Deterministic local services only: no HTTP and no user files leave the browser. */
-export const createLocalRecipeServices = (onError?: (error: unknown) => void): LocalRecipeServices => {
+export const createLocalRecipeServices = (onError?: (error: unknown) => void, logoUrl = '/logo.svg'): LocalRecipeServices => {
   let revision = 1;
   let document: EditorDocument = { version: 1, children: [{ type: 'element', tag: 'p', attributes: {}, children: [{ type: 'text', text: 'Local server document' }] }] };
   const session = createSaveSession({
@@ -40,7 +39,7 @@ export const createLocalRecipeServices = (onError?: (error: unknown) => void): L
         context.reportProgress({ loaded: 0, total: file.size });
         await delay(context.signal);
         context.reportProgress({ loaded: file.size, total: file.size });
-        return { src: withBase('/logo.svg'), alt: 'Simulated local upload', width: 72, height: 72 };
+        return { src: logoUrl, alt: 'Simulated local upload', width: 72, height: 72 };
       },
       onError,
     },
