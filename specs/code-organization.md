@@ -27,6 +27,6 @@ Essential editing and useful standard plugins must be ready to use. Modularity m
 
 ## Acceptance
 
-Source moves preserve runtime behavior, plugin state isolation, public exports and declarations. Existing browser tests remain behavior-oriented; do not add source-text tests that freeze local paths or spelling. Validate the resulting package with build, declarations/package checks, strict type checks and the existing relevant browser suite. Check raw minified/gzip/Brotli/CSS sizes and keep bilingual architecture documentation aligned.
+Source moves preserve runtime behavior, plugin state isolation, public exports and declarations. Existing browser tests remain behavior-oriented; do not add source-text tests that freeze local paths or spelling. Validate the resulting package with build, declarations/package checks, strict type checks and the existing relevant browser suite. Check raw minified/gzip/Brotli/CSS sizes and keep bilingual public API/integration documentation aligned under `documentation.md`; architecture details remain in maintainer specs.
 
 The project AST guard rejects named top-level interface/type declarations in core/plugin implementation files and imports from the core into optional plugin code. Type-owner files remain implementation details unless an explicit public entrypoint exports their contract.

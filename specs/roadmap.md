@@ -1,5 +1,58 @@
 # Product roadmap
 
+## Implemented everyday tables, application extensions and integration readiness — 2026-11-25
+
+Implemented bounded local product blocks 4–6 under `table-workflows.md`,
+`application-extensions.md` and `adoption-feedback.md`.
+
+4. Improve actual everyday table use through explicit whole-row, whole-column
+   and whole-table selection over the existing logical span grid and contextual
+   UI. Keep selection observational and preserve existing clipboard, structural
+   mutations, history and keyboard ownership. Add complete demonstrable workflows.
+5. Finish application-owned entity-reference, callout and template-variable
+   extensions using the implemented SDK, shared editor/reader schema and literal
+   approved-variable expansion. No new engine or automatic preset inclusion.
+6. Prepare three local integration scenarios and explicit privacy-conscious report
+   creation. No automatic document/log/file collection, telemetry, network sending,
+   real-user contact or deployment. Local examples are not customer adoption,
+   backend integrations or received feedback; those remain unverified external
+   outcomes until actual applications/users are available and authorized.
+
+Actual focused checks and independent gzip measurements are recorded in
+`verification-backlog.md`; prepared local scenarios do not establish adoption.
+
+Maintain previous uncommitted blocks 1–3 and validate focused affected contracts,
+RU/EN examples and selected gzip profiles. No implicit full suites, commit, push
+or publication. Internal execution evidence belongs in verification-backlog.md.
+
+## Implemented application integration, consistent tools and published content — 2026-11-25
+
+Implemented combined product blocks 1–3 locally. The application-owned editor
+field uses existing adapters and ready UI: associated label/help/error, controlled
+value, reactive read-only, cancellable local upload and concurrency-safe save/load.
+Do not introduce another editor implementation or duplicate framework state engines.
+Follow `editor-field-integration.md` for the field and wrapper examples.
+
+Unify concrete insertion/editing inconsistencies under
+`insertion-ui-consistency.md`: large dialogs, compact insertion popovers and
+nonmodal search retain their respective presentation. Commands must preserve
+selection, drafts, dismissal and focus ownership across read-only, composition,
+API replacement and disposal. Fix observed differences rather than create a new
+global overlay framework.
+
+An optional standalone `content-view.md` profile displays validated saved HTML or
+schema-v1 JSON without mounting an editor. Resource loading/navigation are explicit
+application policies; canonical stored data remains separate from inert view
+projection. Demonstrate save → load → display on the bilingual site and home through
+public imports. Backend authorization, durable storage and concurrency enforcement
+remain application-owned; local fake services are identified as examples.
+
+Acceptance uses focused browser, documentation and public-package checks with
+independent gzip accounting. New functionality stays outside core/default presets.
+Final focused validation and independent size measurements are recorded in
+`verification-backlog.md`; this is not a full-suite or remote CI result.
+Do not run full local suites, publish, commit or push implicitly.
+
 Status: revised development plan. SDK phase 1, P1–P3 behavior presets, U1/U2 modern UI and the first optional checklist/horizontal-rule slices are implemented locally. U3a opt-in group-priority overflow is implemented and verified under `editor-ui.md`; wrap stays the compatible default. U3b contextual text formatting and independent U3c caret-link, U3d selected-image and U3e table structure controls are implemented under their contextual specifications; current executed validation is recorded separately below and in the verification record. Bounded mixed-link, whole-figure and caption-caret contexts are implemented under the 2026-11-20 addenda, with staged verification below. Remaining milestones describe priorities and acceptance outcomes, not release dates. SDK boundaries follow `specs/plugin-sdk.md`. Current verification results, generated bundle measurements and remaining evidence gaps are recorded in [verification-backlog.md](verification-backlog.md).
 
 Morfira is an independently implemented strict-TypeScript editor under MIT. The product target is a ready everyday-authoring experience close to mature editors in common tasks, with measurable improvements in selected bundle size, extension contracts, UI and documentation. CKEditor, TinyMCE and notectl are comparison references, not implementations to copy. Feature-for-feature enterprise or office-suite parity is not required. Heavy conversion, collaboration and processing remain optional integrations for explicitly requested use cases, outside core. Core/plugins retain zero runtime dependencies; adapters use optional framework peers.

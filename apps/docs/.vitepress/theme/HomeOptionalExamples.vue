@@ -3,6 +3,18 @@ import { computed, defineAsyncComponent, ref } from 'vue';
 import { useData } from 'vitepress';
 const { lang } = useData();
 const ru = computed(() => lang.value === 'ru');
+const publishingOpen = ref(false);
+const PublishingWorkflowExample = defineAsyncComponent(() => import('./PublishingWorkflowExample.vue'));
+const togglePublishing = (event: Event) => { publishingOpen.value = (event.currentTarget as HTMLDetailsElement).open; };
+const tableWorkflowsOpen = ref(false);
+const applicationExtensionsOpen = ref(false);
+const integrationFeedbackOpen = ref(false);
+const TableWorkflowsExample = defineAsyncComponent(() => import('./TableWorkflowsExample.vue'));
+const ApplicationExtensionsExample = defineAsyncComponent(() => import('./ApplicationExtensionsExample.vue'));
+const IntegrationFeedbackExample = defineAsyncComponent(() => import('./IntegrationFeedbackExample.vue'));
+const toggleTableWorkflows = (event: Event) => { tableWorkflowsOpen.value = (event.currentTarget as HTMLDetailsElement).open; };
+const toggleApplicationExtensions = (event: Event) => { applicationExtensionsOpen.value = (event.currentTarget as HTMLDetailsElement).open; };
+const toggleIntegrationFeedback = (event: Event) => { integrationFeedbackOpen.value = (event.currentTarget as HTMLDetailsElement).open; };
 const sourceOpen = ref(false);
 const inlineViewsOpen = ref(false);
 const mappingOpen = ref(false);
@@ -39,6 +51,10 @@ const toggleQuote = (event: Event) => { quoteOpen.value = (event.currentTarget a
   <section class="home-optional-examples">
     <h2>{{ ru ? 'Дополнительные примеры' : 'Additional examples' }}</h2>
     <p>{{ ru ? 'Откройте нужный раздел, чтобы запустить дополнительный редактор с выбранными возможностями.' : 'Open a section to start an additional editor with the selected capabilities.' }}</p>
+    <details @toggle="togglePublishing"><summary>{{ ru ? 'Написать, сохранить, опубликовать' : 'Write, save and publish' }}</summary><PublishingWorkflowExample v-if="publishingOpen" /></details>
+    <details @toggle="toggleTableWorkflows"><summary>{{ ru ? 'Таблицы для повседневной работы' : 'Everyday table workflows' }}</summary><TableWorkflowsExample v-if="tableWorkflowsOpen" /></details>
+    <details @toggle="toggleApplicationExtensions"><summary>{{ ru ? 'Сущности, блоки и переменные приложения' : 'Application entities, callouts and variables' }}</summary><ApplicationExtensionsExample v-if="applicationExtensionsOpen" /></details>
+    <details @toggle="toggleIntegrationFeedback"><summary>{{ ru ? 'Попробовать внедрение и подготовить отзыв' : 'Try an integration and prepare feedback' }}</summary><IntegrationFeedbackExample v-if="integrationFeedbackOpen" /></details>
     <details @toggle="toggleSource"><summary>{{ ru ? 'Безопасный HTML-исходник' : 'Safe HTML source editing' }}</summary><SourceEditingExample v-if="sourceOpen" /></details>
     <details @toggle="toggleInlineViews"><summary>{{ ru ? 'Узлы внутри области редактирования' : 'Node views inside the editor' }}</summary><InlineNodeViewsExample v-if="inlineViewsOpen" /></details>
     <details @toggle="toggleMapping"><summary>{{ ru ? 'Позиции через структурные изменения' : 'Positions through structural edits' }}</summary><StructuralMappingExample v-if="mappingOpen" /></details>

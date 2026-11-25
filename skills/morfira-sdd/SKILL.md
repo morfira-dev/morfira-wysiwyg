@@ -84,3 +84,7 @@ Physical-device and assistive-technology checks are currently unavailable by the
 
 
 For the additive source/SDK authoring stage read specs/source-editing.md, specs/inline-node-views.md and specs/structural-mapping.md. Source preview stays inert; Apply is one validated transaction with explicit pending-format reset. In-editor node views are nonpersisted sibling overlays, not editable contentDOM. Structural plans validate all intermediate resources and exact pre/post state; unknown edits expire positions. Application-owned recipes follow specs/extension-recipes.md and specs/recipe-example-checks.md, outside core/preset graphs.
+
+Application integration follows `specs/editor-field-integration.md` and `specs/insertion-ui-consistency.md`. Standalone publication uses `specs/content-view.md`: no editor or optional UI dependency, validated canonical snapshots, explicit resource policy and owned disposal. Keep example save/upload services outside runtime packages and distinguish local demonstration from backend persistence/authorization.
+
+Everyday table workflows follow `specs/table-workflows.md`; application-owned extensions and local integration/feedback examples follow `specs/application-extensions.md` and `specs/adoption-feedback.md`. Preserve observational selection and revision-bound drafts. Report generation is explicit, bounded and local, with no automatic document capture, telemetry or external sending. Do not equate prepared local scenarios with real applications, deployments or received user feedback.

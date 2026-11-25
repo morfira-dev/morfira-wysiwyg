@@ -37,6 +37,8 @@ The core import is safe without a DOM. Creating an editor requires a browser ele
 
 New subpaths become available in npm as their packages are released. The repository uses workspace links during development.
 
+The [editor-field example](apps/docs/editor-field.md) combines labels, errors, saving and ready UI. The separate `/content-view` and `/content-view.css` display saved HTML/JSON without an editor; image loading and link navigation are explicit opt-ins. See [content display](apps/docs/content-view.md).
+
 ## Local development
 
 Use Node.js 22.20+ and pnpm 11.0.7.

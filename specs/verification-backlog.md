@@ -1,5 +1,126 @@
 # Verification record
 
+## Everyday tables, application extensions and integration readiness — 2026-11-25
+
+Implemented bounded local blocks 4–6 under `table-workflows.md`,
+`application-extensions.md` and `adoption-feedback.md`, preserving prior uncommitted
+blocks 1–3. Tables add observational selectRow/selectColumn/selectTable commands,
+span closure, contextual controls and region summary. A stale explicit/native
+selection mismatch found during independent review now refuses before marker
+changes. Read-only observation uses revision-bound ownership; mutations remain
+guarded. Core and persisted schema are unchanged.
+
+Application-owned examples implement entity/callout/template nodes with the
+existing SDK, shared editor/reader schema and bounded literal expansion. Draft
+freshness uses per-editor revisions rather than HTML equality alone. Expansion
+rejects C0/C1 controls, unknown provided keys and resource overflows while retaining
+unresolved own-key tokens and leaving source/history unchanged. No runtime package,
+dependency, eval, HTML interpolation or backend authority was added.
+
+Integration scenarios and explicit report preparation are local readiness tools,
+not evidence of customers, deployments or received feedback. Reports do not read
+editor data, files, logs, storage or clipboard; browser family is opt-in. Explicit
+review/copy, synchronous source invalidation and late clipboard guards preserve
+intent. A repository issue form is prepared but no issue/message was submitted.
+The displayed version is the documentation build manifest's version, not a claim
+about an external npm installation. Sensitive-pattern detection is a conservative
+convenience, not guaranteed anonymization.
+
+Actual validation:
+
+- Package/declaration/size build, strict root TS and docs Vue/React types passed;
+  docs types passed again after correcting the actual kind-selector label with a
+  unique Vue ID. Project AST/dependency rules and selective tree-shaking passed.
+- Focused three-package tarball smoke passed for eleven public subpaths, including
+  the new table void signatures, CSS packaging, browser bundling and DOM-free SSR
+  imports without workspace-source aliases. Full installed-consumer matrices were
+  not run.
+- Runtime selection included 45 executions across Chromium, Firefox and WebKit:
+  4 new table cases, 3 application-extension cases and 8 existing contextual-table
+  cases per engine. Initial 39/45 passed; six failures were expectations for the
+  previous eight-button UI and LF instead of the existing CRLF clipboard format.
+  Corrected expectations and Russian label assertions passed their 6/6 repeat.
+  No runtime changes were made for these fixture corrections; this is staged
+  evidence, not a single combined final 45/45 run.
+- Final 13/13 selected documentation/helper cases passed in Chromium (9.3s),
+  including RU/EN tables/extensions/reports, privacy and stale-copy cases, lazy
+  homepage disposal and the prior publishing workflow. The earlier 8/13 run found
+  the kind-selector accessible-name defect, an outdated report heading assertion
+  and an ambiguous nested summary selector; original assertions were preserved
+  or correctly scoped, without raising timeouts. Subsequent API prose alignment
+  was built separately; live-example implementation stayed unchanged.
+- RU/EN site build passed; 65 source pages per language and all 131 generated HTML
+  pages passed the local link/anchor audit. Facade-import paths were checked.
+  No full local editor/docs/adapter suite, CI monitoring or physical-device/AT
+  verification was performed.
+
+Final JS bytes raw / gzip / Brotli: core 116095 / 35946 / 31581 (unchanged);
+standard-ready 246774 / 76549 / 65095; largest selected standard authoring-tools
+281718 / 87149 / 73179; extended-ready 303526 / 92752 / 78390; contextual table
+entry 36332 / 14499 / 12839. Contextual table CSS: 1464 raw / 632 gzip / 512 Brotli.
+Largest selected standard CSS remains 19913 raw bytes. All existing guards passed;
+no budgets or required CI matrix were changed. Application examples remain outside
+editor runtime profiles and load explicitly on the homepage.
+
+Task-owned test servers were fresh and runner-managed. No commit, push, npm
+publication, external deployment or real-user contact performed.
+
+## Application field, insertion sessions and saved-content view — 2026-11-25
+
+Implemented the combined blocks under `editor-field-integration.md`,
+`insertion-ui-consistency.md` and `content-view.md`. Application examples reuse the
+Vue adapter, ready UI, save-state and image upload contracts; other adapters share
+documented public ready/value/lifecycle connections. No new field runtime package
+or framework dependency. Home lazily composes an editor field with a separate
+published-content view; only accepted saved snapshots update that view.
+
+Optional `/content-view` + `/content-view.css` validate canonical HTML/JSON without
+an Editor or UI. Defaults omit images and navigation; explicit policies project
+resolved HTTP(S) image URLs and safe navigable URLs independently from canonical
+data. Host/element ownership, invalid replacement, schema fallback and disposal
+are bounded. Images, media, formulas, links and tables retain their independent
+UI imports. Changed session handling covers plain Enter, already-handled keys,
+read-only, authoritative composition cancellation and focus ownership.
+
+Actual local validation on the final runtime build:
+
+- Package/declaration build and all size guards passed. Root strict TS and docs
+  Vue/React types passed; a bad `/presets` example import was corrected to the
+  existing `/presets/standard` before the final site build.
+- Project contract/AST checks and selective-import/tree-shaking checks passed.
+  Focused actual-tarball smoke passed for ten public subpaths (three packed
+  packages), with public content-view types, CSS, browser bundling and SSR import
+  without workspace source resolution. No full installed-consumer matrix run.
+- Three-engine runtime scenarios were validated in stages: the 17 selected
+  media/formula/ready-UI cases cover 51 executions. Initial 48/51 passed; the new
+  collapsed-link test needed valid new-link text, then its three-engine repeat
+  passed 3/3. Runtime code was unchanged by that fixture correction.
+- Six content-view cases cover 18 executions. Default resource/canonical-data,
+  malformed replacement, explicit URL/base policy, schema fallback and ownership
+  cases passed in all engines. The initial wide-table fixture could legitimately
+  shrink and did not force overflow; a preferred-col-width variant also shrank.
+  Final fixture uses 24 validated columns/cells with real intrinsic minimum width,
+  retains its merged header and canonical column data, and passed 3/3 for internal
+  scrolling plus page containment. No runtime CSS was weakened. These staged
+  results are not a single combined final 69/69 suite run.
+- Built RU/EN site passed; ten selected docs cases passed in Chromium. Two
+  workflow cases passed again after adding a 390px viewport assertion and a
+  screenshot. Narrow-screen screenshot was visually inspected. This is desktop
+  browser/touch-emulated evidence, not physical-device or AT verification.
+- All 125 generated HTML pages passed the local file/anchor audit. No external
+  links/network services, full editor/docs suite or GitHub CI were checked.
+
+Final generated bytes (JS raw / gzip / Brotli): core 116095 / 35946 / 31581;
+standard ready 244902 / 76016 / 64691; largest selected standard authoring-tools
+279837 / 86592 / 72732; extended ready 301644 / 92203 / 77972; independently
+bundled content-view 22678 / 8059 / 7219. Content-view CSS is 2184 raw / 712 gzip /
+597 Brotli; largest selected standard CSS remains 19913 raw. Core is unchanged.
+The viewer is outside default preset graphs. No runtime dependencies added.
+
+The first default-sandbox build failed at tsx IPC binding (EPERM), before outputs;
+the authorized build succeeded. Task-owned test servers were fresh and stopped
+by the runner. No commit, push, npm publication or deployment performed.
+
 ## Public documentation cleanup and audit — 2026-11-25
 
 Removed the public RU/EN architecture/size, testing/releases, performance/history
