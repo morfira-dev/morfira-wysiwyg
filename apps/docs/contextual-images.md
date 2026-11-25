@@ -61,7 +61,6 @@ Alt, dimensions, localized labels and errors render as text. The panel **never c
 
 Existing image codec/plugin validation owns URLs, dimensions and text limits. Trusted application callbacks are not sandboxed. Server validation, resource-host policy, upload authorization and CSP remain application responsibilities. Creating or disposing edit mode starts no transport and does not cancel another owner's upload. Document mutations, read-only and composition still cancel a pending upload under the existing images-plugin contract. Frontend filtering is neither a server trust boundary nor complete security/accessibility/mobile certification.
 
-Actual checks and sizes are recorded in the [roadmap](/roadmap#verification-and-limits). JS and CSS are measured separately; combining every optional module is not automatically a measured standard profile.
 
 ## Whole figures and caption carets
 
@@ -69,4 +68,4 @@ The demo provides **Select whole figure** and **Place caret in caption** buttons
 
 Alt+F10 enters the tools. Escape before applying a draft returns the exact caret/range without changing the document. Metadata changes preserve an unchanged rich caption; removal deletes the simple figure with its caption and supports Undo. Read-only retains preview and blocks mutation. Changed/removed captions may end the old context; drafts never retarget another or Undo-recreated image. A link, code or semantic owner on the caption caret path excludes this image context.
 
-This does not expand resize-handle eligibility: select the IMG itself for handles. New scenarios have separate verification rather than inheriting historical results; actual checks are recorded in the project roadmap.
+This does not expand resize-handle eligibility: select the IMG itself for handles.

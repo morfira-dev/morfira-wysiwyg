@@ -85,4 +85,4 @@ Ranges follow supported mapped transactions. Expired/deleted targets disappear. 
 
 Release tracked positions and destroy decorations/node views on unmount. Never transfer handles between editors or persist them in backend storage. View callbacks are not sandboxed: do not insert untrusted HTML or execute untrusted code. Frontend checks do not replace backend data, upload or authorization validation.
 
-Executed results are recorded in [testing](/testing). APIs and examples alone do not establish complete device coverage, accessibility or Office compatibility.
+APIs and examples alone do not establish complete device coverage, accessibility or Office compatibility.

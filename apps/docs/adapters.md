@@ -135,18 +135,3 @@ All four framework adapters and the Web Component forward `locale` and `translat
 ## Synchronization
 
 Typing emits a user change. Feeding that HTML back through the binding does not replace the document or reset the caret. A different external value replaces the document, clears history, and does not emit a feedback change from the adapter. Avoid transforming HTML on every keystroke; use explicit normalization on save.
-
-## Installable package verification
-
-```sh
-pnpm run build
-pnpm run consumers:check
-# Separate Angular 22 profile, on a compatible Node:
-pnpm run consumers:angular22
-```
-
-The check targets eight library tarballs installed into a separate temporary project outside the workspace. Every Morfira dependency/override points at these archives; source aliases and workspace-source links are forbidden. Tool versions and their transitive dependency edges come from the currently installed environment and are verified after installation. The baseline `pnpm install --offline` never fetches a missing cache entry: it fails explicitly.
-
-The baseline covers tsc/vue-tsc/svelte-check, Angular AOT/linker and production examples for Vue SFC, React StrictMode, Svelte 5, Angular 21 and Web Component: fifteen Chromium/Firefox/WebKit browser smoke scenarios. `consumers:angular22` adds three scenarios and a separate TypeScript toolchain in its temporary project; it requires Node 22.22.3+ on the 22 branch or a compatible Node 24.15+. This profile may need network access to obtain its Angular 22 toolchain, without modifying the root lockfile. They cover controlled feedback, one-notification structural slash actions, history/following input, external values, reactive locale/read-only and unmount. Production StrictMode does not prove development effect replay; the main adapter suite covers that separately. This describes the tooling coverage contract, not the outcome of the latest run.
-
-`artifacts/consumer-packages.json` and `artifacts/consumer-angular22.json` record versions, archive SHA-256 hashes, actual export-resolution paths and browser results for their respective profiles. The temporary project is removed in finally. This verifies installable artifacts, not npm publication or live CI status.

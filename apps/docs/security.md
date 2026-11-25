@@ -1,6 +1,6 @@
 # Security and trust boundaries
 
-Morfira reconstructs allowed content at the HTML and schema-v1 JSON boundaries. This reduces executable-markup risk; it does not replace server validation or sandbox application code. Verification results and remaining product limits are listed in the [roadmap](/roadmap#verification-and-limits).
+Morfira reconstructs allowed content at the HTML and schema-v1 JSON boundaries. This reduces executable-markup risk; it does not replace server validation or sandbox application code.
 
 ## Document input
 

@@ -1,6 +1,6 @@
 # Persistent mentions with IDs
 
-`mentions({ persistent: true })` stores the chosen ID in an ordinary schema-v1 semantic `span`. This is a separate option of the existing plugin: without it, mentions and ready presets continue inserting plain text. The code uses TypeScript with no new runtime dependencies. Current browser/example execution results and their limits are recorded under [testing](/testing).
+`mentions({ persistent: true })` stores the chosen ID in an ordinary schema-v1 semantic `span`. This is a separate option of the existing plugin: without it, mentions and ready presets continue inserting plain text. The code uses TypeScript with no new runtime dependencies.
 
 An explicit [atomic mode](/atomic-mentions) is also available with `atomic: true` alongside `persistent: true`. It adds whole-token navigation/deletion and a stricter text-only label contract. The editable behavior described below remains the compatible default for persistent references.
 

@@ -1,6 +1,6 @@
 # Plugin SDK and extensible schema
 
-Status: phase 1 implementation contract. Existing editor methods and schema-v1 documents remain supported. This is the first vertical slice of the revised roadmap, not a new immutable editing engine or full custom-node-view system.
+Status: base command/schema implementation contract. Optional implemented nodes/atoms/decorations and views follow `plugin-extensions.md` and `inline-node-views.md`; explicit mappings follow `plugin-position-mapping.md` and `structural-mapping.md`. References below to phase-1 exclusions delimit this base API, not the entire current SDK. Existing editor methods and schema-v1 documents remain supported. This is the first vertical slice of the revised roadmap, not a new immutable editing engine or full custom-node-view system.
 
 ## Follow-up selection contract
 
@@ -30,7 +30,7 @@ The frozen instance codec is exposed as readonly `editor.schema: DocumentSchema`
 
 Chromium/Firefox/WebKit: callout block and inline reference metadata round-trip through initial HTML/JSON/external values/native input/commands/paste/undo/redo; two editors with different schemas; invalid definitions before mounting/setup; unsafe input and mismatched/unknown markers; all default sanitizer regressions; typed command payload validation, state, disabled/read-only/composition, nested rollback/history, unregister and destruction. Type tests demonstrate wrong payloads are rejected. SSR imports remain safe. An application-owned example uses the same public API, with RU/EN docs and a real live demo.
 
-No new runtime dependency or package. Public exports are explicit through the existing core/facade. Validate real tarball consumers and selective imports; sanitizer-only imports must not retain command/editor/UI code. Keep minified/gzip/Brotli/CSS measurements separate, report full selected closure without shared-chunk double counting. Core 80 KB is a working target; the existing 200 KB guard remains a hard limit pending separately measured preset budgets. Later SDK phases cover mapped structural selection, node views/decorations and richer document operations; they are not claimed by phase 1.
+No new runtime dependency or package. Public exports are explicit through the existing core/facade. Validate real tarball consumers and selective imports; sanitizer-only imports must not retain command/editor/UI code. Keep minified/gzip/Brotli/CSS measurements separate, report full selected closure without shared-chunk double counting. Core 80 KB is a working target; the existing 200 KB guard remains a hard limit pending separately measured preset budgets. The separate implemented SDK modules cover bounded mapping, views/decorations and structural commands under their own specifications; none is implicitly installed by this base slice.
 
 ## Non-owning attribute contributions and split policy
 

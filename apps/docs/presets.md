@@ -149,33 +149,10 @@ For wrappers, pass returned settings through the adapter's supported API. For ex
 
 Presets do not own editor lifetime. Destroying UI leaves its editor usable; destroying the editor releases plugins and associated ready UI. Calling `ui.destroy()` before `editor.destroy()` is also supported; repeated UI destroy is safe.
 
-## Size and limits
-
-Measure headless presets, UI and the final deduplicated closure containing core, plugins, forms and required CSS separately. Keep framework runtimes, source maps, declarations, extra locale alternatives and fonts separate from editor JS.
-
-The build enforces measured headless and ready profiles: Standard — at most 90000 gzip JS bytes; Extended — 110000 gzip JS bytes. On 2026-11-18 the user explicitly raised Standard from 65000 to 80000 bytes: the last measured largest selection of 64602 bytes has 15398 bytes of reserve instead of 398. This permits useful everyday features and maintainable code; avoiding unnecessary runtime dependencies, selective imports and tree-shaking remain mandatory. The original core 200000-byte and optional-entry 150000-byte gzip limits, adapter guards and CSS limits are unchanged; duplicate profile raw JS guards of 200000/350000 remain retired. Raw size remains a separately reported measurement. Each profile is limited to 20000 minified CSS bytes. Minimal is measured separately without an additional preset guard. Actual raw/gzip/Brotli/CSS sizes are saved in `size-report.json`; framework runtimes are excluded from these profiles.
-
-### Current optimization measurements
-
-The dated 2026-11-16 measurement below retains the 65000-byte guard used at that time. The 2026-11-18 policy change does not recalculate those results; new actual sizes are reported after building.
-
-The 2026-11-16 build preserves the existing factories, plugins, features and test set. The largest standard selection decreased from **64999 to 64482 gzip JS bytes**: **517 bytes saved**, leaving **518 bytes** below 65000. The 2000-byte reserve target is **not met yet**. Production build and compression settings are unchanged; no new dependency was retained. CSS is unchanged.
-
-| Selection | JS raw | JS gzip | JS Brotli | CSS raw | CSS gzip | CSS Brotli |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core | 89148 | 27637 | 24281 | 3293 | 1164 | 962 |
-| Standard ready | 200151 | 59394 | 50946 | 11504 | 3747 | 3038 |
-| Standard + table context | 210933 | 62866 | 53729 | 12787 | 4322 | 3500 |
-| Standard + fonts + list properties + LTR/RTL + text-context UI | 216326 | 64482 | 54754 | 11974 | 4019 | 3260 |
-| Extended ready | 221339 | 65528 | 56052 | 12700 | 4239 | 3414 |
-
-All values are decimal bytes from generated `size-report.json`; JS and CSS are separate, with shared chunks counted once per selected composition. Framework runtimes, source maps, declarations and fonts are excluded. The fonts/list-properties/LTR/RTL/contextual selection is explicit composition, not new Standard defaults. Core remains **9148 raw JS bytes** above its soft 80000-byte target. These measurements do not establish regression-test success or input performance; the complete `check` outcome and current example validation are recorded in `specs/verification-backlog.md`.
+## Optional composition
 
 UI wraps by default; explicit `overflow: 'more'` enables verified priority-based whole-group overflow. The text [contextual toolbar](/contextual-toolbar), [link actions](/contextual-links), [image properties](/contextual-images) and [table panel](/contextual-tables) are separate optional modules outside preset defaults. Real mobile/IME and screen-reader behavior still needs dedicated verification. Full DOCX/PDF conversion, collaboration and office-style layout are outside these presets.
 
 The [horizontal-rule command](/horizontal-rule) is included in standard/extended by default, with a ready toolbar button. `horizontalRule: false` omits its instance; a runtime flag does not erase static imports. Use selective composition for a narrower bundle.
 
 Optional [font-family/size commands](/fonts) are also installed explicitly through `plugins: [fonts()]`, with no additional CSS. Configured commands provide a bounded px/family profile rather than a font loader; preset defaults and ready toolbar do not add them automatically.
-
-
-Current user-approved Standard allowance (2026-11-23): **90000 gzip JS bytes**. The last measured largest Standard composition is 79961 bytes, leaving **10039 bytes**. Extended and all other guards are unchanged. Historical paragraphs retain their former thresholds.

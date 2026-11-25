@@ -6,7 +6,7 @@ import AdvancedMarkdownExample from './.vitepress/theme/AdvancedMarkdownExample.
 
 The separate codec converts Markdown to schema-v1 `EditorDocument` and back. It is outside core and presets and does not install [Markdown typing shortcuts](/markdown). It uses TypeScript with no third-party runtime dependencies, works without DOM, and makes no network requests.
 
-This is a bounded everyday-authoring dialect, without a claim of full CommonMark/GFM conformance. Current browser/example execution results and their limits are recorded under [testing](/testing).
+This is a bounded everyday-authoring dialect, without a claim of full CommonMark/GFM conformance.
 
 ## API and composition
 
@@ -78,7 +78,7 @@ const source = serializeMarkdown(value, options);
 
 Both flags default to `false`. `taskLists` preserves `data-checklist-checked` on `li`; the receiving editor must install `checklists()`. Without the option, `[x]` is ordinary text and task metadata is not retained on export. `tableAlignment` preserves safe cell `text-align`; export requires consistent alignment throughout each column and rejects ambiguity. When `false`, alignment hints are lost as before. Unknown options and nonboolean values reject.
 
-This profile follows the primary [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/) and [GFM](https://github.github.com/gfm/) specifications without claiming complete conformance. Regression fixtures are independently authored for this project. Existing limits, DOM-free execution and the separate 15,000 gzip JS byte guard remain; actual size comes from a measured build.
+This profile follows the primary [CommonMark 0.31.2](https://spec.commonmark.org/0.31.2/) and [GFM](https://github.github.com/gfm/) specifications without claiming complete conformance. Regression fixtures are independently authored for this project.
 
 <AdvancedMarkdownExample />
 

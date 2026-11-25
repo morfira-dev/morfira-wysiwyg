@@ -2,7 +2,6 @@
 
 The [homepage](/#editor) and [playground](/playground) enable a separate **Link actions** switch. Load its sample and place the caret inside link text, or use “Select link text” / “Select link text backward”. Its address and **Open link**, **Edit link**, **Remove link** appear. Automatic showing neither takes focus nor opens a website. The selection buttons do not change the document or history.
 
-Caret, single-anchor text ranges and mixed linked ranges have separate scenarios. Actual runs are tracked in the roadmap; historical results do not automatically validate new contexts.
 
 ## Installation
 
@@ -54,7 +53,7 @@ Moving focus into owned controls can temporarily clear native Selection: the UI 
 
 The actual current href is validated through the editor codec before preview and immediately before opening, then resolved against `document.baseURI`. Only **http/https/mailto/tel** are allowed; relative URLs require a safe resolved result. Protocol-relative URLs, control/space-obfuscated values and unsafe schemes are ineligible. The codec trims outer whitespace around otherwise safe URLs; internal control/space obfuscations are rejected. URL/messages render as plain text, never HTML. Validation neither fetches a link nor creates a remote page preview.
 
-This frontend boundary does not replace server validation, CSP or application policy for external destinations. Custom text and `onError` belong to trusted application code. Image/table controls, arbitrary portals, transformed-coordinate mapping and complete accessibility/mobile certification are not added. Actual checks and sizes are recorded separately in the [roadmap](/roadmap#verification-and-limits).
+This frontend boundary does not replace server validation, CSP or application policy for external destinations. Custom text and `onError` belong to trusted application code. Image/table controls, arbitrary portals, transformed-coordinate mapping and complete accessibility/mobile certification are not added.
 
 ## Text across multiple links
 

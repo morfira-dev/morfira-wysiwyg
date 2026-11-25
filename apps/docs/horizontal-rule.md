@@ -44,4 +44,4 @@ Cross-block ranges, root-level boundary positions, lists, quotes, tables, captio
 
 Content color and vertical spacing use scoped CSS variables `--mw-horizontal-rule-color` and `--mw-horizontal-rule-spacing`, falling back to the editor border color and `1em`. These core styles also apply to HR produced by Markdown shortcuts.
 
-Native HR provides separator semantics; the command adds no focusability or interactive decorations. Complete separator-navigation accessibility is not claimed. See the [roadmap](/roadmap#verification-and-limits) for actual executed checks and sizes.
+Native HR provides separator semantics; the command adds no focusability or interactive decorations. Complete separator-navigation accessibility is not claimed.

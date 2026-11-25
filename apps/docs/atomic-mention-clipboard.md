@@ -1,6 +1,6 @@
 # Copying atomic mention references
 
-With `mentions({ persistent: true, atomic: true })`, copy, cut and paste retain IDs through `text/html`. The `text/plain` representation contains visible text only. Current browser/example execution results and their limits are recorded under [testing](/testing). Synthetic ClipboardEvents do not prove OS clipboard behavior across platforms.
+With `mentions({ persistent: true, atomic: true })`, copy, cut and paste retain IDs through `text/html`. The `text/plain` representation contains visible text only. Synthetic ClipboardEvents do not prove OS clipboard behavior across platforms.
 
 ## API
 
@@ -80,7 +80,7 @@ On paste, branches belonging to the first incoming item remain under the retaine
 
 Sibling endpoints use the joining profile above. Different levels within one ordinary tree use the structural interval below. Bodies after branches and protected structures remain unsupported. Source and incoming selected branches share bounded recursive validation: resource/foreign/task/other-owned content, links/code, quotes/tables and excessive depth/size reject the complete operation before mutation or native clipboard writes. Unselected final branch descendants stay opaque and are not cloned merely to preserve them. This is a bounded tree transfer, not arbitrary structural selection.
 
-Actual items, bodies, list, selection and revisions are rechecked after focus and clipboard callbacks. Each successful cut/paste retains one Undo/Redo revision; incoming HTML passes the receiver schema before rendering. Current browser/example execution results and their limits are recorded under [testing](/testing).
+Actual items, bodies, list, selection and revisions are rechecked after focus and clipboard callbacks. Each successful cut/paste retains one Undo/Redo revision; incoming HTML passes the receiver schema before rendering.
 
 ## Between list levels
 
@@ -92,7 +92,6 @@ Copy reconstructs the selected hierarchy with IDs and necessary ancestor shells.
 
 Paste removes the same structural interval and applies the existing same-item inline/P-H/list composition at the retained start caret. One transaction/change/Undo covers the complete step; forward/backward selection is restored by history. Incoming outer list type adapts to the target list while internal hierarchy and IDs survive. Target branches move only under those established paste rules. Source paths/subtrees, actual nodes and revisions are validated again after callbacks; malformed data rejects atomically before native clipboard writes or mutation.
 
-This completes the planned mention clipboard feature scope for this milestone. Later work returns to the wider roadmap, with concrete regression fixes as needed. Browser/OS acceptance remains pending while local tests are paused; this is not a claim of universal structural editing.
 
 ## Native events and safety
 
@@ -106,10 +105,10 @@ An ID is an untrusted entity reference. Schema validation proves neither user ex
 
 On the [homepage](/#editor) and [playground](/playground), expand “Mention clipboard: IDs and plain text”. Load the sample, select `@Anna`, copy to memory and choose the position after the token. “Paste with ID” creates another `anna` reference; “Paste plain text” inserts only the label. HTML/text and `{id,text}` snapshots expose the difference. Buttons never access the OS clipboard; loading the example replaces the document. Native shortcuts require separate target-browser/OS verification when checks resume.
 
-For a multiblock transfer, choose “Load block clipboard sample” → “Select blocks backward” → “Copy to memory”. HTML contains a paragraph, heading and paragraph with `anna`/`boris`; plain text exposes LF separators. “Caret in destination paragraph” or “Select destination blocks” chooses the target for “Paste with ID”. To try cut, reload the sample, select blocks and choose “Cut to memory”: retained `Before`/`after` join; Undo restores source blocks and IDs. Current browser/example execution results and their limits are recorded under [testing](/testing).
+For a multiblock transfer, choose “Load block clipboard sample” → “Select blocks backward” → “Copy to memory”. HTML contains a paragraph, heading and paragraph with `anna`/`boris`; plain text exposes LF separators. “Caret in destination paragraph” or “Select destination blocks” chooses the target for “Paste with ID”. To try cut, reload the sample, select blocks and choose “Cut to memory”: retained `Before`/`after` join; Undo restores source blocks and IDs.
 
 For item transfer, choose “Load list clipboard sample” → “Select list items backward” → “Copy to memory”. HTML exposes an OL with three LIs and two IDs; text shows `@Anna first`, `Shared item` and `@Boris` separated by LF. “Caret in destination item” or “Select destination items” targets the UL: “Paste with ID” keeps its type and unselected subsequent body/branch. To try cut, reload the sample and cut the source items: `Before`/`after` join while `Retained body` and `Retained branch` stay. Undo restores items and IDs. These buttons use page memory, not the OS clipboard.
 
-For selected branches, choose “Load nested branch clipboard sample” and reuse the item selection/copy/paste buttons. The three outer items include first/middle branches and a deeper OL with five IDs: `anna`, `elena`, `deep`, `liam` and `boris`. HTML shows the hierarchy; text shows labels in traversal order. Paste into the destination UL retains nested UL/OL kinds and the final unselected destination body/branch. Reload and cut to see selected branches removed while `Retained body` and `Retained branch` stay outside the cut. Undo restores them. Current browser/example execution results and their limits are recorded under [testing](/testing).
+For selected branches, choose “Load nested branch clipboard sample” and reuse the item selection/copy/paste buttons. The three outer items include first/middle branches and a deeper OL with five IDs: `anna`, `elena`, `deep`, `liam` and `boris`. HTML shows the hierarchy; text shows labels in traversal order. Paste into the destination UL retains nested UL/OL kinds and the final unselected destination body/branch. Reload and cut to see selected branches removed while `Retained body` and `Retained branch` stay outside the cut. Undo restores them.
 
-For level intervals, choose “Load different-level clipboard sample”, then “Parent → nested item”, “Nested → outer item” or “Between cousin branches”. Each button creates a backward selection with the relevant IDs. Copy to memory, choose “Tree paste position” and paste with ID to inspect preserved ancestor shells. Reload and cut between cousin branches: `Left` and `right tail` stay in their original UL/OL branches, rather than joining; parent `anna` and later outer `boris` remain untouched. Undo restores the entire interval. Current browser/example execution results and their limits are recorded under [testing](/testing).
+For level intervals, choose “Load different-level clipboard sample”, then “Parent → nested item”, “Nested → outer item” or “Between cousin branches”. Each button creates a backward selection with the relevant IDs. Copy to memory, choose “Tree paste position” and paste with ID to inspect preserved ancestor shells. Reload and cut between cousin branches: `Left` and `right tail` stay in their original UL/OL branches, rather than joining; parent `anna` and later outer `boris` remain untouched. Undo restores the entire interval.

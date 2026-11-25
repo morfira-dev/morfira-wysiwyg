@@ -85,7 +85,7 @@ commands.paste({ text: 'Название\tЗначение\nЯзык\tTypeScript
 
 ## Контекстные действия таблиц
 
-Явно подключаемая [контекстная панель таблиц](/ru/contextual-tables) добавляет вставку/удаление строк и столбцов, merge/split поверх существующей логической сетки, восстановление native Range и один шаг Undo на команду. Подключите `/ui/contextual-table` и его CSS вместе с `tables()` и CSS таблиц; пресеты не меняются. `getTableSelection(editor, range?)` возвращает наблюдаемый `TableSelectionState`, `registerSelectionHost(host)` задаёт владение внешними контролами, а `tableSelectionChange` — типизированное уведомление экземпляра, не RPC. Гайд описывает spans, недоступные действия, клавиатуру/lifecycle и отдельные gzip-бюджеты.
+Явно подключаемая [контекстная панель таблиц](/ru/contextual-tables) добавляет вставку/удаление строк и столбцов, merge/split поверх существующей логической сетки, восстановление native Range и один шаг Undo на команду. Подключите `/ui/contextual-table` и его CSS вместе с `tables()` и CSS таблиц; пресеты не меняются. `getTableSelection(editor, range?)` возвращает наблюдаемый `TableSelectionState`, `registerSelectionHost(host)` задаёт владение внешними контролами, а `tableSelectionChange` — типизированное уведомление экземпляра, не RPC. Гайд описывает spans, недоступные действия, клавиатуру/lifecycle.
 
 
 Необязательный [выбор размера таблицы](/ru/table-picker) подключается явным импортом фабрики и CSS; [вставка изображения из буфера/drop](/ru/image-input) использует callback загрузки приложения. Пресеты автоматически их не включают.

@@ -230,7 +230,7 @@ Image dimension drafts are strings, while `ImageValue` uses numbers. This retain
 
 ## Selection, errors and embedding
 
-Forms are embedded nonmodal panels with `role="form"`, not nested HTML `<form>` elements. They can live inside an application's form. Their buttons do not submit it; Enter in fields handles a local action.
+By default, forms are embedded nonmodal panels with `role="form"`, not nested HTML `<form>` elements. They can live inside an application's form. Their buttons do not submit it; Enter in fields handles a local action. The image form also supports `presentation: 'dialog'` and `open()`, `close()`, `isOpen()` — see the [image dialog](/images#insert-and-edit-dialog). The ready toolbar offers separate [insertion popovers](/editor-ui). Search stays nonmodal and allows text interaction — see [find and replace](/search).
 
 Links and images remember real DOM Ranges before controls receive focus, including empty blocks and backward selections. External document replacement invalidates the old target: select a position in the new document first. Field input and locale changes preserve drafts. Search uses its recomputed plugin index rather than restoring a stale Range.
 
@@ -263,7 +263,7 @@ The same form exposes **Cell padding (0–48px)**, **Border width (0–12px)** a
 
 The Minimum row height (1–1000px) field uses a string `rowMinHeight` draft: `80px` applies a minimum to every row in the selected logical rectangle, including a full rowspan; an empty string resets it. Different row values use the mixed placeholder. Content can make the rendered row taller. Full HTML/JSON retains TR height, but existing structural commands rebuild rows and rectangle clipboard does not copy their height.
 
-The explicit [contextual table toolbar](/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions and independent gzip budgets.
+The explicit [contextual table toolbar](/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions.
 
 ## Search highlights without document changes
 

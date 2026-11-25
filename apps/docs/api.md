@@ -119,7 +119,7 @@ Try **Paste between blocks** on the homepage or in the [playground](/playground)
 
 ## List item selections and boundaries
 
-The following rules describe bounded list and quote operations. See [verification and remaining limits](/roadmap#verification-and-limits) for current execution results.
+The following rules describe bounded list and quote operations.
 
 Text input, Backspace and Delete handle a noncollapsed selection between ordinary bodies of one item or across direct sibling `li` elements under one `ul`/`ol`. An original item's own content may be direct inline content or **one or more ordinary `p`/`h1`–`h6` bodies**. Each body accepts text, supported inline marks, links, `span`, `code` and `br`; optional trailing nested lists follow all bodies. Mixed direct text and block bodies, whitespace alongside block bodies, original inline images, tables and other structural blocks remain outside this path. A semantic `data-mw-node` on the list, item or body is a barrier; inline semantic nodes are retained. Operating within a nested list or a list in one cell leaves its outer parent intact.
 
@@ -326,11 +326,9 @@ Explicit [contextual image properties](/contextual-images) use `/ui/contextual-i
 
 ## Contextual table actions
 
-The explicit [contextual table toolbar](/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions and independent gzip budgets.
-
+The explicit [contextual table toolbar](/contextual-tables) adds row/column insertion and deletion, merge/split over the existing logical grid, native Range restoration and one-command Undo. Install `/ui/contextual-table` and its CSS alongside `tables()` and table CSS; presets are unchanged. `getTableSelection(editor, range?)` returns observational `TableSelectionState`, `registerSelectionHost(host)` owns external controls, and `tableSelectionChange` is a typed per-editor notification, not RPC. The guide documents spans, disabled states, keyboard/lifecycle restrictions.
 
 Optional [table size picker](/table-picker) uses an explicit factory and CSS import; [image clipboard/drop input](/image-input) delegates to the application-owned images upload callback. Neither changes preset defaults.
-
 
 [Table and cell properties](/table-properties) use independent `/plugins/table-properties` and `/ui/table-properties` entries: table width/placement and selected-cell background/border color/vertical alignment. The form applies only dirty fields in one Undo, uses existing `/ui/forms.css`, and is outside preset defaults.
 
@@ -356,7 +354,7 @@ Optional [table size picker](/table-picker) uses an explicit factory and CSS imp
 
 ## Email completion and cell text
 
-`autolink({ email: true })` explicitly enables conservative ASCII email addresses after Space, controlled Enter and one plain-text clipboard token. Default is `email: false`; HTML/multiline completion and network checks are absent. [Contract, history and limits](/autolink#email-explicit-opt-in).
+`autolink({ email: true })` explicitly enables conservative ASCII email addresses after Space, controlled Enter and one plain-text clipboard token. Default is `email: false`; HTML/multiline completion and network checks are absent. [Contract, history and limits](/autolink#email-—-explicit-opt-in).
 
 `tablePropertyCommands(editor).update({ cellTextAlign: 'right', cellDirection: 'rtl' })` updates selected actual TD/TH in one Undo step. Public types are `TableCellTextAlign` (`left | center | right | justify`) and `TableCellDirection` (`ltr | rtl`); `false` resets an own value, and state also allows `'mixed'`. Explicit descendant formatting is preserved. [Form, inheritance and clipboard](/table-properties#cell-text-alignment-and-direction).
 

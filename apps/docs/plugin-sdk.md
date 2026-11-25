@@ -7,7 +7,7 @@ import SelectionHandleExample from './.vitepress/theme/SelectionHandleExample.vu
 
 SDK phase 1 adds typed commands and declarative semantic document extensions for one editor instance. Core imports no plugins and needs no UI. All examples use the public `@morfira-dev/wysiwyg` facade without third-party runtime dependencies.
 
-This extends the existing `EditorDocument` v1 format. It does not replace the editing engine or yet provide custom node views, atomic selection, decorations or arbitrary new HTML tags.
+This extends the existing `EditorDocument` v1 format. Basic commands and declarative schema are complemented by the separate [node, atom and decoration SDK](/plugin-extensions), [in-editor views](/inline-node-views) and [structural positions](/structural-mapping). All extensions use allowed schema HTML tags.
 
 ## Live example
 
@@ -162,11 +162,11 @@ Commands are trusted application code, not a sandbox. Complete external requests
 
 Destroying the editor clears registrations. A plugin returns cleanup that calls its unregister functions and subscriptions; repeated unregister is safe and cannot remove a later registration. Other calls after editor destruction fail.
 
-## Phase-1 limits and size
+## Declarative schema boundaries
 
-A semantic wrapper is not yet a separate renderer or atom: its children remain natively editable. The schema is fixed at instance creation; live re-registration is not provided. Mapped structural selection, decorations and node views belong to later SDK phases.
+Declaring a semantic wrapper alone installs no renderer or atomic behavior: its children remain natively editable. The schema is fixed at instance creation; live re-registration is not provided. Position mapping, decorations and node views use separate [SDK modules](/plugin-extensions).
 
-The core import loads no optional plugins/UI or framework runtime. CSS imports stay explicit. Measure selected core/plugin closures as minified/gzip/Brotli, with CSS separate and shared chunks counted once. See [architecture and size](/architecture), [events](/events) and [roadmap/limits](/roadmap).
+The core import loads no optional plugins/UI or framework runtime. CSS imports stay explicit. See [events](/events).
 
 Phase 1 validates node identity and attributes; arbitrary per-node child/content rules cannot yet be registered.
 
@@ -209,7 +209,7 @@ For an action from an external field, the demo first restores the remembered bou
 - A handle temporarily retains DOM boundaries. Release it when the form closes; invalidation and editor destruction clear internal references. Do not use handles as persistent IDs, serialize them, or pass them between editors.
 - Direct DOM mutation is trusted application code, not a sandbox. Use transactions and validated HTML/JSON APIs for changes. A handle does not authorize backend requests or establish input safety.
 
-This slice **does not map positions through edits**, add a general atom/node-view/decorations SDK, or broaden supported structural operations. A remembered `Range` is an observation, not permission to bypass command validation. Actual executed checks are recorded in [testing](/testing); API examples alone are not browser verification evidence.
+Revision-bound selection handles **do not map positions through edits** or broaden supported structural operations; optional mapping and presentation modules have separate contracts. A remembered `Range` is an observation, not permission to bypass command validation.
 
 ## Additional SDK layers
 

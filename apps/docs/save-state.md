@@ -97,4 +97,4 @@ view.destroy();
 editor.destroy();
 ```
 
-Timers, subscriptions and AbortControllers are cleaned per instance. Actual focused verification and raw/gzip/Brotli/CSS measurements are reported separately; this example is not a complete-suite claim.
+Timers, subscriptions and AbortControllers are cleaned per instance.

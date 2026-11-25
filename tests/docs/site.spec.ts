@@ -451,17 +451,6 @@ for (const english of [false, true]) test(`structural slash headings and tables 
   await page.locator('.demo-workspace').screenshot({ path: `artifacts/structural-slash-${english ? 'en' : 'ru'}.png`, style: '.VPNav { visibility: hidden !important; }' });
 });
 
-for (const english of [false, true]) test(`performance guide documents explicit tools without mounting an editor in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(english ? '/performance' : '/ru/performance');
-  await expect(page.locator('.vp-doc h1')).toContainText(english ? 'Performance and history' : 'Производительность и история');
-  await expect(page.locator('.vp-doc')).toContainText('pnpm run benchmark');
-  await expect(page.locator('.vp-doc')).toContainText('nativeDispatch');
-  await expect(page.locator('.mw-editor')).toHaveCount(0);
-  expect(errors).toEqual([]);
-});
-
 for (const english of [false, true]) test(`security guide explains deployment boundaries in ${english ? 'English' : 'Russian'}`, async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));

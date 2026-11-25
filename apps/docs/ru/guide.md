@@ -1,13 +1,13 @@
 # Быстрый старт
 
-Morfira WYSIWYG — самостоятельно реализованный редактор на TypeScript с подключаемыми таблицами и адаптерами Vue, React и Svelte. У ядра и плагинов **нет runtime-зависимостей**. Код проекта распространяется по MIT.
+Morfira WYSIWYG — самостоятельно реализованный редактор на TypeScript с подключаемыми таблицами и адаптерами Vue, React, Svelte и Angular, а также Web Component без фреймворка. У ядра и плагинов **нет runtime-зависимостей**. Код проекта распространяется по MIT.
 
 ## Локальный запуск
 
 Нужны Node.js 22.20+ и pnpm 11.0.7.
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 pnpm run docs:dev
 ```
 

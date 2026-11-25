@@ -66,5 +66,3 @@ preview.close();
 preview.destroy();
 editor.destroy();
 ```
-
-Raw JS, gzip, Brotli, CSS and actual focused verification are reported separately. A working example does not establish a complete editor-suite pass or arbitrary print/Office layout fidelity.

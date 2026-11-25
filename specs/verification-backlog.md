@@ -1,5 +1,30 @@
 # Verification record
 
+## Public documentation cleanup and audit — 2026-11-25
+
+Removed the public RU/EN architecture/size, testing/releases, performance/history
+and roadmap/limitations pages, navigation entries and incoming references. The
+existing maintainer specifications remain authoritative; public README/guides keep
+installation, API usage, examples and concrete behavior/security constraints.
+The audience contract is `documentation.md`, referenced by AGENTS and the SDD skill.
+
+Updated README language parity, quick-start wrapper coverage, base-versus-optional
+SDK descriptions, contextual link/image instruction scope and image-dialog versus
+embedded-form guidance. Fixed eight pre-existing broken anchor references. Removed
+the two page-content tests for the deleted performance guide; the existing RU/EN
+accessibility test now checks the retained user-facing WCAG disclaimer instead of
+the removed internal evidence table. No editor runtime behavior was changed.
+
+Actual local validation: site build passed; internal file/anchor audit of all 121
+generated HTML pages passed with no broken local links; RU/EN sets match at 60
+Markdown pages each; all 598 quoted facade-import occurrences resolve to declared
+export subpaths; all referenced spec/skill paths in both agent instruction entry
+points exist. These import checks validate paths, not every snippet's types/runtime.
+Two focused documentation cases passed (RU touch-emulated and EN desktop,
+Chromium, 3.8s) on a fresh task-owned preview. The first sandboxed preview attempt
+could not bind its port (EPERM); the authorized retry passed. No full suite,
+editor build, external-link/network verification, CI observation or push performed.
+
 ## CI Office capture expectation correction, 2026-11-23
 
 Release run `45200450333` at `13c3bdf` failed the same native Google Docs

@@ -99,13 +99,7 @@ Contextual panels and image resize handles may use external hosts. Their layer m
 
 While active, separate body overflow-x/y inline properties suppress background scrolling. Each property is restored only while its value and priority are still module-owned; concurrent application changes survive. The page scroll position at entry is also recorded and restored on exit only while the window has kept the module-recorded locked position; intervening application/user window scrolling is preserved. Editor destruction, workspace detachment/adoption or loss of ownership releases the module’s resources.
 
-## Validation and size
-
-This mode does not change insertion, HTML/JSON or the document format. Focused regressions should exercise viewport geometry, DOM identity, history/current selection, Escape, readonly/IME, competing owners and style cleanup. The demo does not establish complete browser/device coverage; the project verification record reports actual executed checks separately.
-
-Measure minified JS, gzip, Brotli and CSS separately. The standalone UI has an 8000-byte gzip JS guard and a 2000-byte raw CSS guard; `standard-fullscreen-ready` keeps standard’s 80000-byte gzip JS / 20000-byte raw CSS budget. These are budgets, not claimed current measurements. Framework runtimes, fonts, source maps and declarations are excluded. Preview and printing remain separate tasks.
-
-Customization does not require editing core styles:
+## Styling
 
 ```css
 .editor-workspace {

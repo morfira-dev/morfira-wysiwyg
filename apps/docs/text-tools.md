@@ -82,11 +82,7 @@ External UI uses revision-bound selection handles and refuses stale targets. UI
 responds to RU/EN locale, read-only and destroy; controller disposal removes all
 owned listeners.
 
-Actual test and size evidence is recorded in [testing status](/testing). This
-example does not establish physical-device or screen-reader coverage.
-
-
-The optional controls stylesheet uses native CSS nesting: Chrome 112+, Firefox 117+, Safari 16.5+. Plugin commands do not depend on this stylesheet.
+This example does not establish physical-device or screen-reader coverage.
 
 Both optional UI stylesheets use native CSS nesting: Chrome 112+, Firefox 117+,
 Safari 16.5+. This applies only to these styles, not headless commands or core.

@@ -28,7 +28,7 @@ The left block retains its tag and attributes, receiving the right contents with
 
 Inline-only quotes can also be leaf blocks. Ordinary neighboring paragraphs/headings in an item containing a direct quote are supported too; all other barriers remain.
 
-This slice requires a collapsed caret at an actual boundary of ordinary paragraphs/headings owned by one `li`. It does not extend editing to arbitrary semantic nodes, atoms, tables or crossing list items/levels. Read-only, composition and protected-owner guards retain their existing rules. A live example is not proof of passing browser scenarios: actual execution results belong in the [verification record](/testing).
+This slice requires a collapsed caret at an actual boundary of ordinary paragraphs/headings owned by one `li`. It does not extend editing to arbitrary semantic nodes, atoms, tables or crossing list items/levels. Read-only, composition and protected-owner guards retain their existing rules.
 
 ## Composition
 

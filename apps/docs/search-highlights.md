@@ -2,7 +2,6 @@
 
 The optional `createSearchHighlights` paints every current search match and distinguishes the current result. It uses the native [CSS Custom Highlight API](https://www.w3.org/TR/css-highlight-api-1/): ranges are registered for browser painting without inserting `span`, `mark`, attributes or service styles into the document.
 
-Current browser/example execution results and their limits are recorded under [testing](/testing). Range-registration checks do not replace visual paint verification. Current builds, sizes and limitations are tracked in the roadmap separately from historical search results.
 
 ## Setup
 

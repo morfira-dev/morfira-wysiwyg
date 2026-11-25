@@ -1,13 +1,13 @@
 # Getting started
 
-Morfira WYSIWYG is an independently implemented TypeScript editor with an optional table plugin and Vue, React, and Svelte adapters. The editor core and plugins have **zero runtime dependencies**. Project code is licensed under MIT.
+Morfira WYSIWYG is an independently implemented TypeScript editor with an optional table plugin and Vue, React, Svelte and Angular adapters, plus a framework-free Web Component. The editor core and plugins have **zero runtime dependencies**. Project code is licensed under MIT.
 
 ## Run locally
 
 Node.js 22.20+ and pnpm 11.0.7 are required.
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 pnpm run docs:dev
 ```
 

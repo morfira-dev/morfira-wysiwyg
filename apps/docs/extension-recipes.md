@@ -94,5 +94,5 @@ Mount under React.StrictMode and stabilize the factory with useMemo.
 
 <<< @/.vitepress/theme/recipes/wrappers/web-component.ts
 
-Actual executed evidence is recorded in [Testing](/testing). Local services and
+Local services and
 examples do not certify server security, universal Office fidelity or accessibility.

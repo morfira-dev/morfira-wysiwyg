@@ -45,7 +45,7 @@ const options: ChecklistOptions = { interactive: false };
 const editor = createEditor(host, { plugins: [checklists(options)] });
 ```
 
-Open **Load checklist interactions** in the demo: it includes parent/child tasks, a multi-paragraph item and an RTL example. Selection buttons place a caret or create a backward range; then try the marker, shortcut and Undo. Current browser/example execution results and their limits are recorded under [testing](/testing).
+Open **Load checklist interactions** in the demo: it includes parent/child tasks, a multi-paragraph item and an RTL example. Selection buttons place a caret or create a backward range; then try the marker, shortcut and Undo.
 
 ## Commands and state
 
@@ -77,4 +77,4 @@ Separate scoped CSS draws the marker. Size, gap and colors use `--mw-checklist-*
 
 The marker **is not a native checkbox** or a separately focusable control. Keyboard users have the shortcut and ordinary external buttons. Complete accessibility, screen-reader behavior and real touch/IME devices remain unverified. No `input`, `button` or UI node is added to persisted content; HTML/JSON retain only the LI metadata attribute.
 
-Bulk commands spanning multiple items, endpoints inside owning `data-mw-node` elements (including inline nodes), foreign namespaces and cross-block ranges are unsupported. Destroying the editor releases its handlers. New plugin sizes and executed checks are recorded separately from the preceding editor slice in the [roadmap](/roadmap#verification-and-limits).
+Bulk commands spanning multiple items, endpoints inside owning `data-mw-node` elements (including inline nodes), foreign namespaces and cross-block ranges are unsupported. Destroying the editor releases its handlers.

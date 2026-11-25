@@ -55,6 +55,6 @@ const contextual = createContextualToolbar(overlayHost, editor, {
 });
 ```
 
-These are trusted synchronous side-effect-free callbacks. Other native-selection-only APIs are not automatically projected. A snapshot does not authorize execution: UI restores a valid range and the command checks the actual target. Labels/errors render as plain text. Actual verification is recorded in the [roadmap](/roadmap#verification-and-limits).
+These are trusted synchronous side-effect-free callbacks. Other native-selection-only APIs are not automatically projected. A snapshot does not authorize execution: UI restores a valid range and the command checks the actual target. Labels/errors render as plain text.
 
 A caret or text range wholly inside one link can use separate [contextual link actions](/contextual-links): `/ui/contextual-link`, explicit core/forms/contextual-link CSS, validated Open and whole-link editing/unlinking with Undo. Plain text without a link, mixed ranges and multiple anchors are excluded; presets do not install this UI. When both are mounted, an eligible range inside one link belongs to link actions: the text toolbar hides and yields Alt+F10. Without link actions, text formatting remains available as before.

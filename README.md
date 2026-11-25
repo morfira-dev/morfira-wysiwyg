@@ -46,34 +46,11 @@ pnpm install --frozen-lockfile
 pnpm run docs:dev
 ```
 
-The documentation site in `apps/docs` uses English at the root and Russian under `/ru/`. Both versions include live examples, a playground, and search. GitHub Actions deploys the site to GitHub Pages after the checks for `main` pass.
-
-- `packages/core` contains the typed document, HTML and JSON validation, selection, transactions, history, and the plugin API.
-- `packages/plugins` contains optional features, including the logical table grid and image commands.
-- `packages/vue`, `packages/react`, `packages/svelte`, `packages/angular`, and `packages/web-component` contain the adapters.
-- `packages/wysiwyg` provides the public package and subpath exports.
-- `playground` contains browser fixtures. `specs` defines editing contracts and acceptance criteria.
-
-## Verification
-
-```sh
-pnpm exec playwright install chromium firefox webkit
-pnpm run check
-pnpm run docs:build
-pnpm run test:docs
-```
-
-`check:static` builds the packages and verifies project rules, declarations, types, package boundaries, tree shaking, and bundle budgets. `check` adds the editor and adapter browser suite. `docs:build:site` builds the site from existing package outputs. The CI matrix covers Chromium, Firefox, and WebKit, with separate documentation and installed-consumer jobs. See the [CI specification](specs/continuous-integration.md).
-
-`size-report.json` tracks minified JavaScript, gzip, Brotli, and CSS separately. The core JavaScript limit is 200,000 gzip bytes and the optional entry and table JavaScript limit is 150,000 gzip bytes. The Standard and Extended profiles have separate limits of 90,000 and 110,000 gzip JavaScript bytes and 20,000 minified CSS bytes each. Each adapter has a 10,000 minified JavaScript byte limit, excluding framework runtimes.
-
-Use `pnpm run consumers:check` and `pnpm run consumers:angular22` to check installed tarballs outside the workspace. Use `pnpm run benchmark -- --browser=chromium,firefox,webkit` for observational measurements. See [testing](apps/docs/testing.md) and [performance](apps/docs/performance.md).
+The documentation site in `apps/docs` uses English at the root and Russian under `/ru/`. Both versions include live examples, a playground, and search.
 
 ## Document and extension contracts
 
 The editor stores a versioned `EditorDocument` and validates HTML and JSON against its schema. Undo and redo cover input, formatting, paste, and plugin changes. Plugins use per-editor state with validated commands and transactions. See the [core API](apps/docs/api.md), [plugin SDK](apps/docs/plugin-sdk.md), and [security guide](apps/docs/security.md).
-
-See the [roadmap](apps/docs/roadmap.md) for the supported scope and limitations. Physical-device and assistive-technology testing is pending.
 
 ## License
 

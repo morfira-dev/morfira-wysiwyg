@@ -47,4 +47,4 @@ No stylesheet or runtime dependency is required. Presets do not install the plug
 
 ## Limits
 
-Tables, nested lists/quotes, complex figures, unknown semantic nodes and inline atoms keep their existing owners. No persisted cursor marker or HTML/JSON format change is introduced. Shift selections, OS shortcuts, clipboard/drop and editing inside objects retain existing behavior. This is not a universal structural cursor or evidence of real-device/OS IME support. Actual focused verification is recorded in the [testing guide](/testing).
+Tables, nested lists/quotes, complex figures, unknown semantic nodes and inline atoms keep their existing owners. No persisted cursor marker or HTML/JSON format change is introduced. Shift selections, OS shortcuts, clipboard/drop and editing inside objects retain existing behavior. This is not a universal structural cursor or evidence of real-device/OS IME support.

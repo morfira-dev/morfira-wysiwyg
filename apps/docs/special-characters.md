@@ -73,10 +73,6 @@ Search matches the symbol, ID and current label literally, without regular expre
 
 Built-in captions follow `editor.setLocale('ru' | 'en')` and the editor's translation overrides. Locale changes retain the query and insertion target. Appearance uses scoped `--mw-*` variables, and panel CSS works without documentation-site styles. Native controls and keyboard scenarios do not establish full screen-reader, touch-device or arbitrary zoom accessibility.
 
-## Size boundaries
-
-Measure `/ui/special-characters` with its selected shared helpers and the separate `standard-special-characters-ready` profile, counting shared chunks once. This does not promise that every combination of optional modules fits the standard profile. See [architecture and size](/architecture) and [testing](/testing) for measurement rules and current validation.
-
 ## Dialog presentation
 
 For an initially closed native dialog, pass `presentation: 'dialog'`, then call

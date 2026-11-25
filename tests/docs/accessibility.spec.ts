@@ -50,7 +50,7 @@ for (const english of [false, true]) {
       await page.keyboard.press('Escape');
       await expect(content).toBeFocused();
       expect(await content.innerHTML()).toBe(before);
-      await expect(page.locator('.vp-doc')).toContainText(t('Не проверено в этом этапе', 'Not verified in this stage'));
+      await expect(page.locator('.vp-doc')).toContainText(t('не заявление о соответствии WCAG', 'without claiming WCAG conformance'));
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
       expect(errors).toEqual([]);
     });
