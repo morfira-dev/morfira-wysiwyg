@@ -45,6 +45,8 @@ The allowlist follows MathML Core https://www.w3.org/TR/mathml-core/.
 
 ## Optional external view and form
 
+The additive keyboard/session rules in [insertion-ui-consistency.md](insertion-ui-consistency.md) apply. API replacement and enabling read-only reset the form's local composition latch even if native compositionend is absent. Plain unmodified Enter applies a source draft; already-handled/modifier/IME keys do not.
+
 `createFormulaView(host, editor, { display? })` owns external node views, one for
 each actual semantic formula span. MathML stays OUTSIDE persisted editor content.
 Valid sources render natively; malformed imported sources produce a safe literal

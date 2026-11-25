@@ -80,7 +80,7 @@ export const createMediaForm = (host: HTMLElement, editor: Editor, options: Medi
     ignoredClose++;
     dialog.close();
   };
-  const close = () => {
+  const close = (restoreFocus = true) => {
     if (disposed || !opened) return;
     if (presentation === 'inline') { release(); update(); return; }
     opened = false;
@@ -89,7 +89,7 @@ export const createMediaForm = (host: HTMLElement, editor: Editor, options: Medi
     release();
     const previous = origin;
     origin = undefined;
-    if (previous?.isConnected && !element.contains(previous)) previous.focus({ preventScroll: true });
+    if (restoreFocus && previous?.isConnected && !element.contains(previous)) previous.focus({ preventScroll: true });
   };
   const inspect = () => {
     release();
@@ -112,7 +112,7 @@ export const createMediaForm = (host: HTMLElement, editor: Editor, options: Medi
     }
   };
   const open = () => {
-    if (disposed || !host.isConnected || dialog && (opened || typeof dialog.showModal !== 'function')) return;
+    if (disposed || composing || editor.isReadOnly() || !host.isConnected || dialog && (opened || typeof dialog.showModal !== 'function')) return;
     origin = document.activeElement instanceof document.defaultView!.HTMLElement ? document.activeElement : undefined;
     inspect();
     message = undefined;
@@ -195,9 +195,11 @@ export const createMediaForm = (host: HTMLElement, editor: Editor, options: Medi
   };
   listen(apply, 'click', () => perform(false));
   listen(remove, 'click', () => perform(true));
-  listen(closeButton, 'click', close);
+  listen(closeButton, 'click', () => close());
   listen(element, 'keydown', ((event: KeyboardEvent) => {
-    if (event.key === 'Enter' && !event.isComposing && event.target instanceof document.defaultView!.HTMLInputElement) {
+    if (event.defaultPrevented || event.isComposing || event.keyCode === 229) return;
+    if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey
+      && event.target instanceof document.defaultView!.HTMLInputElement) {
       event.preventDefault(); perform(false);
     }
     else if (event.key === 'Escape') { event.preventDefault(); close(); }
@@ -206,14 +208,28 @@ export const createMediaForm = (host: HTMLElement, editor: Editor, options: Medi
     listen(dialog, 'cancel', (event) => { event.preventDefault(); close(); });
     listen(dialog, 'close', () => { if (ignoredClose) { ignoredClose--; return; } if (!suspended) close(); });
   }
-  listen(editor.surface, 'compositionstart', () => { composing = true; release(); update(); });
+  listen(editor.surface, 'compositionstart', () => {
+    composing = true;
+    if (dialog) close(false);
+    else release();
+    update();
+  });
   listen(editor.surface, 'compositionend', () => { composing = false; update(); });
   cleanups.push(editor.subscribe((change) => {
     if (performing) return;
     release();
-    if (change.source === 'api' && dialog) close();
+    if (change.source === 'api') {
+      composing = false;
+      if (dialog) close(false);
+    }
     update();
-  }), editor.events.on('readonlychange', (readonly) => { if (readonly && dialog) close(); update(); }),
+  }), editor.events.on('readonlychange', (readonly) => {
+    if (readonly) {
+      composing = false;
+      if (dialog) close(false);
+    }
+    update();
+  }),
   editor.events.on('localechange', update), editor.events.on('destroy', destroy));
   if (!dialog) inspect();
   update();

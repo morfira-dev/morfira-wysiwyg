@@ -203,3 +203,51 @@ test('form target editing cannot leak to another instance and editor destruction
   });
   expect(result).toEqual({ foreign: false, closed: true, empty: true, secondHTML: '<p>other</p>' });
 });
+
+test('formula draft only applies on plain Enter and respects handled, modified and legacy IME keys', async ({ page }) => {
+  const result = await page.evaluate(() => {
+    const { editor, form } = window.formulaProbe;
+    form.open();
+    form.setSource('x_1');
+    const input = form.element.querySelector('input')!;
+    const events = [{ ctrlKey: true }, { shiftKey: true }, { isComposing: true }, { keyCode: 229 }]
+      .map((options) => new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...options }));
+    for (const event of events) input.dispatchEvent(event);
+    const handled = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    handled.preventDefault();
+    input.dispatchEvent(handled);
+    return { html: editor.getHTML(), opened: form.isOpen(), source: form.getSource(), consumed: events.map((event) => event.defaultPrevented), undo: editor.canUndo() };
+  });
+  expect(result).toEqual({ html: '<p>AB</p>', opened: true, source: 'x_1', consumed: [false, false, false, false], undo: false });
+  await page.locator('dialog input').press('Enter');
+  await expect(page.locator(formulaSelector)).toHaveText('x_1');
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await page.evaluate(() => window.editor.undo());
+  expect(await page.evaluate(() => window.editor.getHTML())).toBe('<p>AB</p>');
+});
+
+test('formula editing recovers after API and readonly cancel IME without a native end; queued old actions cannot reopen', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const { editor, form } = window.formulaProbe;
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    editor.setHTML('<p>Fresh API value</p>');
+    editor.setSelection(1);
+    form.open();
+    const recoveredAPI = form.isOpen();
+    form.close();
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    editor.setReadOnly(true);
+    editor.setReadOnly(false);
+    editor.setSelection(2);
+    form.open();
+    const recoveredReadonly = form.isOpen();
+    form.setSource('x_2');
+    const button = form.element.querySelector<HTMLButtonElement>('button')!;
+    queueMicrotask(() => button.click());
+    editor.setHTML('<p>Final value</p>');
+    form.destroy();
+    await Promise.resolve();
+    return { recoveredAPI, recoveredReadonly, html: editor.getHTML(), undo: editor.canUndo(), open: form.isOpen(), connected: form.element.isConnected };
+  });
+  expect(result).toEqual({ recoveredAPI: true, recoveredReadonly: true, html: '<p>Final value</p>', undo: false, open: false, connected: false });
+});

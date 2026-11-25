@@ -55,3 +55,7 @@ The application owns the external host, user consent and CSP `frame-src` for its
 ## Styling
 
 Import CSS explicitly. Available variables include `--mw-media-gap`, `--mw-media-padding`, `--mw-media-aspect-ratio` and shared `--mw-border`, `--mw-radius`, `--mw-surface`, `--mw-text`. Form and cards use the editor locale, with Russian and English messages.
+
+The editing form refuses opening in read-only or during composition. Composition start closes an active editing dialog without applying its draft. After an external value replacement or a read-only cancellation, a fresh selection can open a new session without waiting for a missing native composition-end event. This does not restrict the separate viewer's explicit read-only playback.
+
+Plain Enter in the URL or title field applies. Modifier shortcuts, already-handled keys and IME confirmation are left to their owner; invalid values remain correctable in the open dialog.

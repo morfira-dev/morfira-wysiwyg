@@ -2,6 +2,8 @@
 
 Status: implementation contract. Persisted schema and existing command behavior stay unchanged.
 
+Insertion keyboard/session consistency follows [insertion-ui-consistency.md](insertion-ui-consistency.md): plain single-line Enter applies, handled/modifier/IME keys remain unconsumed, and search retains its independent backward-navigation shortcut. Preserve feature-specific selection and modal ownership.
+
 Image upload feedback follows [image-upload-feedback.md](image-upload-feedback.md): native localized progress from application byte reports, generic errors and explicit retained-File retry at the original insertion range in all mode. Clear retry authority on document changes, readonly, IME, another file, cancellation and destroy. Do not change ImageFormValues or expose upload controls in edit-only mode. This new behavior has authored browser definitions, not a newly executed runtime validation.
 
 Public facade entries are `/ui/links`, `/ui/images`, `/ui/search` with `createLinkForm`, `createImageForm`, `createSearchForm`. They live in feature-owned folders under the optional plugins package, never the core graph. CSS is explicit via `/ui/forms.css`; JS entries import no CSS/framework and retain only their required feature. Core/plugins retain zero third-party runtime dependencies.

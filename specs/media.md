@@ -47,6 +47,8 @@ an asset manager. No network assertion claims privacy after consent.
 
 ## Reusable insertion/editing form
 
+The additive session rules in [insertion-ui-consistency.md](insertion-ui-consistency.md) apply: editing refuses read-only/composition opening, composition start dismisses the modal, and authoritative API/read-only cancellation clears the local IME latch. Read-only viewing through explicit Load remains independent.
+
 createMediaForm(host,editor,options?) provides open/close/isOpen/refresh/getValues/
 setValues/destroy with a native modal dialog by default and optional inline mode.
 URL/title drafts use native inputs, localized labels/status/Close/Escape, no

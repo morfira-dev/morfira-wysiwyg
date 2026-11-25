@@ -453,3 +453,36 @@ test('table chooser embeds inside an application form without nested forms or ac
   await expect(page.locator('form form')).toHaveCount(0);
   await expect(page.locator('form[data-submissions]')).toHaveAttribute('data-submissions', '0');
 });
+
+test('ready link and table fields share plain-Enter submission while already-handled Escape retains the panel', async ({ page }) => {
+  await initialize(page, '<p>AB</p>', 1, 0, 'floating');
+  for (const kind of ['link', 'table']) {
+    await page.evaluate(() => window.editor.setSelection(1));
+    await launcher(page, kind).click();
+    const field = panel(page).getByLabel(kind === 'link' ? 'Link URL' : 'Table rows', { exact: true });
+    if (kind === 'link') {
+      await field.fill('https://example.com/link');
+      await panel(page).getByLabel('New link text', { exact: true }).fill('Inserted link');
+    }
+    const before = await html(page);
+    const result = await field.evaluate((input) => {
+      const events = [{ ctrlKey: true }, { shiftKey: true }, { keyCode: 229 }]
+        .map((options) => new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...options }));
+      for (const event of events) input.dispatchEvent(event);
+      for (const key of ['Enter', 'Escape']) {
+        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+        event.preventDefault();
+        input.dispatchEvent(event);
+      }
+      return events.map((event) => event.defaultPrevented);
+    });
+    expect(result).toEqual([false, false, false]);
+    expect(await html(page)).toBe(before);
+    await expect(panel(page)).toBeVisible();
+    await field.press('Enter');
+    await expect(content(page).locator(kind === 'link' ? 'a' : 'table')).toHaveCount(1);
+    await page.evaluate(() => window.editor.undo());
+    expect(await html(page)).toBe('<p>AB</p>');
+    if (kind === 'link') await field.press('Escape');
+  }
+});

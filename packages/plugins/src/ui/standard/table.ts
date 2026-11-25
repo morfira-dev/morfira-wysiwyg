@@ -70,7 +70,8 @@ export const createTablePanel = (
     catch (error) { report('ui.standard.error', error); }
   };
   const keydown = (event: KeyboardEvent) => {
-    if (event.key !== 'Enter' || event.isComposing || event.keyCode === 229 || !(event.target instanceof HTMLInputElement)) return;
+    if (event.defaultPrevented || event.key !== 'Enter' || event.isComposing || event.keyCode === 229
+      || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || !(event.target instanceof HTMLInputElement)) return;
     submit(event);
   };
   const stopDOM = [listenToUI(insert, 'click', submit), listenToUI(form, 'keydown', keydown)];

@@ -216,8 +216,9 @@ export const createLinkForm = (host: HTMLElement, editor: Editor, options: LinkF
     perform(true);
   };
   const keydown = (event: KeyboardEvent) => {
-    if (disposed || event.isComposing || event.keyCode === 229) return;
-    if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
+    if (disposed || event.defaultPrevented || event.isComposing || event.keyCode === 229) return;
+    if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey
+      && event.target instanceof HTMLInputElement) {
       event.preventDefault();
       event.stopPropagation();
       perform(false);

@@ -197,3 +197,9 @@ Both factories are independently imported from `/ui/standard` and `/ui/table-pic
 include their documented CSS. `images.presentation` and `table.presentation` can
 override the common setting for application-specific layout. No media embed or
 video processing capability is implied by this presentation option.
+
+## Insertion and editing keys
+
+In link, image, table, media and formula single-line fields, **Enter** applies the current draft. Ctrl/Meta/Alt/Shift-modified Enter, composition confirmation and a key event already handled by an application do not submit it. If the application has already handled Escape before the ready panel receives it, the panel leaves that event alone; otherwise Escape closes the panel and returns focus to its launcher. Search keeps its separate **Shift+Enter** previous-match shortcut and remains nonmodal.
+
+Correctable errors keep the active draft available. Changing the editor language updates labels without applying or discarding the draft. External document replacement invalidates the old target; select a position in the new document and open a fresh editing session. Media and formula dialogs also recover when authoritative replacement or enabling read-only cancels composition without a native end event.

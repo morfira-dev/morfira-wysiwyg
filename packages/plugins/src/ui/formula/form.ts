@@ -188,7 +188,8 @@ export const createFormulaForm = (host: HTMLElement, editor: Editor, options: Fo
   cleanups.push(
     listenToUI(input, 'input', refreshPreview),
     listenToUI(input, 'keydown', (event) => {
-      if (event.key === 'Enter' && !event.isComposing) {
+      if (!event.defaultPrevented && event.key === 'Enter' && !event.isComposing && event.keyCode !== 229
+        && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey) {
         event.preventDefault();
         perform(false);
       }
@@ -213,7 +214,10 @@ export const createFormulaForm = (host: HTMLElement, editor: Editor, options: Fo
       update();
     }),
     editor.events.on('readonlychange', (readOnly) => {
-      if (readOnly) close(false);
+      if (readOnly) {
+        composing = false;
+        close(false);
+      }
       update();
     }),
     editor.events.on('localechange', () => {
@@ -221,7 +225,10 @@ export const createFormulaForm = (host: HTMLElement, editor: Editor, options: Fo
       refreshPreview();
     }),
     editor.events.on('destroy', destroy),
-    editor.subscribe(() => { if (!applying) close(false); }),
+    editor.subscribe((change) => {
+      if (change.source === 'api') composing = false;
+      if (!applying) close(false);
+    }),
   );
   update();
   return { element, open, close: () => close(), isOpen: () => opened && element.open && !disposed,

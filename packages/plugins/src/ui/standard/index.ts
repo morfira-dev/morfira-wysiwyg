@@ -237,7 +237,7 @@ export const createStandardEditorUI = (host: HTMLElement, editor: Editor, option
   };
   const capture = () => selection.capture();
   const keydown = (event: KeyboardEvent) => {
-    if (!active || event.key !== 'Escape' || event.isComposing || event.keyCode === 229) return;
+    if (!active || event.defaultPrevented || event.key !== 'Escape' || event.isComposing || event.keyCode === 229) return;
     event.preventDefault();
     event.stopPropagation();
     closePanel(true);

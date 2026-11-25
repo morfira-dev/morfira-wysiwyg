@@ -176,3 +176,68 @@ test('media editing targets actual identity and external UI cleanup preserves ap
   expect(result).toMatchObject({ removed: true, marker: true, dialogs: 0, views: 0 });
   expect(result.restored).toContain('Edited title');
 });
+
+test('media editing only submits plain Enter and leaves handled, modified and IME keys to their owner', async ({ page }) => {
+  await setupMedia(page);
+  const initial = await page.evaluate(() => window.editor.getHTML());
+  await page.evaluate((url) => {
+    const { editor, form } = window.mediaProbe;
+    editor.setSelection(2);
+    form.open();
+    form.setValues({ url, title: 'Keyboard media' });
+  }, youtube);
+  const ignored = await page.evaluate(() => {
+    const { editor, form } = window.mediaProbe;
+    const input = form.element.querySelector('input')!;
+    const before = editor.getHTML();
+    const events = [
+      { ctrlKey: true }, { metaKey: true }, { altKey: true }, { shiftKey: true },
+      { isComposing: true }, { keyCode: 229 },
+    ].map((options) => new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...options }));
+    for (const event of events) input.dispatchEvent(event);
+    const handled = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    handled.preventDefault();
+    input.dispatchEvent(handled);
+    return { html: editor.getHTML(), before, opened: form.isOpen(), draft: form.getValues(), consumed: events.map((event) => event.defaultPrevented), undo: editor.canUndo() };
+  });
+  expect(ignored).toEqual({ html: initial, before: initial, opened: true, draft: { url: youtube, title: 'Keyboard media' }, consumed: [false, false, false, false, false, false], undo: false });
+  await page.getByLabel('Media URL', { exact: true }).press('Enter');
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page.locator('.mw-content figure')).toHaveText('Keyboard media');
+  await page.evaluate(() => window.editor.undo());
+  expect(await page.evaluate(() => window.editor.getHTML())).toBe(initial);
+});
+
+test('media edit session recovers after authoritative IME cancellation and disposed queued actions stay inert', async ({ page }) => {
+  await setupMedia(page);
+  const result = await page.evaluate(async (url) => {
+    const { editor, form } = window.mediaProbe;
+    editor.setReadOnly(true);
+    form.open();
+    const readonlyRefused = !form.isOpen();
+    editor.setReadOnly(false);
+    editor.setSelection(1);
+    form.open();
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    const compositionClosed = !form.isOpen();
+    editor.setHTML('<p>Fresh API value</p>');
+    editor.setSelection(2);
+    form.open();
+    const recoveredAPI = form.isOpen();
+    form.close();
+    editor.surface.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    editor.setReadOnly(true);
+    editor.setReadOnly(false);
+    editor.setSelection(1);
+    form.open();
+    const recoveredReadonly = form.isOpen();
+    form.setValues({ url, title: 'Discarded draft' });
+    const button = form.element.querySelector<HTMLButtonElement>('button')!;
+    queueMicrotask(() => button.click());
+    editor.setHTML('<p>Final value</p>');
+    form.destroy();
+    await Promise.resolve();
+    return { readonlyRefused, compositionClosed, recoveredAPI, recoveredReadonly, html: editor.getHTML(), undo: editor.canUndo(), open: form.isOpen(), connected: form.element.isConnected };
+  }, youtube);
+  expect(result).toEqual({ readonlyRefused: true, compositionClosed: true, recoveredAPI: true, recoveredReadonly: true, html: '<p>Final value</p>', undo: false, open: false, connected: false });
+});
