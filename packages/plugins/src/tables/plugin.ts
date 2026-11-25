@@ -5,6 +5,7 @@ import type { TableSelectionReader } from './internal-types.js';
 import { tablesMessages } from './messages.js';
 import { cellsInRectangle, deleteGridColumn, deleteGridRow, emptyCell, insertGridColumn, insertGridRow, readGrid, rebuildGrid, selectionRectangle } from './grid.js';
 import { copyTableRange, isTableClipboard, planTablePaste, readClipboardTable } from './clipboard.js';
+import { ordinaryTableGrid } from './ordinary-grid.js';
 
 export const tableSelectionChange = createPluginEvent<number>('tables:selectionchange');
 
@@ -122,6 +123,31 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
         return;
       const grid = readGrid(table);
       const rectangle = selectionRectangle(grid, [from, to]);
+      useCells(cellsInRectangle(grid, rectangle).map((cell) => cell.element));
+    };
+    const selectWhole = (kind: 'row' | 'column' | 'table'): void => {
+      assertActive();
+      if (composing) return;
+      const native = root.ownerDocument.getSelection();
+      const range = native?.rangeCount === 1 ? native.getRangeAt(0) : undefined;
+      const start = range && targetCell(range.startContainer, root);
+      const end = range && targetCell(range.endContainer, root);
+      if (native && native.rangeCount > 1 || range && (!start || start !== end))
+        throw new Error('Place a caret or text selection inside one table cell.');
+      const cells = selected.length ? [...selected] : start ? [start] : [];
+      if (selected.length && start && !selected.includes(start))
+        throw new Error('The native caret no longer belongs to the selected region.');
+      const table = cells[0]?.closest('table');
+      if (!table || cells.some((cell) => !root.contains(cell) || cell.closest('table') !== table))
+        throw new Error('Select cells in one current table.');
+      const grid = ordinaryTableGrid(root, table);
+      const initial = selectionRectangle(grid, cells);
+      const edges = kind === 'row'
+        ? [grid.slots[initial.top]![0]!, grid.slots[initial.bottom]![grid.columns - 1]!]
+        : kind === 'column'
+          ? [grid.slots[0]![initial.left]!, grid.slots[grid.rows - 1]![initial.right]!]
+          : [grid.slots[0]![0]!, grid.slots[grid.rows - 1]![grid.columns - 1]!];
+      const rectangle = selectionRectangle(grid, edges.map((cell) => cell.element));
       useCells(cellsInRectangle(grid, rectangle).map((cell) => cell.element));
     };
     const edit = (mutate: (table: HTMLTableElement, cells: HTMLTableCellElement[]) => void) => {
@@ -250,6 +276,9 @@ export const tables = (options: TableOptions = {}): EditorPlugin => ({
             throw new RangeError('Cell address is outside the table.');
         selectRegion(grid.slots[from.row][from.column].element, grid.slots[to.row][to.column].element);
       },
+      selectRow: () => selectWhole('row'),
+      selectColumn: () => selectWhole('column'),
+      selectTable: () => selectWhole('table'),
       rowAbove: () => edit((table, cells) => insertGridRow(table, selectionRectangle(readGrid(table), cells).top)),
       rowBelow: () => edit((table, cells) => insertGridRow(table, selectionRectangle(readGrid(table), cells).bottom + 1)),
       columnLeft: () => edit((table, cells) => insertGridColumn(table, selectionRectangle(readGrid(table), cells).left)),

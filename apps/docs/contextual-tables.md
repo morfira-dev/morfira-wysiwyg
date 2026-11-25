@@ -47,15 +47,17 @@ External application controls can call `api.registerSelectionHost(host)` to pres
 
 ## Commands, focus and history
 
-Eight native buttons insert a row above/below, delete selected rows, insert a column left/right, delete selected columns, merge and split. Insertion disables at the corresponding 100-axis limit. Structural commands use the existing logical grid and transactions, preserving unaffected content and adjusting spans. Each successful action is one Undo step and dismisses the panel; deleting every selected row/column can remove the table, with Undo restoring it. Showing and positioning do not create history.
+Eight native buttons insert a row above/below, delete selected rows, insert a column left/right, delete selected columns, merge and split. Insertion disables at the corresponding 100-axis limit. Structural commands use the existing logical grid and transactions, preserving unaffected content and adjusting spans. Each successful mutation is one Undo step and dismisses the panel; deleting every selected row/column can remove the table, with Undo restoring it. Showing and positioning do not create history.
 
 A focused collapsed cell caret or explicit multi-cell rectangle opens automatically. A noncollapsed text range inside one cell uses text formatting; **Alt+F10** explicitly enters table tools instead. Carets in links, exact IMG selection, captions and protected semantic nodes are excluded, allowing their separate modules to own those contexts. This is not a new structural selection model or global overlay coordinator.
 
-**Alt+F10** from the eligible editable surface focuses the first enabled action. **Escape** closes visible or pending tools and restores a valid native cell Range once. Outside pointer/focus departure dismisses without taking focus. A new selection, intentional API `select` or Alt+F10 reopens; queued work for the dismissed session cannot immediately reopen it. Native table Tab navigation remains unchanged.
+**Alt+F10** from an eligible table context focuses the first enabled action. **Escape** closes visible or pending tools and restores a valid native cell Range once. Outside pointer/focus departure dismisses without taking focus. A new selection, intentional API `select` or Alt+F10 reopens; queued work for the dismissed session cannot immediately reopen it. Native table Tab navigation remains unchanged.
 
 Before commands, the UI restores the saved Range and checks current revision, actual table/cell identities, rectangle and restrictions after focus callbacks. API replacement, Undo recreating nodes, another table, read-only, composition and disposal invalidate the old target. Stale or unsupported actions cannot silently edit a replacement. Destroy releases host registration, subscriptions, listeners, observers and pending layout work while leaving editor/history usable.
 
-## Security, scope and weight
+Three additional actions select rows, columns or the whole table. The region closes across rowspan/colspan; its summary shows logical dimensions and actual cell count. Selection changes neither the document nor Undo history. Entering read-only closes the old session; a fresh eligible selection exposes observational actions while structural mutations stay disabled. See [table workflows](/table-workflows).
+
+## Security and integration
 
 Labels/errors render as text. The UI does not clone cell contents or images and issues no table mutations itself: existing validated commands own edits. It reads only the active grid on selection/data changes or activation; geometry-only work does not repeat grid scans. Fixed viewport placement handles visible clipping, scrolling, resize and VisualViewport, with wrapping/scrolling narrow controls and no polling.
 

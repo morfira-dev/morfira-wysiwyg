@@ -68,9 +68,12 @@ test('cell preview is focus/history neutral, localizes native controls and reser
   await expect(panel(page)).toBeVisible();
   await expect(action(page, 'merge')).toBeDisabled();
   await expect(action(page, 'split')).toBeEnabled();
-  expect(await page.evaluate(() => ({ focus: document.activeElement === window.editor.surface, changes: window.changes.length, undo: window.editor.canUndo(), controls: window.contextualTableUI.element.querySelectorAll('button[type="button"]').length }))).toEqual({ focus: true, changes: 0, undo: false, controls: 8 });
+  expect(await page.evaluate(() => ({ focus: document.activeElement === window.editor.surface, changes: window.changes.length, undo: window.editor.canUndo(), controls: window.contextualTableUI.element.querySelectorAll('button[type="button"]').length }))).toEqual({ focus: true, changes: 0, undo: false, controls: 11 });
   await page.evaluate(() => window.editor.setLocale('ru'));
   await expect(action(page, 'rowAbove')).toHaveText('Строка выше');
+  await expect(action(page, 'selectRow')).toHaveText('Выделить строки');
+  await expect(action(page, 'selectColumn')).toHaveText('Выделить столбцы');
+  await expect(action(page, 'selectTable')).toHaveText('Выделить таблицу');
   await expect(panel(page)).toHaveAttribute('aria-label', 'Действия с таблицей');
   await caret(page, 'td', true);
   await expect(panel(page)).toBeHidden();

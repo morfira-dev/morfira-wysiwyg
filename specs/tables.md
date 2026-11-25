@@ -1,5 +1,9 @@
 # Table plugin contract — 0.2
 
+Whole-row/column/table observational selection follows `table-workflows.md` through
+additive `selectRow`, `selectColumn`, `selectTable` commands. Span closure and
+native selection/history preservation remain explicit; no persisted format change.
+
 Status: implemented preview contract. Regression scenarios live in `tests/editor.spec.ts` and `tests/native.spec.ts`.
 
 - Public entry: `@morfira-dev/wysiwyg/plugins/tables`; separate CSS. No runtime dependency or shared global registry. `tables()` installs instance-local UI and commands.

@@ -57,6 +57,9 @@ export interface TableCommands {
   paste(data: TableClipboardInput): void;
   insert(rows: number, columns: number): void;
   select(from: CellAddress, to?: CellAddress): void;
+  selectRow(): void;
+  selectColumn(): void;
+  selectTable(): void;
   rowAbove(): void;
   rowBelow(): void;
   columnLeft(): void;

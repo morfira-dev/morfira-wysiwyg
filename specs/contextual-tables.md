@@ -1,5 +1,10 @@
 # Contextual table toolbar — U3e
 
+The additive whole-row/column/table observational selection actions and fresh
+read-only observation profile follow `table-workflows.md`. That addendum supersedes
+the earlier blanket read-only ineligibility below while keeping all mutations
+disabled and retained sessions invalidated on a read-only transition.
+
 Status: implemented with staged local validation; actual results and full-run/repeat distinctions belong to verification-backlog.md.
 
 ## Composition and table selection contract

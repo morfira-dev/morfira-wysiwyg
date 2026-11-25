@@ -1,5 +1,5 @@
 import { localize } from '@morfira-dev/wysiwyg-core';
-import type { Editor } from '@morfira-dev/wysiwyg-core';
+import type { Editor, EditorSelectionHandle } from '@morfira-dev/wysiwyg-core';
 import { getTableSelection, tableCommands, tableSelectionChange } from '../../tables/index.js';
 import { tablesMessages } from '../../tables/messages.js';
 import { createFormSelection } from '../shared/selection.js';
@@ -32,7 +32,11 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
   element.className = 'mw-contextual-table';
   element.setAttribute('role', 'group');
   element.hidden = true;
-  const actions: ContextualTableAction[] = ['rowAbove', 'rowBelow', 'deleteRow', 'columnLeft', 'columnRight', 'deleteColumn', 'merge', 'split'];
+  const summary = document.createElement('span');
+  summary.className = 'mw-contextual-table-summary';
+  summary.setAttribute('role', 'status');
+  element.append(summary);
+  const actions: ContextualTableAction[] = ['rowAbove', 'rowBelow', 'deleteRow', 'columnLeft', 'columnRight', 'deleteColumn', 'merge', 'split', 'selectRow', 'selectColumn', 'selectTable'];
   const buttons = actions.map((action) => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -56,6 +60,11 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
   let explicitOpening = false;
   let invalidated = false;
   let invalidationRevision = 0;
+  let readonlySelection: EditorSelectionHandle | undefined;
+  const releaseReadonlySelection = (): void => {
+    if (readonlySelection) editor.selection.release(readonlySelection);
+    readonlySelection = undefined;
+  };
   const message = (key: keyof typeof contextualTableUIMessages.en): string => localize(editor.getLocale(), key, contextualTableUIMessages);
   const report = (error: unknown): void => {
     try { options.onError?.(error); }
@@ -78,13 +87,15 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
     const failures = release(geometryCleanups);
     if (failures.length) throw new AggregateError(failures, 'Table geometry cleanup failed.');
   };
-  const dismiss = (): void => {
+  const dismiss = (keepReadonlySelection = false): void => {
+    if (!keepReadonlySelection) releaseReadonlySelection();
     if (current) suppressed = current;
     explicitOpening = false;
     element.hidden = true;
     stopGeometry();
   };
   const invalidate = (): void => {
+    releaseReadonlySelection();
     const range = current?.range ?? suppressed?.range;
     const state = getTableSelection(editor, range);
     invalidationRevision = state?.revision ?? invalidationRevision;
@@ -98,8 +109,9 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
     return native?.rangeCount === 1 ? native.getRangeAt(0).cloneRange() : undefined;
   };
   const candidate = (): ContextualTableTarget | undefined => {
-    if (composing || editor.isReadOnly()) return;
-    const range = focusedEditor() ? nativeRange() : element.contains(document.activeElement) ? current?.range.cloneRange() : undefined;
+    if (composing) return;
+    const readonlyBody = editor.isReadOnly() && document.activeElement === document.body;
+    const range = focusedEditor() || readonlyBody ? nativeRange() : element.contains(document.activeElement) ? current?.range.cloneRange() : undefined;
     if (!range || !ordinaryTableRange(editor, range)) return;
     const state = getTableSelection(editor, range);
     if (!state) return;
@@ -108,7 +120,9 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
   const matches = (left: ContextualTableTarget, right: ContextualTableTarget): boolean => left.apiRevision === right.apiRevision
     && left.state.revision === right.state.revision && sameTableRegion(left.state, right.state);
   const enabled = (action: ContextualTableAction, state: TableSelectionState): boolean => {
-    if (editor.isReadOnly() || composing) return false;
+    if (composing) return false;
+    if (action === 'selectRow' || action === 'selectColumn' || action === 'selectTable') return true;
+    if (editor.isReadOnly()) return false;
     if (action === 'merge') return state.canMerge;
     if (action === 'split') return state.canSplit;
     if (action === 'rowAbove' || action === 'rowBelow') return state.rows < 100;
@@ -209,8 +223,18 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
     suppressed = undefined;
     current = next;
     selection.capture();
+    if (editor.isReadOnly() && (focusedEditor() || document.activeElement === document.body)) {
+      const captured = editor.selection.capture();
+      releaseReadonlySelection();
+      readonlySelection = captured;
+    }
+    else if (!editor.isReadOnly()) releaseReadonlySelection();
     element.setAttribute('aria-label', options.label ?? message('ui.contextualTable.label'));
     element.title = message('ui.contextualTable.help');
+    summary.textContent = message('ui.contextualTable.selection')
+      .replace('{rows}', String(next.state.rectangle.bottom - next.state.rectangle.top + 1))
+      .replace('{columns}', String(next.state.rectangle.right - next.state.rectangle.left + 1))
+      .replace('{cells}', String(next.state.cells.length));
     actions.forEach((action, index) => {
       buttons[index]!.textContent = localize(editor.getLocale(), `tables.${action}`, tablesMessages);
       buttons[index]!.disabled = !enabled(action, next.state);
@@ -230,7 +254,10 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
     if (!projected || !matches(previous, projected)) return;
     restoring++;
     try {
-      if (!selection.restore() || disposed || composing || editor.isReadOnly() || previous.apiRevision !== apiRevision) return;
+      const restored = editor.isReadOnly()
+        ? !!readonlySelection && editor.selection.restore(readonlySelection)
+        : selection.restore();
+      if (!restored || disposed || composing || previous.apiRevision !== apiRevision) return;
       const next = candidate();
       if (next && matches(previous, next)) {
         current = next;
@@ -240,7 +267,7 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
     finally { restoring--; }
   };
   const activate = (action: ContextualTableAction): void => {
-    if (disposed || element.hidden || !element.isConnected || composing || editor.isReadOnly()) return;
+    if (disposed || element.hidden || !element.isConnected || composing) return;
     try {
       const next = restoreTarget();
       if (!next || !enabled(action, next.state) || !anchor()) { dismiss(); return; }
@@ -257,14 +284,22 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
     if (event.key === 'Escape' && (!element.hidden || focusRequested) && (element.contains(event.target as Node) || surface.contains(event.target as Node))) {
       event.preventDefault();
       event.stopPropagation();
-      dismiss();
+      dismiss(true);
       restoring++;
-      try { if (!disposed) selection.restore(); }
-      finally { restoring--; }
+      try {
+        if (!disposed) {
+          if (editor.isReadOnly() && readonlySelection) editor.selection.restore(readonlySelection);
+          else selection.restore();
+        }
+      }
+      finally {
+        restoring--;
+        releaseReadonlySelection();
+      }
       return;
     }
     if (event.altKey && !event.ctrlKey && !event.metaKey && event.key === 'F10' && surface.contains(event.target as Node)
-      && !composing && !editor.isReadOnly() && candidate()) {
+      && !composing && candidate()) {
       event.preventDefault();
       event.stopPropagation();
       suppressed = undefined;
@@ -303,7 +338,7 @@ export const createContextualTableUI = (host: HTMLElement, editor: Editor, optio
     if (disposed) return;
     disposed = true;
     const failures = release(cleanups);
-    for (const cleanup of [stopGeometry, () => selection.destroy()]) {
+    for (const cleanup of [stopGeometry, releaseReadonlySelection, () => selection.destroy()]) {
       try { cleanup(); }
       catch (error) { failures.push(error); }
     }

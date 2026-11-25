@@ -1,6 +1,9 @@
 export const tablesMessages = Object.freeze({
   en: Object.freeze({
     'tables.rowAbove': 'Insert row above',
+    'tables.selectRow': 'Select rows',
+    'tables.selectColumn': 'Select columns',
+    'tables.selectTable': 'Select table',
     'tables.rowBelow': 'Insert row below',
     'tables.columnLeft': 'Insert column left',
     'tables.columnRight': 'Insert column right',
@@ -16,6 +19,9 @@ export const tablesMessages = Object.freeze({
   }),
   ru: Object.freeze({
     'tables.rowAbove': 'Строка выше',
+    'tables.selectRow': 'Выделить строки',
+    'tables.selectColumn': 'Выделить столбцы',
+    'tables.selectTable': 'Выделить таблицу',
     'tables.rowBelow': 'Строка ниже',
     'tables.columnLeft': 'Столбец слева',
     'tables.columnRight': 'Столбец справа',

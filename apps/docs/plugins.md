@@ -15,15 +15,17 @@ table.select({ row: 0, column: 0 }, { row: 0, column: 1 });
 table.merge();
 ```
 
-Dimensions are integers from 1 to 100. Nested table insertion is rejected. The plugin uses its own logical grid for spans; all commands are transactions in the editor's history. Imported sparse tables are normalized during structural edits; invalid overlapping or oversized grids are rejected.
+Dimensions are integers from 1 to 100. Nested table insertion is rejected. The plugin uses its own logical grid for spans; structural and styling mutations participate in editor history; selection is observational. Imported sparse tables are normalized during structural edits; invalid overlapping or oversized grids are rejected.
 
 ## Commands
 
-`insert`, `select`, `rowAbove`, `rowBelow`, `columnLeft`, `columnRight`, `deleteRow`, `deleteColumn`, `merge`, `split`, `remove`, `background(color)`, `border(color)`, `columnWidth(column, pixels)`.
+`insert`, `select`, `selectRow`, `selectColumn`, `selectTable`, `rowAbove`, `rowBelow`, `columnLeft`, `columnRight`, `deleteRow`, `deleteColumn`, `merge`, `split`, `remove`, `background(color)`, `border(color)`, `columnWidth(column, pixels)`.
 
 Rows/columns and colors target selected cells, or the current cell. `select` uses zero-based logical addresses; selections expand across existing spans. Merge preserves content in document order; split leaves content in the origin cell. Column width is 40–4000 pixels. Read-only blocks changes.
 
-Drag across cells or Shift-click to select a region. Right-click opens the Russian context menu. Tab/Shift+Tab navigates cells; Tab at the final cell adds a row. Hover a cell's right edge to resize its column; one completed drag is one history edit. Full touch and keyboard-only resize interaction is still pending.
+Drag across cells or Shift-click to select a region. Right-click opens the localized context menu. Tab/Shift+Tab navigates cells; Tab at the final cell adds a row. Hover a cell's right edge to resize its column; one completed drag is one history edit. Full touch and keyboard-only resize interaction is still pending.
+
+`selectRow()`, `selectColumn()` and `selectTable()` select complete logical regions, closing across merged cells. They preserve document content, the native range and history; read-only permits these observational commands. See [everyday table workflows](/table-workflows).
 
 ## Write a plugin
 
