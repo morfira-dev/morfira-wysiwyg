@@ -44,6 +44,9 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     const fullscreenCSS = await readFile(`${path}/ui/fullscreen.css`);
     report['ui-fullscreen.css'] = { raw: fullscreenCSS.length, gzip: gzipSync(fullscreenCSS).length, brotli: brotliCompressSync(fullscreenCSS).length };
     if (fullscreenCSS.length > 2000) { console.error('fullscreen: exceeds 2000 raw CSS byte budget'); failed = true; }
+    const contentViewCSS = await readFile(`${path}/content-view.css`);
+    report['content-view.css'] = { raw: contentViewCSS.length, gzip: gzipSync(contentViewCSS).length, brotli: brotliCompressSync(contentViewCSS).length };
+    if (contentViewCSS.length > 4000) { console.error('content-view: exceeds 4000 raw CSS byte guard'); failed = true; }
     const characterCSS = await readFile(`${path}/ui/special-characters.css`);
     report['ui-special-characters.css'] = { raw: characterCSS.length, gzip: gzipSync(characterCSS).length, brotli: brotliCompressSync(characterCSS).length };
     if (characterCSS.length > 3000) { console.error('special characters: exceeds 3000 raw CSS byte budget'); failed = true; }
@@ -66,7 +69,7 @@ for (const name of ['core', 'plugins', 'vue', 'react', 'svelte', 'angular', 'web
     report['ui-search-highlights.css'] = { raw: searchCSS.length, gzip: gzipSync(searchCSS).length, brotli: brotliCompressSync(searchCSS).length };
     if (searchCSS.length > 1500) { console.error('search highlights: exceeds 1500 raw CSS byte budget'); failed = true; }
     const editorCSS = await readFile(`${path}/ui/editor.css`); report['ui-editor.css'] = { raw: editorCSS.length, gzip: gzipSync(editorCSS).length, brotli: brotliCompressSync(editorCSS).length };
-    for (const entry of ['media', 'formula', 'ui/media', 'ui/formula', 'sdk', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/special-characters', 'ui/fullscreen', 'ui/preview', 'ui/save-state', 'ui/print', 'ui/outline', 'text-drop', 'save-state', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/search-highlights']) {
+    for (const entry of ['content-view', 'media', 'formula', 'ui/media', 'ui/formula', 'sdk', 'presets/minimal', 'presets/standard', 'presets/extended', 'ui/editor', 'ui/standard', 'ui/extended', 'ui/contextual', 'ui/contextual-link', 'ui/contextual-image', 'ui/image-resize', 'ui/contextual-table', 'ui/table-picker', 'ui/special-characters', 'ui/fullscreen', 'ui/preview', 'ui/save-state', 'ui/print', 'ui/outline', 'text-drop', 'save-state', 'ui/table-properties', 'table-properties', 'images', 'image-input', 'search', 'statistics', 'markdown', 'codecs/markdown', 'autolink', 'fonts', 'list-properties', 'text-direction', 'horizontal-rule', 'checklists', 'mentions', 'slash', 'suggestions', 'ui/links', 'ui/images', 'ui/search', 'ui/search-highlights']) {
       const buffers = await Promise.all(entries[entry].map((file) => readFile(`${path}/${file}`)));
       report[`${entry}.js`] = buffers.reduce((size, buffer) => ({ raw: size.raw + buffer.length, gzip: size.gzip + gzipSync(buffer).length, brotli: size.brotli + brotliCompressSync(buffer).length }), { raw: 0, gzip: 0, brotli: 0 });
       if (report[`${entry}.js`].gzip > 150_000) { console.error(`${entry}: exceeds 150000 byte gzip JS budget`); failed = true; }
@@ -144,7 +147,7 @@ for (const [entry, symbol, label, budget] of [['ui/preview', 'createPreviewUI', 
   if (report[`${label}-standalone.js`].gzip > budget) { console.error(`${label}: exceeds ${budget} gzip JS byte budget`); failed = true; }
 }
 // Optional plugins/UI include their selected SDK and validation dependency closure.
-for (const [entry, label] of [['ui/source', 'source-ui'], ['plugins/media', 'media'], ['plugins/formula', 'formula'], ['ui/media', 'media-ui'], ['ui/formula', 'formula-ui'], ['plugins/block-navigation', 'block-navigation'], ['plugins/text-layout', 'text-layout'], ['plugins/format-painter', 'format-painter'], ['plugins/code-blocks', 'code-blocks'], ['ui/text-layout', 'text-layout-ui'], ['ui/format-painter', 'format-painter-ui'], ['ui/code-blocks', 'code-blocks-ui']] as const) {
+for (const [entry, label] of [['content-view', 'content-view'], ['ui/source', 'source-ui'], ['plugins/media', 'media'], ['plugins/formula', 'formula'], ['ui/media', 'media-ui'], ['ui/formula', 'formula-ui'], ['plugins/block-navigation', 'block-navigation'], ['plugins/text-layout', 'text-layout'], ['plugins/format-painter', 'format-painter'], ['plugins/code-blocks', 'code-blocks'], ['ui/text-layout', 'text-layout-ui'], ['ui/format-painter', 'format-painter-ui'], ['ui/code-blocks', 'code-blocks-ui']] as const) {
   const result = await build({
     stdin: { contents: `import * as feature from '@morfira-dev/wysiwyg/${entry}'; globalThis.__morfiraOptional = feature;`, resolveDir: process.cwd(), loader: 'ts' },
     bundle: true, minify: true, charset: 'utf8', write: false, format: 'esm', platform: 'browser',

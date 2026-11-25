@@ -256,7 +256,12 @@
       "types": "./dist/ui/source/index.d.ts",
       "import": "./dist/ui/source.js"
     },
-    "./ui/source.css": "./dist/ui/source.css"
+    "./ui/source.css": "./dist/ui/source.css",
+    "./content-view": {
+      "types": "./dist/content-view/index.d.ts",
+      "import": "./dist/content-view.js"
+    },
+    "./content-view.css": "./dist/content-view.css"
   },
   "peerDependencies": {
     "@morfira-dev/wysiwyg-core": "^1.15.0"

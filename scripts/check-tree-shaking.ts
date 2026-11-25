@@ -15,6 +15,7 @@ const owner = (path: string): string | undefined => {
   return relative.split('/')[0];
 };
 const cases = [
+  { entry: '@morfira-dev/wysiwyg/content-view', symbol: 'createContentView', feature: 'content-view', allowed: ['content-view'] },
   ...[
     ['ui/source', 'createSourceEditor', 'ui/source', ['ui/source', 'ui/shared']],
     ['plugins/block-navigation', 'blockNavigation', 'block-navigation', ['block-navigation']],

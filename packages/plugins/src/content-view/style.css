@@ -1,0 +1,21 @@
+.mw-content-view { box-sizing: border-box; min-width: 0; max-width: 100%; overflow-x: auto; color: var(--mw-text, #263043); font: var(--mw-font-size, 16px)/var(--mw-line-height, 1.75) var(--mw-font, system-ui, sans-serif); overflow-wrap: anywhere; white-space: pre-wrap; }
+.mw-content-view.mw-content-view :where(p, blockquote, ul, ol, pre, figure) { margin-block: 0 1em; }
+.mw-content-view.mw-content-view :where(h1, h2, h3, h4, h5, h6) { margin-block: 1.3em .5em; line-height: 1.3; color: inherit; padding: 0; border: 0; font-weight: 650; }
+.mw-content-view.mw-content-view :where(blockquote) { margin-inline: 0; padding-inline-start: 1em; border-inline-start: 3px solid var(--mw-border, #e4e8ef); }
+.mw-content-view.mw-content-view :where(ul, ol) { padding-inline-start: 1.5em; }
+.mw-content-view.mw-content-view :where(pre) { white-space: pre-wrap; padding: 1em; border-radius: var(--mw-radius, 8px); background: var(--mw-hover, #f0f2f7); }
+.mw-content-view.mw-content-view :where(code) { font-family: ui-monospace, monospace; }
+.mw-content-view.mw-content-view :where(table) { display: table; border-collapse: collapse; max-width: 100%; margin: 0 0 1em; }
+.mw-content-view.mw-content-view :where(td, th) { border: 1px solid var(--mw-border, #e4e8ef); padding: .3em .5em; }
+.mw-content-view.mw-content-view :where(img) { display: inline-block; max-width: 100%; height: auto; }
+.mw-content-view.mw-content-view :where(figcaption) { color: var(--mw-muted, #657185); font-size: .875em; }
+.mw-content-view.mw-content-view :where(a[href]) { color: var(--mw-accent, #6658e8); text-decoration: underline; }
+.mw-content-view.mw-content-view :where(a:focus-visible) { outline: 2px solid var(--mw-focus, #2563eb); outline-offset: 2px; }
+.mw-content-view.mw-content-view :where(li[data-checklist-checked]) { list-style: none; }
+.mw-content-view.mw-content-view :where(li[data-checklist-checked])::before { content: '☐ '; }
+.mw-content-view.mw-content-view :where(li[data-checklist-checked=true])::before { content: '☑ '; }
+.mw-content-view .mw-content-view-image { display: inline-block; border: 1px dashed var(--mw-border, #e4e8ef); padding: .2em .5em; color: var(--mw-muted, #657185); }
+
+.mw-content-view.mw-content-view :where(tr) { background: transparent; border: 0; }
+
+.mw-content-view.mw-content-view :where(a:not([href])) { color: inherit; text-decoration: none; }

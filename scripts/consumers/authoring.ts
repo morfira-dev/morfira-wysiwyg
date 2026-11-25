@@ -20,12 +20,30 @@ try {
     await mkdir(destination, { recursive: true });
     execFileSync('tar', ['-xzf', join(archives, archive), '--strip-components=1', '-C', destination]);
   }
-  const entries = ['sdk', 'ui/source', 'plugins/block-navigation', 'plugins/text-layout', 'plugins/format-painter', 'plugins/code-blocks', 'ui/text-layout', 'ui/format-painter', 'ui/code-blocks'];
+  const entries = ['sdk', 'ui/source', 'plugins/block-navigation', 'plugins/text-layout', 'plugins/format-painter', 'plugins/code-blocks', 'ui/text-layout', 'ui/format-painter', 'ui/code-blocks', 'content-view', 'plugins/tables'];
   const imports = entries.map((entry, index) => `import * as feature${index} from '@morfira-dev/wysiwyg/${entry}';`).join('\n');
   const retain = `export default [${entries.map((_, index) => `feature${index}`).join(',')}];`;
   const entry = join(temporary, 'entry.ts');
   await writeFile(entry, `${imports}
-import type { Editor, EditorNodePositionHandle, EditorMappedNodePosition } from '@morfira-dev/wysiwyg';
+import type { Editor, EditorDocument, EditorNodePositionHandle, EditorMappedNodePosition } from '@morfira-dev/wysiwyg';
+import { createContentView } from '@morfira-dev/wysiwyg/content-view';
+import type { ContentViewController } from '@morfira-dev/wysiwyg/content-view';
+import { tableCommands } from '@morfira-dev/wysiwyg/plugins/tables';
+const checkTableSelectionBoundary = (editor: Editor): void => {
+  const commands = tableCommands(editor);
+  commands.selectRow();
+  commands.selectColumn();
+  commands.selectTable();
+};
+const checkPublishedContentBoundary = (host: HTMLElement, value: EditorDocument): EditorDocument => {
+  const view: ContentViewController = createContentView(host, { value, images: 'omit', links: 'text' });
+  view.setJSON(value);
+  view.setHTML('<p>Published text</p>');
+  const document = view.getJSON();
+  const html: string = view.getHTML();
+  view.destroy();
+  return document;
+};
 const checkNewEditorBoundary = (editor: Editor) => {
   const inserted: boolean = editor.insertTextAtCaret('literal');
   const handle: EditorNodePositionHandle | undefined = editor.positions.trackNode([0], 0);
@@ -47,9 +65,12 @@ ${retain}`);
     assert.equal(typeof sdk.createInlineNodeViews, 'function');
     assert.equal(typeof sdk.structuralCommands, 'function');
     assert.equal(typeof modules[1].createSourceEditor, 'function');
+    assert.equal(typeof modules[9].createContentView, 'function');
+    assert.equal(typeof modules[10].tableCommands, 'function');
     assert.equal(typeof globalThis.document, 'undefined');
   `], { cwd: temporary, stdio: 'pipe' });
-  console.log('Authoring archive smoke: nine public subpaths typecheck/bundle from actual tarballs and import without a browser.');
+  assert.match(await readFile(join(temporary, 'node_modules/@morfira-dev/wysiwyg/dist/content-view.css'), 'utf8'), /\.mw-content-view/);
+  console.log('Authoring archive smoke: eleven public subpaths typecheck/bundle from actual tarballs and import without a browser; table selection types and content-view CSS are packaged.');
 }
 finally {
   await rm(temporary, { recursive: true, force: true });
